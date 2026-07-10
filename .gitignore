@@ -33,6 +33,7 @@
 /[Aa]ssets/Plugins/Editor/JetBrains*
 # Jetbrains Rider personal-layer settings
 *.DotSettings.user
+.com-unity-codely.json
 
 # Visual Studio cache directory
 .vs/
