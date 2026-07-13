@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// 书页界面总控
@@ -18,12 +19,12 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private OptionPanelUI optionPanel;
 
     [Header("顶部栏")]
-    [SerializeField] private Text chapterNameText;
-    [SerializeField] private Text remainingPagesText;
+    [SerializeField] private TextMeshProUGUI chapterNameText;
+    [SerializeField] private TextMeshProUGUI remainingPagesText;
 
     [Header("底部栏")]
-    [SerializeField] private Text hpText;
-    [SerializeField] private Text goldText;
+    [SerializeField] private TextMeshProUGUI hpText;
+    [SerializeField] private TextMeshProUGUI goldText;
 
     [Header("章节完成面板")]
     [SerializeField] private GameObject chapterCompletePanel;

@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// 单个书页卡片UI
@@ -9,20 +10,19 @@ public class PageCardUI : MonoBehaviour
 {
     [Header("UI引用")]
     [SerializeField] private Image iconImage;
-    [SerializeField] private Text titleText;
-    [SerializeField] private Text descText;
-    [SerializeField] private Text typeBadgeText;
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI descText;
+    [SerializeField] private TextMeshProUGUI typeBadgeText;
     [SerializeField] private Button cardButton;
     [SerializeField] private Image cardFrameImage;
     [SerializeField] private GameObject finalNodeIndicator;
-
+    [SerializeField] private Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
+    [SerializeField] private Color ColorShop = new(0.9f, 0.75f, 0.2f, 1f);
+    [SerializeField] private Color ColorRest = new(0.3f, 0.7f, 0.4f, 1f);
+    [SerializeField] private Color ColorFate = new(0.6f, 0.3f, 0.8f, 1f);
+    
     private int _index;
     private Action<int> _onClick;
-
-    private static readonly Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
-    private static readonly Color ColorShop = new(0.9f, 0.75f, 0.2f, 1f);
-    private static readonly Color ColorRest = new(0.3f, 0.7f, 0.4f, 1f);
-    private static readonly Color ColorFate = new(0.6f, 0.3f, 0.8f, 1f);
 
     private void Awake()
     {
@@ -72,7 +72,7 @@ public class PageCardUI : MonoBehaviour
         };
     }
 
-    private static Color GetColor(PageEventType type)
+    private Color GetColor(PageEventType type)
     {
         return type switch
         {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// 选项面板UI（当事件有多选项时弹出）
@@ -12,8 +13,8 @@ public class OptionPanelUI : MonoBehaviour
     [SerializeField] private GameObject panel;
     [SerializeField] private Transform optionContainer;
     [SerializeField] private Button optionButtonPrefab;
-    [SerializeField] private Text eventTitleText;
-    [SerializeField] private Text eventDescText;
+    [SerializeField] private TextMeshProUGUI eventTitleText;
+    [SerializeField] private TextMeshProUGUI eventDescText;
 
     private Action<int> _onOptionSelected;
 
@@ -45,7 +46,7 @@ public class OptionPanelUI : MonoBehaviour
         {
             var option = data.options[i];
             var btn = Instantiate(optionButtonPrefab, optionContainer);
-            var text = btn.GetComponentInChildren<Text>();
+            var text = btn.GetComponentInChildren<TextMeshProUGUI>();
             if (text != null)
                 text.text = option.optionText;
 

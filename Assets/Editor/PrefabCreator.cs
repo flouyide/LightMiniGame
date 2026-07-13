@@ -1,9 +1,10 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
-/// 一键重建被误删的 UI Prefab（PageCard、OptionButton）
+/// 一键重建被误删的 UI Prefab（PageCard、OptionButton），使用 TMP + simhei Chinese 字体
 /// 菜单：Tools > 重建 PageCard Prefab / 重建 OptionButton Prefab
 /// </summary>
 public static class PrefabCreator
@@ -46,7 +47,7 @@ public static class PrefabCreator
         SetAnchors(badgeRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f));
         badgeRect.anchoredPosition = new Vector2(-10, -10);
         badgeRect.sizeDelta = new Vector2(60, 24);
-        var badgeText = badgeObj.AddComponent<Text>();
+        var badgeText = badgeObj.AddComponent<TextMeshProUGUI>();
         SetupText(badgeText, "类型", 14, Color.white);
 
         // Title
@@ -55,7 +56,7 @@ public static class PrefabCreator
         SetAnchors(titleRect, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f));
         titleRect.anchoredPosition = new Vector2(0, 25);
         titleRect.sizeDelta = new Vector2(-20, 30);
-        var titleText = titleObj.AddComponent<Text>();
+        var titleText = titleObj.AddComponent<TextMeshProUGUI>();
         SetupText(titleText, "标题", 18, Color.white);
 
         // Desc
@@ -64,11 +65,11 @@ public static class PrefabCreator
         SetAnchors(descRect, new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f));
         descRect.anchoredPosition = new Vector2(0, -15);
         descRect.sizeDelta = new Vector2(-20, -50);
-        var descText = descObj.AddComponent<Text>();
+        var descText = descObj.AddComponent<TextMeshProUGUI>();
         SetupText(descText, "描述", 14, new Color(0.8f, 0.8f, 0.8f, 1f));
-        descText.alignment = TextAnchor.UpperCenter;
-        descText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        descText.verticalOverflow = VerticalWrapMode.Truncate;
+        descText.alignment = TextAlignmentOptions.Top;
+        descText.enableWordWrapping = true;
+        descText.overflowMode = TextOverflowModes.Ellipsis;
 
         // FinalIndicator
         var finalObj = CreateChild(rootRect, "FinalIndicator");
@@ -76,7 +77,7 @@ public static class PrefabCreator
         SetAnchors(finalRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
         finalRect.anchoredPosition = new Vector2(0, 8);
         finalRect.sizeDelta = new Vector2(120, 20);
-        var finalText = finalObj.AddComponent<Text>();
+        var finalText = finalObj.AddComponent<TextMeshProUGUI>();
         SetupText(finalText, "★ 最终节点", 12, new Color(1f, 0.85f, 0.2f, 1f));
         finalObj.SetActive(false);
 
@@ -119,9 +120,9 @@ public static class PrefabCreator
         StretchFill(textObj);
         textObj.GetComponent<RectTransform>().offsetMin = new Vector2(10, 2);
         textObj.GetComponent<RectTransform>().offsetMax = new Vector2(-10, -2);
-        var text = textObj.AddComponent<Text>();
+        var text = textObj.AddComponent<TextMeshProUGUI>();
         SetupText(text, "选项文本", 16, Color.white);
-        text.alignment = TextAnchor.MiddleLeft;
+        text.alignment = TextAlignmentOptions.Left;
 
         string path = "Assets/Prefabs/UI/OptionButton.prefab";
         PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -136,7 +137,7 @@ public static class PrefabCreator
     {
         CreatePageCardPrefab();
         CreateOptionButtonPrefab();
-        Debug.Log("[PrefabCreator] 全部 UI Prefab 已重建，请在 BookUIController / OptionPanelUI 的 Inspector 中重新拖入引用。");
+        Debug.Log("[PrefabCreator] 全部 UI Prefab 已重建（TMP + simhei Chinese），请在 BookUIController / OptionPanelUI 的 Inspector 中重新拖入引用。");
     }
 
     private static void EnsureDirectory()
@@ -171,23 +172,21 @@ public static class PrefabCreator
         rect.pivot = pivot;
     }
 
-    private static void SetupText(Text text, string content, int fontSize, Color color)
+    private static void SetupText(TextMeshProUGUI text, string content, int fontSize, Color color)
     {
         text.text = content;
-        text.font = GetDefaultFont();
+        text.font = GetTMPFont();
         text.fontSize = fontSize;
         text.color = color;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.alignment = TextAlignmentOptions.Center;
+        text.enableWordWrapping = true;
+        text.overflowMode = TextOverflowModes.Ellipsis;
     }
 
-    private static Font GetDefaultFont()
+    private static TMP_FontAsset GetTMPFont()
     {
-        var font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/simhei.ttf");
+        var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/simhei Chinese.asset");
         if (font != null) return font;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        if (font != null) return font;
-        return Resources.GetBuiltinResource<Font>("Arial.ttf");
+        return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/SimHei SDF.asset");
     }
 }
