@@ -163,6 +163,10 @@ public class ChapterManager : MonoBehaviour
         }
 
         var selected = _currentPages[index];
+
+        // 占位符：进入战斗/事件，先打印事件类型到 Console（战斗/商店/休整/命运）
+        Debug.Log($"[事件] 进入「{selected.displayName}」——类型：{TypeNameOf(selected.eventType)}");
+
         OnPageSelected?.Invoke(selected, index);
 
         // 标记完成
@@ -252,8 +256,16 @@ public class ChapterManager : MonoBehaviour
         StartNextChapter();
     }
 
-    private static void Shuffle<T>(List<T> list)
+    private static string TypeNameOf(PageEventType type) => type switch
     {
+        PageEventType.Battle => "战斗",
+        PageEventType.Shop => "商店",
+        PageEventType.Rest => "休整",
+        PageEventType.Fate => "命运",
+        _ => "未知事件"
+    };
+
+    private static void Shuffle<T>(List<T> list)    {
         for (int i = list.Count - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);

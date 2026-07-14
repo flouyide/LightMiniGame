@@ -16,17 +16,24 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private Button cardButton;
     [SerializeField] private Image cardFrameImage;
     [SerializeField] private GameObject finalNodeIndicator;
+
+    [Header("底部进入按钮(CTA)")]
+    [SerializeField] private Image enterCtaImage;       // 底部"进入"按钮底图
+    [SerializeField] private TextMeshProUGUI enterCtaText; // 底部"进入"按钮文字
+
+    [Header("事件类型颜色")]
     [SerializeField] private Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
     [SerializeField] private Color ColorShop = new(0.9f, 0.75f, 0.2f, 1f);
     [SerializeField] private Color ColorRest = new(0.3f, 0.7f, 0.4f, 1f);
     [SerializeField] private Color ColorFate = new(0.6f, 0.3f, 0.8f, 1f);
-    
+
     private int _index;
     private Action<int> _onClick;
 
     private void Awake()
     {
-        cardButton.onClick.AddListener(OnClick);
+        if (cardButton != null)
+            cardButton.onClick.AddListener(OnClick);
     }
 
     private void OnClick()
@@ -53,34 +60,47 @@ public class PageCardUI : MonoBehaviour
             iconImage.color = new Color(1, 1, 1, 0.1f);
         }
 
+        Color typeColor = GetColor(data.eventType);
+
+        // 卡片边框按类型上色
         if (cardFrameImage != null)
-            cardFrameImage.color = GetColor(data.eventType);
+            cardFrameImage.color = typeColor;
+
+        // 底部"进入"按钮：按类型上色 + 文案（战斗/商店/休整/命运）
+        if (enterCtaImage != null)
+            enterCtaImage.color = typeColor;
+        if (enterCtaText != null)
+            enterCtaText.text = GetEnterLabel(data.eventType);
 
         if (finalNodeIndicator != null)
             finalNodeIndicator.SetActive(data.isFinalNode);
     }
 
-    private static string GetTypeName(PageEventType type)
+    private static string GetTypeName(PageEventType type) => type switch
     {
-        return type switch
-        {
-            PageEventType.Battle => "战斗",
-            PageEventType.Shop => "商店",
-            PageEventType.Rest => "休整",
-            PageEventType.Fate => "命运",
-            _ => "未知"
-        };
-    }
+        PageEventType.Battle => "战斗",
+        PageEventType.Shop => "商店",
+        PageEventType.Rest => "休整",
+        PageEventType.Fate => "命运",
+        _ => "未知"
+    };
 
-    private Color GetColor(PageEventType type)
+    // 底部按钮文案：进入 + 类型
+    private static string GetEnterLabel(PageEventType type) => type switch
     {
-        return type switch
-        {
-            PageEventType.Battle => ColorBattle,
-            PageEventType.Shop => ColorShop,
-            PageEventType.Rest => ColorRest,
-            PageEventType.Fate => ColorFate,
-            _ => Color.white
-        };
-    }
+        PageEventType.Battle => "进入战斗",
+        PageEventType.Shop => "进入商店",
+        PageEventType.Rest => "进入休整",
+        PageEventType.Fate => "进入命运",
+        _ => "进入"
+    };
+
+    private Color GetColor(PageEventType type) => type switch
+    {
+        PageEventType.Battle => ColorBattle,
+        PageEventType.Shop => ColorShop,
+        PageEventType.Rest => ColorRest,
+        PageEventType.Fate => ColorFate,
+        _ => Color.white
+    };
 }
