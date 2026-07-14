@@ -13,13 +13,13 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI descText;
     [SerializeField] private TextMeshProUGUI typeBadgeText;
-    [SerializeField] private Button cardButton;
+    [SerializeField] private Button cardButton;            // 整卡点击（点击卡片其它区域触发）
     [SerializeField] private Image cardFrameImage;
     [SerializeField] private GameObject finalNodeIndicator;
 
-    [Header("底部进入按钮(CTA)")]
-    [SerializeField] private Image enterCtaImage;       // 底部"进入"按钮底图
-    [SerializeField] private TextMeshProUGUI enterCtaText; // 底部"进入"按钮文字
+    [Header("底部进入按钮")]
+    [SerializeField] private Button enterButton;           // 底部"进入"按钮（独立 Button）
+    [SerializeField] private TextMeshProUGUI enterButtonText; // 按钮文字
 
     [Header("事件类型颜色")]
     [SerializeField] private Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
@@ -32,8 +32,13 @@ public class PageCardUI : MonoBehaviour
 
     private void Awake()
     {
+        // 整卡与底部按钮都触发同一个回调。
+        // Unity UI 的 click 通过 ExecuteHierarchy 只命中最深的 IPointerClickHandler，
+        // 点底部按钮只触发 enterButton，点卡片其它区域触发 cardButton，不会双重触发。
         if (cardButton != null)
             cardButton.onClick.AddListener(OnClick);
+        if (enterButton != null)
+            enterButton.onClick.AddListener(OnClick);
     }
 
     private void OnClick()
@@ -66,11 +71,11 @@ public class PageCardUI : MonoBehaviour
         if (cardFrameImage != null)
             cardFrameImage.color = typeColor;
 
-        // 底部"进入"按钮：按类型上色 + 文案（战斗/商店/休整/命运）
-        if (enterCtaImage != null)
-            enterCtaImage.color = typeColor;
-        if (enterCtaText != null)
-            enterCtaText.text = GetEnterLabel(data.eventType);
+        // 底部"进入"按钮：按类型上色 + 文案（进入战斗/商店/休整/命运）
+        if (enterButton != null && enterButton.image != null)
+            enterButton.image.color = typeColor;
+        if (enterButtonText != null)
+            enterButtonText.text = GetEnterLabel(data.eventType);
 
         if (finalNodeIndicator != null)
             finalNodeIndicator.SetActive(data.isFinalNode);

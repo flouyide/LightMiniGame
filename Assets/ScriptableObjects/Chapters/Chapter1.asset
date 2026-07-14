@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93eb46175a208ce42bfce2066b949083, type: 3}
   m_Name: Chapter1
   m_EditorClassIdentifier: 
-  chapterName: "\u7B2C\u4E00\u7AE0\xB7\u9ED1\u6697\u68EE\u6797"
+  chapterName: "\u7B2C\u4E00\u7AE0 \u9ED1\u6697\u68EE\u6797"
   maxSelections: 10
   events:
   - eventId: battle_goblin

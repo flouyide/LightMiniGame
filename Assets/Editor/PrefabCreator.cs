@@ -81,14 +81,16 @@ public static class PrefabCreator
         SetupText(finalText, "★ 最终节点", 12, new Color(1f, 0.85f, 0.2f, 1f));
         finalObj.SetActive(false);
 
-        // EnterCta（底部"进入"按钮视觉，按下整卡即触发，避免嵌套按钮重复触发）
-        var ctaObj = CreateChild(rootRect, "EnterCta");
+        // EnterButton（底部"进入"按钮，独立 Button 组件，按下即进入事件）
+        var ctaObj = CreateChild(rootRect, "EnterButton");
         var ctaRect = ctaObj.GetComponent<RectTransform>();
         SetAnchors(ctaRect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f));
         ctaRect.anchoredPosition = new Vector2(0, 8);
         ctaRect.sizeDelta = new Vector2(-20, 40);
         var ctaImage = ctaObj.AddComponent<Image>();
         ctaImage.color = new Color(0.3f, 0.3f, 0.4f, 1f);
+        var enterBtn = ctaObj.AddComponent<Button>();
+        enterBtn.targetGraphic = ctaImage;
 
         var ctaTextObj = CreateChild(ctaRect, "Text");
         StretchFill(ctaTextObj);
@@ -106,8 +108,8 @@ public static class PrefabCreator
         so.FindProperty("cardButton").objectReferenceValue = button;
         so.FindProperty("cardFrameImage").objectReferenceValue = frameImage;
         so.FindProperty("finalNodeIndicator").objectReferenceValue = finalObj;
-        so.FindProperty("enterCtaImage").objectReferenceValue = ctaImage;
-        so.FindProperty("enterCtaText").objectReferenceValue = ctaText;
+        so.FindProperty("enterButton").objectReferenceValue = enterBtn;
+        so.FindProperty("enterButtonText").objectReferenceValue = ctaText;
         so.ApplyModifiedProperties();
 
         string path = "Assets/Prefabs/UI/PageCard.prefab";
@@ -203,11 +205,6 @@ public static class PrefabCreator
 
     private static TMP_FontAsset GetTMPFont()
     {
-        // 优先干净的动态字体 SimHeiDynamic（由 Tools > 修复中文字体 创建，按需渲染中文、图集已正确初始化）
-        var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/SimHeiDynamic.asset");
-        if (font != null) return font;
-        font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/SimHei SDF.asset");
-        if (font != null) return font;
         return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/simhei Chinese.asset");
     }
 }

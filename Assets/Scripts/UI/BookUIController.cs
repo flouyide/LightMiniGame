@@ -80,32 +80,17 @@ public class BookUIController : MonoBehaviour
         }
     }
 
-    private void OnCardClicked(int index)
+    public void OnCardClicked(int index)
     {
         chapterManager.SelectPage(index);
     }
 
     private void HandlePageSelected(PageEventData data, int selectedIndex)
     {
-        if (data.options != null && data.options.Count > 0)
-        {
-            // 有多选项 → 弹出选项面板
-            optionPanel.Show(data, optionIndex =>
-            {
-                var option = data.options[optionIndex];
-                chapterManager.ApplyEffects(option.effects);
-                chapterManager.OnOptionResolved();
-            });
-        }
-        else
-        {
-            // 无选项 → 直接应用默认效果（如有）
-            if (data.options != null && data.options.Count == 1)
-            {
-                chapterManager.ApplyEffects(data.options[0].effects);
-            }
-            chapterManager.OnOptionResolved();
-        }
+        // 占位阶段：不弹选项面板，直接刷新3个新页面。
+        // z-1 已在 ChapterManager.SelectPage 完成；OnOptionResolved 内部会判断
+        // 剩余次数 >0 则 RefreshPages()，否则触发章节完成。
+        chapterManager.OnOptionResolved();
     }
 
     private void HandleChapterComplete()
