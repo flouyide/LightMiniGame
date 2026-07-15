@@ -110,3 +110,6 @@ InitTestScene*.unity*
 # WorkBuddy agent memory (local working logs, not source)
 /[Aa]ssets/.workbuddy/memory/
 /[Aa]ssets/.workbuddy/memory.meta
+
+# Codely CLI 工作目录（auto-saves / extensions 的 node_modules / 编译产物 / runtime dll，均不入库）
+/.codely-cli/
