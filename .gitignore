@@ -107,9 +107,13 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# WorkBuddy agent memory (local working logs, not source)
-/[Aa]ssets/.workbuddy/memory/
-/[Aa]ssets/.workbuddy/memory.meta
+# WorkBuddy agent working data (memory, skills, local logs — not source)
+/.workbuddy/
+/[Aa]ssets/.workbuddy/
+/[Aa]ssets/.workbuddy.meta
 
 # Codely CLI 工作目录（auto-saves / extensions 的 node_modules / 编译产物 / runtime dll，均不入库）
 /.codely-cli/
+
+# 开发调试截图（临时产物，不入库）
+/[Ss]creenshots/

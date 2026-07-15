@@ -16,7 +16,7 @@ public static class PrefabCreator
 
         var root = new GameObject("PageCard");
         var rootRect = root.AddComponent<RectTransform>();
-        rootRect.sizeDelta = new Vector2(200, 280);
+        rootRect.sizeDelta = new Vector2(240, 320);
 
         var bgImage = root.AddComponent<Image>();
         bgImage.color = new Color(0.12f, 0.12f, 0.15f, 0.95f);
@@ -45,10 +45,35 @@ public static class PrefabCreator
         var badgeObj = CreateChild(rootRect, "TypeBadge");
         var badgeRect = badgeObj.GetComponent<RectTransform>();
         SetAnchors(badgeRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f));
-        badgeRect.anchoredPosition = new Vector2(-10, -10);
+        badgeRect.anchoredPosition = new Vector2(-143, -10);
         badgeRect.sizeDelta = new Vector2(60, 24);
         var badgeText = badgeObj.AddComponent<TextMeshProUGUI>();
         SetupText(badgeText, "类型", 14, Color.white);
+        
+        // 添加 LayoutElement 组件，避免受父对象 LayoutGroup 影响
+        var badgeLayoutElement = badgeObj.AddComponent<UnityEngine.UI.LayoutElement>();
+        badgeLayoutElement.ignoreLayout = true;
+
+        // DeleteButton（右上角删除按钮）
+        var deleteObj = CreateChild(rootRect, "DeleteButton");
+        var deleteRect = deleteObj.GetComponent<RectTransform>();
+        SetAnchors(deleteRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f));
+        deleteRect.anchoredPosition = new Vector2(-20, -20);
+        deleteRect.sizeDelta = new Vector2(30, 30);
+        var deleteImage = deleteObj.AddComponent<Image>();
+        deleteImage.color = new Color(0.8f, 0.2f, 0.2f, 0.8f);
+        var deleteBtn = deleteObj.AddComponent<Button>();
+        deleteBtn.targetGraphic = deleteImage;
+
+        var deleteTextObj = CreateChild(deleteRect, "Text");
+        StretchFill(deleteTextObj);
+        var deleteText = deleteTextObj.AddComponent<TextMeshProUGUI>();
+        SetupText(deleteText, "X", 18, Color.white);
+        deleteText.alignment = TextAlignmentOptions.Center;
+        
+        // 添加 LayoutElement 组件，避免受父对象 LayoutGroup 影响
+        var deleteLayoutElement = deleteObj.AddComponent<UnityEngine.UI.LayoutElement>();
+        deleteLayoutElement.ignoreLayout = true;
 
         // Title
         var titleObj = CreateChild(rootRect, "Title");
@@ -106,10 +131,236 @@ public static class PrefabCreator
         so.FindProperty("descText").objectReferenceValue = descText;
         so.FindProperty("typeBadgeText").objectReferenceValue = badgeText;
         so.FindProperty("cardButton").objectReferenceValue = button;
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         so.FindProperty("cardFrameImage").objectReferenceValue = frameImage;
         so.FindProperty("finalNodeIndicator").objectReferenceValue = finalObj;
         so.FindProperty("enterButton").objectReferenceValue = enterBtn;
         so.FindProperty("enterButtonText").objectReferenceValue = ctaText;
+        so.FindProperty("deleteButton").objectReferenceValue = deleteBtn;
+        so.FindProperty("deleteButtonText").objectReferenceValue = deleteText;
         so.ApplyModifiedProperties();
 
         string path = "Assets/Prefabs/UI/PageCard.prefab";

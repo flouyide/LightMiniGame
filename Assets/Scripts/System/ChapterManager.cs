@@ -29,6 +29,8 @@ public class ChapterManager : MonoBehaviour
     // --- 事件回调 ---
     public UnityEvent<List<PageEventData>> OnPagesRefreshed = new();
     public UnityEvent<PageEventData, int> OnPageSelected = new(); // data, selectedIndex
+    public UnityEvent<PageEventData, int> OnPageRefreshed = new(); // newData, refreshedIndex
+    public UnityEvent<int> OnPageDeleted = new(); // deleted index
     public UnityEvent OnChapterComplete = new();
     public UnityEvent<string, int> OnChapterInfoUpdated = new(); // chapterName, remaining
     public UnityEvent<int, int> OnPlayerStatsUpdated = new();    // hp, gold
@@ -149,6 +151,140 @@ public class ChapterManager : MonoBehaviour
         }
 
         OnPagesRefreshed?.Invoke(_currentPages);
+    }
+
+    /// <summary>
+    /// 刷新指定位置的页面（为删除功能）
+    /// </summary>
+    public void RefreshPageAt(int index)
+    {
+        if (index < 0 || index >= _currentPages.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 无效的页面索引: {index}");
+            return;
+        }
+
+        // 计算可用事件池
+        var availablePool = new List<PageEventData>();
+        var finalNodeCandidates = new List<PageEventData>();
+
+        foreach (var evt in _currentChapter.events)
+        {
+            // 已完成且不可重复 → 跳过
+            if (!evt.isRepeatable && _completedEvents.Contains(evt.eventId))
+                continue;
+
+            // 已完成且是最终节点 → 跳过
+            if (evt.isFinalNode && _finalNodeCompleted)
+                continue;
+
+            // 被排斥（互斥）→ 跳过
+            if (_excludedEvents.Contains(evt.eventId))
+                continue;
+
+            // 未解锁（前置未满足）→ 跳过
+            if (!_unlockedEvents.Contains(evt.eventId))
+                continue;
+
+            // 跳过当前已经在显示的其他页面，避免重复
+            for (int i = 0; i < _currentPages.Count; i++)
+            {
+                if (i != index && _currentPages[i].eventId == evt.eventId)
+                {
+                    goto SkipEvent;
+                }
+            }
+
+            if (evt.isFinalNode)
+                finalNodeCandidates.Add(evt);
+            else
+                availablePool.Add(evt);
+
+            SkipEvent:;
+        }
+
+        // 最终节点逻辑：剩余选择次数为1时强制出现
+        bool forceFinal = _remainingSelections == 1 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
+
+        PageEventData newPage;
+        if (forceFinal && finalNodeCandidates.Count > 0)
+        {
+            newPage = finalNodeCandidates[0];
+        }
+        else
+        {
+            var fullPool = availablePool.ToList();
+            fullPool.AddRange(finalNodeCandidates);
+            Shuffle(fullPool);
+
+            if (fullPool.Count > 0)
+            {
+                newPage = fullPool[0];
+            }
+            else
+            {
+                // 如果没有可用事件，创建一个默认的空事件
+                newPage = new PageEventData
+                {
+                    eventId = "empty_" + index,
+                    displayName = "无事件",
+                    description = "暂无可用事件",
+                    eventType = PageEventType.Rest,
+                    icon = null,
+                    isRepeatable = true,
+                    isFinalNode = false
+                };
+            }
+        }
+
+        // 替换指定位置的页面
+        _currentPages[index] = newPage;
+        OnPageRefreshed?.Invoke(newPage, index);
+    }
+
+    /// <summary>
+    /// 删除某一页（刷新为新页面）
+    /// </summary>
+    public void DeletePage(int index)
+    {
+        if (index < 0 || index >= _currentPages.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 无效的页面索引: {index}");
+            return;
+        }
+
+        var deleted = _currentPages[index];
+        Debug.Log($"[删除] 删除页面「{deleted.displayName}」——类型：{TypeNameOf(deleted.eventType)}");
+
+        // 标记为已完成但不触发事件效果
+        _completedEvents.Add(deleted.eventId);
+
+        // 处理互斥
+        if (deleted.mutuallyExclusiveIds != null)
+        {
+            foreach (var id in deleted.mutuallyExclusiveIds)
+                _excludedEvents.Add(id);
+        }
+
+        // 处理后续解锁
+        if (deleted.followUpIds != null)
+        {
+            foreach (var id in deleted.followUpIds)
+                _unlockedEvents.Add(id);
+        }
+
+        // 减少剩余选择次数
+        _remainingSelections--;
+        OnChapterInfoUpdated?.Invoke(_currentChapter.chapterName, _remainingSelections);
+
+        // 通知删除事件
+        OnPageDeleted?.Invoke(index);
+
+        // 只刷新被删除位置的页面
+        if (_remainingSelections > 0)
+            RefreshPageAt(index);
+        else
+            OnChapterComplete?.Invoke();
     }
 
     /// <summary>

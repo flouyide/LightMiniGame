@@ -21,6 +21,10 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private Button enterButton;           // 底部"进入"按钮（独立 Button）
     [SerializeField] private TextMeshProUGUI enterButtonText; // 按钮文字
 
+    [Header("右上角删除按钮")]
+    [SerializeField] private Button deleteButton;          // 右上角删除按钮
+    [SerializeField] private TextMeshProUGUI deleteButtonText; // 删除按钮文字
+
     [Header("事件类型颜色")]
     [SerializeField] private Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
     [SerializeField] private Color ColorShop = new(0.9f, 0.75f, 0.2f, 1f);
@@ -29,6 +33,7 @@ public class PageCardUI : MonoBehaviour
 
     private int _index;
     private Action<int> _onClick;
+    private Action<int> _onDelete;
 
     private void Awake()
     {
@@ -39,6 +44,8 @@ public class PageCardUI : MonoBehaviour
             cardButton.onClick.AddListener(OnClick);
         if (enterButton != null)
             enterButton.onClick.AddListener(OnClick);
+        if (deleteButton != null)
+            deleteButton.onClick.AddListener(OnDelete);
     }
 
     private void OnClick()
@@ -46,10 +53,16 @@ public class PageCardUI : MonoBehaviour
         _onClick?.Invoke(_index);
     }
 
-    public void Setup(PageEventData data, int index, Action<int> onClick)
+    private void OnDelete()
+    {
+        _onDelete?.Invoke(_index);
+    }
+
+    public void Setup(PageEventData data, int index, Action<int> onClick, Action<int> onDelete = null)
     {
         _index = index;
         _onClick = onClick;
+        _onDelete = onDelete;
 
         titleText.text = data.displayName;
         descText.text = data.description;

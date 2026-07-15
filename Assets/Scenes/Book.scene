@@ -1567,10 +1567,10 @@ MonoBehaviour:
     m_Bottom: 10
   m_ChildAlignment: 4
   m_Spacing: 30
-  m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
-  m_ChildControlWidth: 1
-  m_ChildControlHeight: 1
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
@@ -2059,6 +2059,12 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   OnPageSelected:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPageRefreshed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPageDeleted:
     m_PersistentCalls:
       m_Calls: []
   OnChapterComplete:

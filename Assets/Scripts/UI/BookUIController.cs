@@ -36,7 +36,9 @@ public class BookUIController : MonoBehaviour
     private void OnEnable()
     {
         chapterManager.OnPagesRefreshed.AddListener(HandlePagesRefreshed);
+        chapterManager.OnPageRefreshed.AddListener(HandlePageRefreshed);
         chapterManager.OnPageSelected.AddListener(HandlePageSelected);
+        chapterManager.OnPageDeleted.AddListener(HandlePageDeleted);
         chapterManager.OnChapterComplete.AddListener(HandleChapterComplete);
         chapterManager.OnChapterInfoUpdated.AddListener(HandleChapterInfoUpdated);
         chapterManager.OnPlayerStatsUpdated.AddListener(HandlePlayerStatsUpdated);
@@ -47,10 +49,32 @@ public class BookUIController : MonoBehaviour
             backButton.onClick.AddListener(OnBackClicked);
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private void OnDisable()
     {
         chapterManager.OnPagesRefreshed.RemoveListener(HandlePagesRefreshed);
+        chapterManager.OnPageRefreshed.RemoveListener(HandlePageRefreshed);
         chapterManager.OnPageSelected.RemoveListener(HandlePageSelected);
+        chapterManager.OnPageDeleted.RemoveListener(HandlePageDeleted);
         chapterManager.OnChapterComplete.RemoveListener(HandleChapterComplete);
         chapterManager.OnChapterInfoUpdated.RemoveListener(HandleChapterInfoUpdated);
         chapterManager.OnPlayerStatsUpdated.RemoveListener(HandlePlayerStatsUpdated);
@@ -75,14 +99,41 @@ public class BookUIController : MonoBehaviour
         for (int i = 0; i < pages.Count; i++)
         {
             var card = Instantiate(cardPrefab, cardContainer);
-            card.Setup(pages[i], i, OnCardClicked);
+            card.Setup(pages[i], i, OnCardClicked, OnCardDeleted);
             _activeCards.Add(card);
         }
+    }
+
+    private void HandlePageRefreshed(PageEventData newData, int refreshedIndex)
+    {
+        if (refreshedIndex < 0 || refreshedIndex >= _activeCards.Count)
+        {
+            Debug.LogWarning($"[BookUIController] 无效的刷新索引: {refreshedIndex}");
+            return;
+        }
+
+        // 只刷新指定位置的卡片
+        var card = _activeCards[refreshedIndex];
+        if (card != null)
+        {
+            card.Setup(newData, refreshedIndex, OnCardClicked, OnCardDeleted);
+            Debug.Log($"[BookUIController] 卡片 {refreshedIndex} 已刷新为新事件「{newData.displayName}」");
+        }
+    }
+
+    private void HandlePageDeleted(int deletedIndex)
+    {
+        Debug.Log($"[BookUIController] 卡片 {deletedIndex} 已删除，等待刷新");
     }
 
     public void OnCardClicked(int index)
     {
         chapterManager.SelectPage(index);
+    }
+
+    public void OnCardDeleted(int index)
+    {
+        chapterManager.DeletePage(index);
     }
 
     private void HandlePageSelected(PageEventData data, int selectedIndex)
