@@ -51,6 +51,11 @@ public class HandCardLayout : MonoBehaviour
         // 创建新卡牌
         for (int i = 0; i < hand.Count; i++)
         {
+            if (hand[i] == null)
+            {
+                Debug.LogError($"[HandCardLayout] hand[{i}] 为 null，跳过实例化");
+                continue;
+            }
             var cardObj = Instantiate(hand[i], transform);
             var display = cardObj.GetComponent<CardDisplay>();
             if (display == null)

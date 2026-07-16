@@ -82,7 +82,23 @@ public class BattleManager : MonoBehaviour
 
     public void StartBattle()
     {
-        _drawPile = new List<GameObject>(deck);
+        _drawPile = new List<GameObject>();
+        for (int i = 0; i < deck.Count; i++)
+        {
+            if (deck[i] == null)
+            {
+                Debug.LogError($"[BattleManager] deck[{i}] 引用缺失，请在 Inspector 中重新拖入卡牌 Prefab");
+                continue;
+            }
+            _drawPile.Add(deck[i]);
+        }
+
+        if (_drawPile.Count == 0)
+        {
+            Debug.LogError("[BattleManager] 牌组为空或全部引用缺失，请在 Inspector 中配置 deck 列表");
+            return;
+        }
+
         _hand.Clear();
         _discardPile.Clear();
         _consumedThisBattle.Clear();
