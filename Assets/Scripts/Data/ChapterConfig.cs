@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// 单章配置
 /// </summary>
-[CreateAssetMenu(fileName = "Chapter", menuName = "BookGame/Chapter Config")]
+[CreateAssetMenu(fileName = "Chapter", menuName = "LightGame/Chapter Config")]
 public class ChapterConfig : ScriptableObject
 {
     [Header("章节信息")]

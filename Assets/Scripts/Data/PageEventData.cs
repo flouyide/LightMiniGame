@@ -10,7 +10,7 @@ public enum PageEventType
     Battle, // 战斗书页
     Shop,   // 商店书页
     Rest,   // 休整书页
-    Fate    // 命运书页
+    Event   // 事件书页
 }
 
 /// <summary>
@@ -66,7 +66,7 @@ public class PageEventData
     public bool isFinalNode;                         // 是否为最终节点（boss）
 
     [Header("事件关系")]
-    public List<string> mutuallyExclusiveIds = new(); // 互斥事件ID列表
+    public List<string> mutuallyExclusiveIds = new();  // 互斥事件ID列表
     public List<string> followUpIds = new();           // 后续事件ID列表（选择后解锁）
     public List<string> prerequisiteIds = new();       // 前置事件ID列表（需完成后才可刷新）
 

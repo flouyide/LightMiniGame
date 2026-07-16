@@ -25,11 +25,30 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private Button deleteButton;          // 右上角删除按钮
     [SerializeField] private TextMeshProUGUI deleteButtonText; // 删除按钮文字
 
+    [Header("删除按钮显示规则（按事件类型）")]
+    [Tooltip("勾选表示该类型卡片显示删除按钮")]
+    [SerializeField] private bool showDeleteOnBattle = false;   // 战斗：默认不显示
+    [SerializeField] private bool showDeleteOnShop = true;      // 商店：默认显示
+    [SerializeField] private bool showDeleteOnRest = true;      // 休整：默认显示
+    [SerializeField] private bool showDeleteOnEvent = true;      // 事件：默认显示
+
     [Header("事件类型颜色")]
     [SerializeField] private Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
     [SerializeField] private Color ColorShop = new(0.9f, 0.75f, 0.2f, 1f);
     [SerializeField] private Color ColorRest = new(0.3f, 0.7f, 0.4f, 1f);
-    [SerializeField] private Color ColorFate = new(0.6f, 0.3f, 0.8f, 1f);
+    [SerializeField] private Color ColorEvent = new(0.6f, 0.3f, 0.8f, 1f);
+
+    [Header("类型名称文案")]
+    [SerializeField] private string typeNameBattle = "战斗";
+    [SerializeField] private string typeNameShop = "商店";
+    [SerializeField] private string typeNameRest = "休整";
+    [SerializeField] private string typeNameEvent = "事件";
+
+    [Header("进入按钮文案")]
+    [SerializeField] private string enterLabelBattle = "进入战斗";
+    [SerializeField] private string enterLabelShop = "进入商店";
+    [SerializeField] private string enterLabelRest = "进入休整";
+    [SerializeField] private string enterLabelEvent = "进入事件";
 
     private int _index;
     private Action<int> _onClick;
@@ -84,7 +103,7 @@ public class PageCardUI : MonoBehaviour
         if (cardFrameImage != null)
             cardFrameImage.color = typeColor;
 
-        // 底部"进入"按钮：按类型上色 + 文案（进入战斗/商店/休整/命运）
+        // 底部"进入"按钮：按类型上色 + 文案（进入战斗/商店/休整/事件）
         if (enterButton != null && enterButton.image != null)
             enterButton.image.color = typeColor;
         if (enterButtonText != null)
@@ -92,24 +111,28 @@ public class PageCardUI : MonoBehaviour
 
         if (finalNodeIndicator != null)
             finalNodeIndicator.SetActive(data.isFinalNode);
+
+        // 根据事件类型决定是否显示删除按钮
+        if (deleteButton != null)
+            deleteButton.gameObject.SetActive(ShouldShowDelete(data.eventType));
     }
 
-    private static string GetTypeName(PageEventType type) => type switch
+    private string GetTypeName(PageEventType type) => type switch
     {
-        PageEventType.Battle => "战斗",
-        PageEventType.Shop => "商店",
-        PageEventType.Rest => "休整",
-        PageEventType.Fate => "命运",
+        PageEventType.Battle => typeNameBattle,
+        PageEventType.Shop => typeNameShop,
+        PageEventType.Rest => typeNameRest,
+        PageEventType.Event => typeNameEvent,
         _ => "未知"
     };
 
     // 底部按钮文案：进入 + 类型
-    private static string GetEnterLabel(PageEventType type) => type switch
+    private string GetEnterLabel(PageEventType type) => type switch
     {
-        PageEventType.Battle => "进入战斗",
-        PageEventType.Shop => "进入商店",
-        PageEventType.Rest => "进入休整",
-        PageEventType.Fate => "进入命运",
+        PageEventType.Battle => enterLabelBattle,
+        PageEventType.Shop => enterLabelShop,
+        PageEventType.Rest => enterLabelRest,
+        PageEventType.Event => enterLabelEvent,
         _ => "进入"
     };
 
@@ -118,7 +141,17 @@ public class PageCardUI : MonoBehaviour
         PageEventType.Battle => ColorBattle,
         PageEventType.Shop => ColorShop,
         PageEventType.Rest => ColorRest,
-        PageEventType.Fate => ColorFate,
+        PageEventType.Event => ColorEvent,
         _ => Color.white
+    };
+
+    // 根据事件类型判断是否显示删除按钮
+    private bool ShouldShowDelete(PageEventType type) => type switch
+    {
+        PageEventType.Battle => showDeleteOnBattle,
+        PageEventType.Shop => showDeleteOnShop,
+        PageEventType.Rest => showDeleteOnRest,
+        PageEventType.Event => showDeleteOnEvent,
+        _ => true
     };
 }

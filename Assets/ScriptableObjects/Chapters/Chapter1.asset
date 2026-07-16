@@ -18,7 +18,7 @@ MonoBehaviour:
   - eventId: battle_goblin
     displayName: "\u54E5\u5E03\u6797\u4F0F\u51FB"
     description: "\u4E00\u7FA4\u54E5\u5E03\u6797\u4ECE\u6811\u4E1B\u4E2D\u8DF3\u51FA\u6765\u6321\u4F4F\u4E86\u53BB\u8DEF\uFF01"
-    icon: {fileID: 0}
+    icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
     eventType: 0
     isRepeatable: 0
     isFinalNode: 0

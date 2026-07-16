@@ -10,21 +10,22 @@ public class ChapterManager : MonoBehaviour
 {
     [Header("游戏配置")]
     [SerializeField] private GameConfig gameConfig;
+    [SerializeField] private PlayerConfig playerConfig;
 
     [Header("调试")]
     [Tooltip("跳过前N章，直接从第N+1章开始（0=从第一章开始）")]
     [SerializeField] private int debugStartChapterIndex;
 
     // --- 状态 ---
-    private int _currentChapterIndex = -1;
-    private ChapterConfig _currentChapter;
-    private int _remainingSelections;
-    private List<PageEventData> _currentPages = new();
-    private HashSet<string> _completedEvents = new();   // 已完成事件
-    private HashSet<string> _unlockedEvents = new();    // 已解锁事件（后续事件解锁）
-    private HashSet<string> _excludedEvents = new();    // 已排斥事件（互斥事件排除）
+    private int _currentChapterIndex = -1;  // 当前章节索引（-1表示未开始）
+    private ChapterConfig _currentChapter;  // 当前章节配置引用
+    private int _remainingSelections;   // 章节剩余选择次数
+    private List<PageEventData> _currentPages = new();  // 当前显示的3个页面事件列表
+    private HashSet<string> _completedEvents = new();   // 已完成事件ID集合
+    private HashSet<string> _unlockedEvents = new();    // 已解锁事件ID集合（后续事件解锁）
+    private HashSet<string> _excludedEvents = new();    // 已排斥事件ID集合（互斥事件排除）
     private bool _finalNodeCompleted;
-    private bool _isStarted;
+    private bool _isStarted; // 游戏是否已启动
 
     // --- 事件回调 ---
     public UnityEvent<List<PageEventData>> OnPagesRefreshed = new();
@@ -35,10 +36,10 @@ public class ChapterManager : MonoBehaviour
     public UnityEvent<string, int> OnChapterInfoUpdated = new(); // chapterName, remaining
     public UnityEvent<int, int> OnPlayerStatsUpdated = new();    // hp, gold
 
-    // 玩家状态（简化）
-    public int PlayerHP { get; private set; } = 64;
-    public int PlayerMaxHP { get; private set; } = 64;
-    public int PlayerGold { get; private set; } = 50;
+    // 玩家状态
+    public int PlayerHP { get; private set; }
+    public int PlayerMaxHP { get; private set; }
+    public int PlayerGold { get; private set; }
 
     private const int RefreshCount = 3;
 
@@ -52,7 +53,28 @@ public class ChapterManager : MonoBehaviour
     {
         _isStarted = true;
         _currentChapterIndex = Mathf.Max(0, debugStartChapterIndex) - 1;
+        InitPlayerStats();
         StartNextChapter();
+    }
+
+    /// <summary>
+    /// 从 PlayerConfig 初始化玩家属性（无配置时用默认值兜底）
+    /// </summary>
+    private void InitPlayerStats()
+    {
+        if (playerConfig != null)
+        {
+            PlayerMaxHP = playerConfig.maxHP;
+            PlayerHP = playerConfig.startHP;
+            PlayerGold = playerConfig.startGold;
+        }
+        else
+        {
+            PlayerMaxHP = 64;
+            PlayerHP = 64;
+            PlayerGold = 50;
+            Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
+        }
     }
 
     private void StartNextChapter()
@@ -154,7 +176,7 @@ public class ChapterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 刷新指定位置的页面（为删除功能）
+    /// 刷新指定位置的页面（删除页面功能）
     /// </summary>
     public void RefreshPageAt(int index)
     {
@@ -300,7 +322,7 @@ public class ChapterManager : MonoBehaviour
 
         var selected = _currentPages[index];
 
-        // 占位符：进入战斗/事件，先打印事件类型到 Console（战斗/商店/休整/命运）
+        // 占位符：进入战斗/事件，先打印事件类型到 Console（战斗/商店/休整/事件）
         Debug.Log($"[事件] 进入「{selected.displayName}」——类型：{TypeNameOf(selected.eventType)}");
 
         OnPageSelected?.Invoke(selected, index);
@@ -397,7 +419,7 @@ public class ChapterManager : MonoBehaviour
         PageEventType.Battle => "战斗",
         PageEventType.Shop => "商店",
         PageEventType.Rest => "休整",
-        PageEventType.Fate => "命运",
+        PageEventType.Event => "事件",
         _ => "未知事件"
     };
 
