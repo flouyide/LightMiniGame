@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93eb46175a208ce42bfce2066b949083, type: 3}
   m_Name: Chapter1
   m_EditorClassIdentifier: 
-  chapterName: "\u7B2C\u4E00\u7AE0 \u9ED1\u6697\u68EE\u6797"
-  maxSelections: 10
+  chapterName: "\u7B2C\u4E00\u7AE0 \u5854\u5E95"
+  maxSelections: 4
   events:
   - eventId: battle_goblin
     displayName: "\u54E5\u5E03\u6797\u4F0F\u51FB"
@@ -31,6 +31,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: battle_goblin_camp
     displayName: "\u54E5\u5E03\u6797\u8425\u5730"
     description: "\u54E5\u5E03\u6797\u7684\u8001\u5DE2\u5C31\u5728\u524D\u65B9\uFF0C\u662F\u5426\u53D1\u8D77\u7A81\u88AD\uFF1F"
@@ -49,6 +50,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: battle_bandit
     displayName: "\u76D7\u8D3C\u5934\u76EE"
     description: "\u4E00\u4E2A\u51F6\u72E0\u7684\u76D7\u8D3C\u5934\u76EE\u62E6\u8DEF\u6253\u52AB\uFF0C\u4EAE\u51FA\u4E86\u4ED6\u7684\u5315\u9996\u3002"
@@ -66,6 +68,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: event_merchant
     displayName: "\u6D41\u6D6A\u5546\u4EBA"
     description: "\u4E00\u4F4D\u80CC\u7740\u5927\u5305\u88F9\u7684\u5546\u4EBA\u5411\u4F60\u62DB\u624B\uFF1A'\u4E0A\u7B49\u597D\u8D27\uFF0C\u7AE5\u53DF\u65E0\u6B3A\uFF01'"
@@ -96,6 +99,7 @@ MonoBehaviour:
         itemDesc: "\u795E\u79D8\u5377\u8F74"
     - optionText: "\u79BB\u5F00"
       effects: []
+    defaultEffects: []
   - eventId: rest_campfire
     displayName: "\u8425\u706B\u4F11\u6574"
     description: "\u4E00\u5806\u6E29\u6696\u7684\u8425\u706B\u5728\u8DEF\u8FB9\u71C3\u70E7\uFF0C\u5750\u4E0B\u6B47\u6B47\u811A\u5427\u3002"
@@ -117,6 +121,10 @@ MonoBehaviour:
       - type: 2
         amount: 20
         itemDesc: 
+    defaultEffects:
+    - type: 2
+      amount: 10
+      itemDesc: 
   - eventId: fate_shrine
     displayName: "\u795E\u79D8\u796D\u575B"
     description: "\u4E00\u5EA7\u53E4\u8001\u7684\u796D\u575B\u6563\u53D1\u7740\u5FAE\u5F31\u7684\u5149\u8292\uFF0C\u4F3C\u4E4E\u5728\u7B49\u5F85\u7740\u4EC0\u4E48\u3002"
@@ -143,6 +151,7 @@ MonoBehaviour:
         itemDesc: 
     - optionText: "\u79BB\u5F00"
       effects: []
+    defaultEffects: []
   - eventId: fate_treasure
     displayName: "\u5B9D\u7BB1"
     description: "\u54E5\u5E03\u6797\u8425\u5730\u6DF1\u5904\u85CF\u7740\u4E00\u4E2A\u5B9D\u7BB1\uFF0C\u6253\u5F00\u770B\u770B\uFF1F"
@@ -168,6 +177,7 @@ MonoBehaviour:
       - type: 4
         amount: 1
         itemDesc: "\u54E5\u5E03\u6797\u62A4\u8EAB\u7B26"
+    defaultEffects: []
   - eventId: fate_crossroads
     displayName: "\u5341\u5B57\u8DEF\u53E3"
     description: "\u9762\u524D\u51FA\u73B0\u4E86\u4E09\u6761\u5C94\u8DEF\uFF0C\u4F60\u60F3\u8D70\u54EA\u6761\uFF1F"
@@ -194,6 +204,7 @@ MonoBehaviour:
       - type: 2
         amount: 15
         itemDesc: 
+    defaultEffects: []
   - eventId: fate_witch
     displayName: "\u5973\u5DEB\u5C0F\u5C4B"
     description: "\u68EE\u6797\u6DF1\u5904\u6709\u4E00\u95F4\u5192\u7740\u7EFF\u70DF\u7684\u5C0F\u5C4B\uFF0C\u5973\u5DEB\u5411\u4F60\u62DB\u624B\u3002"
@@ -223,6 +234,7 @@ MonoBehaviour:
         itemDesc: 
     - optionText: "\u793C\u8C8C\u79BB\u5F00"
       effects: []
+    defaultEffects: []
   - eventId: battle_ruins
     displayName: "\u8FDC\u53E4\u9057\u8FF9"
     description: "\u9057\u8FF9\u4E2D\u6F5C\u4F0F\u7740\u4E00\u5934\u77F3\u50CF\u9B3C\uFF0C\u5B83\u5BDF\u89C9\u5230\u4E86\u4F60\u7684\u5B58\u5728\u3002"
@@ -239,6 +251,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: fate_spirit
     displayName: "\u68EE\u6797\u4E4B\u7075"
     description: "\u4E00\u56E2\u67D4\u548C\u7684\u5149\u8292\u98D8\u5230\u4F60\u9762\u524D\uFF0C\u4F20\u6765\u8F7B\u67D4\u7684\u58F0\u97F3\uFF1A'\u65C5\u4EBA\uFF0C\u9009\u4E00\u4E2A\u793C\u7269\u5427\u3002'"
@@ -260,6 +273,7 @@ MonoBehaviour:
       - type: 0
         amount: 20
         itemDesc: 
+    defaultEffects: []
   - eventId: shop_smuggler
     displayName: "\u8D70\u79C1\u8005\u7A9D\u70B9"
     description: "\u4E00\u4E2A\u9B3C\u9B3C\u795F\u795F\u7684\u5BB6\u4F19\u4F4E\u58F0\u8BF4\uFF1A'\u5582\uFF0C\u8981\u4E70\u70B9\u597D\u4E1C\u897F\u5417\uFF1F'"
@@ -289,6 +303,7 @@ MonoBehaviour:
         itemDesc: "\u60C5\u62A5\u7EB8\u6761"
     - optionText: "\u79BB\u5F00"
       effects: []
+    defaultEffects: []
   - eventId: rest_abandoned
     displayName: "\u5E9F\u5F03\u8425\u5730"
     description: "\u4E00\u4E2A\u5E9F\u5F03\u7684\u8425\u5730\uFF0C\u8FD8\u6709\u4E9B\u6B8B\u4F59\u7684\u7269\u8D44\u53EF\u4EE5\u5229\u7528\u3002"
@@ -310,6 +325,10 @@ MonoBehaviour:
       - type: 2
         amount: 15
         itemDesc: 
+    defaultEffects:
+    - type: 2
+      amount: 20
+      itemDesc: 
   - eventId: battle_cave
     displayName: "\u9ED1\u6697\u6D1E\u7A74"
     description: "\u6D1E\u7A74\u6DF1\u5904\u4F20\u6765\u4F4E\u6C89\u7684\u5486\u54EE\u58F0\uFF0C\u4F3C\u4E4E\u6709\u4EC0\u4E48\u4E1C\u897F\u5728\u7B49\u7740\u4F60\u3002"
@@ -327,6 +346,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: fate_hidden_scroll
     displayName: "\u9690\u85CF\u5377\u8F74"
     description: "\u6D1E\u7A74\u6DF1\u5904\u6709\u4E00\u5377\u53E4\u8001\u7684\u5377\u8F74\uFF0C\u6563\u53D1\u7740\u795E\u79D8\u7684\u529B\u91CF\u3002"
@@ -339,19 +359,12 @@ MonoBehaviour:
     prerequisiteIds:
     - battle_cave
     options:
-    - optionText: "\u9605\u8BFB\u5377\u8F74\uFF08\u83B7\u5F9740\u91D1\u5E01\u548C\u7269\u54C1\uFF09"
+    - optionText: "\u786E\u5B9A"
       effects:
-      - type: 0
-        amount: 40
+      - type: 2
+        amount: 50
         itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u53E4\u8001\u5377\u8F74"
-    - optionText: "\u6536\u8D77\u5377\u8F74\uFF08\u83B7\u5F97\u7269\u54C1\uFF09"
-      effects:
-      - type: 4
-        amount: 1
-        itemDesc: "\u53E4\u8001\u5377\u8F74"
+    defaultEffects: []
   - eventId: battle_guardian
     displayName: "\u77F3\u50CF\u5B88\u536B"
     description: "\u4E00\u5C0A\u5DE8\u5927\u7684\u77F3\u50CF\u6321\u4F4F\u4E86\u53BB\u8DEF\uFF0C\u5B83\u7684\u773C\u775B\u4EAE\u8D77\u4E86\u7EA2\u5149\u3002"
@@ -368,6 +381,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: rest_healer
     displayName: "\u6E38\u5386\u533B\u5E08"
     description: "\u4E00\u4F4D\u597D\u5FC3\u7684\u533B\u5E08\u6B63\u5728\u8DEF\u8FB9\u4E3A\u65C5\u4EBA\u6CBB\u7597\u3002"
@@ -392,6 +406,10 @@ MonoBehaviour:
       - type: 2
         amount: 25
         itemDesc: 
+    defaultEffects:
+    - type: 2
+      amount: 2
+      itemDesc: 
   - eventId: fate_fountain
     displayName: "\u8BC5\u5492\u4E4B\u6CC9"
     description: "\u6CC9\u6C34\u6CDB\u7740\u8BE1\u5F02\u7684\u7EFF\u5149\uFF0C\u770B\u8D77\u6765\u4E0D\u592A\u6B63\u5E38\u3002"
@@ -418,6 +436,7 @@ MonoBehaviour:
         itemDesc: "\u6CC9\u6C34\u7ED3\u6676"
     - optionText: "\u79BB\u5F00"
       effects: []
+    defaultEffects: []
   - eventId: battle_bandit_camp
     displayName: "\u6797\u4E2D\u76D7\u532A"
     description: "\u51E0\u4E2A\u76D7\u532A\u6B63\u5728\u5206\u8D43\uFF0C\u4F60\u53EF\u4EE5\u8D81\u5176\u4E0D\u5907\u53D1\u8D77\u653B\u51FB\u3002"
@@ -434,6 +453,7 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
   - eventId: boss_dark_wraith
     displayName: "\u6697\u5F71\u6028\u7075"
     description: "\u68EE\u6797\u6DF1\u5904\u76D8\u8E1E\u7740\u4E00\u56E2\u5DE8\u5927\u7684\u6697\u5F71\uFF0C\u5B83\u5C31\u662F\u8FD9\u4E00\u5207\u9ED1\u6697\u7684\u6E90\u5934\uFF01"
@@ -450,3 +470,21 @@ MonoBehaviour:
       - type: 6
         amount: 0
         itemDesc: 
+    defaultEffects: []
+  - eventId: fate_one
+    displayName: "\u8BAD\u7EC3\u5047\u4EBA"
+    description: "\u6ECB\u6ECB\uFF01 \u8BAD\u7EC3\u65F6\u95F4\u5230\uFF01\uFF01\uFF01"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u786E\u8BA4"
+      effects:
+      - type: 0
+        amount: 20
+        itemDesc: 
+    defaultEffects: []

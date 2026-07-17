@@ -117,6 +117,15 @@ public class PageCardUI : MonoBehaviour
             deleteButton.gameObject.SetActive(ShouldShowDelete(data.eventType));
     }
 
+    /// <summary>
+    /// 当其它卡片被消耗导致本卡片在列表中的位置前移时，重绑其索引，
+    /// 否则 _index 会与 ChapterManager._currentPages 的位置错位，导致点击失效。
+    /// </summary>
+    public void SetIndex(int index)
+    {
+        _index = index;
+    }
+
     private string GetTypeName(PageEventType type) => type switch
     {
         PageEventType.Battle => typeNameBattle,

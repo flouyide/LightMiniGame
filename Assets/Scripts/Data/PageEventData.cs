@@ -70,6 +70,12 @@ public class PageEventData
     public List<string> followUpIds = new();           // 后续事件ID列表（选择后解锁）
     public List<string> prerequisiteIds = new();       // 前置事件ID列表（需完成后才可刷新）
 
-    [Header("选项")]
-    public List<PageEventOption> options = new();      // 选项列表（为空则无选项，直接触发默认行为）
+    [Header("选项（Event 类型用）")]
+    public List<PageEventOption> options = new()      // 选项列表（默认1个"确定"选项）
+    {
+        new() { optionText = "确定" }
+    };
+
+    [Header("默认效果（Battle/Shop/Rest 类型用，点击\"进入\"后直接应用）")]
+    public List<EffectData> defaultEffects = new();
 }

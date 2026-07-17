@@ -18,6 +18,9 @@ public class BookUIController : MonoBehaviour
     [Header("选项面板")]
     [SerializeField] private OptionPanelUI optionPanel;
 
+    [Header("商店面板")]
+    [SerializeField] private ShopPanelUI shopPanel;
+
     [Header("顶部栏")]
     [SerializeField] private TextMeshProUGUI chapterNameText;
     [SerializeField] private TextMeshProUGUI remainingPagesText;
@@ -29,9 +32,10 @@ public class BookUIController : MonoBehaviour
     [Header("章节完成面板")]
     [SerializeField] private GameObject chapterCompletePanel;
     [SerializeField] private Button nextChapterButton;
-    [SerializeField] private Button backButton;
+    [SerializeField] private Button settingsButton;   // 设置按钮（场景中已命名为 SettingsButton），目前无功能，预留打开设置菜单
 
     private readonly List<PageCardUI> _activeCards = new();
+    private PageEventData _currentEventData;   // 当前事件面板正在显示的事件数据（供选项回调取 effects）
 
     private void OnEnable()
     {
@@ -39,14 +43,15 @@ public class BookUIController : MonoBehaviour
         chapterManager.OnPageRefreshed.AddListener(HandlePageRefreshed);
         chapterManager.OnPageSelected.AddListener(HandlePageSelected);
         chapterManager.OnPageDeleted.AddListener(HandlePageDeleted);
+        chapterManager.OnPageConsumed.AddListener(HandlePageConsumed);
         chapterManager.OnChapterComplete.AddListener(HandleChapterComplete);
         chapterManager.OnChapterInfoUpdated.AddListener(HandleChapterInfoUpdated);
         chapterManager.OnPlayerStatsUpdated.AddListener(HandlePlayerStatsUpdated);
 
         if (nextChapterButton != null)
             nextChapterButton.onClick.AddListener(OnNextChapterClicked);
-        if (backButton != null)
-            backButton.onClick.AddListener(OnBackClicked);
+        if (settingsButton != null)
+            settingsButton.onClick.AddListener(OnSettingsClicked);
     }
 
     
@@ -75,14 +80,15 @@ public class BookUIController : MonoBehaviour
         chapterManager.OnPageRefreshed.RemoveListener(HandlePageRefreshed);
         chapterManager.OnPageSelected.RemoveListener(HandlePageSelected);
         chapterManager.OnPageDeleted.RemoveListener(HandlePageDeleted);
+        chapterManager.OnPageConsumed.RemoveListener(HandlePageConsumed);
         chapterManager.OnChapterComplete.RemoveListener(HandleChapterComplete);
         chapterManager.OnChapterInfoUpdated.RemoveListener(HandleChapterInfoUpdated);
         chapterManager.OnPlayerStatsUpdated.RemoveListener(HandlePlayerStatsUpdated);
 
         if (nextChapterButton != null)
             nextChapterButton.onClick.RemoveListener(OnNextChapterClicked);
-        if (backButton != null)
-            backButton.onClick.RemoveListener(OnBackClicked);
+        if (settingsButton != null)
+            settingsButton.onClick.RemoveListener(OnSettingsClicked);
     }
 
     private void HandlePagesRefreshed(List<PageEventData> pages)
@@ -126,6 +132,30 @@ public class BookUIController : MonoBehaviour
         Debug.Log($"[BookUIController] 卡片 {deletedIndex} 已删除，等待刷新");
     }
 
+    /// <summary>
+    /// 剩余页数为 0 时选中卡片 → 删除该卡片，不刷新新卡片
+    /// </summary>
+    private void HandlePageConsumed(int consumedIndex)
+    {
+        if (consumedIndex < 0 || consumedIndex >= _activeCards.Count)
+            return;
+
+        var card = _activeCards[consumedIndex];
+        if (card != null && card.gameObject != null)
+            Destroy(card.gameObject);
+        _activeCards.RemoveAt(consumedIndex);
+
+        // 列表位置发生变化，重绑剩余卡片的索引，使其与 ChapterManager._currentPages 对齐。
+        // 否则剩余卡片仍持有旧的 _index（例如 2），而 _currentPages 已被 RemoveAt 缩短，
+        // 再次点击会因 index 越界被 SelectPage/DeletePage 拒绝。
+        for (int i = 0; i < _activeCards.Count; i++)
+        {
+            _activeCards[i].SetIndex(i);
+        }
+
+        Debug.Log($"[BookUIController] 卡片 {consumedIndex} 已消耗（剩余页数为0），剩余 {_activeCards.Count} 张");
+    }
+
     public void OnCardClicked(int index)
     {
         chapterManager.SelectPage(index);
@@ -138,9 +168,45 @@ public class BookUIController : MonoBehaviour
 
     private void HandlePageSelected(PageEventData data, int selectedIndex)
     {
-        // 占位阶段：不弹选项面板，直接刷新3个新页面。
-        // z-1 已在 ChapterManager.SelectPage 完成；OnOptionResolved 内部会判断
-        // 剩余次数 >0 则 RefreshPages()，否则触发章节完成。
+        if (data.eventType == PageEventType.Event && optionPanel != null)
+        {
+            // Event 类型：弹出选项面板让玩家选择
+            _currentEventData = data;
+            optionPanel.Show(data, OnOptionPanelResolved);
+        }
+        else if (data.eventType == PageEventType.Shop && shopPanel != null)
+        {
+            // Shop 类型：弹出商店面板（不应用 effects）
+            shopPanel.Show(OnShopClosed);
+        }
+        else
+        {
+            // Battle/Rest 类型：直接应用 defaultEffects，不弹面板
+            chapterManager.ApplyEffects(data.defaultEffects);
+            chapterManager.OnOptionResolved();
+        }
+    }
+
+    /// <summary>
+    /// 商店关闭回调：刷新 3 个 PageCard（买卖功能待实现）
+    /// </summary>
+    private void OnShopClosed()
+    {
+        chapterManager.OnOptionResolved();
+    }
+
+    /// <summary>
+    /// 事件面板关闭后的回调：应用选中选项的 effects，然后继续章节推进
+    /// </summary>
+    private void OnOptionPanelResolved(int optionIndex)
+    {
+        if (_currentEventData != null
+            && optionIndex >= 0
+            && optionIndex < _currentEventData.options.Count)
+        {
+            chapterManager.ApplyEffects(_currentEventData.options[optionIndex].effects);
+        }
+        _currentEventData = null;
         chapterManager.OnOptionResolved();
     }
 
@@ -157,9 +223,14 @@ public class BookUIController : MonoBehaviour
         chapterManager.NextChapter();
     }
 
-    private void OnBackClicked()
+    /// <summary>
+    /// 设置按钮点击回调。
+    /// 目前设置菜单尚未实现，此函数暂时为空（不执行任何逻辑）。
+    /// 后续若要做设置菜单，在此处打开对应面板即可（例如：settingsPanel.SetActive(true)）。
+    /// </summary>
+    private void OnSettingsClicked()
     {
-        chapterManager.StartGame();
+        // TODO: 打开设置菜单（音量、画质、重开等）。当前无功能。
     }
 
     private void HandleChapterInfoUpdated(string name, int remaining)

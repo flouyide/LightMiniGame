@@ -26,12 +26,15 @@ public class ChapterManager : MonoBehaviour
     private HashSet<string> _excludedEvents = new();    // 已排斥事件ID集合（互斥事件排除）
     private bool _finalNodeCompleted;
     private bool _isStarted; // 游戏是否已启动
+    private int _lastSelectedIndex = -1; // 最后选中的页面索引（供 OnOptionResolved 使用）
+    private int _remainingBeforeSelection; // 本次选择/删除「之前」的剩余次数（区分"刷新"还是"消耗"）
 
     // --- 事件回调 ---
     public UnityEvent<List<PageEventData>> OnPagesRefreshed = new();
     public UnityEvent<PageEventData, int> OnPageSelected = new(); // data, selectedIndex
     public UnityEvent<PageEventData, int> OnPageRefreshed = new(); // newData, refreshedIndex
     public UnityEvent<int> OnPageDeleted = new(); // deleted index
+    public UnityEvent<int> OnPageConsumed = new(); // consumed index（剩余页数为0时选中卡片 → 删除该卡片不刷新）
     public UnityEvent OnChapterComplete = new();
     public UnityEvent<string, int> OnChapterInfoUpdated = new(); // chapterName, remaining
     public UnityEvent<int, int> OnPlayerStatsUpdated = new();    // hp, gold
@@ -141,8 +144,8 @@ public class ChapterManager : MonoBehaviour
                 availablePool.Add(evt);
         }
 
-        // 最终节点逻辑：剩余选择次数为1时强制出现
-        bool forceFinal = _remainingSelections == 1 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
+        // 最终节点逻辑：仅当剩余选择次数为 0 时强制出现 Boss（Boss 只在剩余 0 时必出现）
+        bool forceFinal = _remainingSelections == 0 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
 
         if (forceFinal)
         {
@@ -225,8 +228,8 @@ public class ChapterManager : MonoBehaviour
             SkipEvent:;
         }
 
-        // 最终节点逻辑：剩余选择次数为1时强制出现
-        bool forceFinal = _remainingSelections == 1 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
+        // 最终节点逻辑：仅当剩余选择次数为 0 时强制出现 Boss（Boss 只在剩余 0 时必出现）
+        bool forceFinal = _remainingSelections == 0 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
 
         PageEventData newPage;
         if (forceFinal && finalNodeCandidates.Count > 0)
@@ -295,18 +298,27 @@ public class ChapterManager : MonoBehaviour
                 _unlockedEvents.Add(id);
         }
 
-        // 减少剩余选择次数
-        _remainingSelections--;
+        // 记录点击「之前」的剩余次数，再递减（不能为负）
+        int remainingBeforeDelete = _remainingSelections;
+        _remainingSelections = Mathf.Max(0, _remainingSelections - 1);
+
         OnChapterInfoUpdated?.Invoke(_currentChapter.chapterName, _remainingSelections);
 
         // 通知删除事件
         OnPageDeleted?.Invoke(index);
 
-        // 只刷新被删除位置的页面
-        if (_remainingSelections > 0)
-            RefreshPageAt(index);
+        if (remainingBeforeDelete <= 0 && !_finalNodeCompleted)
+        {
+            // 点击删除前已无剩余页数 → 删除卡片不刷新
+            if (index >= 0 && index < _currentPages.Count)
+                _currentPages.RemoveAt(index);
+            OnPageConsumed?.Invoke(index);
+        }
         else
-            OnChapterComplete?.Invoke();
+        {
+            // 还有剩余页数 → 刷新被删除位置的页面
+            RefreshPageAt(index);
+        }
     }
 
     /// <summary>
@@ -321,11 +333,10 @@ public class ChapterManager : MonoBehaviour
         }
 
         var selected = _currentPages[index];
+        _lastSelectedIndex = index;
 
         // 占位符：进入战斗/事件，先打印事件类型到 Console（战斗/商店/休整/事件）
         Debug.Log($"[事件] 进入「{selected.displayName}」——类型：{TypeNameOf(selected.eventType)}");
-
-        OnPageSelected?.Invoke(selected, index);
 
         // 标记完成
         _completedEvents.Add(selected.eventId);
@@ -347,14 +358,14 @@ public class ChapterManager : MonoBehaviour
                 _unlockedEvents.Add(id);
         }
 
-        _remainingSelections--;
-        OnChapterInfoUpdated?.Invoke(_currentChapter.chapterName, _remainingSelections);
+        // 记录点击「之前」的剩余次数：>=1 表示还有选择机会 → 之后应刷新；==0 表示已无机会 → 之后应消耗（删除卡片不刷新）
+        _remainingBeforeSelection = _remainingSelections;
 
-        if (_remainingSelections <= 0)
-        {
-            Debug.Log("[ChapterManager] 章节完成！");
-            OnChapterComplete?.Invoke();
-        }
+        _remainingSelections = Mathf.Max(0, _remainingSelections - 1);
+
+        OnChapterInfoUpdated?.Invoke(_currentChapter.chapterName, _remainingSelections);
+        // 此时所有状态已更新完毕，OnOptionResolved 能拿到正确的 _finalNodeCompleted 和 _remainingBeforeSelection
+        OnPageSelected?.Invoke(selected, index);
     }
 
     /// <summary>
@@ -396,14 +407,28 @@ public class ChapterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 选项选择后继续刷新
+    /// 选项选择后继续：Boss 已打完 → 进入下一章；点击前已无剩余次数 → 删除卡片不刷新；否则刷新页面
     /// </summary>
     public void OnOptionResolved()
     {
-        if (_remainingSelections > 0)
-            RefreshPages();
-        else
+        if (_finalNodeCompleted)
+        {
+            // Boss 已打完，立即进入下一章（不管剩余页数）
             OnChapterComplete?.Invoke();
+            return;
+        }
+
+        if (_remainingBeforeSelection <= 0)
+        {
+            // 点击「进入」前就已经没有剩余次数 → 删除当前卡片，不刷新新卡片
+            if (_lastSelectedIndex >= 0 && _lastSelectedIndex < _currentPages.Count)
+                _currentPages.RemoveAt(_lastSelectedIndex);
+            OnPageConsumed?.Invoke(_lastSelectedIndex);
+            return;
+        }
+
+        // 点击前还有剩余次数 → 刷新 3 张新卡片
+        RefreshPages();
     }
 
     /// <summary>

@@ -582,7 +582,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 340, y: 420}
+  m_SizeDelta: {x: 420, y: 520}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3257276800097232819
 CanvasRenderer:
@@ -645,10 +645,22 @@ MonoBehaviour:
   enterButtonText: {fileID: 1336665665324700977}
   deleteButton: {fileID: 8153353738604125650}
   deleteButtonText: {fileID: 1226831289012836784}
+  showDeleteOnBattle: 0
+  showDeleteOnShop: 1
+  showDeleteOnRest: 1
+  showDeleteOnEvent: 1
   ColorBattle: {r: 0.8, g: 0.3, b: 0.3, a: 1}
   ColorShop: {r: 0.9, g: 0.75, b: 0.2, a: 1}
   ColorRest: {r: 0.3, g: 0.7, b: 0.4, a: 1}
   ColorEvent: {r: 0.6, g: 0.3, b: 0.8, a: 1}
+  typeNameBattle: "\u6218\u6597"
+  typeNameShop: "\u5546\u5E97"
+  typeNameRest: "\u4F11\u6574"
+  typeNameEvent: "\u4E8B\u4EF6"
+  enterLabelBattle: "\u8FDB\u5165\u6218\u6597"
+  enterLabelShop: "\u8FDB\u5165\u5546\u5E97"
+  enterLabelRest: "\u8FDB\u5165\u4F11\u6574"
+  enterLabelEvent: "\u8FDB\u5165\u4E8B\u4EF6"
 --- !u!1 &7381518398989394985
 GameObject:
   m_ObjectHideFlags: 0
@@ -1245,7 +1257,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -143, y: -124.3}
+  m_AnchoredPosition: {x: -179.6, y: -124.3}
   m_SizeDelta: {x: 60, y: 24}
   m_Pivot: {x: 1, y: 1}
 --- !u!222 &7036211903121766561
