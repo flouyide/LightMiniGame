@@ -32,7 +32,12 @@ public class BookUIController : MonoBehaviour
     [Header("章节完成面板")]
     [SerializeField] private GameObject chapterCompletePanel;
     [SerializeField] private Button nextChapterButton;
-    [SerializeField] private Button settingsButton;   // 设置按钮（场景中已命名为 SettingsButton），目前无功能，预留打开设置菜单
+    [SerializeField] private Button settingsButton;   // 设置按钮（场景中已命名为 SettingsButton），点击弹出选项面板
+
+    [Header("选项界面")]
+    [SerializeField] private GameObject settingsPanelPrefab;   // 选项界面预制体（SettingsPanel），在 Inspector 中配置；留空则回退到 Resources/UI/SettingsPanel
+
+    private SettingsPanelUI _settingsPanel;            // 选项面板（运行时按需创建）
 
     private readonly List<PageCardUI> _activeCards = new();
     private PageEventData _currentEventData;   // 当前事件面板正在显示的事件数据（供选项回调取 effects）
@@ -224,13 +229,29 @@ public class BookUIController : MonoBehaviour
     }
 
     /// <summary>
-    /// 设置按钮点击回调。
-    /// 目前设置菜单尚未实现，此函数暂时为空（不执行任何逻辑）。
-    /// 后续若要做设置菜单，在此处打开对应面板即可（例如：settingsPanel.SetActive(true)）。
+    /// 设置按钮点击回调：首次点击时实例化选项界面预制体（settingsPanelPrefab，可在 Inspector 配置），
+    /// 之后复用同一实例。面板打开时会暂停游戏，关闭时恢复（见 SettingsPanelUI）。
+    /// 若 settingsPanelPrefab 未配置，则回退到 Resources/UI/SettingsPanel 并打印提示。
     /// </summary>
     private void OnSettingsClicked()
     {
-        // TODO: 打开设置菜单（音量、画质、重开等）。当前无功能。
+        if (_settingsPanel == null)
+        {
+            // 优先使用 Inspector 中配置的预制体；未配置则回退到 Resources
+            GameObject prefab = settingsPanelPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError("[BookUIController] 选项界面预制体未配置");
+                return;
+            }
+
+            var go = Instantiate(prefab, transform, false);
+            go.name = "SettingsPanel";
+            _settingsPanel = go.GetComponent<SettingsPanelUI>();
+            if (_settingsPanel != null)
+                _settingsPanel.Init(chapterManager);
+        }
+        _settingsPanel.Show();
     }
 
     private void HandleChapterInfoUpdated(string name, int remaining)
