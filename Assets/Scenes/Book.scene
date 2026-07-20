@@ -532,6 +532,73 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1697130483
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1697130485}
+  - component: {fileID: 1697130484}
+  - component: {fileID: 1697130486}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: CardLibrary
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1697130484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1697130483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edf5bf10afcee024590f2a5ed54c53fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  saveFileName: cardLibrary.json
+--- !u!4 &1697130485
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1697130483}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1008.5697, y: 530.96063, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1697130486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1697130483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 264608b6f251edd43be3446094c178d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetCharacter: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
+  cardPresets:
+  - {fileID: 11400000, guid: 0b35f946550664ca48b3a53d15624dcf, type: 2}
+  - {fileID: 11400000, guid: 2e4072a56e2194bf08a969ab515ce5e5, type: 2}
+  - {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
+  - {fileID: 11400000, guid: 3b3f494ae33354001a2bdcdb017dcdec, type: 2}
+  showPanel: 1
+  toggleKey: 96
 --- !u!1 &2008882130
 GameObject:
   m_ObjectHideFlags: 0
@@ -542,6 +609,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2008882132}
   - component: {fileID: 2008882131}
+  - component: {fileID: 2008882133}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: BookSystem
@@ -604,6 +672,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2008882133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008882130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca1104475748790499f2247154bbf17a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startingLibraries:
+  - {fileID: 11400000, guid: 6b804e5802a4ee046bb33c71d0eb50ba, type: 2}
+  - {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
 --- !u!1001 &7321734543486093399
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -634,8 +717,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2736421210797496942, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2751899262472763453, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
+      propertyPath: deckButton
+      value: 
+      objectReference: {fileID: 7321734543486093400}
     - target: {fileID: 2751899262472763453, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
       propertyPath: chapterManager
       value: 
@@ -644,6 +731,10 @@ PrefabInstance:
       propertyPath: settingsPanelPrefab
       value: 
       objectReference: {fileID: 8219856345522142511, guid: 282462f1493fb634fb6e9d83c6247891, type: 3}
+    - target: {fileID: 2751899262472763453, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
+      propertyPath: cardLibraryPanelPrefab
+      value: 
+      objectReference: {fileID: 2994301708964544695, guid: 8b33405e3455a604888bc039388316bf, type: 3}
     - target: {fileID: 3947155406636553490, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
@@ -742,13 +833,24 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6688441516285703135, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
+--- !u!114 &7321734543486093400 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 510554965367759777, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
+  m_PrefabInstance: {fileID: 7321734543486093399}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -758,3 +860,4 @@ SceneRoots:
   - {fileID: 2008882132}
   - {fileID: 7321734543486093399}
   - {fileID: 1600256905}
+  - {fileID: 1697130485}

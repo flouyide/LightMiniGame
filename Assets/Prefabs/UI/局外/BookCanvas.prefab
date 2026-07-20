@@ -350,6 +350,12 @@ MonoBehaviour:
   chapterCompletePanel: {fileID: 6034729792026568339}
   nextChapterButton: {fileID: 8245052871790277688}
   settingsButton: {fileID: 279797820379314626}
+  settingsPanelPrefab: {fileID: 0}
+  deckButton: {fileID: 510554965367759777}
+  cardLibraryPanelPrefab: {fileID: 2994301708964544695, guid: 8b33405e3455a604888bc039388316bf, type: 3}
+  attackCardPrefab: {fileID: 5473407269505765583, guid: 81d0e6b49544d49058648e04bf9c1527, type: 3}
+  armorCardPrefab: {fileID: 2973715665040290557, guid: f5f692f5311d94c8bb8e53e0ad3773f9, type: 3}
+  buffCardPrefab: {fileID: 7474974900366243079, guid: 554d0b2b98f0e436c861a89e6893f1a5, type: 3}
 --- !u!1 &1743362556053749712
 GameObject:
   m_ObjectHideFlags: 0
@@ -1227,7 +1233,7 @@ MonoBehaviour:
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: -8530084090043915268, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
   m_fontSharedMaterials:
   - {fileID: 0}
   m_fontMaterial: {fileID: 0}
