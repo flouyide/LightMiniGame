@@ -45,8 +45,15 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private GameObject armorCardPrefab;     // 护甲牌
     [SerializeField] private GameObject buffCardPrefab;      // 增益牌
 
+    [Header("测试用：显示任意 Prefab")]
+    [Tooltip("勾选后点击牌库按钮走 OnDeckClickedTest（实例化 testPrefab 并切换显示/隐藏）；不勾选走正式 OnDeckClicked。")]
+    [SerializeField] private bool useTestDeckHandler = false;
+    [Tooltip("要测试的任意 prefab（UI 预制体、CardLibraryPanel、或任何 GameObject）。会实例化到 BookCanvas 下。")]
+    [SerializeField] private GameObject testPrefab;
+
     private SettingsPanelUI _settingsPanel;            // 选项面板（运行时按需创建）
     private CardLibraryPanelUI _cardLibraryPanel;      // 牌库面板（运行时按需创建）
+    private GameObject _testInstance;                  // 测试 prefab 的运行时实例（OnDeckClickedTest 用）
 
     private readonly List<PageCardUI> _activeCards = new();
     private PageEventData _currentEventData;   // 当前事件面板正在显示的事件数据（供选项回调取 effects）
@@ -67,28 +74,13 @@ public class BookUIController : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsClicked);
         if (deckButton != null)
-            deckButton.onClick.AddListener(OnDeckClicked);
+        {
+            if (useTestDeckHandler)
+                deckButton.onClick.AddListener(OnDeckClickedTest);
+            else
+                deckButton.onClick.AddListener(OnDeckClicked);
+        }
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private void OnDisable()
     {
@@ -106,7 +98,12 @@ public class BookUIController : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.RemoveListener(OnSettingsClicked);
         if (deckButton != null)
-            deckButton.onClick.RemoveListener(OnDeckClicked);
+        {
+            if (useTestDeckHandler)
+                deckButton.onClick.RemoveListener(OnDeckClickedTest);
+            else
+                deckButton.onClick.RemoveListener(OnDeckClicked);
+        }
     }
 
     private void HandlePagesRefreshed(List<PageEventData> pages)
@@ -305,6 +302,38 @@ public class BookUIController : MonoBehaviour
         _cardLibraryPanel.Show();
     }
 
+    /// <summary>
+    /// 测试用：点击牌库按钮后显示任意 prefab（不要求挂 CardLibraryPanelUI）。
+    /// 用法：在 Inspector 把要测试的 prefab 拖到 testPrefab，勾上 useTestDeckHandler。
+    ///   - 首次点击：实例化 testPrefab 到 BookCanvas 下（仿 _settingsPanel/CardLibraryPanel 模式）并显示；
+    ///   - 再次点击：切换显示/隐藏（不需要重复创建）；
+    ///   - 显示时暂停游戏（timeScale=0），隐藏时恢复（timeScale=1）。
+    /// 若 testPrefab 未配置，回退到 cardLibraryPanelPrefab（方便快速验证牌库面板本身能否显示）。
+    /// </summary>
+    public void OnDeckClickedTest()
+    {
+        GameObject prefab = testPrefab != null ? testPrefab : cardLibraryPanelPrefab;
+        if (prefab == null)
+        {
+            Debug.LogError("[BookUIController][Test] 测试用 prefab 未配置（testPrefab 和 cardLibraryPanelPrefab 都为空）");
+            return;
+        }
+
+        // 首次：实例化到 BookCanvas 下（成为当前 transform 的子物体）
+        if (_testInstance == null)
+        {
+            _testInstance = Instantiate(prefab, transform, false);
+            _testInstance.name = "TestPanel_" + prefab.name;
+            Debug.Log($"[BookUIController][Test] 已实例化 {prefab.name} 到 {transform.name} 下");
+        }
+
+        // 切换显示/隐藏
+        _settingsPanel = _testInstance.GetComponent<SettingsPanelUI>();
+        if (_settingsPanel != null)
+            _settingsPanel.Init(chapterManager);
+        _settingsPanel.Show();
+    }
+    
     /// <summary>取牌库面板预制体：优先 Inspector 配置，编辑器下按路径兜底（方便未手动赋值时也能运行）。</summary>
     private GameObject ResolveCardLibraryPanelPrefab()
     {

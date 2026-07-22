@@ -66,11 +66,11 @@ public class CardLibraryPanelUI : MonoBehaviour
         }
         
         // 兜底：强制根缩放为 1（prefab 的 RectTransform 在某些环境下被序列化为 0 导致整块不可见）
-        if (panel != null)
+        /*if (panel != null)
         {
             var prt = panel.transform as RectTransform;
             if (prt != null) prt.localScale = Vector3.one;
-        }
+        }*/
         FixOverlay();       // 修复全屏遮罩 Overlay 拦截点击的问题（已删则自动跳过）
         FixInteraction();   // 关闭背景/容器 raycast 穿透，并将按钮栏置顶，确保按钮可点
         BindExistingUI();
@@ -99,12 +99,12 @@ public class CardLibraryPanelUI : MonoBehaviour
         panel.SetActive(true);
 
         // 确保 Overlay 不会阻挡按钮点击
-        var overlayTransform = panel.transform.Find("Overlay");
+        /*var overlayTransform = panel.transform.Find("Overlay");
         if (overlayTransform != null)
         {
             var overlayImg = overlayTransform.GetComponent<UnityEngine.UI.Image>();
             if (overlayImg != null) overlayImg.raycastTarget = false;
-        }
+        }*/
 
         Time.timeScale = 0f;
         DisableBackgroundInteractables();
