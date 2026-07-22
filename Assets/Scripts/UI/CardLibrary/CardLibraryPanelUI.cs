@@ -71,8 +71,8 @@ public class CardLibraryPanelUI : MonoBehaviour
             var prt = panel.transform as RectTransform;
             if (prt != null) prt.localScale = Vector3.one;
         }*/
-        FixOverlay();       // 修复全屏遮罩 Overlay 拦截点击的问题（已删则自动跳过）
-        FixInteraction();   // 关闭背景/容器 raycast 穿透，并将按钮栏置顶，确保按钮可点
+        //FixOverlay();       // 修复全屏遮罩 Overlay 拦截点击的问题（已删则自动跳过）
+        //FixInteraction();   // 关闭背景/容器 raycast 穿透，并将按钮栏置顶，确保按钮可点
         BindExistingUI();
         HideImmediate();
     }
@@ -336,6 +336,8 @@ public class CardLibraryPanelUI : MonoBehaviour
         btn.gameObject.SetActive(hasChar);   // 角色不足两个时隐藏多余按钮
         if (!hasChar) return;
 
+        btn.interactable = true;   // 保险：prefab 可能被序列化为 false 导致点击无反应
+
         var ch = _registeredCharacters[index];
 
         // 按钮文字 = 角色名字
@@ -420,7 +422,10 @@ public class CardLibraryPanelUI : MonoBehaviour
     private void BindExistingUI()
     {
         if (closeButton != null)
+        {
+            closeButton.interactable = true;   // 保险：prefab 可能被序列化为 false 导致点击无反应
             closeButton.onClick.AddListener(Hide);
+        }
     }
 
     #endregion
