@@ -38,22 +38,15 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private GameObject settingsPanelPrefab;   // 选项界面预制体（SettingsPanel），在 Inspector 中配置；留空则回退到 Resources/UI/SettingsPanel
 
     [Header("牌库界面")]
-    [SerializeField] private Button deckButton;               // 牌库按钮（BookCanvas 中的 DeckButton），点击打开牌库面板
-    [SerializeField] private GameObject cardLibraryPanelPrefab; // 牌库面板预制体（CardLibraryPanel.prefab）
+    [SerializeField] private Button deckButton;               // 牌库按钮（BookCanvas 中的 DeckButton），点击打开牌库面板（CardLibraryPanel 已在场景中作为 BookCanvas 的子物体存在）
+    [SerializeField] private GameObject cardLibraryPanel;     // 牌库面板 GameObject（CardLibraryPanel），在 Inspector 中直接拖入配置；留空则回退到 GetComponentInChildren 自动查找
     [Header("卡面预制体（按类型，来自 Battle/Cards）")]
     [SerializeField] private GameObject attackCardPrefab;    // 攻击牌
     [SerializeField] private GameObject armorCardPrefab;     // 护甲牌
     [SerializeField] private GameObject buffCardPrefab;      // 增益牌
 
-    [Header("测试用：显示任意 Prefab")]
-    [Tooltip("勾选后点击牌库按钮走 OnDeckClickedTest（实例化 testPrefab 并切换显示/隐藏）；不勾选走正式 OnDeckClicked。")]
-    [SerializeField] private bool useTestDeckHandler = false;
-    [Tooltip("要测试的任意 prefab（UI 预制体、CardLibraryPanel、或任何 GameObject）。会实例化到 BookCanvas 下。")]
-    [SerializeField] private GameObject testPrefab;
-
     private SettingsPanelUI _settingsPanel;            // 选项面板（运行时按需创建）
     private CardLibraryPanelUI _cardLibraryPanel;      // 牌库面板（运行时按需创建）
-    private GameObject _testInstance;                  // 测试 prefab 的运行时实例（OnDeckClickedTest 用）
 
     private readonly List<PageCardUI> _activeCards = new();
     private PageEventData _currentEventData;   // 当前事件面板正在显示的事件数据（供选项回调取 effects）
@@ -74,12 +67,7 @@ public class BookUIController : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsClicked);
         if (deckButton != null)
-        {
-            if (useTestDeckHandler)
-                deckButton.onClick.AddListener(OnDeckClickedTest);
-            else
-                deckButton.onClick.AddListener(OnDeckClicked);
-        }
+            deckButton.onClick.AddListener(OnDeckClicked);
     }
 
     private void OnDisable()
@@ -98,12 +86,7 @@ public class BookUIController : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.RemoveListener(OnSettingsClicked);
         if (deckButton != null)
-        {
-            if (useTestDeckHandler)
-                deckButton.onClick.RemoveListener(OnDeckClickedTest);
-            else
-                deckButton.onClick.RemoveListener(OnDeckClicked);
-        }
+            deckButton.onClick.RemoveListener(OnDeckClicked);
     }
 
     private void HandlePagesRefreshed(List<PageEventData> pages)
@@ -265,95 +248,34 @@ public class BookUIController : MonoBehaviour
     }
 
     /// <summary>
-    /// 牌库按钮点击回调：首次点击时实例化牌库面板预制体（CardLibraryPanel.prefab），
-    /// 注入三张 Battle 卡面预制体（攻击牌/护甲牌/增益牌），之后复用同一实例。
-    /// 面板打开时暂停游戏、屏蔽背景交互（见 CardLibraryPanelUI）。
+    /// 牌库按钮点击回调：CardLibraryPanel 已存在于场景中（作为 BookCanvas 的子物体），
+    /// 首次点击时查找并缓存该实例，注入三张 Battle 卡面预制体（攻击牌/护甲牌/增益牌）。
+    /// 之后点击只调用 Show()：启用牌库面板（GameObject.SetActive(true)）、暂停游戏、屏蔽背景交互。
+    /// 关闭由面板自身关闭按钮触发 Hide()：停用牌库面板（GameObject.SetActive(false)）、恢复游戏。
     /// </summary>
     private void OnDeckClicked()
     {
         if (_cardLibraryPanel == null)
         {
-            // 解析牌库面板预制体（Inspector 未配置时，编辑器下按路径自动加载兜底）
-            GameObject prefab = ResolveCardLibraryPanelPrefab();
-            if (prefab == null)
-            {
-                Debug.LogError("[BookUIController] 牌库面板预制体未配置（cardLibraryPanelPrefab）");
-                return;
-            }
-
-            // 仿照 _settingsPanel：实例化到 BookCanvas 下（挂在当前 transform 下），成为其子物体
-            var go = Instantiate(prefab, transform, false);
-            go.name = "CardLibraryPanel";
-            _cardLibraryPanel = go.GetComponent<CardLibraryPanelUI>();
+            // 优先使用 Inspector 中配置的 cardLibraryPanel；未配置则回退到子物体自动查找
+            if (cardLibraryPanel != null)
+                _cardLibraryPanel = cardLibraryPanel.GetComponent<CardLibraryPanelUI>();
+            if (_cardLibraryPanel == null)
+                _cardLibraryPanel = GetComponentInChildren<CardLibraryPanelUI>(true);
             if (_cardLibraryPanel == null)
             {
-                Debug.LogError("[BookUIController] CardLibraryPanelUI 组件未找到");
-                Destroy(go);
+                Debug.LogError("[BookUIController] 未找到 CardLibraryPanelUI（请在 Inspector 配置 cardLibraryPanel，或确保其作为 BookCanvas 的子物体存在）");
                 return;
             }
 
-            // 注入三张卡面预制体（按类型），未配置时编辑器下按路径兜底
-            _cardLibraryPanel.attackCardPrefab = ResolveCardPrefab(attackCardPrefab, "Assets/Prefabs/Battle/Cards/攻击牌.prefab");
-            _cardLibraryPanel.armorCardPrefab  = ResolveCardPrefab(armorCardPrefab,  "Assets/Prefabs/Battle/Cards/护甲牌.prefab");
-            _cardLibraryPanel.buffCardPrefab   = ResolveCardPrefab(buffCardPrefab,   "Assets/Prefabs/Battle/Cards/增益牌.prefab");
+            // 注入三张卡面预制体（按类型），需在 Inspector 中配置
+            _cardLibraryPanel.attackCardPrefab = attackCardPrefab;
+            _cardLibraryPanel.armorCardPrefab  = armorCardPrefab;
+            _cardLibraryPanel.buffCardPrefab   = buffCardPrefab;
 
             _cardLibraryPanel.Init();
         }
         _cardLibraryPanel.Show();
-    }
-
-    /// <summary>
-    /// 测试用：点击牌库按钮后显示任意 prefab（不要求挂 CardLibraryPanelUI）。
-    /// 用法：在 Inspector 把要测试的 prefab 拖到 testPrefab，勾上 useTestDeckHandler。
-    ///   - 首次点击：实例化 testPrefab 到 BookCanvas 下（仿 _settingsPanel/CardLibraryPanel 模式）并显示；
-    ///   - 再次点击：切换显示/隐藏（不需要重复创建）；
-    ///   - 显示时暂停游戏（timeScale=0），隐藏时恢复（timeScale=1）。
-    /// 若 testPrefab 未配置，回退到 cardLibraryPanelPrefab（方便快速验证牌库面板本身能否显示）。
-    /// </summary>
-    public void OnDeckClickedTest()
-    {
-        GameObject prefab = testPrefab != null ? testPrefab : cardLibraryPanelPrefab;
-        if (prefab == null)
-        {
-            Debug.LogError("[BookUIController][Test] 测试用 prefab 未配置（testPrefab 和 cardLibraryPanelPrefab 都为空）");
-            return;
-        }
-
-        // 首次：实例化到 BookCanvas 下（成为当前 transform 的子物体）
-        if (_testInstance == null)
-        {
-            _testInstance = Instantiate(prefab, transform, false);
-            _testInstance.name = "TestPanel_" + prefab.name;
-            Debug.Log($"[BookUIController][Test] 已实例化 {prefab.name} 到 {transform.name} 下");
-        }
-
-        // 切换显示/隐藏
-        _settingsPanel = _testInstance.GetComponent<SettingsPanelUI>();
-        if (_settingsPanel != null)
-            _settingsPanel.Init(chapterManager);
-        _settingsPanel.Show();
-    }
-    
-    /// <summary>取牌库面板预制体：优先 Inspector 配置，编辑器下按路径兜底（方便未手动赋值时也能运行）。</summary>
-    private GameObject ResolveCardLibraryPanelPrefab()
-    {
-        if (cardLibraryPanelPrefab != null) return cardLibraryPanelPrefab;
-#if UNITY_EDITOR
-        return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/CardLibrary/CardLibraryPanel.prefab");
-#else
-        return null;
-#endif
-    }
-
-    /// <summary>取卡面预制体：优先 Inspector 配置，编辑器下按路径兜底。</summary>
-    private static GameObject ResolveCardPrefab(GameObject assigned, string editorPath)
-    {
-        if (assigned != null) return assigned;
-#if UNITY_EDITOR
-        return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(editorPath);
-#else
-        return null;
-#endif
     }
 
     private void HandleChapterInfoUpdated(string name, int remaining)
