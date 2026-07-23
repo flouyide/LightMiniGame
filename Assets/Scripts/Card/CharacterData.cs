@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using LightMiniGame.Shop;
 
 namespace LightMiniGame.Card
 {
@@ -23,6 +25,10 @@ namespace LightMiniGame.Card
         [Header("初始牌组")]
         [Tooltip("该角色的初始牌库配置；游戏开始时据此构建起始卡组。为空则预置空牌库")]
         public CharacterStartingLibrary startingLibrary;
+
+        [Header("初始遗物")]
+        [Tooltip("该角色的初始遗物列表；游戏开始时直接放入该角色的遗物库。为空则预置空遗物库")]
+        public List<RelicData> startingRelics = new List<RelicData>();
 
         [Header("可选约束")]
         [Tooltip("该角色牌库容量上限；<=0 表示不限制")]

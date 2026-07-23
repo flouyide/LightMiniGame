@@ -159,7 +159,7 @@ public class CardDisplay : MonoBehaviour
             }
         }
     }
-
+    
     /// <summary>
     /// 从 CardData ScriptableObject 复制全部字段到本组件并刷新显示
     /// </summary>

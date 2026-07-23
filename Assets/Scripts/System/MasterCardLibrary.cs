@@ -19,14 +19,11 @@ namespace LightMiniGame.Shop
     /// <summary>
     /// 总牌库：内部包含每个角色的所有卡牌（按角色隔离的卡池列表）。
     /// 商店每次开张时从这里按角色比例随机抽取出售的卡牌。
-    /// 在编辑器通过菜单 CardGame/Master Card Library 创建，放到 Resources/MasterCardLibrary.asset
-    /// 或拖到 ShopManager 的对应字段。
+    /// 在编辑器通过菜单 CardGame/Master Card Library 创建资产，然后拖到场景中 ShopManager 组件的 Inspector 字段。
     /// </summary>
     [CreateAssetMenu(menuName = "CardGame/Master Card Library", fileName = "MasterCardLibrary")]
     public class MasterCardLibrary : ScriptableObject
     {
-        public const string ResourcePath = "MasterCardLibrary";
-
         [Tooltip("每个角色拥有的全部卡牌。列表顺序即 角色1、角色2…；商店按角色比例从中抽取。")]
         public List<CharacterCardPool> pools = new List<CharacterCardPool>();
 
@@ -43,8 +40,5 @@ namespace LightMiniGame.Shop
         /// <summary>按索引取该角色的卡池（用于抽卡策略）。</summary>
         public List<CardData> GetCardsByIndex(int index)
             => (index >= 0 && index < pools.Count) ? pools[index].cards : null;
-
-        public static MasterCardLibrary Load()
-            => Resources.Load<MasterCardLibrary>(ResourcePath);
     }
 }

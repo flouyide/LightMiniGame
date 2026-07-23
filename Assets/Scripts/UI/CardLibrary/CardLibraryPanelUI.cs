@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LightMiniGame.Card;
 using UnityEngine;
@@ -23,8 +24,6 @@ public class CardLibraryPanelUI : MonoBehaviour
     [Header("=== 面板根节点（来自 CardLibraryPanel.prefab）===")]
     [Tooltip("面板根物体（含 Canvas）。由预制体注入，不要运行时自建。")]
     public GameObject panel;
-    [Tooltip("角色头像 Image（预制体未包含，留空则只显示名字）")]
-    public Image characterAvatar;
     [Tooltip("角色名称 TextMeshProUGUI")]
     public TextMeshProUGUI characterNameText;
     [Tooltip("右上角关闭按钮")]
@@ -51,6 +50,11 @@ public class CardLibraryPanelUI : MonoBehaviour
     private readonly List<CharacterData> _registeredCharacters = new List<CharacterData>();
     private int _currentCharacterIndex = -1;     // 当前选中角色的索引（_registeredCharacters 中）
     private readonly List<GameObject> _entryObjects = new List<GameObject>(); // 当前展示的卡面对象
+    private Image characterAvatar;
+    
+    // 删除模式（商店删牌用）：非 null 时，网格中的卡变为可点击按钮，点击触发该回调
+    private Action<CardInstance, CharacterData> _cardClickHandler;
+    private Func<int> _removalRemainingGetter;   // 可选：删除模式下头部显示「剩余 N 次」
 
     // 暂停 & 背景屏蔽（与 SettingsPanelUI 同模式）
     private readonly List<Selectable> _disabledBackground = new List<Selectable>();
@@ -126,6 +130,31 @@ public class CardLibraryPanelUI : MonoBehaviour
         if (panel != null) panel.SetActive(false);
         Time.timeScale = 1f;
         EnableBackgroundInteractables();
+        EndRemovalMode();   // 关闭面板即退出删除模式，避免影响后续正常牌库浏览
+    }
+
+    /// <summary>以「删除模式」打开牌库：网格中每张卡变为可点击按钮，点击触发 onCardClicked(card, owner)。
+    /// 关闭面板（点关闭按钮或 EndRemovalMode+Hid）会自动退出删除模式，不影响正常牌库浏览。
+    /// getRemaining 可选，提供时头部追加显示「剩余 N 次」。</summary>
+    public void ShowRemovalMode(Action<CardInstance, CharacterData> onCardClicked, Func<int> getRemaining = null)
+    {
+        _cardClickHandler = onCardClicked;
+        _removalRemainingGetter = getRemaining;
+        Show();
+    }
+
+    /// <summary>退出删除模式（清空点击回调与剩余次数回调）。</summary>
+    public void EndRemovalMode()
+    {
+        _cardClickHandler = null;
+        _removalRemainingGetter = null;
+    }
+
+    /// <summary>重新渲染当前选中角色的卡牌网格（删牌后刷新用）。</summary>
+    public void RefreshCurrent()
+    {
+        if (_currentCharacterIndex >= 0 && _currentCharacterIndex < _registeredCharacters.Count)
+            RefreshGrid(_registeredCharacters[_currentCharacterIndex]);
     }
 
     #endregion
@@ -189,6 +218,18 @@ public class CardLibraryPanelUI : MonoBehaviour
             go.SetActive(true);
             ApplyCardData(go, inst);
             _entryObjects.Add(go);
+
+            // 删除模式：让卡牌变为可点击按钮，点击触发回调
+            if (_cardClickHandler != null)
+            {
+                var btn = go.GetComponent<Button>() ?? go.AddComponent<Button>();
+                btn.targetGraphic = go.GetComponent<Image>();
+                btn.interactable = true;
+                btn.onClick.RemoveAllListeners();
+                var capturedInst = inst;
+                var capturedChar = character;
+                btn.onClick.AddListener(() => _cardClickHandler?.Invoke(capturedInst, capturedChar));
+            }
         }
 
         // 强制刷新布局
@@ -306,7 +347,13 @@ public class CardLibraryPanelUI : MonoBehaviour
     private void UpdateHeader(CharacterData character)
     {
         if (characterNameText != null)
-            characterNameText.SetText(character != null ? character.displayName : "未选择");
+        {
+            string name = character != null ? character.displayName : "未选择";
+            // 删除模式下头部追加剩余次数提示
+            if (_cardClickHandler != null && _removalRemainingGetter != null)
+                name = $"{name}  （剩余 {_removalRemainingGetter()} 次）";
+            characterNameText.SetText(name);
+        }
         // 角色头像（CharacterData.avatar）；为空则保持原样，不强制清空
         if (characterAvatar != null && character != null && character.avatar != null)
             characterAvatar.sprite = character.avatar;
@@ -341,6 +388,14 @@ public class CardLibraryPanelUI : MonoBehaviour
         btn.interactable = true;   // 保险：prefab 可能被序列化为 false 导致点击无反应
 
         var ch = _registeredCharacters[index];
+
+        // 按钮图片 = 角色头像（CharacterData.avatar）：优先自身 Image，否则子物体 Image
+        var btnImg = btn.GetComponent<Image>() ?? btn.GetComponentInChildren<Image>();
+        if (btnImg != null && ch.avatar != null)
+        {
+            btnImg.sprite = ch.avatar;
+            btnImg.preserveAspect = true;
+        }
 
         // 按钮文字 = 角色名字
         var txt = btn.GetComponentInChildren<TextMeshProUGUI>();

@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: Candelabra
   relicName: Candelabra
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f5586168c02e6d34aa4a48103a49ada6, type: 3}
   value: 200
   grade: 0
   sortOrder: 0

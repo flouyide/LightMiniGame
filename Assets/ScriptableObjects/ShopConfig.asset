@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: ShopConfig
   m_EditorClassIdentifier: 
   shopCardCount: 6
-  shopRelicCount: 3
+  shopRelicCount: 6
   character1CardRatio: 0.5
   character2CardRatio: 0.5
-  removalCount: 3
+  character1RelicRatio: 0.5
+  character2RelicRatio: 0.5
+  removalCount: 1
   removalBasePrice: 75
   removalPriceStep: 25

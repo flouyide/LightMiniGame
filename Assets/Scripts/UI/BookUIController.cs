@@ -26,10 +26,9 @@ public class BookUIController : MonoBehaviour
     [Header("顶部栏")]
     [SerializeField] private TextMeshProUGUI chapterNameText;
     [SerializeField] private TextMeshProUGUI remainingPagesText;
-
-    [Header("底部栏")]
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private TextMeshProUGUI goldText;
+    [SerializeField] private TextMeshProUGUI sanText;       // 理智文本（显示玩家 Sanity）
 
     [Header("章节完成面板")]
     [SerializeField] private GameObject chapterCompletePanel;
@@ -47,13 +46,22 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private GameObject armorCardPrefab;     // 护甲牌
     [SerializeField] private GameObject buffCardPrefab;      // 增益牌
 
+    [Header("遗物清单界面")]
+    [SerializeField] private Button relicButton;             // 遗物按钮（BookCanvas 中的 RelicButton），点击弹出遗物清单面板（RelicInventoryPanel）
+    [SerializeField] private GameObject relicInventoryPanel; // 遗物清单面板 GameObject（RelicInventoryPanel），Inspector 直接拖入；留空则回退 GetComponentInChildren 自动查找
+
     [Header("角色头像")]
     [SerializeField] private GameConfig gameConfig;          // 角色数据源（含 2 个 CharacterData）；需在 Inspector 配置
     [SerializeField] private GameObject character1Icon;          // 角色1 头像载体（其下 Image 显示角色1头像）
     [SerializeField] private GameObject character2Icon;          // 角色2 头像载体（其下 Image 显示角色2头像）
 
+    [Header("背景")]
+    [SerializeField] private GameObject background;         // BookCanvas 下的 Background 物体，其下 Image 显示背景图（按 Sanity 切换 NormalBG / AbnormalBG）
+    private Image _backgroundImage;                        // Background 下的 Image 组件缓存
+
     private SettingsPanelUI _settingsPanel;            // 选项面板（运行时按需创建）
     private CardLibraryPanelUI _cardLibraryPanel;      // 牌库面板（运行时按需创建）
+    private RelicInventoryPanelUI _relicInventoryPanel; // 遗物清单面板（运行时按需创建）
 
     private readonly List<PageCardUI> _activeCards = new();
     private PageEventData _currentEventData;   // 当前事件面板正在显示的事件数据（供选项回调取 effects）
@@ -75,12 +83,19 @@ public class BookUIController : MonoBehaviour
             settingsButton.onClick.AddListener(OnSettingsClicked);
         if (deckButton != null)
             deckButton.onClick.AddListener(OnDeckClicked);
+        if (relicButton != null)
+            relicButton.onClick.AddListener(OnRelicButtonClicked);
 
         // 初始化商店控制器（绑定金币来源 ChapterManager）
         ShopManager.EnsureInstance()?.Init(chapterManager);
 
         // 游戏开始时，把 GameConfig 中前两个角色的头像应用到角色栏
         ApplyCharacterAvatars();
+
+        // 缓存背景 Image 初始应用
+        if (background != null)
+            _backgroundImage = background.GetComponent<Image>() ?? background.GetComponentInChildren<Image>();
+        UpdateBackground();
     }
 
     private void OnDisable()
@@ -100,6 +115,8 @@ public class BookUIController : MonoBehaviour
             settingsButton.onClick.RemoveListener(OnSettingsClicked);
         if (deckButton != null)
             deckButton.onClick.RemoveListener(OnDeckClicked);
+        if (relicButton != null)
+            relicButton.onClick.RemoveListener(OnRelicButtonClicked);
     }
 
     private void HandlePagesRefreshed(List<PageEventData> pages)
@@ -294,6 +311,29 @@ public class BookUIController : MonoBehaviour
     }
 
     /// <summary>
+    /// 遗物按钮点击回调：RelicInventoryPanel 已存在于场景中（作为 BookCanvas 的子物体），
+    /// 首次点击时查找并缓存该实例。之后点击只调用 Show()：启用遗物清单面板、暂停游戏、屏蔽背景交互。
+    /// 关闭由面板自身关闭按钮触发 Hide()：停用面板、恢复游戏。逻辑与 OnDeckClicked 一致。
+    /// </summary>
+    private void OnRelicButtonClicked()
+    {
+        if (_relicInventoryPanel == null)
+        {
+            // 优先使用 Inspector 中配置的 relicInventoryPanel；未配置则回退到子物体自动查找
+            if (relicInventoryPanel != null)
+                _relicInventoryPanel = relicInventoryPanel.GetComponent<RelicInventoryPanelUI>();
+            if (_relicInventoryPanel == null)
+                _relicInventoryPanel = GetComponentInChildren<RelicInventoryPanelUI>(true);
+            if (_relicInventoryPanel == null)
+            {
+                Debug.LogError("[BookUIController] 未找到 RelicInventoryPanelUI（请在 Inspector 配置 relicInventoryPanel，或确保其作为 BookCanvas 的子物体存在）");
+                return;
+            }
+        }
+        _relicInventoryPanel.Show();
+    }
+
+    /// <summary>
     /// 游戏开始时从 GameConfig.characters 读取前两个角色，把各自的头像应用到
     /// character1 / character2 物体下的 Image 组件，并把 displayName 应用到其下的 TMP 文本
     /// （头像优先自身 Image、否则取子物体 Image；角色名优先自身 TMP、否则取子物体 TMP）。
@@ -327,13 +367,38 @@ public class BookUIController : MonoBehaviour
             chapterNameText.text = name;
         if (remainingPagesText != null)
             remainingPagesText.text = $"剩余页数: {remaining}";
+        // 章节切换 → 背景图与阈值可能变化
+        UpdateBackground();
     }
 
-    private void HandlePlayerStatsUpdated(int hp, int gold)
+    private void HandlePlayerStatsUpdated(int hp, int gold, int sanity)
     {
         if (hpText != null)
             hpText.text = $"HP: {hp}";
         if (goldText != null)
             goldText.text = $"金币: {gold}";
+        if (sanText != null)
+            sanText.text = $"理智: {sanity}";
+        // 玩家属性变化（含 Sanity）→ 背景图可能需切换
+        UpdateBackground();
+    }
+
+    /// <summary>
+    /// 依据当前章节配置与玩家 Sanity 切换 Background 的图片：
+    /// Sanity &gt;= sanityThreshold（阈值）→ NormalBG；Sanity &lt; threshold → AbnormalBG。
+    /// 若未配置对应 Sprite 或 Background 缺失则跳过。
+    /// </summary>
+    private void UpdateBackground()
+    {
+        if (_backgroundImage == null || chapterManager == null) return;
+        var chapter = chapterManager.CurrentChapter;
+        if (chapter == null) return;
+
+        Sprite target = chapterManager.PlayerSanity >= chapter.sanityThreshold
+            ? chapter.NormalBG
+            : chapter.AbnormalBG;
+
+        if (target != null)
+            _backgroundImage.sprite = target;
     }
 }

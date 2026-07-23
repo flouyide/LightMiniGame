@@ -7,29 +7,50 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 商店面板 UI：进店时从 ShopManager 读取库存并动态渲染（卡牌 / 遗物 / 删牌服务），
-/// 点击购买 / 删除按钮调用 ShopManager 完成交易。所有条目在运行时用 uGUI 动态构建，
-/// 因此无需额外预制体即可跑通；后续若要做精美样式，可替换为卡牌/遗物项预制体（见 cardItemPrefab 等字段）。
+/// 商店面板 UI（仿《杀戮尖塔2》布局）：
+///  - ShopBoard 分为上下两层：上层 CardLayer 水平排列卡牌，下层 RelicLayer 水平排列遗物；
+///  - 右下角保留 prefab 里的 Service（删牌）按钮，可在 Inspector 的 serviceButton 字段配置（未配时按路径 _shopBoard/Service 查找），点击弹出牌库选择界面；
+///  - 每次进店刷新一次卡牌 / 遗物（由 ShopManager.OpenShop 负责抽取）；
+///  - 每张卡牌 / 遗物下方显示价格，点击即购买：卡牌进对应角色牌库（CharacterCardLibrary），
+///    遗物进对应角色的遗物库（GlobalRelicInventory），并扣除对应货币。
+/// 卡牌条目使用 Assets/Prefabs/Battle/Cards 下按类型（攻击/护甲/增益）细分的卡牌预制体，
+/// 由牌库数据驱动绘制卡面；遗物条目在运行时动态生成。两者都挂到 CardLayer / RelicLayer 下。
 /// </summary>
 public class ShopPanelUI : MonoBehaviour
 {
-    [Header("UI引用（未绑定时按名字自动查找子对象）")]
+    [Header("UI引用（未绑定时按路径自动查找）")]
     [SerializeField] private GameObject panel;
     [SerializeField] private Button closeButton;
     [SerializeField] private TextMeshProUGUI hintText;
+    [SerializeField] private Button serviceButton;           // 删牌按钮（prefab 中的 Service），点击弹出牌库选择界面；未绑定时按路径查找
 
-    [Header("可选：卡牌/遗物/删牌项预制体（留空则运行时用 uGUI 自动构建）")]
-    [SerializeField] private GameObject cardItemPrefab;
-    [SerializeField] private GameObject relicItemPrefab;
-    [SerializeField] private GameObject removeItemPrefab;
+    [Header("卡牌预制体（按 CardType 细分，拖入对应 prefab）")]
+    [Tooltip("攻击牌预制体（Assets/Prefabs/Battle/Cards/攻击牌.prefab），须含 CardDisplay 组件")]
+    public GameObject attackCardPrefab;
+    [Tooltip("护甲牌预制体（Assets/Prefabs/Battle/Cards/护甲牌.prefab），须含 CardDisplay 组件")]
+    public GameObject armorCardPrefab;
+    [Tooltip("增益牌预制体（Assets/Prefabs/Battle/Cards/增益牌.prefab），须含 CardDisplay 组件")]
+    public GameObject buffCardPrefab;
 
     private Action _onClose;
     private bool _closeHooked;
 
     private ShopManager _shop;
     private List<CharacterData> _characters;
-    private GameObject _scrollGO;
-    private RectTransform _contentRoot;
+
+    private Transform _shopBoard;
+    private Transform _cardLayer;
+    private Transform _relicLayer;
+    private Text _goldLabel;
+
+    // ===== 删牌服务（点击 Service 按钮弹出 CardLibraryPanel，点卡即删）=====
+    private Button _serviceButton;
+    private bool _serviceHooked;
+    private TextMeshProUGUI _removalPriceText;     // 删牌按钮（Service）下 Price 子物体里的价格标签（TMP）
+
+    [Header("牌库界面（用于删牌选择；优先 Inspector 配置，未配时按场景查找）")]
+    [Tooltip("CardLibraryPanel.prefab 的 UI 控件（场景实例，通常位于 BookCanvas 下）。点击删牌按钮后以此面板作为选择界面。")]
+    public CardLibraryPanelUI cardLibraryPanel;
 
     // ===== 生命周期 =====
     private void Start()
@@ -37,6 +58,12 @@ public class ShopPanelUI : MonoBehaviour
         if (panel == null) panel = transform.Find("Panel")?.gameObject;
         if (closeButton == null) closeButton = transform.Find("CloseButton")?.GetComponent<Button>();
         if (hintText == null) hintText = transform.Find("HintText")?.GetComponent<TextMeshProUGUI>();
+
+        _shopBoard = transform.Find("Panel/ShopBoard");
+        EnsureLayers();
+        HookServiceButton();
+        EnsureRemovalPriceText();
+
         if (panel != null) panel.SetActive(false);
         HookCloseButton();
     }
@@ -61,10 +88,60 @@ public class ShopPanelUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 显示商店面板。shop 为商店控制器，characters 为两个出战角色（用于按比例抽卡），
-    /// onClose 为关闭回调。进店会重新随机一次库存。
-    /// </summary>
+    // ===== 在 ShopBoard 下创建上下两层（若 prefab 未提供则运行时创建）=====
+    private void EnsureLayers()
+    {
+        if (_shopBoard == null) return;
+
+        _cardLayer = _shopBoard.Find("CardLayer");
+        if (_cardLayer == null)
+            _cardLayer = CreateLayer("CardLayer", new Vector2(0f, 0.52f), new Vector2(0.82f, 0.98f));
+        else
+            SetupHorizontal(_cardLayer);
+
+        _relicLayer = _shopBoard.Find("RelicLayer");
+        if (_relicLayer == null)
+            _relicLayer = CreateLayer("RelicLayer", new Vector2(0f, 0.02f), new Vector2(0.82f, 0.48f));
+        else
+            SetupHorizontal(_relicLayer);
+
+        // 顺手隐藏 prefab 里遗留的单个 Card / Relic 占位（若有），避免与动态行重复
+        var legacy = _shopBoard.Find("Card");
+        if (legacy != null) legacy.gameObject.SetActive(false);
+        legacy = _shopBoard.Find("Relic");
+        if (legacy != null) legacy.gameObject.SetActive(false);
+    }
+
+    private Transform CreateLayer(string name, Vector2 anchorMin, Vector2 anchorMax)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        go.transform.SetParent(_shopBoard, false);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = Vector2.zero;
+        SetupHorizontal(rt);
+        return rt;
+    }
+
+    private void SetupHorizontal(Transform layer)
+    {
+        var hlg = layer.GetComponent<HorizontalLayoutGroup>();
+        if (hlg == null) hlg = layer.gameObject.AddComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 100;
+        hlg.padding = new RectOffset(16, 16, 16, 16);
+        hlg.childAlignment = TextAnchor.MiddleCenter;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = false;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+    }
+
+    // ===== 对外：显示商店 =====
     public void Show(ShopManager shop, List<CharacterData> characters, Action onClose)
     {
         _shop = shop;
@@ -73,19 +150,20 @@ public class ShopPanelUI : MonoBehaviour
 
         if (_shop != null)
         {
-            _shop.OpenShop(_characters);
+            _shop.OpenShop(_characters);   // 每次进店重抽一次卡牌与遗物
             _shop.OnStockChanged -= Render;
             _shop.OnStockChanged += Render;
         }
 
         if (panel != null) panel.SetActive(true);
-        RebuildContent();
+        Render();
     }
 
     private void OnCloseClicked()
     {
         if (_shop != null)
             _shop.OnStockChanged -= Render;
+        CloseRemoval();   // 离开商店时确保关闭删牌选择界面
         _onClose?.Invoke();
         Hide();
     }
@@ -96,233 +174,347 @@ public class ShopPanelUI : MonoBehaviour
         _onClose = null;
     }
 
-    // ===== 内容构建 =====
-    private void RebuildContent()
-    {
-        if (panel == null) return;
-        if (_scrollGO != null) Destroy(_scrollGO);
-        BuildScrollArea();
-        Render();
-    }
-
-    private void BuildScrollArea()
-    {
-        // ScrollRect（仅纵向滚动，删牌列表可能较长）
-        _scrollGO = new GameObject("ShopScroll", typeof(RectTransform), typeof(ScrollRect));
-        _scrollGO.transform.SetParent(panel.transform, false);
-        var sr = _scrollGO.GetComponent<ScrollRect>();
-        sr.horizontal = false;
-        sr.vertical = true;
-        sr.movementType = ScrollRect.MovementType.Clamped;
-
-        // Viewport
-        var vpGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
-        vpGO.transform.SetParent(_scrollGO.transform, false);
-        var vpRT = vpGO.GetComponent<RectTransform>();
-        vpRT.anchorMin = Vector2.zero;
-        vpRT.anchorMax = Vector2.one;
-        vpRT.offsetMin = Vector2.zero;
-        vpRT.offsetMax = Vector2.zero;
-
-        // Content（纵向布局 + 自适应高度）
-        var contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        contentGO.transform.SetParent(vpGO.transform, false);
-        var contentRT = contentGO.GetComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0, 1);
-        contentRT.anchorMax = new Vector2(1, 1);
-        contentRT.pivot = new Vector2(0.5f, 1);
-        contentRT.sizeDelta = new Vector2(0, 0);
-
-        var vlg = contentGO.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 8;
-        vlg.padding = new RectOffset(12, 12, 12, 12);
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-
-        var csf = contentGO.GetComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        sr.viewport = vpRT;
-        sr.content = contentRT;
-        _contentRoot = contentRT;
-    }
-
-    /// <summary>库存 / 金币变化后刷新（保留 ScrollRect，仅重刷条目）。</summary>
+    // ===== 渲染 =====
     private void Render()
     {
-        if (_contentRoot == null || _shop == null) return;
+        if (_shop == null || _cardLayer == null || _relicLayer == null) return;
 
-        // 清旧条目
+        UpdateGoldLabel();
+
+        ClearLayer(_cardLayer);
+        ClearLayer(_relicLayer);
+
+        if (_shop.CardStock.Count == 0)
+            AddNote(_cardLayer, "（总牌库为空或未配置 MasterCardLibrary）");
+        foreach (var e in _shop.CardStock)
+            BuildCardItem(_cardLayer, e);
+
+        if (_shop.RelicStock.Count == 0)
+            AddNote(_relicLayer, "（总遗物库为空或未配置 MasterRelicLibrary）");
+        foreach (var e in _shop.RelicStock)
+            BuildRelicItem(_relicLayer, e);
+
+        // 同步删牌价格标签
+        UpdateRemovalPriceText();
+    }
+
+    private void UpdateGoldLabel()
+    {
+        if (_shopBoard == null) return;
+        if (_goldLabel == null)
+        {
+            var go = new GameObject("GoldLabel", typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(_shopBoard, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0f, 0.985f);
+            rt.anchorMax = new Vector2(0.6f, 1f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            _goldLabel = go.GetComponent<Text>();
+            _goldLabel.alignment = TextAnchor.MiddleLeft;
+            _goldLabel.fontSize = 20;
+            _goldLabel.fontStyle = FontStyle.Bold;
+            _goldLabel.color = new Color(1f, 0.85f, 0.3f);
+        }
+        _goldLabel.text = $"金币：{_shop.PlayerGold}";
+    }
+
+    private void ClearLayer(Transform layer)
+    {
         var children = new List<Transform>();
-        foreach (Transform c in _contentRoot) children.Add(c);
+        foreach (Transform c in layer) children.Add(c);
         foreach (var c in children) Destroy(c.gameObject);
-
-        // 金币抬头
-        AddSectionTitle($"金币：{_shop.PlayerGold}");
-
-        // 卡牌
-        AddSectionTitle("卡牌");
-        if (_shop.CardStock.Count == 0) AddInfo("（总牌库为空或尚未配置 MasterCardLibrary）");
-        foreach (var e in _shop.CardStock) AddCardRow(e);
-
-        // 遗物
-        AddSectionTitle("遗物");
-        if (_shop.RelicStock.Count == 0) AddInfo("（总遗物库为空或尚未配置 MasterRelicLibrary）");
-        foreach (var e in _shop.RelicStock) AddRelicRow(e);
-
-        // 删牌服务
-        AddSectionTitle($"删牌服务（剩余 {_shop.RemovalsRemaining} 次，本次价格 {_shop.CurrentRemovalPrice}）");
-        var removable = _shop.GetRemovableCards();
-        if (removable.Count == 0) AddInfo("（当前牌库为空）");
-        foreach (var (card, owner) in removable) AddRemoveRow(card, owner);
     }
 
-    // ===== 行构建辅助 =====
-    private GameObject AddRow()
+    private void AddNote(Transform parent, string text)
     {
-        var row = new GameObject("Row", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-        row.transform.SetParent(_contentRoot, false);
-        var hlg = row.GetComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 8;
-        hlg.childControlWidth = false;
-        hlg.childControlHeight = false;
-        hlg.childForceExpandWidth = false;
-        hlg.childForceExpandHeight = false;
-        var le = row.GetComponent<LayoutElement>();
-        le.minHeight = 32;
-        return row;
-    }
-
-    private Text AddLabel(Transform parent, string text, int fontSize, Color color, float minWidth)
-    {
-        var go = new GameObject("Label", typeof(RectTransform), typeof(Text));
+        var go = new GameObject("Note", typeof(RectTransform), typeof(Text));
         go.transform.SetParent(parent, false);
-        var t = go.GetComponent<Text>();
-        t.text = text;
-        t.fontSize = fontSize;
-        t.color = color;
-        t.alignment = TextAnchor.MiddleLeft;
-        t.horizontalOverflow = HorizontalWrapMode.Wrap;
-        t.verticalOverflow = VerticalWrapMode.Overflow;
-        var le = go.AddComponent<LayoutElement>();
-        le.minWidth = minWidth;
-        le.flexibleWidth = 1;
-        le.minHeight = 28;
-        return t;
-    }
-
-    private Button AddButton(Transform parent, string label, Action onClick, bool enabled)
-    {
-        var go = new GameObject("Btn", typeof(RectTransform), typeof(Image), typeof(Button));
-        go.transform.SetParent(parent, false);
-        var img = go.GetComponent<Image>();
-        img.color = enabled ? new Color(0.20f, 0.60f, 0.25f) : new Color(0.35f, 0.35f, 0.35f);
-        var btn = go.GetComponent<Button>();
-        btn.interactable = enabled;
-        btn.onClick.AddListener(() => onClick?.Invoke());
-        var le = go.AddComponent<LayoutElement>();
-        le.minWidth = 110;
-        le.minHeight = 28;
-
-        var lbl = new GameObject("Text", typeof(RectTransform), typeof(Text));
-        lbl.transform.SetParent(go.transform, false);
-        var t = lbl.GetComponent<Text>();
-        t.text = label;
-        t.fontSize = 15;
-        t.color = Color.white;
-        t.alignment = TextAnchor.MiddleCenter;
-        var rt = lbl.GetComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-        return btn;
-    }
-
-    private void AddSectionTitle(string text)
-    {
-        var go = new GameObject("Title", typeof(RectTransform), typeof(Text));
-        go.transform.SetParent(_contentRoot, false);
-        var t = go.GetComponent<Text>();
-        t.text = text;
-        t.fontSize = 18;
-        t.fontStyle = FontStyle.Bold;
-        t.color = new Color(1f, 0.85f, 0.4f);
-        t.alignment = TextAnchor.MiddleLeft;
-        var le = go.AddComponent<LayoutElement>();
-        le.minHeight = 28;
-    }
-
-    private void AddInfo(string text)
-    {
-        var go = new GameObject("Info", typeof(RectTransform), typeof(Text));
-        go.transform.SetParent(_contentRoot, false);
         var t = go.GetComponent<Text>();
         t.text = text;
         t.fontSize = 14;
         t.color = new Color(0.7f, 0.7f, 0.7f);
-        t.alignment = TextAnchor.MiddleLeft;
+        t.alignment = TextAnchor.MiddleCenter;
         var le = go.AddComponent<LayoutElement>();
-        le.minHeight = 24;
+        le.minWidth = 160;
+        le.minHeight = 160;
     }
 
-    // ===== 各类行 =====
-    private void AddCardRow(ShopCardEntry e)
+    // ===== 商品条目 =====
+    private GameObject GetCardPrefab(CardType type) => type switch
     {
-        var row = AddRow();
-        string grade = e.card != null ? CardData.GetGradeName(e.card.grade) : "";
-        string name = e.card != null ? e.card.cardName : "(空)";
-        AddLabel(row.transform, name, 16, Color.white, 170);
-        AddLabel(row.transform, $"[{grade}]", 14, Color.cyan, 70);
-        bool canBuy = !e.sold && _shop.CanAfford(e.price);
-        string label = e.sold ? "已售" : $"购买 {e.price}";
-        AddButton(row.transform, label, () => OnBuyCard(e), canBuy);
-    }
+        CardType.Attack => attackCardPrefab,
+        CardType.Armor => armorCardPrefab,
+        CardType.Buff => buffCardPrefab,
+        _ => attackCardPrefab
+    };
 
-    private void AddRelicRow(ShopRelicEntry e)
+    /// <summary>
+    /// 用对应类型的卡牌预制体渲染一张待售卡牌：
+    ///  - 竖向容器 = 角色名（上，TMP）+ 卡牌（中，含 CardDisplay）+ 价格（下，TMP）；
+    ///  - 卡牌用 CardDisplay.Apply(CardData) 由数据驱动绘制；
+    ///  - 点击卡牌即购买。
+    /// </summary>
+    private void BuildCardItem(Transform parent, ShopCardEntry e)
     {
-        var row = AddRow();
-        string name = e.relic != null ? e.relic.relicName : "(空)";
-        AddLabel(row.transform, name, 16, Color.white, 240);
-        bool canBuy = !e.sold && _shop.CanAfford(e.price);
-        string label = e.sold ? "已售" : $"购买 {e.price}";
-        AddButton(row.transform, label, () => OnBuyRelic(e), canBuy);
+        if (e.card == null) { AddNote(parent, "(空卡牌)"); return; }
+
+        bool sold = e.sold;
+        bool affordable = !sold && _shop.CanAfford(e.price);
+
+        var prefab = GetCardPrefab(e.card.cardType);
+        if (prefab == null)
+        {
+            AddNote(parent, $"[缺少 {CardData.GetCardTypeName(e.card.cardType)} 预制体]");
+            return;
+        }
+
+        // 竖向容器：角色名（上）→ 卡牌（中）→ 价格（下）
+        var wrapper = new GameObject("CardItem", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        wrapper.transform.SetParent(parent, false);
+        var vlg = wrapper.GetComponent<VerticalLayoutGroup>();
+        vlg.spacing = 4;
+        vlg.childAlignment = TextAnchor.MiddleCenter;
+        vlg.childControlWidth = false;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = false;
+        vlg.childForceExpandHeight = false;
+
+        // 角色名（卡牌上方，TMP）—— 此卡牌属于哪个角色的牌库
+        string ownerName = e.ownerCharacter != null ? e.ownerCharacter.displayName : "通用";
+        AddTmpText(wrapper.transform, ownerName, 18, new Color(0.85f, 0.9f, 1f), FontStyles.Bold);
+
+        // 实例化卡牌预制体
+        var cardGO = Instantiate(prefab, wrapper.transform, false);
+        var cardRT = cardGO.GetComponent<RectTransform>();
+        cardRT.localScale = Vector3.one;   // 防止父级缩放影响卡面
+
+        // 用牌库数据驱动绘制卡面
+        var display = cardGO.GetComponent<CardDisplay>();
+        if (display != null) display.ApplyCardData(e.card);
+
+        // 价格（卡牌下方，TMP）
+        AddTmpText(wrapper.transform, sold ? "已售" : $"价格 {e.price}", 18,
+            sold ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.85f, 0.3f), FontStyles.Bold);
+
+        // 点击卡牌即购买（整张卡牌作为按钮）
+        var btn = cardGO.GetComponent<Button>() ?? cardGO.AddComponent<Button>();
+        btn.targetGraphic = cardGO.GetComponent<Image>();
+        btn.interactable = affordable;
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(() => OnBuyCard(e));
+
+        if (sold)
+        {
+            var img = cardGO.GetComponent<Image>();
+            if (img != null) img.color = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+        }
     }
 
-    private void AddRemoveRow(CardInstance card, CharacterData owner)
+    private void BuildRelicItem(Transform parent, ShopRelicEntry e)
     {
-        var row = AddRow();
-        string cname = card != null ? card.EffectiveName : "(?)";
-        string ownerName = owner != null ? owner.displayName : "";
-        AddLabel(row.transform, $"{ownerName}：{cname}", 15, Color.white, 230);
-        bool canRemove = _shop.RemovalsRemaining > 0 && _shop.CanAfford(_shop.CurrentRemovalPrice);
-        AddButton(row.transform, $"删除 {_shop.CurrentRemovalPrice}", () => OnRemoveCard(card, owner), canRemove);
+        if (e.relic == null) { AddNote(parent, "(空遗物)"); return; }
+
+        bool sold = e.sold;
+        bool affordable = !sold && _shop.CanAfford(e.price);
+        string name = e.relic.relicName;
+        // 遗物上方显示所属角色名（每个角色有独立遗物池）
+        string ownerName = e.ownerCharacter != null ? e.ownerCharacter.displayName : "";
+        string price = sold ? "已售" : $"{e.price}";
+        Sprite icon = e.relic.icon;   // RelicData.icon：遗物图标
+        BuildItem(parent, ownerName, name, price, icon, new Color(0.45f, 0.76f, 0.44f), affordable,
+            () => OnBuyRelic(e));
     }
 
-    // ===== 按钮回调 =====
+    /// <summary>
+    /// 生成一个遗物商品条目：竖向布局 = [所属角色名(TMP)] + [图标(RelicData.icon)] + [名称(TMP)] + [价格(TMP, 下方)]，
+    /// 整块可点击购买。图标缺失时仅显示纯色块背景。
+    /// </summary>
+    private void BuildItem(Transform parent, string ownerName, string name, string price, Sprite icon,
+        Color bgColor, bool affordable, Action onClick)
+    {
+        var go = new GameObject("RelicItem", typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+
+        var img = go.GetComponent<Image>();
+        img.color = affordable ? bgColor : new Color(0.45f, 0.45f, 0.45f, 1f);
+
+        var btn = go.GetComponent<Button>();
+        btn.targetGraphic = img;
+        btn.interactable = affordable;
+        btn.onClick.AddListener(() => onClick?.Invoke());
+
+        var vlg = go.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = 6;
+        vlg.childAlignment = TextAnchor.MiddleCenter;
+        vlg.childControlWidth = false;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = false;
+        vlg.childForceExpandHeight = false;
+
+        // 所属角色名（TMP，置顶，金色）—— 每个角色有独立遗物池
+        if (!string.IsNullOrEmpty(ownerName))
+            AddTmpText(go.transform, ownerName, 13, new Color(0.95f, 0.85f, 0.45f), FontStyles.Bold);
+
+        // 遗物图标：使用 RelicData.icon（缺失则跳过，仅留背景色块）
+        if (icon != null)
+        {
+            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            iconGO.transform.SetParent(go.transform, false);
+            var iconRT = iconGO.GetComponent<RectTransform>();
+            iconRT.sizeDelta = new Vector2(96, 96);
+            var iconImg = iconGO.GetComponent<Image>();
+            iconImg.sprite = icon;
+            iconImg.color = Color.white;
+            iconImg.preserveAspect = true;
+        }
+
+        // 名称（TMP）
+        AddTmpText(go.transform, name, 16, Color.white, FontStyles.Bold);
+
+        // 价格（TMP，显示在图标下方）
+        AddTmpText(go.transform, price, 18,
+            affordable ? new Color(1f, 0.85f, 0.3f) : new Color(0.6f, 0.6f, 0.6f), FontStyles.Bold);
+    }
+
+    /// <summary>动态创建一个 TextMeshProUGUI 文本（用于卡牌的角色名 / 价格，避免依赖 prefab）。</summary>
+    private void AddTmpText(Transform parent, string text, float fontSize, Color color, FontStyles style = FontStyles.Normal)
+    {
+        var go = new GameObject("TmpTxt", typeof(RectTransform), typeof(TextMeshProUGUI));
+        go.transform.SetParent(parent, false);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 0f);
+        rt.anchorMax = new Vector2(1f, 0f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(180f, 24f);
+        var t = go.GetComponent<TextMeshProUGUI>();
+        t.text = text;
+        t.fontSize = fontSize;
+        t.color = color;
+        t.alignment = TextAlignmentOptions.Center;
+        t.fontStyle = style;
+        t.raycastTarget = false;
+    }
+
+    // ===== 购买回调 =====
     private void OnBuyCard(ShopCardEntry e)
     {
         var r = _shop.BuyCard(e);
-        if (r == ShopResult.Success) Debug.Log($"[Shop] 购买卡牌：{e.card?.cardName}");
+        if (r == ShopResult.Success) Debug.Log($"[Shop] 购买卡牌：{e.card?.cardName} → {e.ownerCharacter?.displayName} 牌库");
         else Debug.Log($"[Shop] 购买卡牌失败：{r}");
-        Render();
+        // BuyCard 内部会广播 OnStockChanged → Render 自动刷新
     }
 
     private void OnBuyRelic(ShopRelicEntry e)
     {
         var r = _shop.BuyRelic(e);
-        if (r == ShopResult.Success) Debug.Log($"[Shop] 购买遗物：{e.relic?.relicName}");
+        if (r == ShopResult.Success) Debug.Log($"[Shop] 购买遗物：{e.relic?.relicName} → {e.ownerCharacter?.displayName} 遗物库");
         else Debug.Log($"[Shop] 购买遗物失败：{r}");
-        Render();
     }
 
+    // ===== 删牌服务：点击 Service 按钮 → 弹出牌库选择界面，点卡即删 =====
+
+    /// <summary>绑定「删牌」按钮（Service）到 OnServiceClicked：优先用 Inspector 配置的 serviceButton，
+    /// 未配置时回退到 prefab 路径 _shopBoard/Service 查找。</summary>
+    private void HookServiceButton()
+    {
+        Button btn = null;
+        if (serviceButton != null)
+        {
+            btn = serviceButton;
+        }
+        else if (_shopBoard != null)
+        {
+            var svc = _shopBoard.Find("Service");
+            btn = svc != null ? svc.GetComponent<Button>() : null;
+        }
+        _serviceButton = btn;
+        if (_serviceButton != null && !_serviceHooked)
+        {
+            _serviceButton.onClick.AddListener(OnServiceClicked);
+            _serviceHooked = true;
+        }
+    }
+
+    /// <summary>删牌按钮点击：校验剩余次数后，弹出 CardLibraryPanel 并进入删牌（删除）模式。</summary>
+    private void OnServiceClicked()
+    {
+        if (_shop == null) return;
+        if (_shop.RemovalsRemaining <= 0)
+        {
+            Debug.Log("[Shop] 删牌次数已用完（或本次商店未提供删牌服务）");
+            return;
+        }
+        var lib = ResolveCardLibraryPanel();
+        if (lib == null)
+        {
+            Debug.LogError("[Shop] 未配置 / 未找到 CardLibraryPanel（请在 Inspector 的 cardLibraryPanel 字段赋值）");
+            return;
+        }
+        // 进入删除模式：网格中的卡变为可点击按钮，点卡即删
+        lib.Init();   // 确保布局/角色列表已初始化（牌库面板与牌库浏览共用同一实例）
+        lib.ShowRemovalMode(OnRemoveCard, () => _shop.RemovalsRemaining);
+    }
+
+    /// <summary>取得 CardLibraryPanelUI：优先用 Inspector 配置的 cardLibraryPanel，未配置时按场景查找（含未激活）。</summary>
+    private CardLibraryPanelUI ResolveCardLibraryPanel()
+    {
+        if (cardLibraryPanel != null) return cardLibraryPanel;
+        return UnityEngine.Object.FindObjectOfType<CardLibraryPanelUI>(true);
+    }
+
+    /// <summary>解析删牌按钮（Service）下 Price 子物体中的 TMP：作为删牌价格标签（取代单独创建/查找 _shopBoard 下的 RemovalPriceText）。</summary>
+    private void EnsureRemovalPriceText()
+    {
+        if (_removalPriceText != null) return;
+        if (_serviceButton != null)
+        {
+            var priceGO = _serviceButton.transform.Find("Price");
+            if (priceGO != null)
+                _removalPriceText = priceGO.GetComponent<TextMeshProUGUI>();
+        }
+        if (_removalPriceText == null)
+            Debug.LogWarning("[ShopPanelUI] 未在 serviceButton 下找到 Price 子物体的 TMP，删牌价格标签不可用");
+        UpdateRemovalPriceText();
+    }
+
+    private void UpdateRemovalPriceText()
+    {
+        if (_removalPriceText == null) return;
+        if (_shop == null || _shop.RemovalsRemaining <= 0)
+            _removalPriceText.text = "已删牌";
+        else
+            _removalPriceText.text = $"删牌价格：{_shop.CurrentRemovalPrice}";
+    }
+
+    // —— 删牌：使用 CardLibraryPanel 作为选择界面（卡牌按钮化，点卡即删）——
+
+    /// <summary>删牌回调：由 CardLibraryPanel 删除模式下点击卡牌触发。</summary>
     private void OnRemoveCard(CardInstance card, CharacterData owner)
     {
+        if (_shop == null) return;
         var r = _shop.RemoveCard(card, owner);
-        if (r == ShopResult.Success) Debug.Log($"[Shop] 删除卡牌：{card?.EffectiveName}");
-        else Debug.Log($"[Shop] 删牌失败：{r}");
-        Render();
+        if (r == ShopResult.Success)
+        {
+            Debug.Log($"[Shop] 删除卡牌：{card.EffectiveName}（来自 {owner?.displayName} 牌库）");
+            UpdateRemovalPriceText();   // 价格随 removalPriceStep 上涨
+            // 每删一次牌即关闭牌库界面，回到商店（可再次点删牌按钮继续删下一张）
+            CloseRemoval();
+        }
+        else
+        {
+            Debug.Log($"[Shop] 删除卡牌失败：{r}");
+            if (r == ShopResult.NoRemovalsLeft) CloseRemoval();
+        }
+        // RemoveCard 内部会广播 OnStockChanged → Render 自动刷新商店价格标签
+    }
+
+    /// <summary>关闭删牌选择界面：退出删除模式并隐藏 CardLibraryPanel。</summary>
+    private void CloseRemoval()
+    {
+        var lib = ResolveCardLibraryPanel();
+        if (lib == null) return;
+        lib.EndRemovalMode();
+        lib.Hide();
     }
 }

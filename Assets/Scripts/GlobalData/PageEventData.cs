@@ -24,7 +24,9 @@ public enum EffectType
     LoseHP,      // 失去生命值
     GainItem,    // 获得物品
     LoseItem,    // 失去物品
-    EnterBattle  // 进入战斗
+    EnterBattle, // 进入战斗
+    GainSanity,  // 获得理智（背景据此切换）
+    LoseSanity   // 失去理智（背景据此切换）
 }
 
 /// <summary>

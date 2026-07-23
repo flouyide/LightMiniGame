@@ -26,7 +26,7 @@ namespace LightMiniGame.Card
         public CardData[] cardPresets = new CardData[0];
 
         [Header("GUI")]
-        public bool showPanel = true;
+        public bool showPanel = false;   // 默认不显示，按 ~ 键（toggleKey）开关
         public KeyCode toggleKey = KeyCode.BackQuote;   // 数字 1 左边那个 ~ 键
 
         private CharacterCardLibrary _lib;

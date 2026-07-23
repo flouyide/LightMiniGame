@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LightMiniGame.Card;
+using LightMiniGame.Shop;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -38,12 +39,16 @@ public class ChapterManager : MonoBehaviour
     public UnityEvent<int> OnPageConsumed = new(); // consumed index（剩余页数为0时选中卡片 → 删除该卡片不刷新）
     public UnityEvent OnChapterComplete = new();
     public UnityEvent<string, int> OnChapterInfoUpdated = new(); // chapterName, remaining
-    public UnityEvent<int, int> OnPlayerStatsUpdated = new();    // hp, gold
+    public UnityEvent<int, int, int> OnPlayerStatsUpdated = new();    // hp, gold, sanity
 
     // 玩家状态
     public int PlayerHP { get; private set; }
     public int PlayerMaxHP { get; private set; }
     public int PlayerGold { get; private set; }
+    public int PlayerSanity { get; private set; }   // 理智（背景切换依据）
+
+    /// <summary>当前章节配置（供 BookUIController 读取背景图与阈值）。</summary>
+    public ChapterConfig CurrentChapter => _currentChapter;
 
     /// <summary>是否买得起 amount 金币。</summary>
     public bool CanAfford(int amount) => PlayerGold >= amount;
@@ -57,7 +62,7 @@ public class ChapterManager : MonoBehaviour
         if (amount < 0) return false;
         if (PlayerGold < amount) return false;
         PlayerGold -= amount;
-        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold);
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
         return true;
     }
 
@@ -88,12 +93,14 @@ public class ChapterManager : MonoBehaviour
             PlayerMaxHP = playerConfig.maxHP;
             PlayerHP = playerConfig.startHP;
             PlayerGold = playerConfig.startGold;
+            PlayerSanity = playerConfig.Sanity;
         }
         else
         {
             PlayerMaxHP = 64;
             PlayerHP = 64;
             PlayerGold = 50;
+            PlayerSanity = 0;
             Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
         }
     }
@@ -119,6 +126,22 @@ public class ChapterManager : MonoBehaviour
                 GlobalCardLibrary.Instance.BuildFromStartingLibrary(ch.startingLibrary);
             else if (ch != null)
                 GlobalCardLibrary.Instance.RegisterCharacter(ch);   // 无初始牌组也登记角色，避免后续操作时报空
+        }
+
+        // 初始化按角色隔离的遗物库：为每个角色登记独立遗物库，并放入起始遗物
+        GlobalRelicInventory.EnsureInstance();
+        if (GlobalRelicInventory.Instance != null)
+        {
+            foreach (var ch in gameConfig.characters)
+            {
+                if (ch == null) continue;
+                GlobalRelicInventory.Instance.RegisterCharacter(ch);
+                if (ch.startingRelics != null)
+                {
+                    foreach (var r in ch.startingRelics)
+                        GlobalRelicInventory.Instance.Add(ch, r);
+                }
+            }
         }
     }
 
@@ -148,7 +171,7 @@ public class ChapterManager : MonoBehaviour
         }
 
         OnChapterInfoUpdated?.Invoke(_currentChapter.chapterName, _remainingSelections);
-        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold);
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
         RefreshPages();
     }
 
@@ -442,10 +465,16 @@ public class ChapterManager : MonoBehaviour
                 case EffectType.EnterBattle:
                     Debug.Log("[ChapterManager] 进入战斗！（战斗系统待实现）");
                     break;
+                case EffectType.GainSanity:
+                    PlayerSanity += effect.amount;
+                    break;
+                case EffectType.LoseSanity:
+                    PlayerSanity = Mathf.Max(0, PlayerSanity - effect.amount);
+                    break;
             }
         }
 
-        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold);
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
     }
 
     /// <summary>

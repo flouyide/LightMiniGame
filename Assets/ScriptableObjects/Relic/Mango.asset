@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: Mango
   relicName: Mango
   description: Raise your max HP by 14
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e059f0b2a17dc7648a9af33643a3be15, type: 3}
   value: 2
   grade: 0
   sortOrder: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: Akabeko
   relicName: Akabeko
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e0cf6fac4e7d6d9488f4da3635aaa8eb, type: 3}
   value: 100
   grade: 0
   sortOrder: 0

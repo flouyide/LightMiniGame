@@ -141,10 +141,10 @@ MonoBehaviour:
       - type: 2
         amount: 20
         itemDesc: 
-    - optionText: "\u732E\u796D\uFF08\u5931\u53BB10HP\uFF0C\u83B7\u5F9750\u91D1\u5E01\uFF09"
+    - optionText: "\u732E\u796D\uFF08\u5931\u53BB50\u7406\u667A\uFF0C\u83B7\u5F9750\u91D1\u5E01\uFF09"
       effects:
-      - type: 3
-        amount: 10
+      - type: 8
+        amount: 50
         itemDesc: 
       - type: 0
         amount: 50
@@ -488,3 +488,6 @@ MonoBehaviour:
         amount: 20
         itemDesc: 
     defaultEffects: []
+  NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
+  sanityThreshold: 20

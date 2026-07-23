@@ -12,10 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 919c274bf65bbd445be9b3f4569ae8eb, type: 3}
   m_Name: MasterRelicLibrary
   m_EditorClassIdentifier: 
-  allRelics:
-  - {fileID: 11400000, guid: e8d9054ba90aaf849b3b8ae69b9eb086, type: 2}
-  - {fileID: 11400000, guid: 1348c1728833f9d48971ac321c0e6765, type: 2}
-  - {fileID: 11400000, guid: c424a08b8d4faa24f8417a73231f6a8b, type: 2}
-  - {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
-  - {fileID: 11400000, guid: a2c046a6435bdad41aa8f3a64655f72a, type: 2}
-  - {fileID: 11400000, guid: 6f316edbfed9a844a85963bd8f5b49ed, type: 2}
+  pools:
+  - character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
+    relics:
+    - {fileID: 11400000, guid: e8d9054ba90aaf849b3b8ae69b9eb086, type: 2}
+    - {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
+    - {fileID: 11400000, guid: 1348c1728833f9d48971ac321c0e6765, type: 2}
+  - character: {fileID: 11400000, guid: 05c4874963545144daee7fef33724012, type: 2}
+    relics:
+    - {fileID: 11400000, guid: e8d9054ba90aaf849b3b8ae69b9eb086, type: 2}
+    - {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
+    - {fileID: 11400000, guid: 6f316edbfed9a844a85963bd8f5b49ed, type: 2}

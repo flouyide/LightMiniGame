@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: Anchor
   relicName: Anchor
   description: Start each combat with  10 block
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 27da7932510a02d4ebd1a8acda98412c, type: 3}
   value: 150
   grade: 0
   sortOrder: 0
