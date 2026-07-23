@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using LightMiniGame.Card;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -44,6 +45,22 @@ public class ChapterManager : MonoBehaviour
     public int PlayerMaxHP { get; private set; }
     public int PlayerGold { get; private set; }
 
+    /// <summary>是否买得起 amount 金币。</summary>
+    public bool CanAfford(int amount) => PlayerGold >= amount;
+
+    /// <summary>
+    /// 扣减金币（用于商店消费）。成功返回 true 并广播玩家属性变化（刷新金币 UI）。
+    /// 余额不足或金额为负时返回 false，不扣款。
+    /// </summary>
+    public bool SpendGold(int amount)
+    {
+        if (amount < 0) return false;
+        if (PlayerGold < amount) return false;
+        PlayerGold -= amount;
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold);
+        return true;
+    }
+
     private const int RefreshCount = 3;
 
     private void Start()
@@ -57,6 +74,7 @@ public class ChapterManager : MonoBehaviour
         _isStarted = true;
         _currentChapterIndex = Mathf.Max(0, debugStartChapterIndex) - 1;
         InitPlayerStats();
+        BuildInitialLibraries();   // 从 GameConfig.characters 读取 startingLibrary 构建初始牌库
         StartNextChapter();
     }
 
@@ -77,6 +95,30 @@ public class ChapterManager : MonoBehaviour
             PlayerHP = 64;
             PlayerGold = 50;
             Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
+        }
+    }
+
+    /// <summary>
+    /// 从 GameConfig.characters 读取每个角色的 startingLibrary，构建初始牌库。
+    /// （原由 GameManager 负责，现已集中到开局流程，避免分散两处初始化。）
+    /// </summary>
+    private void BuildInitialLibraries()
+    {
+        if (gameConfig == null || gameConfig.characters == null || gameConfig.characters.Count == 0)
+        {
+            Debug.LogWarning("[ChapterManager] gameConfig 未配置或 characters 为空，跳过初始牌库构建");
+            return;
+        }
+
+        GlobalCardLibrary.EnsureInstance();
+        if (GlobalCardLibrary.Instance == null) return;
+
+        foreach (var ch in gameConfig.characters)
+        {
+            if (ch != null && ch.startingLibrary != null)
+                GlobalCardLibrary.Instance.BuildFromStartingLibrary(ch.startingLibrary);
+            else if (ch != null)
+                GlobalCardLibrary.Instance.RegisterCharacter(ch);   // 无初始牌组也登记角色，避免后续操作时报空
         }
     }
 

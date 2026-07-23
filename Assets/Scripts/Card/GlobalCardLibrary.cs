@@ -10,7 +10,7 @@ namespace LightMiniGame.Card
     /// 持有游戏中所有角色的独立牌库，所有增删改都必须先指定目标角色，再路由到对应牌库，
     /// 从 API 层面保证「按角色隔离」。
     ///
-    /// 用法：把本组件挂到一个常驻 GameObject 上（或 GameManager），通过 GlobalCardLibrary.Instance 访问。
+    /// 用法：把本组件挂到一个常驻 GameObject 上（或 ChapterManager），通过 GlobalCardLibrary.Instance 访问。
     /// 典型流程：
     ///   library.RegisterCharacter(warrior);
     ///   library.AddCard(warrior, strikeTemplate);          // 加一张

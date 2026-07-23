@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using LightMiniGame.Card;
+using LightMiniGame.Shop;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -45,6 +47,11 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private GameObject armorCardPrefab;     // 护甲牌
     [SerializeField] private GameObject buffCardPrefab;      // 增益牌
 
+    [Header("角色头像")]
+    [SerializeField] private GameConfig gameConfig;          // 角色数据源（含 2 个 CharacterData）；需在 Inspector 配置
+    [SerializeField] private GameObject character1Icon;          // 角色1 头像载体（其下 Image 显示角色1头像）
+    [SerializeField] private GameObject character2Icon;          // 角色2 头像载体（其下 Image 显示角色2头像）
+
     private SettingsPanelUI _settingsPanel;            // 选项面板（运行时按需创建）
     private CardLibraryPanelUI _cardLibraryPanel;      // 牌库面板（运行时按需创建）
 
@@ -68,6 +75,12 @@ public class BookUIController : MonoBehaviour
             settingsButton.onClick.AddListener(OnSettingsClicked);
         if (deckButton != null)
             deckButton.onClick.AddListener(OnDeckClicked);
+
+        // 初始化商店控制器（绑定金币来源 ChapterManager）
+        ShopManager.EnsureInstance()?.Init(chapterManager);
+
+        // 游戏开始时，把 GameConfig 中前两个角色的头像应用到角色栏
+        ApplyCharacterAvatars();
     }
 
     private void OnDisable()
@@ -174,8 +187,10 @@ public class BookUIController : MonoBehaviour
         }
         else if (data.eventType == PageEventType.Shop && shopPanel != null)
         {
-            // Shop 类型：弹出商店面板（不应用 effects）
-            shopPanel.Show(OnShopClosed);
+            // Shop 类型：弹出商店面板（不应用 effects），进店时重新随机库存
+            var mgr = ShopManager.EnsureInstance();
+            if (mgr != null) mgr.Init(chapterManager);
+            shopPanel.Show(mgr, gameConfig != null ? gameConfig.characters : null, OnShopClosed);
         }
         else
         {
@@ -276,6 +291,34 @@ public class BookUIController : MonoBehaviour
             _cardLibraryPanel.Init();
         }
         _cardLibraryPanel.Show();
+    }
+
+    /// <summary>
+    /// 游戏开始时从 GameConfig.characters 读取前两个角色，把各自的头像应用到
+    /// character1 / character2 物体下的 Image 组件，并把 displayName 应用到其下的 TMP 文本
+    /// （头像优先自身 Image、否则取子物体 Image；角色名优先自身 TMP、否则取子物体 TMP）。
+    /// </summary>
+    private void ApplyCharacterAvatars()
+    {
+        if (gameConfig == null || gameConfig.characters == null) return;
+        var chars = gameConfig.characters;
+        ApplyCharacterTo(character1Icon, chars.Count > 0 ? chars[0] : null);
+        ApplyCharacterTo(character2Icon, chars.Count > 1 ? chars[1] : null);
+    }
+
+    private void ApplyCharacterTo(GameObject go, CharacterData data)
+    {
+        if (go == null || data == null) return;
+
+        // 头像：优先自身 Image，否则取子物体 Image
+        var img = go.GetComponent<Image>() ?? go.GetComponentInChildren<Image>();
+        if (img != null && data.avatar != null)
+            img.sprite = data.avatar;
+
+        // 角色名：优先自身 TMP，否则取子物体 TMP
+        var tmp = go.GetComponent<TextMeshProUGUI>() ?? go.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp != null)
+            tmp.text = data.displayName;
     }
 
     private void HandleChapterInfoUpdated(string name, int remaining)

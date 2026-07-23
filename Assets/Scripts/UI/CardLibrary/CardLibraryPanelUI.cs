@@ -307,7 +307,9 @@ public class CardLibraryPanelUI : MonoBehaviour
     {
         if (characterNameText != null)
             characterNameText.SetText(character != null ? character.displayName : "未选择");
-        // TODO: 若 CharacterData 之后加了 avatar 字段，在此赋值 characterAvatar.sprite
+        // 角色头像（CharacterData.avatar）；为空则保持原样，不强制清空
+        if (characterAvatar != null && character != null && character.avatar != null)
+            characterAvatar.sprite = character.avatar;
     }
 
     /// <summary>

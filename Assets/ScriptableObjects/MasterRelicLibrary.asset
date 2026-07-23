@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 919c274bf65bbd445be9b3f4569ae8eb, type: 3}
+  m_Name: MasterRelicLibrary
+  m_EditorClassIdentifier: 
+  allRelics:
+  - {fileID: 11400000, guid: e8d9054ba90aaf849b3b8ae69b9eb086, type: 2}
+  - {fileID: 11400000, guid: 1348c1728833f9d48971ac321c0e6765, type: 2}
+  - {fileID: 11400000, guid: c424a08b8d4faa24f8417a73231f6a8b, type: 2}
+  - {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
+  - {fileID: 11400000, guid: a2c046a6435bdad41aa8f3a64655f72a, type: 2}
+  - {fileID: 11400000, guid: 6f316edbfed9a844a85963bd8f5b49ed, type: 2}

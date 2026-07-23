@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdbaef85bca7d7441b8401349a585ec8, type: 3}
+  m_Name: MasterCardLibrary
+  m_EditorClassIdentifier: 
+  pools:
+  - character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
+    cards:
+    - {fileID: 11400000, guid: 931558a66f4144cc4bc3fbf849291898, type: 2}
+    - {fileID: 11400000, guid: 1ae2a1e8659144f188d1b6ce55cdaa74, type: 2}
+    - {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
+    - {fileID: 11400000, guid: 3b3f494ae33354001a2bdcdb017dcdec, type: 2}
+    - {fileID: 11400000, guid: e482bc5168d7649748cc99fac5418301, type: 2}
+    - {fileID: 11400000, guid: d789a840c930a4656873571c0ac272e4, type: 2}
+    - {fileID: 11400000, guid: 19dd1176f298e4e6991fe28350d46fa3, type: 2}
+    - {fileID: 11400000, guid: 2e4072a56e2194bf08a969ab515ce5e5, type: 2}
+    - {fileID: 11400000, guid: 0b35f946550664ca48b3a53d15624dcf, type: 2}
+  - character: {fileID: 11400000, guid: 05c4874963545144daee7fef33724012, type: 2}
+    cards:
+    - {fileID: 11400000, guid: 3b3f494ae33354001a2bdcdb017dcdec, type: 2}
+    - {fileID: 11400000, guid: 19dd1176f298e4e6991fe28350d46fa3, type: 2}
+    - {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
+    - {fileID: 11400000, guid: 1ae2a1e8659144f188d1b6ce55cdaa74, type: 2}
+    - {fileID: 11400000, guid: 2e4072a56e2194bf08a969ab515ce5e5, type: 2}
+    - {fileID: 11400000, guid: 0b35f946550664ca48b3a53d15624dcf, type: 2}

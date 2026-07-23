@@ -16,6 +16,14 @@ namespace LightMiniGame.Card
         [Tooltip("显示名（如 战士），可变，不作为路由 key")]
         public string displayName;
 
+        [Header("角色外观")]
+        [Tooltip("角色头像（牌库面板/角色栏显示用，拖入 Sprite）")]
+        public Sprite avatar;
+
+        [Header("初始牌组")]
+        [Tooltip("该角色的初始牌库配置；游戏开始时据此构建起始卡组。为空则预置空牌库")]
+        public CharacterStartingLibrary startingLibrary;
+
         [Header("可选约束")]
         [Tooltip("该角色牌库容量上限；<=0 表示不限制")]
         public int maxLibrarySize = 100;
