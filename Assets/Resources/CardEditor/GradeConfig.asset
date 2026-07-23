@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f0af24b6b21544cc9513800998381c5, type: 3}
+  m_Name: GradeConfig
+  m_EditorClassIdentifier: 
+  gradeConfigs:
+  - grade: 0
+    shopBasePrice: 50
+    shopRefreshWeight: 3
+    rewardRefreshWeight: 3
+  - grade: 1
+    shopBasePrice: 100
+    shopRefreshWeight: 2
+    rewardRefreshWeight: 2
+  - grade: 2
+    shopBasePrice: 200
+    shopRefreshWeight: 1
+    rewardRefreshWeight: 1

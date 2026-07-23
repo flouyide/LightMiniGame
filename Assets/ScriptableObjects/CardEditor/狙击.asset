@@ -1,0 +1,127 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u72D9\u51FB"
+  m_EditorClassIdentifier: 
+  cardId: SniperShot
+  cardName: "\u72D9\u51FB"
+  baseDescription: "\u9020\u6210 16 \u70B9\u4F24\u5BB3\uFF1B\u82E5\u70ED\u5EA6\u5927\u4E8E
+    15\uFF0C\u5219\u5FC5\u5B9A\u66B4\u51FB\u3002"
+  upgradeDescription: "\u9020\u6210 22 \u70B9\u4F24\u5BB3\uFF1B\u6761\u4EF6\u4E0D\u53D8\u3002"
+  cardArt: {fileID: 0}
+  grade: 1
+  cardType: 0
+  existence: 0
+  baseCost: 2
+  upgradeCost: 2
+  keyword: 0
+  upgradable: 1
+  baseEffects:
+  - enabled: 1
+    effectName: "\u72D9\u51FB\u4F24\u5BB3"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 16
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions:
+    - conditionType: 7
+      attributeRef: 0
+      comparison: 3
+      compareValue: 0
+      eventName: 
+      statusType: 0
+      customConditionScript: {fileID: 0}
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  upgradeEffects:
+  - enabled: 1
+    effectName: "\u72D9\u51FB\u4F24\u5BB3"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 22
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions:
+    - conditionType: 7
+      attributeRef: 0
+      comparison: 3
+      compareValue: 0
+      eventName: 
+      statusType: 0
+      customConditionScript: {fileID: 0}
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  baseAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  upgradeAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  customCardScript: {fileID: 0}
+  designerNotes: "\u70ED\u5EA6(Heat)\u4E3A\u81EA\u5B9A\u4E49\u5C5E\u6027\uFF0C\u9700\u6218\u6597\u7CFB\u7EDF\u5B9E\u73B0\u3002\u6761\u4EF6\u53EF\u901A\u8FC7\u81EA\u5B9A\u4E49\u6761\u4EF6\u811A\u672C\u5B9E\u73B0\u3002"

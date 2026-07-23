@@ -1,0 +1,189 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u8FDE\u73AF\u67AA"
+  m_EditorClassIdentifier: 
+  cardId: ChainGun
+  cardName: "\u8FDE\u73AF\u67AA"
+  baseDescription: "\u653B\u51FB 3 \u6B21\uFF0C\u6BCF\u6B21\u9020\u6210 6 \u70B9\u4F24\u5BB3\uFF0C\u6BCF\u6B21\u72EC\u7ACB\u5224\u5B9A\u66B4\u51FB\uFF1B\u6BCF\u6B21\u66B4\u51FB\u989D\u5916\u8FFD\u52A0
+    3 \u70B9\u4F24\u5BB3\u3002"
+  upgradeDescription: "\u6BCF\u6B21\u4F24\u5BB3\u63D0\u9AD8\u4E3A 8 \u70B9\u3002"
+  cardArt: {fileID: 0}
+  grade: 1
+  cardType: 0
+  existence: 0
+  baseCost: 2
+  upgradeCost: 2
+  keyword: 0
+  upgradable: 1
+  baseEffects:
+  - enabled: 1
+    effectName: "\u4E09\u8FDE\u5C04"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 6
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 3
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  - enabled: 1
+    effectName: "\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 3
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions:
+    - conditionType: 2
+      attributeRef: 0
+      comparison: 3
+      compareValue: 0
+      eventName: OnCrit
+      statusType: 0
+      customConditionScript: {fileID: 0}
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  upgradeEffects:
+  - enabled: 1
+    effectName: "\u4E09\u8FDE\u5C04"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 8
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 3
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  - enabled: 1
+    effectName: "\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 3
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions:
+    - conditionType: 2
+      attributeRef: 0
+      comparison: 3
+      compareValue: 0
+      eventName: OnCrit
+      statusType: 0
+      customConditionScript: {fileID: 0}
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  baseAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  upgradeAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  customCardScript: {fileID: 0}
+  designerNotes: "\u6BCF\u6BB5\u72EC\u7ACB\u5224\u5B9A\u66B4\u51FB\u3002\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3\u9700\u6218\u6597\u7CFB\u7EDF\u9010\u6BB5\u5224\u5B9A\u540E\u89E6\u53D1\u3002"

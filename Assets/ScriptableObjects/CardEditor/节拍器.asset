@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u8282\u62CD\u5668"
+  m_EditorClassIdentifier: 
+  cardId: Metronome
+  cardName: "\u8282\u62CD\u5668"
+  baseDescription: "\u6BCF\u56DE\u5408\u7B2C\u4E00\u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB\u3002"
+  upgradeDescription: "\u6BCF\u56DE\u5408\u7B2C\u4E8C\u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB\u3002"
+  cardArt: {fileID: 0}
+  grade: 0
+  cardType: 2
+  existence: 0
+  baseCost: 1
+  upgradeCost: 1
+  keyword: 0
+  upgradable: 1
+  baseEffects: []
+  upgradeEffects: []
+  baseAbility:
+    abilityName: "\u8282\u62CD\u5668"
+    abilityDescription: "\u6BCF\u56DE\u5408\u7B2C\u4E00\u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB"
+    trigger: 6
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 1
+    triggeredEffects:
+    - enabled: 1
+      effectName: "\u5FC5\u5B9A\u66B4\u51FB"
+      effectType: 6
+      source: 0
+      target: 0
+      value:
+        formulaType: 0
+        baseValue: 0
+        attributeRef: 0
+        coefficient: 1
+        counterRef: 0
+      times: 1
+      conditions: []
+      conditionLogic: 0
+      timing: 2
+      duration: 0
+      durationValue: 1
+      alwaysCrit: 0
+      ignoreArmor: 0
+      applyArmorBreak: 0
+      armorBreakAmount: 0
+      buffTarget: 0
+      modAttribute: 0
+      modifyMethod: 0
+      statusType: 7
+      statusStacks: 100
+      stackable: 1
+      handCostTarget: 0
+      costChange: 0
+      customEffectScript: {fileID: 0}
+      customParams: 
+    customAbilityScript: {fileID: 0}
+  upgradeAbility:
+    abilityName: "\u8282\u62CD\u5668+"
+    abilityDescription: "\u6BCF\u56DE\u5408\u524D\u4E24\u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB"
+    trigger: 6
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 2
+    triggeredEffects:
+    - enabled: 1
+      effectName: "\u5FC5\u5B9A\u66B4\u51FB"
+      effectType: 6
+      source: 0
+      target: 0
+      value:
+        formulaType: 0
+        baseValue: 0
+        attributeRef: 0
+        coefficient: 1
+        counterRef: 0
+      times: 1
+      conditions: []
+      conditionLogic: 0
+      timing: 2
+      duration: 0
+      durationValue: 1
+      alwaysCrit: 0
+      ignoreArmor: 0
+      applyArmorBreak: 0
+      armorBreakAmount: 0
+      buffTarget: 0
+      modAttribute: 0
+      modifyMethod: 0
+      statusType: 7
+      statusStacks: 100
+      stackable: 1
+      handCostTarget: 0
+      costChange: 0
+      customEffectScript: {fileID: 0}
+      customParams: 
+    customAbilityScript: {fileID: 0}
+  customCardScript: {fileID: 0}
+  designerNotes: "\u80FD\u529B\u5361\uFF1A\u89E6\u53D1\u65F6\u673A\u4E3A\u6BCF\u56DE\u5408\u9996\u6B21\u653B\u51FB\uFF0C\u89E6\u53D1\u540E\u65BD\u52A0\u66B4\u51FB\u7387\u63D0\u5347100%(=\u5FC5\u5B9A\u66B4\u51FB)\u3002\u5347\u7EA7\u7248\u89E6\u53D1\u6B21\u6570\u63D0\u5347\u4E3A2\u3002"
