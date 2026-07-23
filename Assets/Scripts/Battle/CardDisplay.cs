@@ -160,6 +160,38 @@ public class CardDisplay : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 从 CardData ScriptableObject 复制全部字段到本组件并刷新显示
+    /// </summary>
+    public void ApplyCardData(CardData data)
+    {
+        if (data == null) return;
+        cardName = data.cardName;
+        description = data.description;
+        cardType = data.cardType;
+        cardArt = data.cardArt;
+        value = data.value;
+        grade = data.grade;
+        actionPointCost = data.actionPointCost;
+        consumeType = data.consumeType;
+        keywords = data.keywords;
+        attackCount = data.attackCount;
+        attackValueType = data.attackValueType;
+        attackValue = data.attackValue;
+        attackAttribute = data.attackAttribute;
+        ignoreArmor = data.ignoreArmor;
+        armorValueType = data.armorValueType;
+        armorValue = data.armorValue;
+        armorAttribute = data.armorAttribute;
+        buffDuration = data.buffDuration;
+        buffDurationTurns = data.buffDurationTurns;
+        buffStacks = data.buffStacks;
+        buffEffects = data.buffEffects != null
+            ? new List<BuffEffect>(data.buffEffects)
+            : new List<BuffEffect>();
+        UpdateDisplay();
+    }
+
     // ========================================================================
     // 描述生成（复用CardData的静态方法）
     // ========================================================================

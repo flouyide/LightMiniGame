@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 手牌扇形布局管理 —— 负责卡牌的弧形排列、悬浮放大、丝滑过渡动画
-/// 直接接收卡牌Prefab列表，实例化后读取CardDisplay上的数据
+/// 手牌扇形布局管理 —— 负责卡牌的弧形排列、悬浮放大、丝滑过渡动画。
+/// 接收 CardData 列表，根据卡牌类型自动选择对应 Prefab 实例化并填充数据。
 /// </summary>
 public class HandCardLayout : MonoBehaviour
 {
@@ -20,8 +20,14 @@ public class HandCardLayout : MonoBehaviour
     [Header("动画")]
     [SerializeField] private float lerpSpeed = 20f;
 
+    [Header("卡牌预制体（按类型）")]
+    [SerializeField] private GameObject attackCardPrefab;
+    [SerializeField] private GameObject armorCardPrefab;
+    [SerializeField] private GameObject buffCardPrefab;
+
     private readonly List<GameObject> _cardObjects = new List<GameObject>();
     private readonly List<CardDisplay> _cardDisplays = new List<CardDisplay>();
+    private readonly List<CardData> _cardDataRefs = new List<CardData>();
     private readonly List<Vector3> _targetPositions = new List<Vector3>();
     private readonly List<Quaternion> _targetRotations = new List<Quaternion>();
     private readonly List<Vector3> _targetScales = new List<Vector3>();
@@ -36,9 +42,30 @@ public class HandCardLayout : MonoBehaviour
     }
 
     /// <summary>
-    /// 更新手牌显示 —— 传入手牌Prefab列表，自动实例化
+    /// 设置卡牌预制体（可由外部注入）
     /// </summary>
-    public void UpdateHand(List<GameObject> hand, System.Func<CardDisplay, bool> isPlayable = null)
+    public void SetCardPrefabs(GameObject attack, GameObject armor, GameObject buff)
+    {
+        attackCardPrefab = attack;
+        armorCardPrefab = armor;
+        buffCardPrefab = buff;
+    }
+
+    private GameObject GetPrefabForType(CardType type)
+    {
+        return type switch
+        {
+            CardType.Attack => attackCardPrefab,
+            CardType.Armor => armorCardPrefab,
+            CardType.Buff => buffCardPrefab,
+            _ => attackCardPrefab
+        };
+    }
+
+    /// <summary>
+    /// 更新手牌显示 —— 传入 CardData 列表，自动实例化对应类型 Prefab 并填充数据
+    /// </summary>
+    public void UpdateHand(List<CardData> hand, System.Func<CardData, bool> isPlayable = null)
     {
         // 销毁旧卡牌
         foreach (var obj in _cardObjects)
@@ -47,6 +74,7 @@ public class HandCardLayout : MonoBehaviour
         }
         _cardObjects.Clear();
         _cardDisplays.Clear();
+        _cardDataRefs.Clear();
 
         // 创建新卡牌
         for (int i = 0; i < hand.Count; i++)
@@ -56,19 +84,26 @@ public class HandCardLayout : MonoBehaviour
                 Debug.LogError($"[HandCardLayout] hand[{i}] 为 null，跳过实例化");
                 continue;
             }
-            var cardObj = Instantiate(hand[i], transform);
+
+            var prefab = GetPrefabForType(hand[i].cardType);
+            if (prefab == null)
+            {
+                Debug.LogError($"[HandCardLayout] 未找到卡牌类型 {hand[i].cardType} 对应的 Prefab");
+                continue;
+            }
+
+            var cardObj = Instantiate(prefab, transform);
             var display = cardObj.GetComponent<CardDisplay>();
             if (display == null)
             {
-                Debug.LogError($"[HandCardLayout] 卡牌Prefab缺少CardDisplay组件: {hand[i].name}");
+                Debug.LogError($"[HandCardLayout] 卡牌Prefab缺少CardDisplay组件: {prefab.name}");
                 Destroy(cardObj);
                 continue;
             }
 
-            // 刷新显示（数据已在Prefab上配置好）
-            display.UpdateDisplay();
+            display.ApplyCardData(hand[i]);
             if (isPlayable != null)
-                display.SetPlayable(isPlayable(display));
+                display.SetPlayable(isPlayable(hand[i]));
 
             var hover = cardObj.GetComponent<CardHoverEffect>();
             if (hover != null)
@@ -77,6 +112,7 @@ public class HandCardLayout : MonoBehaviour
             cardObj.transform.localPosition = new Vector3(0, -200f, 0);
             _cardObjects.Add(cardObj);
             _cardDisplays.Add(display);
+            _cardDataRefs.Add(hand[i]);
         }
 
         _hoveredIndex = -1;
@@ -86,12 +122,12 @@ public class HandCardLayout : MonoBehaviour
     /// <summary>
     /// 刷新已存在卡牌的可打出状态
     /// </summary>
-    public void RefreshPlayable(System.Func<CardDisplay, bool> isPlayable)
+    public void RefreshPlayable(System.Func<CardData, bool> isPlayable)
     {
-        foreach (var display in _cardDisplays)
+        for (int i = 0; i < _cardDisplays.Count; i++)
         {
-            if (display != null && isPlayable != null)
-                display.SetPlayable(isPlayable(display));
+            if (_cardDisplays[i] != null && isPlayable != null && i < _cardDataRefs.Count)
+                _cardDisplays[i].SetPlayable(isPlayable(_cardDataRefs[i]));
         }
     }
 
