@@ -31,6 +31,9 @@ namespace LightMiniGame.CardEditor
         [Tooltip("卡面原画")]
         public Sprite cardArt;
 
+        [Tooltip("黑暗卡面（理智转阶段时替换为这张图）")]
+        public Sprite darkCardArt;
+
         [Tooltip("品级")]
         public CardGrade grade = CardGrade.Bronze;
 
@@ -157,6 +160,8 @@ namespace LightMiniGame.CardEditor
         {
             CardKeyword.None => "无",
             CardKeyword.Echo => "回响",
+            CardKeyword.Calamity => "灾厄",
+            CardKeyword.Fate => "命运",
             _ => k.ToString()
         };
     }

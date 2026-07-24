@@ -22,8 +22,8 @@ public class HandCardLayout : MonoBehaviour
 
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
-    [SerializeField] private GameObject armorCardPrefab;
-    [SerializeField] private GameObject buffCardPrefab;
+    [SerializeField] private GameObject skillCardPrefab;
+    [SerializeField] private GameObject abilityCardPrefab;
 
     private readonly List<GameObject> _cardObjects = new List<GameObject>();
     private readonly List<CardDisplay> _cardDisplays = new List<CardDisplay>();
@@ -33,8 +33,12 @@ public class HandCardLayout : MonoBehaviour
     private readonly List<Vector3> _targetScales = new List<Vector3>();
     private int _hoveredIndex = -1;
     private System.Action<int> _onCardClicked;
+    private bool _isDarkMode = false;  // 黑暗卡面模式（理智转阶段时开启）
 
     public int CardCount => _cardObjects.Count;
+
+    /// <summary>当前是否处于黑暗卡面模式</summary>
+    public bool IsDarkMode => _isDarkMode;
 
     public void SetCardClickCallback(System.Action<int> callback)
     {
@@ -42,13 +46,26 @@ public class HandCardLayout : MonoBehaviour
     }
 
     /// <summary>
+    /// 开启/关闭黑暗卡面模式。对所有当前手牌及后续新手牌生效。
+    /// </summary>
+    public void SetDarkMode(bool enabled)
+    {
+        _isDarkMode = enabled;
+        foreach (var display in _cardDisplays)
+        {
+            if (display != null)
+                display.SetDarkMode(enabled);
+        }
+    }
+
+    /// <summary>
     /// 设置卡牌预制体（可由外部注入）
     /// </summary>
-    public void SetCardPrefabs(GameObject attack, GameObject armor, GameObject buff)
+    public void SetCardPrefabs(GameObject attack, GameObject skill, GameObject ability)
     {
         attackCardPrefab = attack;
-        armorCardPrefab = armor;
-        buffCardPrefab = buff;
+        skillCardPrefab = skill;
+        abilityCardPrefab = ability;
     }
 
     private GameObject GetPrefabForType(CardType type)
@@ -56,8 +73,8 @@ public class HandCardLayout : MonoBehaviour
         return type switch
         {
             CardType.Attack => attackCardPrefab,
-            CardType.Armor => armorCardPrefab,
-            CardType.Buff => buffCardPrefab,
+            CardType.Skill => skillCardPrefab,
+            CardType.Ability => abilityCardPrefab,
             _ => attackCardPrefab
         };
     }
@@ -102,6 +119,8 @@ public class HandCardLayout : MonoBehaviour
             }
 
             display.ApplyCardData(hand[i]);
+            if (_isDarkMode)
+                display.SetDarkMode(true);
             if (isPlayable != null)
                 display.SetPlayable(isPlayable(hand[i]));
 

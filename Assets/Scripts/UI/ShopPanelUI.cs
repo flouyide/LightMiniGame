@@ -287,8 +287,8 @@ public class ShopPanelUI : MonoBehaviour
     private GameObject GetCardPrefab(CardType type) => type switch
     {
         CardType.Attack => attackCardPrefab,
-        CardType.Armor => armorCardPrefab,
-        CardType.Buff => buffCardPrefab,
+        CardType.Skill => armorCardPrefab,
+        CardType.Ability => buffCardPrefab,
         _ => attackCardPrefab
     };
 

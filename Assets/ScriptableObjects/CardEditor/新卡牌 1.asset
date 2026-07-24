@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: "\u65B0\u5361\u724C"
+  m_Name: "\u65B0\u5361\u724C 1"
   m_EditorClassIdentifier: 
-  cardId: card_833a111f
+  cardId: card_5b9aebc3
   cardName: "\u65B0\u5361\u724C"
   baseDescription: 
   upgradeDescription: 

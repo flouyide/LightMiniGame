@@ -19,6 +19,7 @@ MonoBehaviour:
   upgradeDescription: "\u672C\u573A\u6218\u6597\u66B4\u51FB\u7387\u589E\u52A0 25%\uFF0C\u62BD
     1 \u5F20\u724C\u3002"
   cardArt: {fileID: 0}
+  darkCardArt: {fileID: 0}
   grade: 0
   cardType: 1
   existence: 0

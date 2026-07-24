@@ -18,6 +18,7 @@ MonoBehaviour:
     3 \u70B9\u4F24\u5BB3\u3002"
   upgradeDescription: "\u6BCF\u6B21\u4F24\u5BB3\u63D0\u9AD8\u4E3A 8 \u70B9\u3002"
   cardArt: {fileID: 0}
+  darkCardArt: {fileID: 0}
   grade: 1
   cardType: 0
   existence: 0

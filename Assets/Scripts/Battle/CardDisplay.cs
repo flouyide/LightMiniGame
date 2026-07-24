@@ -3,6 +3,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using LightMiniGame.CardEditor;
 
 /// <summary>
 /// 卡牌显示+数据组件 —— 挂载在卡牌Prefab上。
@@ -80,7 +81,30 @@ public class CardDisplay : MonoBehaviour
     [Header("不可打出状态")]
     [SerializeField] private Color unplayableColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
 
+    // —— 黑暗卡面（理智转阶段时启用，策划可在此配置黑暗素材） ——
+    [Header("黑暗卡面（理智转阶段）")]
+    [Tooltip("黑暗模式边框 Sprite，留空则仅变色")]
+    [SerializeField] private Sprite darkFrameSprite;
+    [Tooltip("黑暗模式背景 Sprite，留空则仅变色")]
+    [SerializeField] private Sprite darkBackgroundSprite;
+    [Tooltip("黑暗模式边框颜色")]
+    [SerializeField] private Color darkFrameColor = new Color(0.35f, 0.1f, 0.45f, 1f);
+    [Tooltip("黑暗模式背景颜色")]
+    [SerializeField] private Color darkBackgroundColor = new Color(0.08f, 0.04f, 0.12f, 0.95f);
+    [Tooltip("黑暗模式文本颜色")]
+    [SerializeField] private Color darkTextColor = new Color(0.75f, 0.6f, 0.85f, 1f);
+    [Tooltip("侵蚀词条徽章颜色")]
+    [SerializeField] private Color corruptedBadgeColor = new Color(0.6f, 0.15f, 0.75f, 1f);
+
     private bool _playable = true;
+    private bool _darkMode = false;
+    private Sprite _darkCardArt;  // 从 CardData 读入的黑暗卡面
+
+    // 缓存正常模式颜色/精灵，退出黑暗模式时恢复
+    private Sprite _origFrameSprite;
+    private Sprite _origBgSprite;
+    private Color _origFrameColor;
+    private Color _origBgColor;
 
     // ========================================================================
     // 公共方法
@@ -92,6 +116,25 @@ public class CardDisplay : MonoBehaviour
     public void SetPlayable(bool playable)
     {
         _playable = playable;
+        UpdateDisplay();
+    }
+
+    /// <summary>
+    /// 开启/关闭黑暗卡面模式（理智转阶段时调用）。
+    /// 开启时替换边框/背景 Sprite 与颜色，文本变为暗紫色。
+    /// </summary>
+    public void SetDarkMode(bool enabled)
+    {
+        if (_darkMode == enabled) return;
+        _darkMode = enabled;
+
+        if (enabled)
+        {
+            // 缓存原始值
+            if (frameImage) { _origFrameSprite = frameImage.sprite; _origFrameColor = frameImage.color; }
+            if (backgroundImage) { _origBgSprite = backgroundImage.sprite; _origBgColor = backgroundImage.color; }
+        }
+
         UpdateDisplay();
     }
 
@@ -115,7 +158,18 @@ public class CardDisplay : MonoBehaviour
             keywordText.gameObject.SetActive(kwNames.Count > 0);
         }
 
-        // 类型颜色
+        // —— 黑暗模式覆盖 ——
+        if (_darkMode)
+        {
+            ApplyDarkTheme();
+            return;
+        }
+
+        // —— 正常模式 ——
+        // 恢复精灵（从黑暗模式切回时）
+        if (frameImage && _origFrameSprite != null) frameImage.sprite = _origFrameSprite;
+        if (backgroundImage && _origBgSprite != null) backgroundImage.sprite = _origBgSprite;
+
         Color typeColor = GetCardTypeColor();
         if (typeBadgeImage) typeBadgeImage.color = typeColor;
         if (costBadgeImage) costBadgeImage.color = _playable ? typeColor : new Color(0.5f, 0.5f, 0.5f, 1f);
@@ -158,6 +212,71 @@ public class CardDisplay : MonoBehaviour
                 artImage.color = placeholder;
             }
         }
+
+        // 恢复文本颜色
+        Color normalTextColor = Color.white;
+        if (nameText) nameText.color = normalTextColor;
+        if (descText) descText.color = normalTextColor;
+        if (costText) costText.color = normalTextColor;
+        if (typeText) typeText.color = normalTextColor;
+        if (gradeText) gradeText.color = normalTextColor;
+        if (keywordText) keywordText.color = normalTextColor;
+    }
+
+    /// <summary>应用黑暗卡面主题：替换边框/背景精灵与颜色，文本变为暗紫色</summary>
+    private void ApplyDarkTheme()
+    {
+        Color typeColor = GetCardTypeColor();
+
+        // 边框：替换精灵 + 黑暗颜色
+        if (frameImage)
+        {
+            if (darkFrameSprite != null) frameImage.sprite = darkFrameSprite;
+            frameImage.color = _playable ? darkFrameColor : new Color(0.2f, 0.08f, 0.25f, 1f);
+        }
+
+        // 背景：替换精灵 + 黑暗颜色
+        if (backgroundImage)
+        {
+            if (darkBackgroundSprite != null) backgroundImage.sprite = darkBackgroundSprite;
+            backgroundImage.color = darkBackgroundColor;
+        }
+
+        // 类型徽章 / 费用徽章
+        if (typeBadgeImage) typeBadgeImage.color = darkFrameColor;
+        if (costBadgeImage) costBadgeImage.color = _playable ? darkFrameColor : new Color(0.3f, 0.15f, 0.35f, 1f);
+
+        // 卡牌插图：优先使用黑暗卡面，无则叠加紫色滤镜
+        if (artImage)
+        {
+            if (_darkCardArt != null)
+            {
+                artImage.sprite = _darkCardArt;
+                artImage.color = Color.white;
+            }
+            else if (cardArt != null)
+            {
+                artImage.sprite = cardArt;
+                artImage.color = new Color(0.5f, 0.4f, 0.6f, 1f);  // 紫色滤镜
+            }
+            else
+            {
+                artImage.color = new Color(0.15f, 0.08f, 0.2f, 0.3f);
+            }
+        }
+
+        // 文本颜色
+        if (nameText) nameText.color = darkTextColor;
+        if (descText) descText.color = darkTextColor;
+        if (costText) costText.color = darkTextColor;
+        if (typeText) typeText.color = darkTextColor;
+        if (gradeText) gradeText.color = darkTextColor;
+
+        // 灾厄词条高亮
+        if (keywordText && (keywords & KeywordType.Calamity) != 0)
+            keywordText.color = corruptedBadgeColor;
+        else if (keywordText)
+            keywordText.color = darkTextColor;
     }
     
     /// <summary>
@@ -166,10 +285,22 @@ public class CardDisplay : MonoBehaviour
     public void ApplyCardData(CardData data)
     {
         if (data == null) return;
+
+        // 如果有关联的 CardEntry，优先从 CardEntry 读取显示数据
+        if (data.sourceEntry != null)
+        {
+            ApplyCardEntry(data.sourceEntry, data.isUpgraded);
+            // 仍然复制运行时字段（费用可能被修改过）
+            actionPointCost = data.GetEffectiveCost();
+            UpdateDisplay();
+            return;
+        }
+
         cardName = data.cardName;
         description = data.description;
         cardType = data.cardType;
         cardArt = data.cardArt;
+        _darkCardArt = data.darkCardArt;
         value = data.value;
         grade = data.grade;
         actionPointCost = data.actionPointCost;
@@ -189,6 +320,51 @@ public class CardDisplay : MonoBehaviour
         buffEffects = data.buffEffects != null
             ? new List<BuffEffect>(data.buffEffects)
             : new List<BuffEffect>();
+        UpdateDisplay();
+    }
+
+    /// <summary>
+    /// 从 CardEntry（卡牌编辑器数据）读取显示信息并刷新。
+    /// </summary>
+    public void ApplyCardEntry(CardEntry entry, bool upgraded = false)
+    {
+        if (entry == null) return;
+
+        cardName = entry.cardName;
+        description = entry.GetDescription(upgraded);
+        cardArt = entry.cardArt;
+        actionPointCost = entry.GetCost(upgraded);
+
+        // 映射品级
+        grade = entry.grade switch
+        {
+            LightMiniGame.CardEditor.CardGrade.Bronze => CardGrade.Common,
+            LightMiniGame.CardEditor.CardGrade.Silver => CardGrade.Fine,
+            LightMiniGame.CardEditor.CardGrade.Gold => CardGrade.Rare,
+            _ => CardGrade.Common
+        };
+
+        // 映射卡牌类型（与编辑器统一）
+        cardType = entry.cardType switch
+        {
+            LightMiniGame.CardEditor.CardType.Attack => CardType.Attack,
+            LightMiniGame.CardEditor.CardType.Skill => CardType.Skill,
+            LightMiniGame.CardEditor.CardType.Ability => CardType.Ability,
+            _ => CardType.Attack
+        };
+
+        // 黑暗卡面
+        _darkCardArt = entry.darkCardArt;
+
+        // 词条映射（3词条：回响/灾厄/命运）
+        keywords = KeywordType.None;
+        if (entry.keyword == LightMiniGame.CardEditor.CardKeyword.Echo)
+            keywords |= KeywordType.Echo;
+        if (entry.keyword == LightMiniGame.CardEditor.CardKeyword.Calamity)
+            keywords |= KeywordType.Calamity;
+        if (entry.keyword == LightMiniGame.CardEditor.CardKeyword.Fate)
+            keywords |= KeywordType.Fate;
+
         UpdateDisplay();
     }
 
@@ -213,13 +389,13 @@ public class CardDisplay : MonoBehaviour
                 sb.Append($"造成{attackCount}次").Append(dmg).Append("点伤害");
                 if (ignoreArmor) sb.Append("\n无视护甲");
                 break;
-            case CardType.Armor:
+            case CardType.Skill:
                 string armor = armorValueType == ValueType.Fixed
                     ? armorValue.ToString()
                     : $"({armorValue}+{CardData.GetAttributeName(armorAttribute)})";
                 sb.Append($"获得{armor}点护甲");
                 break;
-            case CardType.Buff:
+            case CardType.Ability:
                 foreach (var effect in buffEffects)
                     sb.AppendLine(CardData.GetBuffEffectText(effect));
                 string dur = buffDuration switch
@@ -246,8 +422,8 @@ public class CardDisplay : MonoBehaviour
     private Color GetCardTypeColor() => cardType switch
     {
         CardType.Attack => attackColor,
-        CardType.Armor => armorColor,
-        CardType.Buff => buffColor,
+        CardType.Skill => armorColor,
+        CardType.Ability => buffColor,
         _ => Color.white
     };
 

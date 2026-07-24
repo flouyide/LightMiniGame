@@ -6,8 +6,8 @@ using System;
 public enum CardType
 {
     Attack,  // 攻击牌
-    Armor,   // 护甲牌
-    Buff     // 增益牌
+    Skill,   // 技能牌
+    Ability  // 能力牌
 }
 
 /// <summary>
@@ -69,15 +69,9 @@ public enum BuffDurationType
 public enum KeywordType
 {
     None       = 0,
-    Pierce     = 1 << 0,  // 穿透：无视敌人护甲
-    Lifesteal  = 1 << 1,  // 吸血：回复造成伤害的一定比例
-    Combo      = 1 << 2,  // 连击：额外攻击次数+1
-    Heavy      = 1 << 3,  // 重击：暴击概率提升
-    Swift      = 1 << 4,  // 迅捷：抽牌+1
-    Sturdy     = 1 << 5,  // 坚固：护甲不随回合消失
-    Toxic      = 1 << 6,  // 剧毒：附加中毒效果
-    Burning    = 1 << 7,  // 燃烧：附加燃烧效果
-    FreePlay   = 1 << 8,  // 免费打出：不消耗行动点
+    Echo       = 1 << 0,  // 回响：卡牌在本回合第一次打出后将回到手牌
+    Calamity   = 1 << 1,  // 灾厄：卡牌数值得到提升，但打出后触发负面效果
+    Fate       = 1 << 2,  // 命运：卡牌打出后随机触发好运与厄运效果
 }
 
 /// <summary>

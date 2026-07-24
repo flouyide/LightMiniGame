@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using LightMiniGame.Card;
+using LightMiniGame.CardEditor;
 
 /// <summary>
 /// 战斗管理器（双角色回合制）。
@@ -20,14 +21,19 @@ public class BattleManager : MonoBehaviour
     [Tooltip("游戏配置（含角色列表）")]
     [SerializeField] private GameConfig gameConfig;
 
+    [Header("卡牌编辑器初始牌组（可选）")]
+    [Tooltip("如果填写，战斗开始时用这些 CardEntry 卡牌代替角色的 startingLibrary。每个角色一组。")]
+    [SerializeField] private List<CardEntry> character1Cards;
+    [SerializeField] private List<CardEntry> character2Cards;
+
     [Header("运行时属性来源（持久基础属性运行时副本）")]
     [Tooltip("ChapterManager 持有持久基础属性（力量/敏捷/吸血/暴击率/暴伤）的运行时副本，单局内跨战斗保留。战斗开始时从此读取。留空则回退到 PlayerConfig（仅初始值，不含事件累积）")]
     [SerializeField] private ChapterManager chapterManager;
 
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
-    [SerializeField] private GameObject armorCardPrefab;
-    [SerializeField] private GameObject buffCardPrefab;
+    [SerializeField] private GameObject skillCardPrefab;
+    [SerializeField] private GameObject abilityCardPrefab;
 
     [Header("玩家属性（双角色共享）")]
     [SerializeField] private int playerMaxHP = 100;
@@ -92,6 +98,15 @@ public class BattleManager : MonoBehaviour
     [Header("UI引用 - 结果")]
     [SerializeField] private GameObject victoryPanel;
     [SerializeField] private GameObject defeatPanel;
+    [SerializeField] private Button quitButton;
+
+    [Header("UI引用 - 黑暗模式（理智转阶段）")]
+    [Tooltip("全屏暗色遮罩 Image，理智转阶段时淡入。留空则不显示遮罩。")]
+    [SerializeField] private Image darkOverlay;
+    [Tooltip("黑暗遮罩目标透明度（0-1）")]
+    [SerializeField] private float darkOverlayAlpha = 0.3f;
+    [Tooltip("黑暗遮罩淡入持续时间（秒）")]
+    [SerializeField] private float darkOverlayFadeDuration = 1f;
 
     // ========================================================================
     // 运行时状态
@@ -120,6 +135,15 @@ public class BattleManager : MonoBehaviour
     private int _playerCritDamage;
     private int _playerSanity;
     private int _playerMaxSanity;
+
+    // === CardEntry 效果系统支持 ===
+    private EffectExecutor _effectExecutor;
+    private readonly Dictionary<string, int> _customData = new();
+    private readonly HashSet<string> _eventsThisTurn = new();
+    private readonly HashSet<string> _eventsThisBattle = new();
+    private readonly Dictionary<string, int> _turnCounters = new();
+    private readonly Dictionary<string, int> _battleCounters = new();
+    private int _selectedEnemyIndex = 0;
     private bool _sanityPhaseTriggered;  // 理智转阶段是否已触发（防止重复触发）
     private const int SanityPhaseThreshold = 4;  // 理智转阶段阈值
     private int _baseDrawPerTurn;   // 每场战斗前的抽牌基数（来自 Inspector 的 drawPerTurn，开局捕获一次）
@@ -129,12 +153,134 @@ public class BattleManager : MonoBehaviour
     private int _turnCount = 1;
     private bool _isPlayerTurn = true;
     private bool _battleEnded = false;
-    private bool _hasSturdyArmor = false;
     private bool _waitingEnemyConfirm = false;
+    private bool _isDarkMode = false;
+    private Coroutine _sanityTrembleRoutine;
 
     private SettingsPanelUI _settingsPanel;
 
     public bool IsPlayerTurn => _isPlayerTurn && !_battleEnded;
+
+    // ========================================================================
+    // 公共属性（供 BattleCardContext / EffectExecutor 使用）
+    // ========================================================================
+
+    public int PlayerHP => _playerHP;
+    public int PlayerMaxHP => playerMaxHP;
+    public int PlayerStrength => _playerStrength;
+    public int PlayerDexterity => _playerDexterity;
+    public float PlayerCritRate => _playerCritRate / 100f;
+    public float PlayerCritDamage => _playerCritDamage / 100f;
+    public int PlayerSanity => _playerSanity;
+    public int PlayerArmor => _playerArmor;
+    public int PlayerBleed => 0;
+    public int ActionPoints => _actionPoints;
+    public int EnemyCount => 1; // 当前只有一个敌人
+    public int SelectedEnemyIndex => _selectedEnemyIndex;
+    public int HandCount => _hand.Count;
+    public int DrawPileCount => ActiveChar?.drawPile.Count ?? 0;
+    public int DiscardPileCount => ActiveChar?.discardPile.Count ?? 0;
+
+    public int GetEnemyHP(int index) => index == 0 ? _enemyHP : 0;
+    public int GetEnemyArmor(int index) => index == 0 ? _enemyArmor : 0;
+    public int GetEnemyBleed(int index) => 0;
+    public int GetEnemyArmorBreak(int index) => 0;
+
+    public int GetTurnCounter(string name) => _turnCounters.TryGetValue(name, out var v) ? v : 0;
+    public int GetBattleCounter(string name) => _battleCounters.TryGetValue(name, out var v) ? v : 0;
+
+    public int GetCustomData(string key) => _customData.TryGetValue(key, out var v) ? v : 0;
+    public void SetCustomData(string key, int value) => _customData[key] = value;
+    public void ModifyCustomData(string key, int delta) => _customData[key] = GetCustomData(key) + delta;
+
+    public bool HasEventOccurred(string eventName) => _eventsThisTurn.Contains(eventName) || _eventsThisBattle.Contains(eventName);
+    public void RecordEvent(string eventName) { _eventsThisTurn.Add(eventName); _eventsThisBattle.Add(eventName); }
+
+    public void DealDamageToEnemy(int index, int amount, bool ignoreArmor)
+    {
+        if (index < 0 || index >= EnemyCount) return;
+        int actual = DealDamageToEnemy(amount, ignoreArmor);
+        if (actual > 0) ShowEnemyDamage(actual);
+    }
+
+    public void DealDamageToAllEnemies(int amount, bool ignoreArmor)
+    {
+        int actual = DealDamageToEnemy(amount, ignoreArmor);
+        if (actual > 0) ShowEnemyDamage(actual);
+    }
+
+    public void HealPlayer(int amount) => _playerHP = Mathf.Min(playerMaxHP, _playerHP + amount);
+    public void AddPlayerArmor(int amount) => _playerArmor += amount;
+    public void AddActionPoints(int amount) => _actionPoints = Mathf.Max(0, _actionPoints + amount);
+
+    public void ModifyPlayerAttribute(ModifiableAttribute attr, ModifyMethod method, int amount)
+    {
+        int newVal = method switch
+        {
+            ModifyMethod.Add => GetModAttrValue(attr) + amount,
+            ModifyMethod.Subtract => GetModAttrValue(attr) - amount,
+            ModifyMethod.Multiply => GetModAttrValue(attr) * amount,
+            ModifyMethod.Override => amount,
+            _ => GetModAttrValue(attr)
+        };
+        SetModAttrValue(attr, newVal);
+    }
+
+    public void ApplyStatusToEnemy(int index, StatusType status, int stacks)
+    {
+        if (index != 0) return;
+        // 破甲直接减少护甲；流血/力量等需要状态系统
+        if (status == StatusType.ArmorBreak)
+            _enemyArmor = Mathf.Max(0, _enemyArmor - stacks);
+    }
+
+    public void ApplyStatusToPlayer(StatusType status, int stacks)
+    {
+        switch (status)
+        {
+            case StatusType.Strength: _playerStrength += stacks; break;
+            case StatusType.Dexterity: _playerDexterity += stacks; break;
+            case StatusType.CritRateBoost: _playerCritRate += stacks; break;
+            case StatusType.CritDamageBoost: _playerCritDamage += stacks; break;
+        }
+    }
+
+    public int RequestSelectCardFromHand(string prompt) => -1; // 简化：暂不支持运行时选牌
+    public void DiscardHandCard(int index)
+    {
+        if (index < 0 || index >= _hand.Count) return;
+        ActiveChar.discardPile.Add(_hand[index]);
+        _hand.RemoveAt(index);
+        RefreshHandUI();
+    }
+
+    private int GetModAttrValue(ModifiableAttribute attr) => attr switch
+    {
+        ModifiableAttribute.Strength => _playerStrength,
+        ModifiableAttribute.Dexterity => _playerDexterity,
+        ModifiableAttribute.PlayerCritRate => _playerCritRate,
+        ModifiableAttribute.PlayerCritDamage => _playerCritDamage,
+        ModifiableAttribute.MaxHP => playerMaxHP,
+        ModifiableAttribute.CurrentHP => _playerHP,
+        ModifiableAttribute.DrawPerTurn => drawPerTurn,
+        ModifiableAttribute.EnergyPerTurn => maxActionPoints,
+        _ => 0
+    };
+
+    private void SetModAttrValue(ModifiableAttribute attr, int value)
+    {
+        switch (attr)
+        {
+            case ModifiableAttribute.Strength: _playerStrength = value; break;
+            case ModifiableAttribute.Dexterity: _playerDexterity = value; break;
+            case ModifiableAttribute.PlayerCritRate: _playerCritRate = value; break;
+            case ModifiableAttribute.PlayerCritDamage: _playerCritDamage = value; break;
+            case ModifiableAttribute.MaxHP: playerMaxHP = value; break;
+            case ModifiableAttribute.CurrentHP: _playerHP = Mathf.Clamp(value, 0, playerMaxHP); break;
+            case ModifiableAttribute.DrawPerTurn: drawPerTurn = value; break;
+            case ModifiableAttribute.EnergyPerTurn: maxActionPoints = value; break;
+        }
+    }
 
     private CharBattleState ActiveChar => _chars[_activeCharIdx];
     private CharBattleState InactiveChar => _chars[1 - _activeCharIdx];
@@ -148,7 +294,7 @@ public class BattleManager : MonoBehaviour
         if (handLayout != null)
         {
             handLayout.SetCardClickCallback(OnCardClicked);
-            handLayout.SetCardPrefabs(attackCardPrefab, armorCardPrefab, buffCardPrefab);
+            handLayout.SetCardPrefabs(attackCardPrefab, skillCardPrefab, abilityCardPrefab);
         }
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
@@ -156,6 +302,8 @@ public class BattleManager : MonoBehaviour
             switchCharacterButton.onClick.AddListener(OnSwitchCharacterClicked);
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsClicked);
+        if (quitButton != null)
+            quitButton.onClick.AddListener(OnQuitClicked);
 
         _baseDrawPerTurn = drawPerTurn;   // 捕获抽牌基数（Inspector 配置），避免逐场战斗累加
         StartBattle();
@@ -165,6 +313,10 @@ public class BattleManager : MonoBehaviour
     {
         if (_waitingEnemyConfirm && Input.GetKeyDown(KeyCode.P))
             ExecuteEnemyAction();
+
+        // 测试：按 1 降低 1 点理智
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+            ModifySanity(-1);
     }
 
     // ========================================================================
@@ -254,6 +406,19 @@ public class BattleManager : MonoBehaviour
     private void BuildStartingDeck(CharBattleState state)
     {
         var charData = state.data;
+
+        // 优先使用卡牌编辑器的 CardEntry 初始牌组
+        List<CardEntry> entryCards = state == _chars[0] ? character1Cards : character2Cards;
+        if (entryCards != null && entryCards.Count > 0)
+        {
+            var cardDataList = CardEntryAdapter.ConvertToCardData(entryCards);
+            foreach (var cd in cardDataList)
+                state.drawPile.Add(cd);
+            Debug.Log($"[BattleManager] {charData?.Label} 初始牌组(CardEntry): {state.drawPile.Count} 张");
+            return;
+        }
+
+        // 回退：使用旧 CardData 初始牌库
         if (charData == null || charData.startingLibrary == null) return;
 
         foreach (var card in charData.startingLibrary.startingCards)
@@ -262,7 +427,7 @@ public class BattleManager : MonoBehaviour
                 state.drawPile.Add(card);
         }
 
-        Debug.Log($"[BattleManager] {charData.Label} 初始牌组: {state.drawPile.Count} 张");
+        Debug.Log($"[BattleManager] {charData.Label} 初始牌组(CardData): {state.drawPile.Count} 张");
     }
 
     // ========================================================================
@@ -306,23 +471,18 @@ public class BattleManager : MonoBehaviour
         if (!_isPlayerTurn || _battleEnded) return false;
 
         var card = _hand[handIndex];
-        bool freePlay = (card.keywords & KeywordType.FreePlay) != 0;
+        int cost = card.GetEffectiveCost();
 
-        if (!freePlay && _actionPoints < card.actionPointCost)
+        if (_actionPoints < cost)
             return false;
 
-        if (!freePlay)
-            _actionPoints -= card.actionPointCost;
+        _actionPoints -= cost;
 
         ApplyCardEffects(card);
         HandleCardConsumption(card);
 
         _hand.RemoveAt(handIndex);
-
-        if ((card.keywords & KeywordType.Swift) != 0)
-            DrawCards(1);
-        else
-            RefreshHandUI();
+        RefreshHandUI();
 
         UpdateUI();
         CheckBattleEnd();
@@ -331,11 +491,24 @@ public class BattleManager : MonoBehaviour
 
     private void ApplyCardEffects(CardData card)
     {
+        // 如果有关联的 CardEntry，走统一效果执行器
+        if (card.sourceEntry != null)
+        {
+            if (_effectExecutor == null)
+                _effectExecutor = new EffectExecutor(new BattleCardContext(this));
+            var effects = card.GetEffects(card.isUpgraded);
+            _effectExecutor.ExecuteEffects(effects, card.sourceEntry, card.isUpgraded);
+            UpdateUI();
+            CheckBattleEnd();
+            return;
+        }
+
+        // 回退：旧路径（无 CardEntry 的 CardData）
         switch (card.cardType)
         {
             case CardType.Attack: ApplyAttackCard(card); break;
-            case CardType.Armor: ApplyArmorCard(card); break;
-            case CardType.Buff: ApplyBuffCard(card); break;
+            case CardType.Skill: ApplyArmorCard(card); break;
+            case CardType.Ability: ApplyBuffCard(card); break;
         }
     }
 
@@ -346,38 +519,16 @@ public class BattleManager : MonoBehaviour
             baseDamage += GetAttributeValue(card.attackAttribute);
 
         int attackCount = card.attackCount;
-        if ((card.keywords & KeywordType.Combo) != 0) attackCount += 1;
-
-        bool ignoreArmor = card.ignoreArmor || (card.keywords & KeywordType.Pierce) != 0;
-        bool isHeavy = (card.keywords & KeywordType.Heavy) != 0;
-        bool hasLifesteal = (card.keywords & KeywordType.Lifesteal) != 0;
-
-        // 重击暴击：默认 25% 概率 / 2 倍；配置了暴击率/暴伤后以其为准（百分比）
-        float critChance = isHeavy ? (_playerCritRate > 0 ? _playerCritRate * 0.01f : 0.25f) : 0f;
-        float critMult   = isHeavy ? (_playerCritDamage > 0 ? _playerCritDamage * 0.01f : 2f) : 1f;
+        bool ignoreArmor = card.ignoreArmor;
 
         int totalDamageDealt = 0;
         for (int i = 0; i < attackCount; i++)
         {
-            int hitDamage = baseDamage;
-            if (isHeavy && Random.value < critChance) hitDamage = Mathf.RoundToInt(hitDamage * critMult);
-            totalDamageDealt += DealDamageToEnemy(hitDamage, ignoreArmor);
+            totalDamageDealt += DealDamageToEnemy(baseDamage, ignoreArmor);
         }
-
-        if ((card.keywords & KeywordType.Toxic) != 0)
-            totalDamageDealt += DealDamageToEnemy(2, true);
-        if ((card.keywords & KeywordType.Burning) != 0)
-            totalDamageDealt += DealDamageToEnemy(3, true);
 
         if (totalDamageDealt > 0)
             ShowEnemyDamage(totalDamageDealt);
-
-        if (hasLifesteal && totalDamageDealt > 0)
-        {
-            float ratio = 0.5f + _playerLifesteal * 0.01f;   // 基础 50%，吸血属性每点 +1%
-            int heal = Mathf.FloorToInt(totalDamageDealt * ratio);
-            _playerHP = Mathf.Min(playerMaxHP, _playerHP + heal);
-        }
     }
 
     private void ApplyArmorCard(CardData card)
@@ -387,8 +538,6 @@ public class BattleManager : MonoBehaviour
             armor += GetAttributeValue(card.armorAttribute);
 
         _playerArmor += armor;
-        if ((card.keywords & KeywordType.Sturdy) != 0)
-            _hasSturdyArmor = true;
     }
 
     private void ApplyBuffCard(CardData card)
@@ -472,6 +621,7 @@ public class BattleManager : MonoBehaviour
         int prev = _playerSanity;
         _playerSanity = Mathf.Clamp(_playerSanity + delta, 0, _playerMaxSanity);
 
+        // 降至阈值 → 触发黑暗阶段
         if (!_sanityPhaseTriggered && prev > SanityPhaseThreshold && _playerSanity <= SanityPhaseThreshold)
         {
             _sanityPhaseTriggered = true;
@@ -481,10 +631,118 @@ public class BattleManager : MonoBehaviour
         UpdateUI();
     }
 
-    /// <summary>理智转阶段钩子（理智降至阈值 4 时触发，子类或事件可覆盖）</summary>
+    /// <summary>理智转阶段钩子（理智降至阈值 4 时触发，每场战斗仅一次）</summary>
     protected virtual void OnSanityPhaseTransition()
     {
         Debug.Log($"[BattleManager] 理智转阶段触发！理智 {_playerSanity}/{_playerMaxSanity}（阈值 {SanityPhaseThreshold}）");
+        _isDarkMode = true;
+
+        // 1. 升级所有卡牌效果 + 施加侵蚀词条
+        UpgradeAllCardsForDarkMode();
+
+        // 2. 切换手牌为黑暗卡面
+        if (handLayout != null)
+            handLayout.SetDarkMode(true);
+
+        // 3. 全屏暗色遮罩淡入
+        if (darkOverlay != null)
+            StartCoroutine(DarkOverlayFadeRoutine());
+
+        // 4. 理智条颤抖效果
+        if (sanityBarFill != null)
+        {
+            if (_sanityTrembleRoutine != null) StopCoroutine(_sanityTrembleRoutine);
+            _sanityTrembleRoutine = StartCoroutine(SanityTrembleRoutine());
+        }
+
+        UpdateUI();
+    }
+
+    /// <summary>
+    /// 升级所有牌堆中的卡牌效果（使用每张牌配置的升级数据），并施加灾厄词条。
+    /// 涵盖手牌、两角色抽牌堆、弃牌堆、消耗堆。
+    /// </summary>
+    private void UpgradeAllCardsForDarkMode()
+    {
+        // 手牌
+        foreach (var card in _hand)
+            UpgradeSingleCard(card);
+
+        // 双角色的牌堆
+        for (int ci = 0; ci < 2; ci++)
+        {
+            if (_chars[ci] == null) continue;
+            foreach (var card in _chars[ci].drawPile)
+                UpgradeSingleCard(card);
+            foreach (var card in _chars[ci].discardPile)
+                UpgradeSingleCard(card);
+            foreach (var card in _chars[ci].consumedPile)
+                UpgradeSingleCard(card);
+        }
+
+        // 刷新手牌 UI（重新应用数据以显示升级后的描述）
+        RefreshHandUI();
+        Debug.Log("[BattleManager] 所有卡牌已升级并施加灾厄词条");
+    }
+
+    /// <summary>
+    /// 单张卡牌升级：仅设置 isUpgraded 标记并施加灾厄词条。
+    /// 升级后的效果由 EffectExecutor 通过 card.GetEffects(true) 自动读取 CardEntry.upgradeEffects，
+    /// 无需写回 CardData flat fields。
+    /// </summary>
+    private void UpgradeSingleCard(CardData card)
+    {
+        if (card == null) return;
+        if (card.isUpgraded) return;
+
+        card.isUpgraded = true;
+        card.keywords |= KeywordType.Calamity;
+    }
+
+    /// <summary>全屏暗色遮罩淡入协程</summary>
+    private IEnumerator DarkOverlayFadeRoutine()
+    {
+        darkOverlay.gameObject.SetActive(true);
+        Color target = new Color(0.05f, 0.02f, 0.08f, darkOverlayAlpha);
+        Color start = darkOverlay.color;
+        start.a = 0f;
+        darkOverlay.color = start;
+
+        float elapsed = 0f;
+        while (elapsed < darkOverlayFadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / darkOverlayFadeDuration;
+            darkOverlay.color = Color.Lerp(start, target, t);
+            yield return null;
+        }
+        darkOverlay.color = target;
+    }
+
+    /// <summary>理智条颤抖效果：持续在原始位置上做小幅随机偏移，理智恢复后停止</summary>
+    private IEnumerator SanityTrembleRoutine()
+    {
+        var rt = sanityBarFill.GetComponent<RectTransform>();
+        Vector2 basePos = rt.anchoredPosition;
+        float intensity = 3f;  // 颤抖幅度（像素）
+
+        while (_playerSanity <= SanityPhaseThreshold && !_battleEnded)
+        {
+            float ox = Random.Range(-intensity, intensity);
+            float oy = Random.Range(-intensity, intensity);
+            rt.anchoredPosition = basePos + new Vector2(ox, oy);
+
+            // 变暗效果
+            Color darkTint = new Color(0.5f, 0.3f, 0.6f, 1f);
+            sanityBarFill.color = Color.Lerp(sanityBarFill.color, darkTint, 0.1f);
+
+            yield return null;
+        }
+
+        // 恢复
+        rt.anchoredPosition = basePos;
+        sanityBarFill.color = new Color(0.3f, 0.5f, 0.85f, 1f);
+        _sanityTrembleRoutine = null;
     }
 
     /// <summary>
@@ -545,8 +803,7 @@ public class BattleManager : MonoBehaviour
     private bool IsCardPlayable(CardData card)
     {
         if (card == null) return false;
-        if ((card.keywords & KeywordType.FreePlay) != 0) return true;
-        return _actionPoints >= card.actionPointCost;
+        return _actionPoints >= card.GetEffectiveCost();
     }
 
     // ========================================================================
@@ -622,6 +879,15 @@ public class BattleManager : MonoBehaviour
         _settingsPanel?.Show();
     }
 
+    private void OnQuitClicked()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
     // ========================================================================
     // 回合流程
     // ========================================================================
@@ -684,9 +950,9 @@ public class BattleManager : MonoBehaviour
     {
         _turnCount++;
         _actionPoints = maxActionPoints;
-        if (!_hasSturdyArmor) _playerArmor = 0;
-        _hasSturdyArmor = false;
+        _playerArmor = 0;
         _hasSwitchedThisTurn = false;
+        _eventsThisTurn.Clear(); // 清除本回合事件
 
         DrawCards(drawPerTurn);
         _isPlayerTurn = true;
@@ -713,6 +979,7 @@ public class BattleManager : MonoBehaviour
         _battleEnded = true;
         _isPlayerTurn = false;
         _waitingEnemyConfirm = false;
+        if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }
         if (victoryPanel != null) victoryPanel.SetActive(victory);
         if (defeatPanel != null) defeatPanel.SetActive(!victory);
         if (endTurnButton != null) endTurnButton.interactable = false;

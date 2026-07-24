@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using LightMiniGame.CardEditor;
 
 /// <summary>
 /// 增益效果数据
@@ -26,6 +27,8 @@ public class CardData : ScriptableObject
     [TextArea(2, 4)] public string description;
     public CardType cardType;
     public Sprite cardArt;
+    [Tooltip("黑暗卡面（理智转阶段时替换为此图），留空则仅变色")]
+    public Sprite darkCardArt;
 
     [Header("通用属性")]
     [Tooltip("商店价值")]
@@ -72,6 +75,28 @@ public class CardData : ScriptableObject
     [Tooltip("增益效果列表")]
     public List<BuffEffect> buffEffects = new List<BuffEffect>();
 
+    // === 升级数据来源（从卡牌编辑器读取） ===
+    [Header("升级数据来源")]
+    [Tooltip("关联的 CardEntry（卡牌编辑器数据），理智转阶段时从其 upgradeEffects 读取升级效果")]
+    public CardEntry sourceEntry;
+
+    /// <summary>运行时标记：本张卡是否已升级（不持久化，每场战斗重置）</summary>
+    [NonSerialized] public bool isUpgraded = false;
+
+    /// <summary>
+    /// 获取当前效果列表。如果有关联的 CardEntry，从其读取；否则返回 null（走旧路径）。
+    /// </summary>
+    public List<CardEffect> GetEffects(bool upgraded)
+    {
+        if (sourceEntry == null) return null;
+        return sourceEntry.GetEffects(upgraded);
+    }
+
+    /// <summary>
+    /// 获取当前费用。如果有关联的 CardEntry，从其读取。
+    /// </summary>
+    public int GetEffectiveCost() => sourceEntry != null ? sourceEntry.GetCost(isUpgraded) : actionPointCost;
+
     /// <summary>
     /// 获取品级中文名
     /// </summary>
@@ -91,8 +116,8 @@ public class CardData : ScriptableObject
     public static string GetCardTypeName(CardType type) => type switch
     {
         CardType.Attack => "攻击",
-        CardType.Armor => "护甲",
-        CardType.Buff => "增益",
+        CardType.Skill => "技能",
+        CardType.Ability => "能力",
         _ => "未知"
     };
 
@@ -125,15 +150,9 @@ public class CardData : ScriptableObject
     public static List<string> GetKeywordNames(KeywordType keywords)
     {
         var result = new List<string>();
-        if ((keywords & KeywordType.Pierce) != 0) result.Add("穿透");
-        if ((keywords & KeywordType.Lifesteal) != 0) result.Add("吸血");
-        if ((keywords & KeywordType.Combo) != 0) result.Add("连击");
-        if ((keywords & KeywordType.Heavy) != 0) result.Add("重击");
-        if ((keywords & KeywordType.Swift) != 0) result.Add("迅捷");
-        if ((keywords & KeywordType.Sturdy) != 0) result.Add("坚固");
-        if ((keywords & KeywordType.Toxic) != 0) result.Add("剧毒");
-        if ((keywords & KeywordType.Burning) != 0) result.Add("燃烧");
-        if ((keywords & KeywordType.FreePlay) != 0) result.Add("免费");
+        if ((keywords & KeywordType.Echo) != 0) result.Add("回响");
+        if ((keywords & KeywordType.Calamity) != 0) result.Add("灾厄");
+        if ((keywords & KeywordType.Fate) != 0) result.Add("命运");
         return result;
     }
 
@@ -170,14 +189,14 @@ public class CardData : ScriptableObject
                 if (ignoreArmor) sb.Append("\n无视护甲");
                 break;
 
-            case CardType.Armor:
+            case CardType.Skill:
                 string armor = armorValueType == ValueType.Fixed
                     ? armorValue.ToString()
                     : $"({armorValue}+{GetAttributeName(armorAttribute)})";
                 sb.Append($"获得{armor}点护甲");
                 break;
 
-            case CardType.Buff:
+            case CardType.Ability:
                 foreach (var effect in buffEffects)
                     sb.AppendLine(GetBuffEffectText(effect));
                 string dur = buffDuration switch

@@ -240,10 +240,11 @@ namespace LightMiniGame.CardEditor.Editor
             card.cardId = EditorGUILayout.TextField("卡牌 ID", card.cardId);
             card.cardName = EditorGUILayout.TextField("卡牌名称", card.cardName);
             card.cardArt = (Sprite)EditorGUILayout.ObjectField("卡面原画", card.cardArt, typeof(Sprite), false);
+            card.darkCardArt = (Sprite)EditorGUILayout.ObjectField("黑暗卡面", card.darkCardArt, typeof(Sprite), false);
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
             card.cardType = (CardType)EditorGUILayout.Popup("卡牌类型", (int)card.cardType, new[] { "攻击", "技能", "能力" });
             card.existence = (CardExistence)EditorGUILayout.Popup("存在形式", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
-            card.keyword = (CardKeyword)EditorGUILayout.Popup("词条", (int)card.keyword, new[] { "无", "回响" });
+            card.keyword = (CardKeyword)EditorGUILayout.Popup("词条", (int)card.keyword, new[] { "无", "回响", "灾厄", "命运" });
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
@@ -895,6 +896,7 @@ namespace LightMiniGame.CardEditor.Editor
             card.baseDescription = source.baseDescription;
             card.upgradeDescription = source.upgradeDescription;
             card.cardArt = source.cardArt;
+            card.darkCardArt = source.darkCardArt;
             card.grade = source.grade;
             card.cardType = source.cardType;
             card.existence = source.existence;

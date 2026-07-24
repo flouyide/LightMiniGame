@@ -17,8 +17,8 @@ public static class BattlePrefabBuilder
     {
         EnsureDirectory();
         CreateCardPrefab(CardType.Attack);
-        CreateCardPrefab(CardType.Armor);
-        CreateCardPrefab(CardType.Buff);
+        CreateCardPrefab(CardType.Skill);
+        CreateCardPrefab(CardType.Ability);
         Debug.Log("[BattlePrefabBuilder] 三种卡牌模板Prefab已创建");
     }
 
@@ -27,8 +27,8 @@ public static class BattlePrefabBuilder
         string typeName = cardType switch
         {
             CardType.Attack => "攻击牌",
-            CardType.Armor => "护甲牌",
-            CardType.Buff => "增益牌",
+            CardType.Skill => "技能牌",
+            CardType.Ability => "能力牌",
             _ => "卡牌"
         };
 
@@ -53,10 +53,10 @@ public static class BattlePrefabBuilder
                 cardDisplay.attackValue = 5;
                 cardDisplay.attackCount = 1;
                 break;
-            case CardType.Armor:
+            case CardType.Skill:
                 cardDisplay.armorValue = 5;
                 break;
-            case CardType.Buff:
+            case CardType.Ability:
                 cardDisplay.buffEffects = new System.Collections.Generic.List<BuffEffect>();
                 break;
         }

@@ -41,10 +41,10 @@ public class CardDisplayEditor : Editor
             case CardType.Attack:
                 DrawAttackFields(card);
                 break;
-            case CardType.Armor:
+            case CardType.Skill:
                 DrawArmorFields(card);
                 break;
-            case CardType.Buff:
+            case CardType.Ability:
                 DrawBuffFields(card);
                 break;
         }

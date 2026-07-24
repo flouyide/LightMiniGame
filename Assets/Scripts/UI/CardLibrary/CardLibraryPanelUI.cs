@@ -294,8 +294,8 @@ public class CardLibraryPanelUI : MonoBehaviour
     {
         switch (type)
         {
-            case CardType.Armor: return armorCardPrefab;
-            case CardType.Buff:  return buffCardPrefab;
+            case CardType.Skill: return armorCardPrefab;
+            case CardType.Ability:  return buffCardPrefab;
             default:             return attackCardPrefab;
         }
     }
