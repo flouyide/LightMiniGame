@@ -408,18 +408,40 @@ public class BattleManager : MonoBehaviour
     {
         var charData = state.data;
 
-        // 优先使用卡牌编辑器的 CardEntry 初始牌组
+        // 优先从 GlobalCardLibrary 读取（跨战斗保留的牌库）
+        var library = GlobalCardLibrary.Instance;
+        if (library != null && charData != null)
+        {
+            var cards = library.GetCards(charData);
+            if (cards != null && cards.Count > 0)
+            {
+                foreach (var inst in cards)
+                {
+                    var cd = CreateRuntimeCardData(inst);
+                    if (cd != null) state.drawPile.Add(cd);
+                }
+                Debug.Log($"[BattleManager] {charData.Label} 初始牌组(从牌库): {state.drawPile.Count} 张");
+                return;
+            }
+        }
+
+        // 回退：从 Inspector 配置的 CardEntry 列表读取，并注入牌库
         List<CardEntry> entryCards = state == _chars[0] ? character1Cards : character2Cards;
         if (entryCards != null && entryCards.Count > 0)
         {
             var cardDataList = CardEntryAdapter.ConvertToCardData(entryCards);
             foreach (var cd in cardDataList)
+            {
                 state.drawPile.Add(cd);
-            Debug.Log($"[BattleManager] {charData?.Label} 初始牌组(CardEntry): {state.drawPile.Count} 张");
+                // 注入 GlobalCardLibrary 供后续战斗使用
+                if (library != null && charData != null)
+                    library.AddCard(charData, cd);
+            }
+            Debug.Log($"[BattleManager] {charData?.Label} 初始牌组(CardEntry→注入牌库): {state.drawPile.Count} 张");
             return;
         }
 
-        // 回退：使用旧 CardData 初始牌库
+        // 最终回退：旧 CardData 初始牌库
         if (charData == null || charData.startingLibrary == null) return;
 
         foreach (var card in charData.startingLibrary.startingCards)
@@ -429,6 +451,54 @@ public class BattleManager : MonoBehaviour
         }
 
         Debug.Log($"[BattleManager] {charData.Label} 初始牌组(CardData): {state.drawPile.Count} 张");
+    }
+
+    /// <summary>
+    /// 从 CardInstance 创建运行时 CardData 副本（应用覆盖层，保留 sourceEntry）。
+    /// 使用 CreateInstance 生成临时实例，战斗结束后随场景销毁。
+    /// </summary>
+    private CardData CreateRuntimeCardData(LightMiniGame.Card.CardInstance inst)
+    {
+        if (inst == null) return null;
+
+        var cd = ScriptableObject.CreateInstance<CardData>();
+
+        // 如果原模板有 sourceEntry，保留关联（走 EffectExecutor 路径）
+        cd.sourceEntry = inst.template != null ? inst.template.sourceEntry : null;
+
+        // 应用有效值（覆盖层优先，回退到模板）
+        cd.cardName = inst.EffectiveName;
+        cd.description = inst.EffectiveDescription;
+        cd.actionPointCost = inst.EffectiveCost;
+        cd.value = inst.EffectiveValue;
+        cd.grade = inst.EffectiveGrade;
+        cd.consumeType = inst.EffectiveConsume;
+        cd.keywords = inst.EffectiveKeywords;
+        cd.cardType = inst.template != null ? inst.template.cardType : CardType.Attack;
+        cd.cardArt = inst.template != null ? inst.template.cardArt : null;
+        cd.darkCardArt = inst.template != null ? inst.template.darkCardArt : null;
+
+        // 攻击属性
+        cd.attackCount = inst.EffectiveAttackCount;
+        cd.attackValueType = inst.EffectiveAttackValType;
+        cd.attackValue = inst.EffectiveAttackValue;
+        cd.attackAttribute = inst.EffectiveAttackAttr;
+        cd.ignoreArmor = inst.EffectiveIgnoreArmor;
+
+        // 护甲属性
+        cd.armorValueType = inst.EffectiveArmorValType;
+        cd.armorValue = inst.EffectiveArmorValue;
+        cd.armorAttribute = inst.EffectiveArmorAttr;
+
+        // 增益属性
+        cd.buffDuration = inst.EffectiveBuffDuration;
+        cd.buffDurationTurns = inst.EffectiveBuffTurns;
+        cd.buffStacks = inst.EffectiveBuffStacks;
+        cd.buffEffects = inst.EffectiveBuffEffects != null
+            ? new List<BuffEffect>(inst.EffectiveBuffEffects)
+            : new List<BuffEffect>();
+
+        return cd;
     }
 
     // ========================================================================
