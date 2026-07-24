@@ -46,9 +46,9 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
-    - optionText: "\u7279\u4EF7\u5546\u5E97"
+    - optionText: "\u6218\uFF01"
       effects:
-      - type: 12
+      - type: 6
         amount: 50
         itemDesc: 
         attributeOp: 0
@@ -65,7 +65,7 @@ MonoBehaviour:
         attributeOp: 0
         targetAttribute: 5
         relic: {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
-        card: {fileID: 11400000, guid: 3b3f494ae33354001a2bdcdb017dcdec, type: 2}
+        card: {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
         keywordToAdd: 0
         discountRatio: 0.5
       - type: 14

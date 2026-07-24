@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using LightMiniGame.Shop;   // RelicData（GrantRelic 用）
+using LightMiniGame.Shop;          // RelicData（GrantRelic 用）
+using LightMiniGame.CardEditor;   // CardEntry（GrantCard 用编辑器卡牌格式）
 
 /// <summary>
 /// 书页事件类型
@@ -77,7 +78,7 @@ public class EffectData
     public PlayerAttributeOp attributeOp = PlayerAttributeOp.Gain;  // ModifyAttribute：先选 增/减（Gain/Lose）
     public PlayerBaseAttribute targetAttribute;                     // ModifyAttribute：再选 属性（Strength/Agility/...）
     public RelicData relic;                                          // GrantRelic：具体遗物（留空=从角色池随机）
-    public CardData card;                                            // GrantCard：具体卡牌
+    public CardEntry card;                                           // GrantCard：具体卡牌（编辑器格式）
     public KeywordType keywordToAdd;                                 // AddKeywordToCard：要附加的词条（位标枚举，Inspector 可多选）
     [Range(0.1f, 1f)]
     public float discountRatio = 0.6f;                               // EnterDiscountShop：折扣比例（0.6=6折）；原 ChapterConfig.discountShopRatio 已迁移至此，按事件单独配置

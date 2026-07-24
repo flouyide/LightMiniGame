@@ -938,6 +938,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1023908107}
     - target: {fileID: 8272002400983176042, guid: c37c6911dfcbea045bfd2b533a693447, type: 3}
+      propertyPath: skillCardPrefab
+      value: 
+      objectReference: {fileID: 2973715665040290557, guid: f5f692f5311d94c8bb8e53e0ad3773f9, type: 3}
+    - target: {fileID: 8272002400983176042, guid: c37c6911dfcbea045bfd2b533a693447, type: 3}
+      propertyPath: abilityCardPrefab
+      value: 
+      objectReference: {fileID: 7474974900366243079, guid: 554d0b2b98f0e436c861a89e6893f1a5, type: 3}
+    - target: {fileID: 8272002400983176042, guid: c37c6911dfcbea045bfd2b533a693447, type: 3}
       propertyPath: activeCharNameText
       value: 
       objectReference: {fileID: 64290555}

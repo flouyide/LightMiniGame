@@ -28,6 +28,7 @@ public class ChapterManager : MonoBehaviour
     [Tooltip("战斗管理器（BattleManager）。进入战斗时驱动其 BeginBattle()。留空则运行时自动查找。")]
     [SerializeField] private BattleManager battleManager;
     private bool _inBattle;
+    private System.Action _battleResume;   // 由“选项效果 EnterBattle”发起战斗时的效果序列续体；非空则战后先续体再推进章节
 
     // --- 当前激活/未激活角色（局外角色切换，进入战斗时传给 BattleManager）---
     private CharacterData _activeCharacter;
@@ -529,7 +530,8 @@ public class ChapterManager : MonoBehaviour
                 Debug.Log($"[ChapterManager] 失去物品: {effect.itemDesc}");
                 break;
             case EffectType.EnterBattle:
-                EnterBattle();
+                // 作为选项效果：挂起效果序列，战斗结束（ReturnFromBattle）后续体，继续后续效果并最终触发 onComplete
+                suspended = EnterBattle(() => ProcessEffect(effects, next, onComplete));
                 break;
 
             case EffectType.ModifyAttribute:
@@ -643,12 +645,15 @@ public class ChapterManager : MonoBehaviour
         }
         var ch = PickRandomCharacter();
         if (ch == null) return;
+        // 编辑器格式 CardEntry → 运行时 CardData（牌库/战斗内部格式）
+        var cardData = CardEntryAdapter.ConvertSingle(effect.card);
+        if (cardData == null) return;
         GlobalCardLibrary.EnsureInstance();
         if (GlobalCardLibrary.Instance == null) return;
         int copies = Mathf.Max(1, effect.amount);
         for (int i = 0; i < copies; i++)
-            GlobalCardLibrary.Instance.AddCard(ch, effect.card);
-        Debug.Log($"[ChapterManager] 发放卡牌 {effect.card.cardName} x{copies} → {ch.displayName}（随机角色）");
+            GlobalCardLibrary.Instance.AddCard(ch, cardData);
+        Debug.Log($"[ChapterManager] 发放卡牌 {cardData.cardName} x{copies} → {ch.displayName}（随机角色）");
     }
 
     /// <summary>随机挑一个角色，用于发放卡牌/遗物（设计意图：单局内随机单个角色获得）。</summary>
@@ -757,12 +762,16 @@ public class ChapterManager : MonoBehaviour
 
     /// <summary>
     /// 进入战斗：禁用 BookCanvas、启用 BattleCanvas，并驱动 BattleManager 读取局外玩家属性后开始战斗。
-    /// 由 BookUIController 在玩家选中「战斗」类型页面时调用（即“进入战斗按钮”）。
+    /// - 来自「战斗」类型书页（PageEventType.Battle）直接调用时 onResolved 为 null，战斗结束由 ReturnFromBattle 推进章节；
+    /// - 来自选项效果 EffectType.EnterBattle 时，传入续体回调，使效果序列在战斗结束后才继续并触发 onComplete（=OnOptionResolved），
+    ///   避免「进入战斗的同时立刻推进章节 / 战后再次推进」的双调用问题。
     /// </summary>
-    public void EnterBattle()
+    /// <returns>true=已发起战斗（调用方应暂停序列，等战斗结束后续体）；false=未发起（如已在战斗中）。</returns>
+    public bool EnterBattle(System.Action onResolved = null)
     {
-        if (_inBattle) return;          // 防止重复进入
+        if (_inBattle) return false;          // 防止重复进入
         _inBattle = true;
+        _battleResume = onResolved;
 
         if (bookCanvas != null) bookCanvas.SetActive(false);
         if (battleCanvas != null) battleCanvas.SetActive(true);
@@ -775,11 +784,13 @@ public class ChapterManager : MonoBehaviour
             bm.OnBattleEnded -= OnBattleEnded;
             bm.OnBattleEnded += OnBattleEnded;
             bm.BeginBattle();        // 读取局外属性 + 启动战斗
+            return true;
         }
         else
         {
             Debug.LogError("[ChapterManager] 未找到 BattleManager，无法进入战斗");
-            ReturnFromBattle();      // 兜底：直接回到局外
+            ReturnFromBattle();      // 兜底：直接回到局外（会触发 _battleResume 或 OnOptionResolved）
+            return false;
         }
     }
 
@@ -800,8 +811,19 @@ public class ChapterManager : MonoBehaviour
         // 战斗后的玩家属性已由 BattleManager 在退出前通过 ApplyBattleResult 写回本管理器
         OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
 
-        // 推进章节（等价一次选项结算：刷新页面 / 消耗卡片 / 章节完成）
-        OnOptionResolved();
+        // 若本次战斗由“选项效果 EnterBattle”发起（_battleResume 非空），则战后续体：
+        // 继续处理剩余效果并最终触发 onComplete（=OnOptionResolved，由 ApplyEffects 传入，负责推进章节）。
+        // 否则（直接点「战斗」书页进入）按原逻辑直接推进章节。
+        if (_battleResume != null)
+        {
+            var resume = _battleResume;
+            _battleResume = null;
+            resume.Invoke();
+        }
+        else
+        {
+            OnOptionResolved();
+        }
     }
 
     /// <summary>
