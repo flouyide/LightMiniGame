@@ -53,6 +53,9 @@ public class ChapterManager : MonoBehaviour
     public int PlayerMaxHP { get; private set; }
     public int PlayerGold { get; private set; }
     public int PlayerSanity { get; private set; }   // 理智（背景切换依据）
+    public int PlayerMaxSanity { get; private set; }   // 理智上限
+    public int PlayerMaxActionPoints { get; private set; }  // 每回合行动点
+    public int PlayerDrawPerTurn { get; private set; }      // 每回合基础抽牌数
 
     // 持久基础属性（力量/敏捷/吸血/暴击率/暴伤）的【运行时副本】：
     // 只在单局游戏内保留（跨战斗有效），开局时由 InitPlayerStats 从 PlayerConfig 读入初始值，
@@ -110,7 +113,10 @@ public class ChapterManager : MonoBehaviour
             PlayerMaxHP = playerConfig.maxHP;
             PlayerHP = playerConfig.startHP;
             PlayerGold = playerConfig.startGold;
-            PlayerSanity = playerConfig.Sanity;
+            PlayerSanity = playerConfig.startSanity;
+            PlayerMaxSanity = playerConfig.maxSanity;
+            PlayerMaxActionPoints = playerConfig.maxActionPoints;
+            PlayerDrawPerTurn = playerConfig.drawPerTurn;
             // 持久基础属性：每次开局从 PlayerConfig（仅作初始值来源）重新读入
             PlayerStrength   = playerConfig.strength;
             PlayerAgility    = playerConfig.agility;
@@ -123,7 +129,10 @@ public class ChapterManager : MonoBehaviour
             PlayerMaxHP = 64;
             PlayerHP = 64;
             PlayerGold = 50;
-            PlayerSanity = 0;
+            PlayerSanity = 10;
+            PlayerMaxSanity = 10;
+            PlayerMaxActionPoints = 3;
+            PlayerDrawPerTurn = 3;
             PlayerStrength = PlayerAgility = PlayerLifesteal = PlayerCritRate = PlayerCritDamage = 0;
             Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
         }

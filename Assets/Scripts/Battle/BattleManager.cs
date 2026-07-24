@@ -60,6 +60,10 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI dexterityText;
     [SerializeField] private Image playerHPBarFill;
 
+    [Header("UI引用 - 理智")]
+    [SerializeField] private TextMeshProUGUI sanityText;
+    [SerializeField] private Image sanityBarFill;
+
     [Header("UI引用 - 敌人")]
     [SerializeField] private TextMeshProUGUI enemyHPText;
     [SerializeField] private TextMeshProUGUI enemyArmorText;
@@ -114,6 +118,10 @@ public class BattleManager : MonoBehaviour
     private int _playerLifesteal;
     private int _playerCritRate;
     private int _playerCritDamage;
+    private int _playerSanity;
+    private int _playerMaxSanity;
+    private bool _sanityPhaseTriggered;  // 理智转阶段是否已触发（防止重复触发）
+    private const int SanityPhaseThreshold = 4;  // 理智转阶段阈值
     private int _baseDrawPerTurn;   // 每场战斗前的抽牌基数（来自 Inspector 的 drawPerTurn，开局捕获一次）
     private int _actionPoints;
     private int _enemyHP;
@@ -181,25 +189,35 @@ public class BattleManager : MonoBehaviour
         _activeCharIdx = 0;
         _hasSwitchedThisTurn = false;
         _turnCount = 1;
-        _playerHP = playerMaxHP;
         _playerArmor = 0;
-        _playerStrength = playerStrength;
-        _playerDexterity = playerDexterity;
+        _sanityPhaseTriggered = false;
 
         // 读入持久基础属性（单局内跨战斗保留，存于 ChapterManager 运行时副本；资产 PlayerConfig 仅作初始值）
         ChapterManager cm = chapterManager != null ? chapterManager : FindObjectOfType<ChapterManager>();
         if (cm != null)
         {
+            playerMaxHP = cm.PlayerMaxHP;
+            _playerHP = cm.PlayerHP;
+            maxActionPoints = cm.PlayerMaxActionPoints;
+            _baseDrawPerTurn = cm.PlayerDrawPerTurn;
+            _playerMaxSanity = cm.PlayerMaxSanity;
+            _playerSanity = cm.PlayerSanity;
             _playerStrength = cm.PlayerStrength;
             _playerAgility = cm.PlayerAgility;
             _playerLifesteal = cm.PlayerLifesteal;
             _playerCritRate = cm.PlayerCritRate;
             _playerCritDamage = cm.PlayerCritDamage;
-            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
         }
         else if (playerConfig != null)
         {
             // 回退：直接用资产初始值（不含事件累积，仅作安全网）
+            playerMaxHP = playerConfig.maxHP;
+            _playerHP = playerConfig.startHP;
+            maxActionPoints = playerConfig.maxActionPoints;
+            _baseDrawPerTurn = playerConfig.drawPerTurn;
+            _playerMaxSanity = playerConfig.maxSanity;
+            _playerSanity = playerConfig.startSanity;
             _playerStrength = playerConfig.strength;
             _playerAgility = playerConfig.agility;
             _playerLifesteal = playerConfig.lifesteal;
@@ -209,6 +227,9 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
+            _playerHP = playerMaxHP;
+            _playerMaxSanity = 10;
+            _playerSanity = 10;
             Debug.LogWarning("[BattleManager] 未配置 ChapterManager / PlayerConfig，持久属性为 0");
         }
 
@@ -439,6 +460,31 @@ public class BattleManager : MonoBehaviour
         }
         _playerHP -= actualDamage;
         if (_playerHP < 0) _playerHP = 0;
+    }
+
+    /// <summary>
+    /// 修改理智值。delta 为正则恢复，为正则降低。降至 0 以下时置为 0。
+    /// 当理智从 >阈值 降至 ≤阈值 时触发转阶段（每场战斗仅触发一次）。
+    /// </summary>
+    public void ModifySanity(int delta)
+    {
+        if (delta == 0) return;
+        int prev = _playerSanity;
+        _playerSanity = Mathf.Clamp(_playerSanity + delta, 0, _playerMaxSanity);
+
+        if (!_sanityPhaseTriggered && prev > SanityPhaseThreshold && _playerSanity <= SanityPhaseThreshold)
+        {
+            _sanityPhaseTriggered = true;
+            OnSanityPhaseTransition();
+        }
+
+        UpdateUI();
+    }
+
+    /// <summary>理智转阶段钩子（理智降至阈值 4 时触发，子类或事件可覆盖）</summary>
+    protected virtual void OnSanityPhaseTransition()
+    {
+        Debug.Log($"[BattleManager] 理智转阶段触发！理智 {_playerSanity}/{_playerMaxSanity}（阈值 {SanityPhaseThreshold}）");
     }
 
     /// <summary>
@@ -716,6 +762,9 @@ public class BattleManager : MonoBehaviour
             playerHPBarFill.fillAmount = (float)_playerHP / playerMaxHP;
         if (enemyHPBarFill != null)
             enemyHPBarFill.fillAmount = (float)_enemyHP / enemyMaxHP;
+
+        if (sanityText != null) sanityText.text = $"{_playerSanity}/{_playerMaxSanity}";
+        if (sanityBarFill != null) sanityBarFill.fillAmount = (float)_playerSanity / _playerMaxSanity;
 
         if (handLayout != null)
             handLayout.RefreshPlayable(IsCardPlayable);

@@ -10,7 +10,14 @@ public class PlayerConfig : ScriptableObject
     public int maxHP = 64;       // 最大生命值
     public int startHP = 64;     // 初始生命值
     public int startGold = 50;   // 初始金币
-    public int Sanity = 0;  // 理智
+    [Tooltip("理智初始值")]
+    public int startSanity = 10; // 初始理智
+    [Tooltip("理智上限")]
+    public int maxSanity = 10;   // 理智上限
+    [Tooltip("每回合能量回复")]
+    public int maxActionPoints = 3;  // 每回合行动点
+    [Tooltip("每回合基础抽牌数")]
+    public int drawPerTurn = 3;  // 每回合抽牌数
     
     [Tooltip("力量：影响攻击牌伤害（AttributeBased 时加成）")]
     public int strength;          // 力量
