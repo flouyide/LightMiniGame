@@ -66,6 +66,16 @@ public class CardDisplay : MonoBehaviour
     [SerializeField] private Image typeBadgeImage;
     [SerializeField] private Image costBadgeImage;
 
+    [Header("词条悬浮提示")]
+    [Tooltip("悬浮时显示的词条说明面板（Image + 子 TextMeshProUGUI），需挂在卡牌上方")]
+    [SerializeField] private GameObject keywordTooltip;
+    [Tooltip("词条说明文本组件（keywordTooltip 的子对象）")]
+    [SerializeField] private TextMeshProUGUI tooltipText;
+    [Tooltip("词条提示背景颜色")]
+    [SerializeField] private Color tooltipBgColor = new Color(0.15f, 0.1f, 0.2f, 0.9f);
+    [Tooltip("词条提示文字颜色")]
+    [SerializeField] private Color tooltipTextColor = new Color(0.85f, 0.8f, 0.95f, 1f);
+
     [Header("类型颜色")]
     [SerializeField] private Color attackColor = new Color(0.75f, 0.22f, 0.22f, 1f);
     [SerializeField] private Color armorColor = new Color(0.22f, 0.45f, 0.78f, 1f);
@@ -117,6 +127,38 @@ public class CardDisplay : MonoBehaviour
     {
         _playable = playable;
         UpdateDisplay();
+    }
+
+    /// <summary>悬浮时显示词条提示，移开时隐藏</summary>
+    public void ShowKeywordTooltip(bool show)
+    {
+        if (keywordTooltip == null) return;
+        if (!show) { keywordTooltip.SetActive(false); return; }
+
+        var desc = GetKeywordTooltipText();
+        if (string.IsNullOrEmpty(desc)) { keywordTooltip.SetActive(false); return; }
+
+        if (tooltipText != null)
+        {
+            tooltipText.text = desc;
+            tooltipText.color = tooltipTextColor;
+        }
+        keywordTooltip.SetActive(true);
+    }
+
+    /// <summary>生成词条提示文本</summary>
+    private string GetKeywordTooltipText()
+    {
+        if (keywords == KeywordType.None) return "";
+
+        var parts = new System.Collections.Generic.List<string>();
+        if ((keywords & KeywordType.Echo) != 0)
+            parts.Add("回响：本回合第一次打出时回到手牌");
+        if ((keywords & KeywordType.Calamity) != 0)
+            parts.Add("灾厄：卡牌效果提升，但需支付代价");
+        if ((keywords & KeywordType.Fate) != 0)
+            parts.Add("命运：打出后随机触发好运与厄运效果");
+        return string.Join("\n", parts);
     }
 
     /// <summary>
@@ -290,8 +332,9 @@ public class CardDisplay : MonoBehaviour
         if (data.sourceEntry != null)
         {
             ApplyCardEntry(data.sourceEntry, data.isUpgraded);
-            // 仍然复制运行时字段（费用可能被修改过）
+            // 运行时字段覆盖（费用可能被修改过，keywords 可能被理智转阶段改过）
             actionPointCost = data.GetEffectiveCost();
+            keywords = data.keywords;
             UpdateDisplay();
             return;
         }

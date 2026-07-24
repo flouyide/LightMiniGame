@@ -26,7 +26,69 @@ MonoBehaviour:
   keyword: 0
   upgradable: 1
   baseEffects: []
-  upgradeEffects: []
+  upgradeEffects:
+  - enabled: 1
+    effectName: "\u6548\u679C 1"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 0
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  - enabled: 1
+    effectName: "\u6548\u679C 1"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 0
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
   baseAbility:
     abilityName: 
     abilityDescription: 

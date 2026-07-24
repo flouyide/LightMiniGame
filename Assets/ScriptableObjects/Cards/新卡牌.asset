@@ -21,7 +21,7 @@ MonoBehaviour:
   grade: 0
   cardType: 0
   existence: 0
-  baseCost: 1
+  baseCost: 0
   upgradeCost: 1
   keyword: 0
   upgradable: 1

@@ -17,7 +17,7 @@ namespace LightMiniGame.CardEditor.Editor
         private CardDatabase _database;
         private List<CardEntry> _filteredCards = new List<CardEntry>();
         private CardEntry _selectedCard;
-        private bool _showUpgrade;
+        private bool _viewingUpgrade;  // 右栏当前查看的是基础(false)还是升级(true)
         private Vector2 _leftScroll, _middleScroll, _rightScroll;
 
         // === 筛选 ===
@@ -199,7 +199,7 @@ namespace LightMiniGame.CardEditor.Editor
                     if (GUILayout.Button(card.cardName ?? "(未命名)", EditorStyles.label))
                     {
                         _selectedCard = card;
-                        _showUpgrade = false;
+                        _viewingUpgrade = false;
                         _validationResults.Clear();
                     }
                     EditorGUILayout.EndHorizontal();
@@ -249,8 +249,8 @@ namespace LightMiniGame.CardEditor.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
             card.baseCost = EditorGUILayout.IntField("基础费用", card.baseCost);
-    _showUpgrade = EditorGUILayout.BeginToggleGroup("升级", card.upgradable);
-            card.upgradable = _showUpgrade;
+    card.upgradable = EditorGUILayout.BeginToggleGroup("升级", card.upgradable);
+            EditorGUILayout.EndToggleGroup();
             if (card.upgradable)
             {
                 card.upgradeCost = EditorGUILayout.IntField("升级后费用", card.upgradeCost);
@@ -298,19 +298,19 @@ namespace LightMiniGame.CardEditor.Editor
                     EditorGUILayout.BeginHorizontal();
                     var oldLabel = GUI.skin.label.fontSize;
                     GUI.skin.label.fontSize = 13;
-                    var baseColor = !_showUpgrade ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
-                    var upgradeColor = _showUpgrade ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
+                    var baseColor = !_viewingUpgrade ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
+                    var upgradeColor = _viewingUpgrade ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
                     var oldBg = GUI.backgroundColor;
                     GUI.backgroundColor = baseColor;
                     if (GUILayout.Button("基础效果", GUILayout.Height(24)))
                     {
-                        _showUpgrade = false;
+                        _viewingUpgrade = false;
                         _validationResults.Clear();
                     }
                     GUI.backgroundColor = upgradeColor;
                     if (GUILayout.Button("升级效果", GUILayout.Height(24)))
                     {
-                        _showUpgrade = true;
+                        _viewingUpgrade = true;
                         _validationResults.Clear();
                     }
                     GUI.backgroundColor = oldBg;
@@ -354,10 +354,10 @@ namespace LightMiniGame.CardEditor.Editor
         // ========================================================================
         private void DrawEffectList()
         {
-            var effects = _showUpgrade ? _selectedCard.upgradeEffects : _selectedCard.baseEffects;
+            var effects = _viewingUpgrade ? _selectedCard.upgradeEffects : _selectedCard.baseEffects;
             if (effects == null) effects = new List<CardEffect>();
 
-            EditorGUILayout.LabelField(_showUpgrade ? "升级效果列表" : "基础效果列表", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(_viewingUpgrade ? "升级效果列表" : "基础效果列表", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("效果按列表顺序依次结算。可拖动排序（↑↓）、复制、启用/禁用。", MessageType.Info);
 
             for (int i = 0; i < effects.Count; i++)
@@ -374,7 +374,7 @@ namespace LightMiniGame.CardEditor.Editor
         private void DrawEffectItem(List<CardEffect> effects, int index)
         {
             var eff = effects[index];
-            string foldoutKey = $"{(_showUpgrade ? "U" : "B")}_{index}";
+            string foldoutKey = $"{(_viewingUpgrade ? "U" : "B")}_{index}";
             if (!_effectFoldouts.ContainsKey(foldoutKey)) _effectFoldouts[foldoutKey] = true;
 
             EditorGUILayout.BeginVertical("box");
@@ -685,10 +685,10 @@ namespace LightMiniGame.CardEditor.Editor
         // ========================================================================
         private void DrawAbilityEditor()
         {
-            var ability = _showUpgrade ? _selectedCard.upgradeAbility : _selectedCard.baseAbility;
+            var ability = _viewingUpgrade ? _selectedCard.upgradeAbility : _selectedCard.baseAbility;
             if (ability == null) ability = new AbilityData();
 
-            EditorGUILayout.LabelField(_showUpgrade ? "升级能力配置" : "基础能力配置", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(_viewingUpgrade ? "升级能力配置" : "基础能力配置", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("能力卡：持续监听触发器，事件发生时执行一组普通效果。", MessageType.Info);
 
             ability.abilityName = EditorGUILayout.TextField("能力名称", ability.abilityName);
@@ -788,7 +788,7 @@ namespace LightMiniGame.CardEditor.Editor
 
             // 卡牌标题
             EditorGUILayout.LabelField($"【{CardEntry.GetGradeName(card.grade)}】{card.cardName}", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"类型: {CardEntry.GetCardTypeName(card.cardType)}  费用: {(_showUpgrade && card.upgradable ? card.upgradeCost : card.baseCost)}  存在形式: {CardEntry.GetExistenceName(card.existence)}");
+            EditorGUILayout.LabelField($"类型: {CardEntry.GetCardTypeName(card.cardType)}  费用: {(_viewingUpgrade && card.upgradable ? card.upgradeCost : card.baseCost)}  存在形式: {CardEntry.GetExistenceName(card.existence)}");
             if (card.keyword != CardKeyword.None)
                 EditorGUILayout.LabelField($"词条: {CardEntry.GetKeywordName(card.keyword)}");
 
@@ -796,13 +796,13 @@ namespace LightMiniGame.CardEditor.Editor
 
             // 描述
             EditorGUILayout.LabelField("描述:", EditorStyles.boldLabel);
-            var desc = card.GetDescription(_showUpgrade && card.upgradable);
+            var desc = card.GetDescription(_viewingUpgrade && card.upgradable);
             EditorGUILayout.LabelField(desc, EditorStyles.wordWrappedLabel);
 
             // 效果列表
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("效果结算顺序:", EditorStyles.boldLabel);
-            var effects = card.GetEffects(_showUpgrade && card.upgradable);
+            var effects = card.GetEffects(_viewingUpgrade && card.upgradable);
             for (int i = 0; i < effects.Count; i++)
             {
                 if (!effects[i].enabled) continue;
@@ -812,7 +812,7 @@ namespace LightMiniGame.CardEditor.Editor
             // 能力信息
             if (card.cardType == CardType.Ability)
             {
-                var ability = card.GetAbility(_showUpgrade && card.upgradable);
+                var ability = card.GetAbility(_viewingUpgrade && card.upgradable);
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("能力信息:", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(ability.GetDescription(), EditorStyles.wordWrappedLabel);
@@ -878,7 +878,7 @@ namespace LightMiniGame.CardEditor.Editor
             AssetDatabase.SaveAssets();
 
             _selectedCard = card;
-            _showUpgrade = false;
+            _viewingUpgrade = false;
             RefreshFilter();
             EditorGUIUtility.PingObject(card);
         }
@@ -920,7 +920,7 @@ namespace LightMiniGame.CardEditor.Editor
             AssetDatabase.SaveAssets();
 
             _selectedCard = card;
-            _showUpgrade = false;
+            _viewingUpgrade = false;
             RefreshFilter();
             EditorGUIUtility.PingObject(card);
         }

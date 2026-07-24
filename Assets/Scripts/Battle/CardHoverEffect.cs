@@ -9,6 +9,7 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
     private int _handIndex;
     private HandCardLayout _layout;
     private System.Action<int> _onCardClicked;
+    private CardDisplay _display;
 
     /// <summary>
     /// 初始化交互回调
@@ -18,18 +19,23 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
         _handIndex = handIndex;
         _layout = layout;
         _onCardClicked = onCardClicked;
+        _display = GetComponent<CardDisplay>();
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (_layout != null)
             _layout.SetHoveredIndex(_handIndex);
+        if (_display != null)
+            _display.ShowKeywordTooltip(true);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         if (_layout != null)
             _layout.SetHoveredIndex(-1);
+        if (_display != null)
+            _display.ShowKeywordTooltip(false);
     }
 
     public void OnPointerClick(PointerEventData eventData)
