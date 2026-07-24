@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LightMiniGame.Card;
 using LightMiniGame.Shop;
@@ -77,6 +78,11 @@ public class BookUIController : MonoBehaviour
         chapterManager.OnChapterInfoUpdated.AddListener(HandleChapterInfoUpdated);
         chapterManager.OnPlayerStatsUpdated.AddListener(HandlePlayerStatsUpdated);
 
+        // 交互式效果请求（开启对应界面，关闭后恢复效果序列）
+        chapterManager.OnRequestDiscountShop += HandleRequestDiscountShop;
+        chapterManager.OnRequestRemoveCard += HandleRequestRemoveCard;
+        chapterManager.OnRequestAddKeyword += HandleRequestAddKeyword;
+
         if (nextChapterButton != null)
             nextChapterButton.onClick.AddListener(OnNextChapterClicked);
         if (settingsButton != null)
@@ -108,6 +114,10 @@ public class BookUIController : MonoBehaviour
         chapterManager.OnChapterComplete.RemoveListener(HandleChapterComplete);
         chapterManager.OnChapterInfoUpdated.RemoveListener(HandleChapterInfoUpdated);
         chapterManager.OnPlayerStatsUpdated.RemoveListener(HandlePlayerStatsUpdated);
+
+        chapterManager.OnRequestDiscountShop -= HandleRequestDiscountShop;
+        chapterManager.OnRequestRemoveCard -= HandleRequestRemoveCard;
+        chapterManager.OnRequestAddKeyword -= HandleRequestAddKeyword;
 
         if (nextChapterButton != null)
             nextChapterButton.onClick.RemoveListener(OnNextChapterClicked);
@@ -212,8 +222,7 @@ public class BookUIController : MonoBehaviour
         else
         {
             // Battle/Rest 类型：直接应用 defaultEffects，不弹面板
-            chapterManager.ApplyEffects(data.defaultEffects);
-            chapterManager.OnOptionResolved();
+            chapterManager.ApplyEffects(data.defaultEffects, () => chapterManager.OnOptionResolved());
         }
     }
 
@@ -230,14 +239,65 @@ public class BookUIController : MonoBehaviour
     /// </summary>
     private void OnOptionPanelResolved(int optionIndex)
     {
+        List<EffectData> effects = null;
         if (_currentEventData != null
             && optionIndex >= 0
             && optionIndex < _currentEventData.options.Count)
         {
-            chapterManager.ApplyEffects(_currentEventData.options[optionIndex].effects);
+            effects = _currentEventData.options[optionIndex].effects;
         }
         _currentEventData = null;
-        chapterManager.OnOptionResolved();
+        // 效果处理（含交互式）全部完成后才推进章节
+        chapterManager.ApplyEffects(effects, () => chapterManager.OnOptionResolved());
+    }
+
+    // ===== 特殊事件交互式效果处理（ChapterManager 请求开启对应界面，关闭后 resume 续体）=====
+
+    /// <summary>进入特价商店：以当前章节折扣比例开铺，关闭后恢复效果序列。</summary>
+    private void HandleRequestDiscountShop(float ratio, Action resume)
+    {
+        var mgr = ShopManager.EnsureInstance();
+        if (mgr != null) mgr.Init(chapterManager);
+        if (shopPanel != null)
+            shopPanel.Show(mgr, gameConfig != null ? gameConfig.characters : null, () => resume?.Invoke(), ratio);
+        else
+            resume?.Invoke();
+    }
+
+    /// <summary>删牌（事件效果，免费单次）：打开牌库选择界面，点一张卡即删除，随后恢复效果序列。</summary>
+    private void HandleRequestRemoveCard(Action resume)
+    {
+        var lib = ResolveCardLibraryPanel();
+        if (lib == null) { resume?.Invoke(); return; }
+        lib.Init();
+        lib.ShowCardPickerMode(
+            (card, owner) =>
+            {
+                if (card != null && owner != null)
+                {
+                    GlobalCardLibrary.EnsureInstance();
+                    GlobalCardLibrary.Instance?.RemoveCard(owner, card.instanceId);
+                    Debug.Log($"[事件] 删除卡牌：{card.EffectiveName}");
+                }
+            },
+            () => resume?.Invoke());
+    }
+
+    /// <summary>附加词条（事件效果）：打开牌库选择界面，点一张卡即附加词条，随后恢复效果序列。</summary>
+    private void HandleRequestAddKeyword(KeywordType kw, Action resume)
+    {
+        var lib = ResolveCardLibraryPanel();
+        if (lib == null) { resume?.Invoke(); return; }
+        lib.Init();
+        lib.ShowKeywordMode(kw, () => resume?.Invoke());
+    }
+
+    private CardLibraryPanelUI ResolveCardLibraryPanel()
+    {
+        if (_cardLibraryPanel != null) return _cardLibraryPanel;
+        var go = cardLibraryPanel != null ? cardLibraryPanel.GetComponent<CardLibraryPanelUI>() : null;
+        if (go != null) return go;
+        return UnityEngine.Object.FindObjectOfType<CardLibraryPanelUI>(true);
     }
 
     private void HandleChapterComplete()

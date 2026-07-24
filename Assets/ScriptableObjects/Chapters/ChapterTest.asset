@@ -1,0 +1,144 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93eb46175a208ce42bfce2066b949083, type: 3}
+  m_Name: ChapterTest
+  m_EditorClassIdentifier: 
+  chapterName: "\u7B2C\u4E00\u7AE0"
+  maxSelections: 10
+  events:
+  - eventId: event_test
+    displayName: "\u968F\u673A\u4E8B\u4EF6\u6D4B\u8BD5"
+    description: Debug only
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+40\u91D1\u5E01\uFF0C-10 San"
+      effects:
+      - type: 9
+        amount: 40
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+    - optionText: "\u83B7\u5F97\u5361\u724C\uFF0C\u6DFB\u52A0\u8BCD\u6761"
+      effects:
+      - type: 11
+        amount: 3
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
+        card: {fileID: 11400000, guid: 3b3f494ae33354001a2bdcdb017dcdec, type: 2}
+        keywordToAdd: 0
+        discountRatio: 0.5
+      - type: 14
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: c424a08b8d4faa24f8417a73231f6a8b, type: 2}
+        card: {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
+        keywordToAdd: 1
+        discountRatio: 0.5
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+  - eventId: final
+    displayName: "\u7ED3\u5C3E"
+    description: Debug only
+    icon: {fileID: 0}
+    eventType: 0
+    isRepeatable: 0
+    isFinalNode: 1
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+50\u91D1\u5E01\uFF0C-10HP"
+      effects:
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+  NormalBG: {fileID: 0}
+  AbnormalBG: {fileID: 0}
+  sanityThreshold: 50

@@ -16,4 +16,6 @@ MonoBehaviour:
   displayName: "\u5927\u80C3\u888B\u6218\u58EB"
   avatar: {fileID: 21300000, guid: e30a5551eac02794d8191053506809c1, type: 3}
   startingLibrary: {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
+  startingRelics:
+  - {fileID: 11400000, guid: 1348c1728833f9d48971ac321c0e6765, type: 2}
   maxLibrarySize: 100

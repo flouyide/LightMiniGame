@@ -56,6 +56,11 @@ public class CardLibraryPanelUI : MonoBehaviour
     private Action<CardInstance, CharacterData> _cardClickHandler;
     private Func<int> _removalRemainingGetter;   // 可选：删除模式下头部显示「剩余 N 次」
 
+    // 交互式选择（事件效果用）：进入 Picker 模式后，选卡或关闭面板都会触发 _interactiveComplete 续体（仅一次）
+    private enum InteractiveMode { None, Picker }
+    private InteractiveMode _mode = InteractiveMode.None;
+    private Action _interactiveComplete;
+
     // 暂停 & 背景屏蔽（与 SettingsPanelUI 同模式）
     private readonly List<Selectable> _disabledBackground = new List<Selectable>();
 
@@ -131,6 +136,15 @@ public class CardLibraryPanelUI : MonoBehaviour
         Time.timeScale = 1f;
         EnableBackgroundInteractables();
         EndRemovalMode();   // 关闭面板即退出删除模式，避免影响后续正常牌库浏览
+
+        // 交互式选择续体：进入 Picker 模式后，无论玩家选卡还是点 X 关闭，都触发一次续体
+        if (_mode == InteractiveMode.Picker && _interactiveComplete != null)
+        {
+            var cb = _interactiveComplete;
+            _interactiveComplete = null;
+            _mode = InteractiveMode.None;
+            cb?.Invoke();
+        }
     }
 
     /// <summary>以「删除模式」打开牌库：网格中每张卡变为可点击按钮，点击触发 onCardClicked(card, owner)。
@@ -148,6 +162,45 @@ public class CardLibraryPanelUI : MonoBehaviour
     {
         _cardClickHandler = null;
         _removalRemainingGetter = null;
+    }
+
+    /// <summary>以「交互式选择模式」打开牌库：网格中每张卡变为可点击按钮，点击触发 onPicked(card, owner)，
+    /// 随后关闭面板并调用 onComplete 续体（选卡或关闭面板均触发一次，供事件效果挂起—恢复）。
+    /// 与商店的 ShowRemovalMode 区分：本方法会注册续体，关闭面板即恢复效果序列。</summary>
+    public void ShowCardPickerMode(Action<CardInstance, CharacterData> onPicked, Action onComplete)
+    {
+        _cardClickHandler = (inst, owner) =>
+        {
+            onPicked?.Invoke(inst, owner);
+            FinishInteractive();
+        };
+        _interactiveComplete = onComplete;
+        _mode = InteractiveMode.Picker;
+        Show();
+    }
+
+    /// <summary>以「附加词条模式」打开牌库：玩家点一张卡即把 kw 按位 OR 进该卡实例覆盖层（不影响其它副本），
+    /// 随后关闭面板并调用 onComplete（供事件 AddKeywordToCard 续体恢复）。</summary>
+    public void ShowKeywordMode(KeywordType kw, Action onComplete)
+    {
+        ShowCardPickerMode(
+            (inst, owner) =>
+            {
+                if (inst != null)
+                {
+                    inst.overrideData.keywords |= kw;
+                    inst.overrideData.hasKeywordsOverride = true;
+                    Debug.Log($"[CardLibraryPanel] 为「{inst.EffectiveName}」附加词条 {kw}");
+                }
+            },
+            onComplete);
+    }
+
+    /// <summary>交互式选择完成：退出点击回调并关闭面板（HideImmediate 会触发 _interactiveComplete 续体一次）。</summary>
+    private void FinishInteractive()
+    {
+        EndRemovalMode();   // 清空点击回调，避免重复触发
+        Hide();             // HideImmediate → 触发 _interactiveComplete
     }
 
     /// <summary>重新渲染当前选中角色的卡牌网格（删牌后刷新用）。</summary>

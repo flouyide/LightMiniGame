@@ -43,6 +43,10 @@ public class ShopPanelUI : MonoBehaviour
     private Transform _relicLayer;
     private Text _goldLabel;
 
+    // ===== 特价商店角标（运行时动态创建，避免改动 prefab）=====
+    private float _discountRatio = 1f;   // 本店折扣比例：1=不打折；<1=特价商店
+    private Text _discountBadge;            // 「特价商店（X折）」角标（动态创建，复用即显隐）
+
     // ===== 删牌服务（点击 Service 按钮弹出 CardLibraryPanel，点卡即删）=====
     private Button _serviceButton;
     private bool _serviceHooked;
@@ -142,15 +146,16 @@ public class ShopPanelUI : MonoBehaviour
     }
 
     // ===== 对外：显示商店 =====
-    public void Show(ShopManager shop, List<CharacterData> characters, Action onClose)
+    public void Show(ShopManager shop, List<CharacterData> characters, Action onClose, float discountRatio = 1f)
     {
         _shop = shop;
         _characters = characters;
         _onClose = onClose;
+        _discountRatio = discountRatio;   // 记录折扣：特价商店 <1，正常商店 =1
 
         if (_shop != null)
         {
-            _shop.OpenShop(_characters);   // 每次进店重抽一次卡牌与遗物
+            _shop.OpenShop(_characters, discountRatio);   // 每次进店重抽一次卡牌与遗物（特价店带折扣）
             _shop.OnStockChanged -= Render;
             _shop.OnStockChanged += Render;
         }
@@ -196,6 +201,8 @@ public class ShopPanelUI : MonoBehaviour
 
         // 同步删牌价格标签
         UpdateRemovalPriceText();
+        // 同步特价商店角标（折扣 <1 时显示）
+        UpdateDiscountBadge();
     }
 
     private void UpdateGoldLabel()
@@ -217,6 +224,42 @@ public class ShopPanelUI : MonoBehaviour
             _goldLabel.color = new Color(1f, 0.85f, 0.3f);
         }
         _goldLabel.text = $"金币：{_shop.PlayerGold}";
+    }
+
+    /// <summary>
+    /// 特价商店角标：折扣比例 &lt; 1 时显示「特价商店（X折）」，正常商店（=1）则隐藏。
+    /// 复用 _discountBadge，运行时动态创建为 ShopBoard 的子物体，不依赖 prefab 自带节点。
+    /// </summary>
+    private void UpdateDiscountBadge()
+    {
+        if (_shopBoard == null) return;
+
+        // 正常商店：确保角标隐藏（已创建则只关不删，复用）
+        if (_discountRatio >= 1f)
+        {
+            if (_discountBadge != null) _discountBadge.gameObject.SetActive(false);
+            return;
+        }
+
+        if (_discountBadge == null)
+        {
+            var go = new GameObject("DiscountBadge", typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(_shopBoard, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.3f, 0.955f);
+            rt.anchorMax = new Vector2(0.7f, 1f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            _discountBadge = go.GetComponent<Text>();
+            _discountBadge.alignment = TextAnchor.MiddleCenter;
+            _discountBadge.fontSize = 22;
+            _discountBadge.fontStyle = FontStyle.Bold;
+            _discountBadge.color = new Color(1f, 0.45f, 0.3f);
+        }
+
+        int zhe = Mathf.RoundToInt(_discountRatio * 10f);   // 0.6 -> 6折
+        _discountBadge.text = $"特价商店（{zhe}折）";
+        _discountBadge.gameObject.SetActive(true);
     }
 
     private void ClearLayer(Transform layer)

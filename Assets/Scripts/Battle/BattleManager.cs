@@ -20,6 +20,10 @@ public class BattleManager : MonoBehaviour
     [Tooltip("游戏配置（含角色列表）")]
     [SerializeField] private GameConfig gameConfig;
 
+    [Header("运行时属性来源（持久基础属性运行时副本）")]
+    [Tooltip("ChapterManager 持有持久基础属性（力量/敏捷/吸血/暴击率/暴伤）的运行时副本，单局内跨战斗保留。战斗开始时从此读取。留空则回退到 PlayerConfig（仅初始值，不含事件累积）")]
+    [SerializeField] private ChapterManager chapterManager;
+
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
     [SerializeField] private GameObject armorCardPrefab;
@@ -110,6 +114,7 @@ public class BattleManager : MonoBehaviour
     private int _playerLifesteal;
     private int _playerCritRate;
     private int _playerCritDamage;
+    private int _baseDrawPerTurn;   // 每场战斗前的抽牌基数（来自 Inspector 的 drawPerTurn，开局捕获一次）
     private int _actionPoints;
     private int _enemyHP;
     private int _enemyArmor;
@@ -144,6 +149,7 @@ public class BattleManager : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsClicked);
 
+        _baseDrawPerTurn = drawPerTurn;   // 捕获抽牌基数（Inspector 配置），避免逐场战斗累加
         StartBattle();
     }
 
@@ -180,17 +186,34 @@ public class BattleManager : MonoBehaviour
         _playerStrength = playerStrength;
         _playerDexterity = playerDexterity;
 
-        // 读入持久基础属性（由特殊事件 ModifyAttribute 修改，永久保留）
-        if (playerConfig != null)
+        // 读入持久基础属性（单局内跨战斗保留，存于 ChapterManager 运行时副本；资产 PlayerConfig 仅作初始值）
+        ChapterManager cm = chapterManager != null ? chapterManager : FindObjectOfType<ChapterManager>();
+        if (cm != null)
         {
+            _playerStrength = cm.PlayerStrength;
+            _playerAgility = cm.PlayerAgility;
+            _playerLifesteal = cm.PlayerLifesteal;
+            _playerCritRate = cm.PlayerCritRate;
+            _playerCritDamage = cm.PlayerCritDamage;
+            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+        }
+        else if (playerConfig != null)
+        {
+            // 回退：直接用资产初始值（不含事件累积，仅作安全网）
             _playerStrength = playerConfig.strength;
             _playerAgility = playerConfig.agility;
             _playerLifesteal = playerConfig.lifesteal;
             _playerCritRate = playerConfig.critRate;
             _playerCritDamage = playerConfig.critDamage;
-            drawPerTurn += _playerAgility;   // 灵巧：每回合额外抽牌（默认 0 无影响）
-            Debug.Log($"[BattleManager] 读入持久属性 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+            Debug.LogWarning("[BattleManager] 未找到 ChapterManager，回退读入 PlayerConfig 初始值（无跨战斗累积）");
         }
+        else
+        {
+            Debug.LogWarning("[BattleManager] 未配置 ChapterManager / PlayerConfig，持久属性为 0");
+        }
+
+        // 灵巧：每回合额外抽牌 = 基础值 + 敏捷（赋值式，避免多场战斗逐场累加）
+        drawPerTurn = _baseDrawPerTurn + _playerAgility;
 
         _enemyHP = enemyMaxHP;
         _enemyArmor = enemyArmor;

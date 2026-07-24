@@ -12,451 +12,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93eb46175a208ce42bfce2066b949083, type: 3}
   m_Name: Chapter1
   m_EditorClassIdentifier: 
-  chapterName: "\u7B2C\u4E00\u7AE0 \u5854\u5E95"
-  maxSelections: 4
+  chapterName: "\u7B2C\u4E00\u7AE0"
+  maxSelections: 10
   events:
-  - eventId: battle_goblin
+  - eventId: ch1_battle_goblin
     displayName: "\u54E5\u5E03\u6797\u4F0F\u51FB"
-    description: "\u4E00\u7FA4\u54E5\u5E03\u6797\u4ECE\u6811\u4E1B\u4E2D\u8DF3\u51FA\u6765\u6321\u4F4F\u4E86\u53BB\u8DEF\uFF01"
-    icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8FDB\u5165\u6218\u6597"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: battle_goblin_camp
-    displayName: "\u54E5\u5E03\u6797\u8425\u5730"
-    description: "\u54E5\u5E03\u6797\u7684\u8001\u5DE2\u5C31\u5728\u524D\u65B9\uFF0C\u662F\u5426\u53D1\u8D77\u7A81\u88AD\uFF1F"
+    description: "\u4E00\u7FA4\u54E5\u5E03\u6797\u4ECE\u8DEF\u8FB9\u7684\u704C\u6728\u4E1B\u4E2D\u8DF3\u51FA\u6765\uFF0C\u6325\u821E\u7740\u7C97\u7CD9\u7684\u6B66\u5668\u5411\u4F60\u51B2\u6765\uFF01"
     icon: {fileID: 0}
     eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds:
-    - fate_treasure
-    prerequisiteIds:
-    - battle_goblin
-    options:
-    - optionText: "\u7A81\u88AD\u8425\u5730"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: battle_bandit
-    displayName: "\u76D7\u8D3C\u5934\u76EE"
-    description: "\u4E00\u4E2A\u51F6\u72E0\u7684\u76D7\u8D3C\u5934\u76EE\u62E6\u8DEF\u6253\u52AB\uFF0C\u4EAE\u51FA\u4E86\u4ED6\u7684\u5315\u9996\u3002"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds:
-    - event_merchant
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u62D4\u5251\u8FCE\u6218"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: event_merchant
-    displayName: "\u6D41\u6D6A\u5546\u4EBA"
-    description: "\u4E00\u4F4D\u80CC\u7740\u5927\u5305\u88F9\u7684\u5546\u4EBA\u5411\u4F60\u62DB\u624B\uFF1A'\u4E0A\u7B49\u597D\u8D27\uFF0C\u7AE5\u53DF\u65E0\u6B3A\uFF01'"
-    icon: {fileID: 0}
-    eventType: 1
-    isRepeatable: 1
-    isFinalNode: 0
-    mutuallyExclusiveIds:
-    - battle_bandit
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8D2D\u4E70\u751F\u547D\u836F\u6C34\uFF08-30\u91D1\u5E01\uFF0C+25HP\uFF09"
-      effects:
-      - type: 1
-        amount: 30
-        itemDesc: 
-      - type: 2
-        amount: 25
-        itemDesc: 
-    - optionText: "\u8D2D\u4E70\u795E\u79D8\u5377\u8F74\uFF08-50\u91D1\u5E01\uFF09"
-      effects:
-      - type: 1
-        amount: 50
-        itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u795E\u79D8\u5377\u8F74"
-    - optionText: "\u79BB\u5F00"
-      effects: []
-    defaultEffects: []
-  - eventId: rest_campfire
-    displayName: "\u8425\u706B\u4F11\u6574"
-    description: "\u4E00\u5806\u6E29\u6696\u7684\u8425\u706B\u5728\u8DEF\u8FB9\u71C3\u70E7\uFF0C\u5750\u4E0B\u6B47\u6B47\u811A\u5427\u3002"
-    icon: {fileID: 0}
-    eventType: 2
     isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []
     followUpIds: []
     prerequisiteIds: []
-    options:
-    - optionText: "\u5145\u5206\u4F11\u606F\uFF08\u56DE\u590D\u5168\u90E8HP\uFF09"
-      effects:
-      - type: 2
-        amount: 999
-        itemDesc: 
-    - optionText: "\u77ED\u6682\u4F11\u606F\uFF08\u56DE\u590D20HP\uFF09"
-      effects:
-      - type: 2
-        amount: 20
-        itemDesc: 
-    defaultEffects:
-    - type: 2
-      amount: 10
-      itemDesc: 
-  - eventId: fate_shrine
-    displayName: "\u795E\u79D8\u796D\u575B"
-    description: "\u4E00\u5EA7\u53E4\u8001\u7684\u796D\u575B\u6563\u53D1\u7740\u5FAE\u5F31\u7684\u5149\u8292\uFF0C\u4F3C\u4E4E\u5728\u7B49\u5F85\u7740\u4EC0\u4E48\u3002"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u7948\u7977\uFF08\u83B7\u5F9720HP\uFF09"
-      effects:
-      - type: 2
-        amount: 20
-        itemDesc: 
-    - optionText: "\u732E\u796D\uFF08\u5931\u53BB50\u7406\u667A\uFF0C\u83B7\u5F9750\u91D1\u5E01\uFF09"
-      effects:
-      - type: 8
-        amount: 50
-        itemDesc: 
-      - type: 0
-        amount: 50
-        itemDesc: 
-    - optionText: "\u79BB\u5F00"
-      effects: []
-    defaultEffects: []
-  - eventId: fate_treasure
-    displayName: "\u5B9D\u7BB1"
-    description: "\u54E5\u5E03\u6797\u8425\u5730\u6DF1\u5904\u85CF\u7740\u4E00\u4E2A\u5B9D\u7BB1\uFF0C\u6253\u5F00\u770B\u770B\uFF1F"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds:
-    - battle_goblin_camp
-    options:
-    - optionText: "\u6253\u5F00\u5B9D\u7BB1\uFF08\u83B7\u5F97100\u91D1\u5E01\uFF09"
-      effects:
-      - type: 0
-        amount: 100
-        itemDesc: 
-    - optionText: "\u5C0F\u5FC3\u7FFC\u7FFC\u5730\u68C0\u67E5\uFF08\u83B7\u5F9750\u91D1\u5E01\u548C\u7269\u54C1\uFF09"
-      effects:
-      - type: 0
-        amount: 50
-        itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u54E5\u5E03\u6797\u62A4\u8EAB\u7B26"
-    defaultEffects: []
-  - eventId: fate_crossroads
-    displayName: "\u5341\u5B57\u8DEF\u53E3"
-    description: "\u9762\u524D\u51FA\u73B0\u4E86\u4E09\u6761\u5C94\u8DEF\uFF0C\u4F60\u60F3\u8D70\u54EA\u6761\uFF1F"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u9EC4\u91D1\u4E4B\u8DEF\uFF08\u83B7\u5F9750\u91D1\u5E01\uFF09"
-      effects:
-      - type: 0
-        amount: 50
-        itemDesc: 
-    - optionText: "\u795E\u79D8\u4E4B\u8DEF\uFF08\u83B7\u5F97\u672A\u77E5\u7269\u54C1\uFF09"
-      effects:
-      - type: 4
-        amount: 1
-        itemDesc: "\u795E\u79D8\u5B9D\u7269"
-    - optionText: "\u5B89\u5168\u4E4B\u8DEF\uFF08\u56DE\u590D15HP\uFF09"
-      effects:
-      - type: 2
-        amount: 15
-        itemDesc: 
-    defaultEffects: []
-  - eventId: fate_witch
-    displayName: "\u5973\u5DEB\u5C0F\u5C4B"
-    description: "\u68EE\u6797\u6DF1\u5904\u6709\u4E00\u95F4\u5192\u7740\u7EFF\u70DF\u7684\u5C0F\u5C4B\uFF0C\u5973\u5DEB\u5411\u4F60\u62DB\u624B\u3002"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u4EA4\u6613\uFF1A\u7528\u751F\u547D\u6362\u529B\u91CF\uFF08-10HP\uFF0C\u83B7\u5F97\u9B54\u6CD5\u5377\u8F74\uFF09"
-      effects:
-      - type: 3
-        amount: 10
-        itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u9B54\u6CD5\u5377\u8F74"
-    - optionText: "\u8D2D\u4E70\u836F\u6C34\uFF08-20\u91D1\u5E01\uFF0C+30HP\uFF09"
-      effects:
-      - type: 1
-        amount: 20
-        itemDesc: 
-      - type: 2
-        amount: 30
-        itemDesc: 
-    - optionText: "\u793C\u8C8C\u79BB\u5F00"
-      effects: []
-    defaultEffects: []
-  - eventId: battle_ruins
-    displayName: "\u8FDC\u53E4\u9057\u8FF9"
-    description: "\u9057\u8FF9\u4E2D\u6F5C\u4F0F\u7740\u4E00\u5934\u77F3\u50CF\u9B3C\uFF0C\u5B83\u5BDF\u89C9\u5230\u4E86\u4F60\u7684\u5B58\u5728\u3002"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8FDB\u5165\u6218\u6597"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: fate_spirit
-    displayName: "\u68EE\u6797\u4E4B\u7075"
-    description: "\u4E00\u56E2\u67D4\u548C\u7684\u5149\u8292\u98D8\u5230\u4F60\u9762\u524D\uFF0C\u4F20\u6765\u8F7B\u67D4\u7684\u58F0\u97F3\uFF1A'\u65C5\u4EBA\uFF0C\u9009\u4E00\u4E2A\u793C\u7269\u5427\u3002'"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u63A5\u53D7\u795D\u798F\uFF08+15HP\uFF09"
-      effects:
-      - type: 2
-        amount: 15
-        itemDesc: 
-    - optionText: "\u7D22\u8981\u91D1\u5E01\uFF08+20\u91D1\u5E01\uFF09"
-      effects:
-      - type: 0
-        amount: 20
-        itemDesc: 
-    defaultEffects: []
-  - eventId: shop_smuggler
-    displayName: "\u8D70\u79C1\u8005\u7A9D\u70B9"
-    description: "\u4E00\u4E2A\u9B3C\u9B3C\u795F\u795F\u7684\u5BB6\u4F19\u4F4E\u58F0\u8BF4\uFF1A'\u5582\uFF0C\u8981\u4E70\u70B9\u597D\u4E1C\u897F\u5417\uFF1F'"
-    icon: {fileID: 0}
-    eventType: 1
-    isRepeatable: 1
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8D2D\u4E70\u6697\u5668\uFF08-25\u91D1\u5E01\uFF0C\u83B7\u5F97\u6697\u5668\uFF09"
-      effects:
-      - type: 1
-        amount: 25
-        itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u6697\u5668"
-    - optionText: "\u8D2D\u4E70\u60C5\u62A5\uFF08-15\u91D1\u5E01\uFF09"
-      effects:
-      - type: 1
-        amount: 15
-        itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u60C5\u62A5\u7EB8\u6761"
-    - optionText: "\u79BB\u5F00"
-      effects: []
-    defaultEffects: []
-  - eventId: rest_abandoned
-    displayName: "\u5E9F\u5F03\u8425\u5730"
-    description: "\u4E00\u4E2A\u5E9F\u5F03\u7684\u8425\u5730\uFF0C\u8FD8\u6709\u4E9B\u6B8B\u4F59\u7684\u7269\u8D44\u53EF\u4EE5\u5229\u7528\u3002"
-    icon: {fileID: 0}
-    eventType: 2
-    isRepeatable: 1
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u641C\u522E\u7269\u8D44\uFF08\u83B7\u5F9715\u91D1\u5E01\uFF09"
-      effects:
-      - type: 0
-        amount: 15
-        itemDesc: 
-    - optionText: "\u539F\u5730\u4F11\u606F\uFF08\u56DE\u590D15HP\uFF09"
-      effects:
-      - type: 2
-        amount: 15
-        itemDesc: 
-    defaultEffects:
-    - type: 2
-      amount: 20
-      itemDesc: 
-  - eventId: battle_cave
-    displayName: "\u9ED1\u6697\u6D1E\u7A74"
-    description: "\u6D1E\u7A74\u6DF1\u5904\u4F20\u6765\u4F4E\u6C89\u7684\u5486\u54EE\u58F0\uFF0C\u4F3C\u4E4E\u6709\u4EC0\u4E48\u4E1C\u897F\u5728\u7B49\u7740\u4F60\u3002"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds:
-    - fate_hidden_scroll
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8FDB\u5165\u6218\u6597"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: fate_hidden_scroll
-    displayName: "\u9690\u85CF\u5377\u8F74"
-    description: "\u6D1E\u7A74\u6DF1\u5904\u6709\u4E00\u5377\u53E4\u8001\u7684\u5377\u8F74\uFF0C\u6563\u53D1\u7740\u795E\u79D8\u7684\u529B\u91CF\u3002"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds:
-    - battle_cave
     options:
     - optionText: "\u786E\u5B9A"
-      effects:
-      - type: 2
-        amount: 50
-        itemDesc: 
-    defaultEffects: []
-  - eventId: battle_guardian
-    displayName: "\u77F3\u50CF\u5B88\u536B"
-    description: "\u4E00\u5C0A\u5DE8\u5927\u7684\u77F3\u50CF\u6321\u4F4F\u4E86\u53BB\u8DEF\uFF0C\u5B83\u7684\u773C\u775B\u4EAE\u8D77\u4E86\u7EA2\u5149\u3002"
+      effects: []
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+  - eventId: ch1_battle_slime
+    displayName: "\u53F2\u83B1\u59C6\u6CBC\u6CFD"
+    description: "\u524D\u65B9\u7684\u9053\u8DEF\u88AB\u4E00\u7247\u9ECF\u7CCA\u7CCA\u7684\u53F2\u83B1\u59C6\u6CBC\u6CFD\u6321\u4F4F\u4E86\u3002\u8FD9\u4E9B\u53F2\u83B1\u59C6\u867D\u7136\u884C\u52A8\u7F13\u6162\uFF0C\u4F46\u6570\u91CF\u4F17\u591A\u3002"
     icon: {fileID: 0}
     eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8FDB\u5165\u6218\u6597"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: rest_healer
-    displayName: "\u6E38\u5386\u533B\u5E08"
-    description: "\u4E00\u4F4D\u597D\u5FC3\u7684\u533B\u5E08\u6B63\u5728\u8DEF\u8FB9\u4E3A\u65C5\u4EBA\u6CBB\u7597\u3002"
-    icon: {fileID: 0}
-    eventType: 2
     isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []
     followUpIds: []
     prerequisiteIds: []
     options:
-    - optionText: "\u514D\u8D39\u6CBB\u7597\uFF08+10HP\uFF09"
-      effects:
-      - type: 2
-        amount: 10
-        itemDesc: 
-    - optionText: "\u8D2D\u4E70\u7279\u6548\u836F\uFF08-20\u91D1\u5E01\uFF0C+25HP\uFF09"
-      effects:
-      - type: 1
-        amount: 20
-        itemDesc: 
-      - type: 2
-        amount: 25
-        itemDesc: 
-    defaultEffects:
-    - type: 2
-      amount: 2
-      itemDesc: 
-  - eventId: fate_fountain
-    displayName: "\u8BC5\u5492\u4E4B\u6CC9"
-    description: "\u6CC9\u6C34\u6CDB\u7740\u8BE1\u5F02\u7684\u7EFF\u5149\uFF0C\u770B\u8D77\u6765\u4E0D\u592A\u6B63\u5E38\u3002"
-    icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u996E\u7528\u6CC9\u6C34\uFF08+30HP\uFF09"
-      effects:
-      - type: 2
-        amount: 30
-        itemDesc: 
-    - optionText: "\u6295\u5165\u91D1\u5E01\uFF08-10\u91D1\u5E01\uFF0C\u83B7\u5F97\u7269\u54C1\uFF09"
-      effects:
-      - type: 1
-        amount: 10
-        itemDesc: 
-      - type: 4
-        amount: 1
-        itemDesc: "\u6CC9\u6C34\u7ED3\u6676"
-    - optionText: "\u79BB\u5F00"
+    - optionText: "\u786E\u5B9A"
       effects: []
-    defaultEffects: []
-  - eventId: battle_bandit_camp
-    displayName: "\u6797\u4E2D\u76D7\u532A"
-    description: "\u51E0\u4E2A\u76D7\u532A\u6B63\u5728\u5206\u8D43\uFF0C\u4F60\u53EF\u4EE5\u8D81\u5176\u4E0D\u5907\u53D1\u8D77\u653B\u51FB\u3002"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u8FDB\u5165\u6218\u6597"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: boss_dark_wraith
-    displayName: "\u6697\u5F71\u6028\u7075"
-    description: "\u68EE\u6797\u6DF1\u5904\u76D8\u8E1E\u7740\u4E00\u56E2\u5DE8\u5927\u7684\u6697\u5F71\uFF0C\u5B83\u5C31\u662F\u8FD9\u4E00\u5207\u9ED1\u6697\u7684\u6E90\u5934\uFF01"
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+  - eventId: ch1_battle_wolf
+    displayName: "\u72FC\u7FA4\u5DE1\u903B"
+    description: "\u4F60\u542C\u5230\u8FDC\u5904\u4F20\u6765\u4F4E\u6C89\u7684\u55E5\u53EB\u58F0\u3002\u4E00\u7FA4\u9965\u997F\u7684\u91CE\u72FC\u6B63\u5728\u9644\u8FD1\u5DE1\u903B\uFF0C\u5B83\u4EEC\u5DF2\u7ECF\u53D1\u73B0\u4E86\u4F60\u3002"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -465,29 +72,323 @@ MonoBehaviour:
     followUpIds: []
     prerequisiteIds: []
     options:
-    - optionText: "\u6700\u7EC8\u51B3\u6218\uFF01"
-      effects:
-      - type: 6
-        amount: 0
-        itemDesc: 
-    defaultEffects: []
-  - eventId: fate_one
-    displayName: "\u8BAD\u7EC3\u5047\u4EBA"
-    description: "\u6ECB\u6ECB\uFF01 \u8BAD\u7EC3\u65F6\u95F4\u5230\uFF01\uFF01\uFF01"
+    - optionText: "\u786E\u5B9A"
+      effects: []
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+  - eventId: ch1_shop_traveler
+    displayName: "\u65C5\u884C\u5546\u4EBA"
+    description: "\u4E00\u4E2A\u70ED\u60C5\u7684\u65C5\u884C\u5546\u4EBA\u63A8\u7740\u5C0F\u8F66\u505C\u5728\u8DEF\u8FB9\uFF0C\u8F66\u4E0A\u7684\u8D27\u7269\u7433\u7405\u6EE1\u76EE\u3002"
     icon: {fileID: 0}
-    eventType: 3
-    isRepeatable: 0
+    eventType: 1
+    isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []
     followUpIds: []
     prerequisiteIds: []
     options:
-    - optionText: "\u786E\u8BA4"
+    - optionText: "\u786E\u5B9A"
+      effects: []
+    defaultEffects: []
+  - eventId: ch1_rest_campfire
+    displayName: "\u7BDD\u706B\u8425\u5730"
+    description: "\u4F60\u53D1\u73B0\u4E86\u4E00\u4E2A\u5B89\u5168\u7684\u8425\u5730\uFF0C\u7BDD\u706B\u8FD8\u5728\u71C3\u70E7\u3002\u4F60\u53EF\u4EE5\u5728\u8FD9\u91CC\u4F11\u606F\u6062\u590D\u4F53\u529B\uFF0C\u6216\u8005\u6574\u7406\u4E00\u4E0B\u88C5\u5907\u3002"
+    icon: {fileID: 0}
+    eventType: 2
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u786E\u5B9A"
+      effects: []
+    defaultEffects:
+    - type: 9
+      amount: 15
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 6
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+  - eventId: ch1_event_chest
+    displayName: "\u795E\u79D8\u5B9D\u7BB1"
+    description: "\u8DEF\u8FB9\u7684\u6811\u6839\u4E0B\u653E\u7740\u4E00\u4E2A\u53E4\u6734\u7684\u5B9D\u7BB1\uFF0C\u4E0A\u9762\u8986\u76D6\u7740\u82D4\u85D3\uFF0C\u6563\u53D1\u7740\u795E\u79D8\u7684\u5149\u8292\u3002"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u6253\u5F00\u5B9D\u7BB1"
       effects:
-      - type: 0
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u5C0F\u5FC3\u68C0\u67E5"
+      effects:
+      - type: 9
+        amount: 30
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 4
+        amount: 1
+        itemDesc: "\u83B7\u5F97\u4E86\u4E00\u4EF6\u968F\u673A\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u4E0D\u4E88\u7406\u4F1A"
+      effects: []
+    defaultEffects: []
+  - eventId: ch1_event_traveler
+    displayName: "\u53D7\u4F24\u7684\u65C5\u4EBA"
+    description: "\u4E00\u4E2A\u53D7\u4F24\u7684\u65C5\u4EBA\u9760\u5728\u8DEF\u8FB9\uFF0C\u8EAB\u4E0A\u6709\u88AB\u91CE\u517D\u6293\u4F24\u7684\u75D5\u8FF9\uFF0C\u4ED6\u865A\u5F31\u5730\u5411\u4F60\u6C42\u6551\u3002"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u65BD\u4EE5\u63F4\u624B"
+      effects:
+      - type: 9
+        amount: 5
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u7ED9\u4E88\u91D1\u5E01"
+      effects:
+      - type: 9
         amount: 20
         itemDesc: 
+        attributeOp: 1
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 11
+        amount: 1
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u89C6\u800C\u4E0D\u89C1"
+      effects:
+      - type: 9
+        amount: 5
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    defaultEffects: []
+  - eventId: ch1_event_altar
+    displayName: "\u53E4\u8001\u796D\u575B"
+    description: "\u5BC6\u6797\u6DF1\u5904\u77D7\u7ACB\u7740\u4E00\u5EA7\u53E4\u8001\u7684\u77F3\u5236\u796D\u575B\uFF0C\u4E0A\u9762\u523B\u6EE1\u4E86\u770B\u4E0D\u61C2\u7684\u7B26\u6587\uFF0C\u4F3C\u4E4E\u8574\u542B\u7740\u67D0\u79CD\u529B\u91CF\u3002"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u732E\u4E0A\u91D1\u5E01"
+      effects:
+      - type: 9
+        amount: 30
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 9
+        amount: 1
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u8654\u8BDA\u7948\u7977"
+      effects:
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u7834\u574F\u796D\u575B"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    defaultEffects: []
+  - eventId: ch1_event_crossroad
+    displayName: "\u5C94\u8DEF\u9009\u62E9"
+    description: "\u524D\u65B9\u51FA\u73B0\u4E86\u4E24\u6761\u5C94\u8DEF\u3002\u5DE6\u8FB9\u7684\u8DEF\u770B\u8D77\u6765\u5E73\u5766\u597D\u8D70\uFF0C\u53F3\u8FB9\u7684\u8DEF\u9634\u6697\u72ED\u7A84\u4F46\u4F3C\u4E4E\u6709\u5B9D\u85CF\u7684\u5149\u8292\u95EA\u8FC7\u3002"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u8D70\u5E73\u5766\u5927\u8DEF"
+      effects:
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u8D70\u9634\u6697\u5C0F\u8DEF"
+      effects:
+      - type: 9
+        amount: 5
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 9
+        amount: 40
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    defaultEffects: []
+  - eventId: ch1_event_abandoned_camp
+    displayName: "\u5E9F\u5F03\u8425\u5730"
+    description: "\u4F60\u53D1\u73B0\u4E86\u4E00\u4E2A\u88AB\u9057\u5F03\u7684\u8425\u5730\uFF0C\u5E10\u7BF7\u5DF2\u7ECF\u7834\u70C2\u4E0D\u582A\uFF0C\u4F46\u4F3C\u4E4E\u8FD8\u80FD\u627E\u5230\u4E00\u4E9B\u6709\u7528\u7684\u4E1C\u897F\u3002"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
     defaultEffects: []
   NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
   AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
-  sanityThreshold: 20
+  sanityThreshold: 50

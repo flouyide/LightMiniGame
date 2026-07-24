@@ -16,3 +16,8 @@ MonoBehaviour:
   startHP: 65
   startGold: 9999
   Sanity: 50
+  strength: 10
+  agility: 60
+  lifesteal: 0
+  critRate: 0
+  critDamage: 0

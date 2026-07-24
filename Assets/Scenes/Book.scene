@@ -1028,6 +1028,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameConfig: {fileID: 11400000, guid: 0f7cc3ed8c6b9b14fb6aa45988056316, type: 2}
   playerConfig: {fileID: 11400000, guid: 9c1bb1a8fc6d166448f6d77beb295aba, type: 2}
+  masterRelicLibrary: {fileID: 11400000, guid: 7ccc0877a23096244b53c2e81a68a324, type: 2}
   debugStartChapterIndex: 0
   OnPagesRefreshed:
     m_PersistentCalls:

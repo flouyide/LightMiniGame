@@ -71,6 +71,7 @@ namespace LightMiniGame.Shop
         private readonly List<ShopRelicEntry> _relicStock = new List<ShopRelicEntry>();
         private int _usedRemovalsThisShop;   // 本店已用删牌次数（开新店重置，per-shop 语义）
         private int _globalRemovals;        // 全局累计删牌次数（跨店递增、永不清零），用于费用全局上涨
+        private float _discountRatio = 1f;  // 本店折扣比例：1=不打折；特价商店由调用方通过 OpenShop 传入
 
         // ===== 单例 =====
         // 优先复用场景中已放好的 ShopManager（其 Inspector 上的配置才会被读取）；
@@ -129,8 +130,10 @@ namespace LightMiniGame.Shop
         public IReadOnlyList<ShopRelicEntry> RelicStock => _relicStock;
 
         // ===== 进店：重新随机抽取全部商品 =====
-        public void OpenShop(List<CharacterData> characters)
+        // discountRatio: 折扣比例（0~1）。1=不打折；特价商店由 ApplyEffects 传入 EffectData.discountRatio（原 ChapterConfig.discountShopRatio 已迁移，如 0.6=6折）
+        public void OpenShop(List<CharacterData> characters, float discountRatio = 1f)
         {
+            _discountRatio = Mathf.Clamp(discountRatio, 0f, 1f);
             _characters = characters ?? new List<CharacterData>();
             _usedRemovalsThisShop = 0;   // 仅重置本店计数；_globalRemovals 保留，费用继续上涨
             GlobalCardLibrary.EnsureInstance();
@@ -139,7 +142,7 @@ namespace LightMiniGame.Shop
             DrawRelics();
             OnStockChanged?.Invoke();
 
-            Debug.Log($"[ShopManager] 开张：卡牌 {_cardStock.Count} 张，遗物 {_relicStock.Count} 件，可删牌 {RemovalsRemaining} 次");
+            Debug.Log($"[ShopManager] 开张：卡牌 {_cardStock.Count} 张，遗物 {_relicStock.Count} 件，可删牌 {RemovalsRemaining} 次，折扣 {_discountRatio:P0}");
         }
 
         // ===== 抽卡：按 Character1 / Character2 比例拆分 =====
@@ -178,7 +181,7 @@ namespace LightMiniGame.Shop
                 {
                     card = card,
                     ownerCharacter = owner,
-                    price = card != null ? card.value : 0,
+                    price = card != null ? Mathf.RoundToInt(card.value * _discountRatio) : 0,
                 });
             }
         }
@@ -250,7 +253,7 @@ namespace LightMiniGame.Shop
                 {
                     relic = relic,
                     ownerCharacter = owner,
-                    price = relic != null ? relic.value : 0,
+                    price = relic != null ? Mathf.RoundToInt(relic.value * _discountRatio) : 0,
                 });
             }
 
