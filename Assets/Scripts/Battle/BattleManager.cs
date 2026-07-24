@@ -31,6 +31,10 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private int playerStrength = 0;
     [SerializeField] private int playerDexterity = 0;
 
+    [Header("玩家属性来源（持久基础属性）")]
+    [Tooltip("可选：配置玩家持久基础属性（力量/敏捷/吸血/暴击率/暴击伤害），由特殊事件 ModifyAttribute 修改，战斗开始时读入替换上方临时变量")]
+    [SerializeField] private PlayerConfig playerConfig;
+
     [Header("敌人属性")]
     [SerializeField] private int enemyMaxHP = 100;
     [SerializeField] private int enemyArmor = 0;
@@ -102,6 +106,10 @@ public class BattleManager : MonoBehaviour
     private int _playerArmor;
     private int _playerStrength;
     private int _playerDexterity;
+    private int _playerAgility;
+    private int _playerLifesteal;
+    private int _playerCritRate;
+    private int _playerCritDamage;
     private int _actionPoints;
     private int _enemyHP;
     private int _enemyArmor;
@@ -171,6 +179,19 @@ public class BattleManager : MonoBehaviour
         _playerArmor = 0;
         _playerStrength = playerStrength;
         _playerDexterity = playerDexterity;
+
+        // 读入持久基础属性（由特殊事件 ModifyAttribute 修改，永久保留）
+        if (playerConfig != null)
+        {
+            _playerStrength = playerConfig.strength;
+            _playerAgility = playerConfig.agility;
+            _playerLifesteal = playerConfig.lifesteal;
+            _playerCritRate = playerConfig.critRate;
+            _playerCritDamage = playerConfig.critDamage;
+            drawPerTurn += _playerAgility;   // 灵巧：每回合额外抽牌（默认 0 无影响）
+            Debug.Log($"[BattleManager] 读入持久属性 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+        }
+
         _enemyHP = enemyMaxHP;
         _enemyArmor = enemyArmor;
         _battleEnded = false;
@@ -287,11 +308,15 @@ public class BattleManager : MonoBehaviour
         bool isHeavy = (card.keywords & KeywordType.Heavy) != 0;
         bool hasLifesteal = (card.keywords & KeywordType.Lifesteal) != 0;
 
+        // 重击暴击：默认 25% 概率 / 2 倍；配置了暴击率/暴伤后以其为准（百分比）
+        float critChance = isHeavy ? (_playerCritRate > 0 ? _playerCritRate * 0.01f : 0.25f) : 0f;
+        float critMult   = isHeavy ? (_playerCritDamage > 0 ? _playerCritDamage * 0.01f : 2f) : 1f;
+
         int totalDamageDealt = 0;
         for (int i = 0; i < attackCount; i++)
         {
             int hitDamage = baseDamage;
-            if (isHeavy && Random.value < 0.25f) hitDamage *= 2;
+            if (isHeavy && Random.value < critChance) hitDamage = Mathf.RoundToInt(hitDamage * critMult);
             totalDamageDealt += DealDamageToEnemy(hitDamage, ignoreArmor);
         }
 
@@ -305,7 +330,8 @@ public class BattleManager : MonoBehaviour
 
         if (hasLifesteal && totalDamageDealt > 0)
         {
-            int heal = Mathf.FloorToInt(totalDamageDealt * 0.5f);
+            float ratio = 0.5f + _playerLifesteal * 0.01f;   // 基础 50%，吸血属性每点 +1%
+            int heal = Mathf.FloorToInt(totalDamageDealt * ratio);
             _playerHP = Mathf.Min(playerMaxHP, _playerHP + heal);
         }
     }
