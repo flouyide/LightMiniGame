@@ -49,6 +49,9 @@ namespace LightMiniGame.CardEditor
         [Tooltip("升级后费用")]
         public int upgradeCost = 1;
 
+        [Tooltip("商店售价（金币）。转换到运行时 CardData 时映射到 value 字段")]
+        public int price = 10;
+
         [Tooltip("词条")]
         public CardKeyword keyword = CardKeyword.None;
 

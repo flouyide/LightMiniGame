@@ -120,7 +120,7 @@ namespace LightMiniGame.Card
         {
             if (start == null || start.character == null) return;
             var lib = RegisterCharacter(start.character);
-            foreach (var t in start.startingCards) lib.Add(t);
+            start.BuildInto(lib);   // 内部已将 CardEntry 转成运行时 CardData 写入牌库
         }
 
         // ===== 持久化（可选）：按角色序列化，模板按 asset name 还原 =====

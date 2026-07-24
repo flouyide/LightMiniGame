@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!1 &4346907534119301521
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 4663723854344184891}
+  - component: {fileID: 8272002400983176042}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: BattleSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4663723854344184891
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4346907534119301521}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8272002400983176042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4346907534119301521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5ac7d367a2e14ab788ddcdf14181945, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameConfig: {fileID: 11400000, guid: 0f7cc3ed8c6b9b14fb6aa45988056316, type: 2}
+  character1Cards: []
+  character2Cards: []
+  chapterManager: {fileID: 0}
+  attackCardPrefab: {fileID: 5473407269505765583, guid: 81d0e6b49544d49058648e04bf9c1527, type: 3}
+  skillCardPrefab: {fileID: 0}
+  abilityCardPrefab: {fileID: 0}
+  playerMaxHP: 100
+  playerArmor: 0
+  playerStrength: 0
+  playerDexterity: 0
+  playerConfig: {fileID: 11400000, guid: 9c1bb1a8fc6d166448f6d77beb295aba, type: 2}
+  enemyMaxHP: 100
+  enemyArmor: 0
+  enemyAttackDamage: 5
+  enemyName: "\u7CBE\u82F11"
+  maxActionPoints: 3
+  drawPerTurn: 3
+  initialDraw: 3
+  handLimit: 10
+  handLayout: {fileID: 0}
+  hpText: {fileID: 0}
+  actionPointText: {fileID: 0}
+  armorText: {fileID: 0}
+  strengthText: {fileID: 0}
+  dexterityText: {fileID: 0}
+  playerHPBarFill: {fileID: 0}
+  sanityText: {fileID: 0}
+  sanityBarFill: {fileID: 0}
+  enemyHPText: {fileID: 0}
+  enemyArmorText: {fileID: 0}
+  enemyNameText: {fileID: 0}
+  enemyIntentText: {fileID: 0}
+  enemyDamageText: {fileID: 0}
+  enemyHPBarFill: {fileID: 0}
+  phaseHintText: {fileID: 0}
+  endTurnButton: {fileID: 0}
+  switchCharacterButton: {fileID: 0}
+  activeCharNameText: {fileID: 0}
+  inactiveCharNameText: {fileID: 0}
+  activeCharPortrait: {fileID: 0}
+  inactiveCharPortrait: {fileID: 0}
+  switchAvailableIndicator: {fileID: 0}
+  switchUsedIndicator: {fileID: 0}
+  settingsButton: {fileID: 0}
+  settingsPanelPrefab: {fileID: 8219856345522142511, guid: 282462f1493fb634fb6e9d83c6247891, type: 3}
+  victoryPanel: {fileID: 0}
+  defeatPanel: {fileID: 0}
+  quitButton: {fileID: 0}
+  darkOverlay: {fileID: 0}
+  darkOverlayAlpha: 0.3
+  darkOverlayFadeDuration: 1

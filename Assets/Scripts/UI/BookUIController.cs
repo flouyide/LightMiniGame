@@ -51,10 +51,14 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private Button relicButton;             // 遗物按钮（BookCanvas 中的 RelicButton），点击弹出遗物清单面板（RelicInventoryPanel）
     [SerializeField] private GameObject relicInventoryPanel; // 遗物清单面板 GameObject（RelicInventoryPanel），Inspector 直接拖入；留空则回退 GetComponentInChildren 自动查找
 
-    [Header("角色头像")]
-    [SerializeField] private GameConfig gameConfig;          // 角色数据源（含 2 个 CharacterData）；需在 Inspector 配置
-    [SerializeField] private GameObject character1Icon;          // 角色1 头像载体（其下 Image 显示角色1头像）
-    [SerializeField] private GameObject character2Icon;          // 角色2 头像载体（其下 Image 显示角色2头像）
+    [Header("角色数据源")]
+    [SerializeField] private GameConfig gameConfig;          // 角色数据源（含 2 个 CharacterData）；需在 Inspector 配置（商店/角色栏共用）
+
+    [Header("角色切换（局外，可点击交换激活角色）")]
+    [SerializeField] private GameObject activeCharacter;       // 当前【激活】角色载体（其下 Image 显示头像、TMP 显示名字；其下 Button 点击交换）
+    [SerializeField] private GameObject inactiveCharacter;     // 当前【未激活】角色载体（其下 Image 显示头像、TMP 显示名字；其下 Button 点击交换）
+    private Button _activeCharSwapButton;
+    private Button _inactiveCharSwapButton;
 
     [Header("背景")]
     [SerializeField] private GameObject background;         // BookCanvas 下的 Background 物体，其下 Image 显示背景图（按 Sanity 切换 NormalBG / AbnormalBG）
@@ -95,8 +99,11 @@ public class BookUIController : MonoBehaviour
         // 初始化商店控制器（绑定金币来源 ChapterManager）
         ShopManager.EnsureInstance()?.Init(chapterManager);
 
-        // 游戏开始时，把 GameConfig 中前两个角色的头像应用到角色栏
-        ApplyCharacterAvatars();
+        // 初始化局外角色激活状态，并把头像/名字渲染到可点击交换的激活/未激活角色栏
+        // （头像显示在角色载体下的 Image、名字显示在 TMP，由 RefreshActiveCharacterDisplay 统一处理）
+        chapterManager.InitCharacters();
+        WireCharacterSwap();
+        RefreshActiveCharacterDisplay();
 
         // 缓存背景 Image 初始应用
         if (background != null)
@@ -127,6 +134,12 @@ public class BookUIController : MonoBehaviour
             deckButton.onClick.RemoveListener(OnDeckClicked);
         if (relicButton != null)
             relicButton.onClick.RemoveListener(OnRelicButtonClicked);
+
+        // 角色交换按钮：反注册，避免 BookCanvas 反复启用时重复订阅
+        if (_activeCharSwapButton != null)
+            _activeCharSwapButton.onClick.RemoveListener(SwapActiveCharacter);
+        if (_inactiveCharSwapButton != null)
+            _inactiveCharSwapButton.onClick.RemoveListener(SwapActiveCharacter);
     }
 
     private void HandlePagesRefreshed(List<PageEventData> pages)
@@ -219,9 +232,14 @@ public class BookUIController : MonoBehaviour
             if (mgr != null) mgr.Init(chapterManager);
             shopPanel.Show(mgr, gameConfig != null ? gameConfig.characters : null, OnShopClosed);
         }
+        else if (data.eventType == PageEventType.Battle)
+        {
+            // 战斗类型：进入战斗（ChapterManager 负责切换 Canvas 并驱动 BattleManager 读取局外属性）
+            chapterManager.EnterBattle();
+        }
         else
         {
-            // Battle/Rest 类型：直接应用 defaultEffects，不弹面板
+            // Rest 类型：直接应用 defaultEffects，不弹面板
             chapterManager.ApplyEffects(data.defaultEffects, () => chapterManager.OnOptionResolved());
         }
     }
@@ -393,19 +411,6 @@ public class BookUIController : MonoBehaviour
         _relicInventoryPanel.Show();
     }
 
-    /// <summary>
-    /// 游戏开始时从 GameConfig.characters 读取前两个角色，把各自的头像应用到
-    /// character1 / character2 物体下的 Image 组件，并把 displayName 应用到其下的 TMP 文本
-    /// （头像优先自身 Image、否则取子物体 Image；角色名优先自身 TMP、否则取子物体 TMP）。
-    /// </summary>
-    private void ApplyCharacterAvatars()
-    {
-        if (gameConfig == null || gameConfig.characters == null) return;
-        var chars = gameConfig.characters;
-        ApplyCharacterTo(character1Icon, chars.Count > 0 ? chars[0] : null);
-        ApplyCharacterTo(character2Icon, chars.Count > 1 ? chars[1] : null);
-    }
-
     private void ApplyCharacterTo(GameObject go, CharacterData data)
     {
         if (go == null || data == null) return;
@@ -419,6 +424,39 @@ public class BookUIController : MonoBehaviour
         var tmp = go.GetComponent<TextMeshProUGUI>() ?? go.GetComponentInChildren<TextMeshProUGUI>();
         if (tmp != null)
             tmp.text = data.displayName;
+    }
+
+    // ===== 局外角色激活/未激活切换 =====
+
+    /// <summary>把按钮（active/inactive 角色载体下的 Button）绑定到交换回调。</summary>
+    private void WireCharacterSwap()
+    {
+        if (activeCharacter != null)
+        {
+            _activeCharSwapButton = activeCharacter.GetComponent<Button>() ?? activeCharacter.GetComponentInChildren<Button>();
+            if (_activeCharSwapButton != null)
+                _activeCharSwapButton.onClick.AddListener(SwapActiveCharacter);
+        }
+        if (inactiveCharacter != null)
+        {
+            _inactiveCharSwapButton = inactiveCharacter.GetComponent<Button>() ?? inactiveCharacter.GetComponentInChildren<Button>();
+            if (_inactiveCharSwapButton != null)
+                _inactiveCharSwapButton.onClick.AddListener(SwapActiveCharacter);
+        }
+    }
+
+    /// <summary>交换局外激活/未激活角色，并立即刷新两个角色栏的头像与名字。</summary>
+    private void SwapActiveCharacter()
+    {
+        chapterManager.SwapCharacters();
+        RefreshActiveCharacterDisplay();
+    }
+
+    /// <summary>把当前激活/未激活角色的头像与名字渲染到对应的角色载体。</summary>
+    private void RefreshActiveCharacterDisplay()
+    {
+        ApplyCharacterTo(activeCharacter, chapterManager.ActiveCharacter);
+        ApplyCharacterTo(inactiveCharacter, chapterManager.InactiveCharacter);
     }
 
     private void HandleChapterInfoUpdated(string name, int remaining)
@@ -441,6 +479,8 @@ public class BookUIController : MonoBehaviour
             sanText.text = $"理智: {sanity}";
         // 玩家属性变化（含 Sanity）→ 背景图可能需切换
         UpdateBackground();
+        // 战斗结束后 ChapterManager 写回的激活/未激活角色同步刷新到局外角色栏（头像+名字）
+        RefreshActiveCharacterDisplay();
     }
 
     /// <summary>

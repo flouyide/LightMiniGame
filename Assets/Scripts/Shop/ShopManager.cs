@@ -212,7 +212,7 @@ namespace LightMiniGame.Shop
             foreach (var pool in master.pools)
             {
                 if (pool == null || pool.character == null) continue;
-                var picked = CardDrawStrategy.Draw(pool.cards, count - result.Count, exclude);
+                var picked = CardDrawStrategy.Draw(master.GetCards(pool.character), count - result.Count, exclude);
                 foreach (var c in picked)
                 {
                     exclude.Add(c);

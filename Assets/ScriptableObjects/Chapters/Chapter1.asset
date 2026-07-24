@@ -282,7 +282,7 @@ MonoBehaviour:
         discountRatio: 0.6
     - optionText: "\u7834\u574F\u796D\u575B"
       effects:
-      - type: 9
+      - type: 14
         amount: 20
         itemDesc: 
         attributeOp: 0
@@ -290,7 +290,7 @@ MonoBehaviour:
         relic: {fileID: 0}
         card: {fileID: 0}
         keywordToAdd: 0
-        discountRatio: 0.6
+        discountRatio: 0.602
       - type: 9
         amount: 10
         itemDesc: 

@@ -15,7 +15,10 @@ MonoBehaviour:
   maxHP: 65
   startHP: 65
   startGold: 9999
-  Sanity: 50
+  startSanity: 10
+  maxSanity: 10
+  maxActionPoints: 3
+  drawPerTurn: 5
   strength: 10
   agility: 60
   lifesteal: 0

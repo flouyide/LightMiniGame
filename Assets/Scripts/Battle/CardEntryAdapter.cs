@@ -52,6 +52,7 @@ public static class CardEntryAdapter
         cd.cardName = entry.cardName;
         cd.description = entry.GetDescription(false);
         cd.cardArt = entry.cardArt;
+        cd.value = entry.price;   // 商店售价（金币）
 
         // 费用
         cd.actionPointCost = entry.baseCost;

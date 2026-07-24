@@ -20,6 +20,21 @@ public class ChapterManager : MonoBehaviour
     [Tooltip("跳过前N章，直接从第N+1章开始（0=从第一章开始）")]
     [SerializeField] private int debugStartChapterIndex;
 
+    [Header("场景画布（单场景内 局外↔战斗 切换）")]
+    [Tooltip("战斗画布（BattleCanvas）。进入战斗时启用，退出时禁用。")]
+    [SerializeField] private GameObject battleCanvas;
+    [Tooltip("局外画布（BookCanvas）。进入战斗时禁用，退出时启用。")]
+    [SerializeField] private GameObject bookCanvas;
+    [Tooltip("战斗管理器（BattleManager）。进入战斗时驱动其 BeginBattle()。留空则运行时自动查找。")]
+    [SerializeField] private BattleManager battleManager;
+    private bool _inBattle;
+
+    // --- 当前激活/未激活角色（局外角色切换，进入战斗时传给 BattleManager）---
+    private CharacterData _activeCharacter;
+    private CharacterData _inactiveCharacter;
+    public CharacterData ActiveCharacter => _activeCharacter;
+    public CharacterData InactiveCharacter => _inactiveCharacter;
+
     // --- 状态 ---
     private int _currentChapterIndex = -1;  // 当前章节索引（-1表示未开始）
     private ChapterConfig _currentChapter;  // 当前章节配置引用
@@ -100,6 +115,7 @@ public class ChapterManager : MonoBehaviour
         _currentChapterIndex = Mathf.Max(0, debugStartChapterIndex) - 1;
         InitPlayerStats();
         BuildInitialLibraries();   // 从 GameConfig.characters 读取 startingLibrary 构建初始牌库
+        InitCharacters();          // 初始化局外激活/未激活角色状态
         StartNextChapter();
     }
 
@@ -513,7 +529,7 @@ public class ChapterManager : MonoBehaviour
                 Debug.Log($"[ChapterManager] 失去物品: {effect.itemDesc}");
                 break;
             case EffectType.EnterBattle:
-                Debug.Log("[ChapterManager] 进入战斗！（战斗系统待实现）");
+                EnterBattle();
                 break;
 
             case EffectType.ModifyAttribute:
@@ -715,6 +731,107 @@ public class ChapterManager : MonoBehaviour
     public void NextChapter()
     {
         StartNextChapter();
+    }
+
+    // ===== 局外 ↔ 战斗 场景切换（单场景：同场景内切换 Canvas）=====
+
+    /// <summary>初始化局外角色激活状态：默认 characters[0] 激活、characters[1] 未激活。幂等。</summary>
+    public void InitCharacters()
+    {
+        // 幂等：若已被设置（开局默认 / 局外交换 / 战斗写回）则不重置，
+        // 否则 BookCanvas 战后重新启用时 OnEnable→InitCharacters 会把战斗内切换的角色结果覆盖回 characters[0]/[1]。
+        if (_activeCharacter != null) return;
+        if (gameConfig == null || gameConfig.characters == null) return;
+        var chars = gameConfig.characters;
+        _activeCharacter   = chars.Count > 0 ? chars[0] : null;
+        _inactiveCharacter = chars.Count > 1 ? chars[1] : null;
+        Debug.Log($"[ChapterManager] 初始化角色激活状态：激活={_activeCharacter?.displayName}，未激活={_inactiveCharacter?.displayName}");
+    }
+
+    /// <summary>局外交换激活/未激活角色（由 BookUIController 的角色栏按钮调用）。</summary>
+    public void SwapCharacters()
+    {
+        (_activeCharacter, _inactiveCharacter) = (_inactiveCharacter, _activeCharacter);
+        Debug.Log($"[ChapterManager] 交换激活角色：激活={_activeCharacter?.displayName}，未激活={_inactiveCharacter?.displayName}");
+    }
+
+    /// <summary>
+    /// 进入战斗：禁用 BookCanvas、启用 BattleCanvas，并驱动 BattleManager 读取局外玩家属性后开始战斗。
+    /// 由 BookUIController 在玩家选中「战斗」类型页面时调用（即“进入战斗按钮”）。
+    /// </summary>
+    public void EnterBattle()
+    {
+        if (_inBattle) return;          // 防止重复进入
+        _inBattle = true;
+
+        if (bookCanvas != null) bookCanvas.SetActive(false);
+        if (battleCanvas != null) battleCanvas.SetActive(true);
+
+        var bm = battleManager != null ? battleManager : FindObjectOfType<BattleManager>();
+        if (bm != null)
+        {
+            bm.StartActiveChar = _activeCharacter;   // 局外当前激活角色作为战斗起始激活角色
+            bm.StartInactiveChar = _inactiveCharacter;
+            bm.OnBattleEnded -= OnBattleEnded;
+            bm.OnBattleEnded += OnBattleEnded;
+            bm.BeginBattle();        // 读取局外属性 + 启动战斗
+        }
+        else
+        {
+            Debug.LogError("[ChapterManager] 未找到 BattleManager，无法进入战斗");
+            ReturnFromBattle();      // 兜底：直接回到局外
+        }
+    }
+
+    /// <summary>BattleManager.QuitButton 回调：切回局外并推进章节。</summary>
+    private void OnBattleEnded()
+    {
+        ReturnFromBattle();
+    }
+
+    private void ReturnFromBattle()
+    {
+        if (!_inBattle) return;
+        _inBattle = false;
+
+        if (battleCanvas != null) battleCanvas.SetActive(false);
+        if (bookCanvas != null) bookCanvas.SetActive(true);
+
+        // 战斗后的玩家属性已由 BattleManager 在退出前通过 ApplyBattleResult 写回本管理器
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
+
+        // 推进章节（等价一次选项结算：刷新页面 / 消耗卡片 / 章节完成）
+        OnOptionResolved();
+    }
+
+    /// <summary>
+    /// 战斗结束后由 BattleManager 调用：把战斗后的玩家属性写回局外系统。
+    /// hp/maxHp：战斗结算后的当前/最大 HP；sanity/maxSanity：理智；
+    /// 其余为战斗内可能变化的持久基础属性与每回合数值。
+    /// </summary>
+    public void ApplyBattleResult(int hp, int maxHp, int sanity, int maxSanity,
+        int strength, int agility, int lifesteal, int critRate, int critDamage,
+        int maxActionPoints, int drawPerTurn,
+        CharacterData activeChar = null, CharacterData inactiveChar = null)
+    {
+        PlayerMaxHP   = maxHp > 0 ? maxHp : PlayerMaxHP;
+        PlayerHP      = Mathf.Clamp(hp, 0, PlayerMaxHP);
+        PlayerMaxSanity  = maxSanity > 0 ? maxSanity : PlayerMaxSanity;
+        PlayerSanity  = Mathf.Clamp(sanity, 0, PlayerMaxSanity);
+        PlayerMaxActionPoints = maxActionPoints;
+        PlayerDrawPerTurn      = drawPerTurn;
+        PlayerStrength   = strength;
+        PlayerAgility    = agility;
+        PlayerLifesteal  = lifesteal;
+        PlayerCritRate   = critRate;
+        PlayerCritDamage  = critDamage;
+
+        // 战斗结束时的激活/未激活角色同步回局外：若战斗内切换过角色，则保留切换结果，
+        // 局外角色栏与下次进入战斗都以此时状态为准。
+        if (activeChar != null)   _activeCharacter = activeChar;
+        if (inactiveChar != null) _inactiveCharacter = inactiveChar;
+
+        Debug.Log($"[ChapterManager] 战斗结果已写回：HP {PlayerHP}/{PlayerMaxHP}，理智 {PlayerSanity}/{PlayerMaxSanity}，力量 {PlayerStrength}；激活角色={_activeCharacter?.displayName}，未激活={_inactiveCharacter?.displayName}");
     }
 
     private static string TypeNameOf(PageEventType type) => type switch

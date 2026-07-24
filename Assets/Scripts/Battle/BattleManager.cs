@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,7 @@ using UnityEngine.Serialization;
 using TMPro;
 using LightMiniGame.Card;
 using LightMiniGame.CardEditor;
+using Random = UnityEngine.Random;
 
 /// <summary>
 /// 战斗管理器（双角色回合制）。
@@ -157,10 +159,14 @@ public class BattleManager : MonoBehaviour
     private bool _waitingEnemyConfirm = false;
     private bool _isDarkMode = false;
     private Coroutine _sanityTrembleRoutine;
+    private bool _listenersWired = false;
 
     private SettingsPanelUI _settingsPanel;
 
     public bool IsPlayerTurn => _isPlayerTurn && !_battleEnded;
+
+    /// <summary>战斗结束（点击 QuitButton）后通知 ChapterManager 切回局外。</summary>
+    public event Action OnBattleEnded;
 
     // ========================================================================
     // 公共属性（供 BattleCardContext / EffectExecutor 使用）
@@ -286,11 +292,28 @@ public class BattleManager : MonoBehaviour
     private CharBattleState ActiveChar => _chars[_activeCharIdx];
     private CharBattleState InactiveChar => _chars[1 - _activeCharIdx];
 
+    /// <summary>
+    /// 局外（ChapterManager）在进入战斗前指定的【起始】激活/未激活角色（CharacterData）。
+    /// 为空则按默认：characters[0] 激活、characters[1] 未激活。
+    /// 注意：本类已有的 ActiveChar/InactiveChar（CharBattleState）是战斗中“当前”角色状态，
+    /// 会随切换角色变化；此处 StartActiveChar/StartInactiveChar 仅作起始指派。
+    /// </summary>
+    public CharacterData StartActiveChar { get; set; }
+    public CharacterData StartInactiveChar { get; set; }
+
     // ========================================================================
     // 生命周期
     // ========================================================================
 
+    // 战斗由 ChapterManager 在进入战斗时显式调用 BeginBattle() 启动；
+    // BattleCanvas 默认禁用，故场景加载时 Start() 不会自动开战。
     private void Start()
+    {
+        // 空实现：真正初始化放在 BeginBattle()，确保 BattleCanvas 被启用后才执行
+    }
+
+    /// <summary>绑定一次性 UI 监听（仅执行一次）。</summary>
+    private void WireListeners()
     {
         if (handLayout != null)
         {
@@ -305,7 +328,15 @@ public class BattleManager : MonoBehaviour
             settingsButton.onClick.AddListener(OnSettingsClicked);
         if (quitButton != null)
             quitButton.onClick.AddListener(OnQuitClicked);
+    }
 
+    /// <summary>
+    /// 由 ChapterManager 在进入战斗后调用：绑定监听（一次性），启动战斗。
+    /// 每次进入战斗都应调用一次（战斗结束后会重新启用 BattleCanvas 并再次 BeginBattle）。
+    /// </summary>
+    public void BeginBattle()
+    {
+        if (!_listenersWired) { WireListeners(); _listenersWired = true; }
         _baseDrawPerTurn = drawPerTurn;   // 捕获抽牌基数（Inspector 配置），避免逐场战斗累加
         StartBattle();
     }
@@ -339,7 +370,14 @@ public class BattleManager : MonoBehaviour
             ShuffleDrawPile(_chars[i]);
         }
 
-        _activeCharIdx = 0;
+        // 起始激活角色：优先用局外传入的 StartActiveChar，否则默认 characters[0]
+        int startIdx = 0;
+        if (StartActiveChar != null && gameConfig.characters != null)
+        {
+            int idx = gameConfig.characters.IndexOf(StartActiveChar);
+            if (idx >= 0) startIdx = idx;
+        }
+        _activeCharIdx = startIdx;
         _hasSwitchedThisTurn = false;
         _turnCount = 1;
         _playerArmor = 0;
@@ -394,6 +432,12 @@ public class BattleManager : MonoBehaviour
         _battleEnded = false;
         _isPlayerTurn = true;
 
+        // 重新进入战斗时复位上一场结束状态（胜利/失败面板、按钮可用性）
+        if (victoryPanel != null) victoryPanel.SetActive(false);
+        if (defeatPanel != null) defeatPanel.SetActive(false);
+        if (endTurnButton != null) endTurnButton.interactable = true;
+        if (switchCharacterButton != null) switchCharacterButton.interactable = true;
+
         _hand.Clear();
         _actionPoints = maxActionPoints;
         DrawCards(initialDraw);
@@ -407,98 +451,45 @@ public class BattleManager : MonoBehaviour
     private void BuildStartingDeck(CharBattleState state)
     {
         var charData = state.data;
+        if (charData == null) return;
 
-        // 优先从 GlobalCardLibrary 读取（跨战斗保留的牌库）
-        var library = GlobalCardLibrary.Instance;
-        if (library != null && charData != null)
+        // 优先使用运行时牌库（GlobalCardLibrary，含商店购买的卡），回退到 CardEntry / startingLibrary
+        var globalLib = GlobalCardLibrary.Instance;
+        if (globalLib != null && globalLib.IsRegistered(charData))
         {
-            var cards = library.GetCards(charData);
-            if (cards != null && cards.Count > 0)
+            foreach (var inst in globalLib.GetCards(charData))
             {
-                foreach (var inst in cards)
-                {
-                    var cd = CreateRuntimeCardData(inst);
-                    if (cd != null) state.drawPile.Add(cd);
-                }
-                Debug.Log($"[BattleManager] {charData.Label} 初始牌组(从牌库): {state.drawPile.Count} 张");
+                if (inst != null && inst.template != null)
+                    state.drawPile.Add(inst.template);
+            }
+            if (state.drawPile.Count > 0)
+            {
+                Debug.Log($"[BattleManager] {charData.Label} 使用运行时牌库: {state.drawPile.Count} 张");
                 return;
             }
         }
 
-        // 回退：从 Inspector 配置的 CardEntry 列表读取，并注入牌库
+        // 其次：卡牌编辑器的 CardEntry 初始牌组
         List<CardEntry> entryCards = state == _chars[0] ? character1Cards : character2Cards;
         if (entryCards != null && entryCards.Count > 0)
         {
             var cardDataList = CardEntryAdapter.ConvertToCardData(entryCards);
             foreach (var cd in cardDataList)
-            {
                 state.drawPile.Add(cd);
-                // 注入 GlobalCardLibrary 供后续战斗使用
-                if (library != null && charData != null)
-                    library.AddCard(charData, cd);
-            }
-            Debug.Log($"[BattleManager] {charData?.Label} 初始牌组(CardEntry→注入牌库): {state.drawPile.Count} 张");
+            Debug.Log($"[BattleManager] {charData?.Label} 初始牌组(CardEntry): {state.drawPile.Count} 张");
             return;
         }
 
-        // 最终回退：旧 CardData 初始牌库
-        if (charData == null || charData.startingLibrary == null) return;
+        // 回退：使用旧 CardData 初始牌库
+        if (charData.startingLibrary == null) return;
 
         foreach (var card in charData.startingLibrary.startingCards)
         {
             if (card != null)
-                state.drawPile.Add(card);
+                state.drawPile.Add(CardEntryAdapter.ConvertSingle(card));
         }
 
         Debug.Log($"[BattleManager] {charData.Label} 初始牌组(CardData): {state.drawPile.Count} 张");
-    }
-
-    /// <summary>
-    /// 从 CardInstance 创建运行时 CardData 副本（应用覆盖层，保留 sourceEntry）。
-    /// 使用 CreateInstance 生成临时实例，战斗结束后随场景销毁。
-    /// </summary>
-    private CardData CreateRuntimeCardData(LightMiniGame.Card.CardInstance inst)
-    {
-        if (inst == null) return null;
-
-        var cd = ScriptableObject.CreateInstance<CardData>();
-
-        // 如果原模板有 sourceEntry，保留关联（走 EffectExecutor 路径）
-        cd.sourceEntry = inst.template != null ? inst.template.sourceEntry : null;
-
-        // 应用有效值（覆盖层优先，回退到模板）
-        cd.cardName = inst.EffectiveName;
-        cd.description = inst.EffectiveDescription;
-        cd.actionPointCost = inst.EffectiveCost;
-        cd.value = inst.EffectiveValue;
-        cd.grade = inst.EffectiveGrade;
-        cd.consumeType = inst.EffectiveConsume;
-        cd.keywords = inst.EffectiveKeywords;
-        cd.cardType = inst.template != null ? inst.template.cardType : CardType.Attack;
-        cd.cardArt = inst.template != null ? inst.template.cardArt : null;
-        cd.darkCardArt = inst.template != null ? inst.template.darkCardArt : null;
-
-        // 攻击属性
-        cd.attackCount = inst.EffectiveAttackCount;
-        cd.attackValueType = inst.EffectiveAttackValType;
-        cd.attackValue = inst.EffectiveAttackValue;
-        cd.attackAttribute = inst.EffectiveAttackAttr;
-        cd.ignoreArmor = inst.EffectiveIgnoreArmor;
-
-        // 护甲属性
-        cd.armorValueType = inst.EffectiveArmorValType;
-        cd.armorValue = inst.EffectiveArmorValue;
-        cd.armorAttribute = inst.EffectiveArmorAttr;
-
-        // 增益属性
-        cd.buffDuration = inst.EffectiveBuffDuration;
-        cd.buffDurationTurns = inst.EffectiveBuffTurns;
-        cd.buffStacks = inst.EffectiveBuffStacks;
-        cd.buffEffects = inst.EffectiveBuffEffects != null
-            ? new List<BuffEffect>(inst.EffectiveBuffEffects)
-            : new List<BuffEffect>();
-
-        return cd;
     }
 
     // ========================================================================
@@ -950,13 +941,24 @@ public class BattleManager : MonoBehaviour
         _settingsPanel?.Show();
     }
 
+    /// <summary>
+    /// QuitButton 回调：把战斗后的玩家属性写回局外系统（ChapterManager），
+    /// 并通知战斗结束（由 ChapterManager 切回 BookCanvas 并推进章节）。
+    /// </summary>
     private void OnQuitClicked()
     {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        var cm = chapterManager != null ? chapterManager : FindObjectOfType<ChapterManager>();
+        if (cm != null)
+        {
+            cm.ApplyBattleResult(
+                _playerHP, playerMaxHP,
+                _playerSanity, _playerMaxSanity,
+                _playerStrength, _playerAgility, _playerLifesteal,
+                _playerCritRate, _playerCritDamage,
+                maxActionPoints, drawPerTurn,
+                ActiveChar?.data, InactiveChar?.data);   // 把战斗结束时的激活/未激活角色同步回局外
+        }
+        OnBattleEnded?.Invoke();
     }
 
     // ========================================================================

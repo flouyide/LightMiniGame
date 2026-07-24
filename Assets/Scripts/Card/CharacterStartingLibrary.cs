@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using LightMiniGame.CardEditor;
 
 namespace LightMiniGame.Card
 {
@@ -11,14 +12,14 @@ namespace LightMiniGame.Card
     public class CharacterStartingLibrary : ScriptableObject
     {
         public CharacterData character;              // 归属角色
-        public List<CardData> startingCards;         // 初始模板列表（可重复，重复会生成多张独立实例）
+        public List<CardEntry> startingCards;        // 初始模板列表（编辑器 CardEntry 格式；可重复，重复会生成多张独立实例）
 
-        /// <summary>把起始卡组写入目标牌库（逐张 new 独立实例）。</summary>
+        /// <summary>把起始卡组写入目标牌库（逐张转成运行时 CardData 后 new 独立实例）。</summary>
         public void BuildInto(CharacterCardLibrary lib)
         {
             if (lib == null) return;
             foreach (var t in startingCards)
-                lib.Add(t);
+                if (t != null) lib.Add(CardEntryAdapter.ConvertSingle(t));
         }
     }
 }

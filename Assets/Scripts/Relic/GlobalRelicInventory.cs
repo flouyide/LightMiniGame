@@ -33,6 +33,7 @@ namespace LightMiniGame.Shop
                 return;
             }
             Instance = this;
+            DontDestroyOnLoad(gameObject);   // 常驻：跨场景/重载保留遗物库（避免切场景丢遗物）
             // Dictionary 不被 Unity 序列化，从已序列化的 _libraries 重建索引
             _index.Clear();
             foreach (var lib in _libraries)
