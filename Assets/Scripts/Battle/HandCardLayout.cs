@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 手牌扇形布局管理 —— 负责卡牌的弧形排列、悬浮放大、丝滑过渡动画。
@@ -22,8 +23,8 @@ public class HandCardLayout : MonoBehaviour
 
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
-    [SerializeField] private GameObject skillCardPrefab;
-    [SerializeField] private GameObject abilityCardPrefab;
+    [FormerlySerializedAs("armorCardPrefab")] [SerializeField] private GameObject skillCardPrefab;
+    [FormerlySerializedAs("buffCardPrefab")] [SerializeField] private GameObject abilityCardPrefab;
 
     private readonly List<GameObject> _cardObjects = new List<GameObject>();
     private readonly List<CardDisplay> _cardDisplays = new List<CardDisplay>();

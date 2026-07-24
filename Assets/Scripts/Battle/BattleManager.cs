@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Serialization;
 using TMPro;
 using LightMiniGame.Card;
 using LightMiniGame.CardEditor;
@@ -32,8 +33,8 @@ public class BattleManager : MonoBehaviour
 
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
-    [SerializeField] private GameObject skillCardPrefab;
-    [SerializeField] private GameObject abilityCardPrefab;
+    [FormerlySerializedAs("armorCardPrefab")] [SerializeField] private GameObject skillCardPrefab;
+    [FormerlySerializedAs("buffCardPrefab")] [SerializeField] private GameObject abilityCardPrefab;
 
     [Header("玩家属性（双角色共享）")]
     [SerializeField] private int playerMaxHP = 100;
