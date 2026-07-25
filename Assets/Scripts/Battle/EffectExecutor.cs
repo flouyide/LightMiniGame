@@ -116,13 +116,13 @@ public class EffectExecutor
 
             if (eff.target == EffectTarget.AllEnemies)
             {
-                _ctx.DealDamageToAllEnemies(hitDamage, eff.ignoreArmor);
+                _ctx.DealDamageToAllEnemies(hitDamage, eff.ignoreArmor, isCrit);
             }
             else
             {
                 int actualTarget = targetIndex >= 0 ? targetIndex : _ctx.SelectedEnemyIndex;
                 if (actualTarget >= 0)
-                    _ctx.DealDamageToEnemy(actualTarget, hitDamage, eff.ignoreArmor);
+                    _ctx.DealDamageToEnemy(actualTarget, hitDamage, eff.ignoreArmor, isCrit);
             }
 
             // 暴击事件

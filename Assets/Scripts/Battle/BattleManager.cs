@@ -82,6 +82,8 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Image enemyHPBarFill;
     [Tooltip("敌人立绘 Image（阶段切换时替换 Sprite）")]
     [SerializeField] private Image enemyPortraitImage;
+    [Tooltip("凝视值文本（显示在敌人上方）")]
+    [SerializeField] private TextMeshProUGUI gazeValueText;
 
     [Header("UI引用 - 敌人技能卡面")]
     [Tooltip("敌人出招时显示的技能卡面板（Image + 子 TextMeshProUGUI）")]
@@ -90,9 +92,9 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI enemySkillNameText;
     [SerializeField] private TextMeshProUGUI enemySkillDescText;
     [Tooltip("技能卡显示持续时间（秒）")]
-    [SerializeField] private float enemySkillCardDuration = 1.5f;
+    [SerializeField] private float enemySkillCardDuration = 2.5f;
     [Tooltip("技能卡淡入淡出时间（秒）")]
-    [SerializeField] private float enemySkillCardFadeTime = 0.3f;
+    [SerializeField] private float enemySkillCardFadeTime = 0.5f;
 
     [Header("UI引用 - 回合")]
     [SerializeField] private TextMeshProUGUI phaseHintText;
@@ -138,7 +140,7 @@ public class BattleManager : MonoBehaviour
 
     private CharBattleState[] _chars = new CharBattleState[2];
     private int _activeCharIdx = 0;
-    private bool _hasSwitchedThisTurn = false;
+    private bool _hasSwitchedThisBattle = false;
 
     private readonly List<CardData> _hand = new();
     private int _playerHP;
@@ -221,17 +223,17 @@ public class BattleManager : MonoBehaviour
     public bool HasEventOccurred(string eventName) => _eventsThisTurn.Contains(eventName) || _eventsThisBattle.Contains(eventName);
     public void RecordEvent(string eventName) { _eventsThisTurn.Add(eventName); _eventsThisBattle.Add(eventName); }
 
-    public void DealDamageToEnemy(int index, int amount, bool ignoreArmor)
+    public void DealDamageToEnemy(int index, int amount, bool ignoreArmor, bool isCrit = false)
     {
         if (index < 0 || index >= EnemyCount) return;
         int actual = DealDamageToEnemy(amount, ignoreArmor);
-        if (actual > 0) ShowEnemyDamage(actual);
+        if (actual > 0) ShowEnemyDamage(actual, isCrit);
     }
 
-    public void DealDamageToAllEnemies(int amount, bool ignoreArmor)
+    public void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false)
     {
         int actual = DealDamageToEnemy(amount, ignoreArmor);
-        if (actual > 0) ShowEnemyDamage(actual);
+        if (actual > 0) ShowEnemyDamage(actual, isCrit);
     }
 
     public void HealPlayer(int amount) => _playerHP = Mathf.Min(playerMaxHP, _playerHP + amount);
@@ -426,7 +428,7 @@ public class BattleManager : MonoBehaviour
             if (idx >= 0) startIdx = idx;
         }
         _activeCharIdx = startIdx;
-        _hasSwitchedThisTurn = false;
+        _hasSwitchedThisBattle = false;
         _turnCount = 1;
         _playerArmor = 0;
         _sanityPhaseTriggered = false;
@@ -738,6 +740,9 @@ public class BattleManager : MonoBehaviour
             OnSanityPhaseTransition();
         }
 
+        // 理智变化时检查敌人阶段切换
+        CheckEnemyPhaseSwitch();
+
         UpdateUI();
     }
 
@@ -858,7 +863,7 @@ public class BattleManager : MonoBehaviour
     /// <summary>
     /// 在敌人右侧显示伤害数字并飘起消失。支持多段同时显示（每次调用独立飘字）。
     /// </summary>
-    private void ShowEnemyDamage(int amount)
+    private void ShowEnemyDamage(int amount, bool isCrit = false)
     {
         if (amount <= 0) return;
 
@@ -876,22 +881,21 @@ public class BattleManager : MonoBehaviour
         }
         else if (enemyDamageText != null)
         {
-            // 回退：用单个文本（多段时会互相覆盖）
             popupObj = enemyDamageText.gameObject;
             popupText = enemyDamageText;
             popupRect = enemyDamageText.GetComponent<RectTransform>();
-            StopCoroutine(nameof(DamagePopupRoutine));
+            StopAllCoroutines();
         }
 
         if (popupText == null || popupRect == null) return;
 
-        // 随机偏移避免完全重叠
         float offsetX = Random.Range(-20f, 20f);
         Vector2 startPos = new Vector2(150 + offsetX, -20);
 
         popupObj.SetActive(true);
-        popupText.text = amount.ToString();
-        popupText.color = new Color(1f, 0.3f, 0.2f, 1f);
+        popupText.text = isCrit ? $"{amount}!" : amount.ToString();
+        popupText.color = isCrit ? new Color(1f, 0.85f, 0.1f, 1f) : new Color(1f, 0.3f, 0.2f, 1f);
+        popupText.fontSize = isCrit ? 28 : 20;
         popupRect.anchoredPosition = startPos;
 
         StartCoroutine(DamagePopupRoutine(popupRect, popupText, startPos, popupObj));
@@ -952,9 +956,9 @@ public class BattleManager : MonoBehaviour
     private void OnSwitchCharacterClicked()
     {
         if (!_isPlayerTurn || _battleEnded) return;
-        if (_hasSwitchedThisTurn)
+        if (_hasSwitchedThisBattle)
         {
-            Debug.Log("[BattleManager] 本回合已切换过角色");
+            Debug.Log("[BattleManager] 本场战斗已切换过角色");
             return;
         }
         SwitchCharacter();
@@ -968,7 +972,7 @@ public class BattleManager : MonoBehaviour
         _hand.Clear();
 
         _activeCharIdx = 1 - _activeCharIdx;
-        _hasSwitchedThisTurn = true;
+        _hasSwitchedThisBattle = true;
 
         DrawCards(drawPerTurn);
 
@@ -995,13 +999,13 @@ public class BattleManager : MonoBehaviour
                 inactiveCharPortrait.sprite = InactiveChar.data.avatar;
         }
 
-        bool canSwitch = _isPlayerTurn && !_battleEnded && !_hasSwitchedThisTurn;
+        bool canSwitch = _isPlayerTurn && !_battleEnded && !_hasSwitchedThisBattle;
         if (switchCharacterButton != null)
             switchCharacterButton.interactable = canSwitch;
         if (switchAvailableIndicator != null)
             switchAvailableIndicator.SetActive(canSwitch);
         if (switchUsedIndicator != null)
-            switchUsedIndicator.SetActive(_hasSwitchedThisTurn);
+            switchUsedIndicator.SetActive(_hasSwitchedThisBattle);
     }
 
     // ========================================================================
@@ -1143,10 +1147,21 @@ public class BattleManager : MonoBehaviour
             if (enemySkillCardImage != null)
             {
                 enemySkillCardImage.sprite = skill.skillCardArt;
-                enemySkillCardImage.color = new Color(1, 1, 1, skill.skillCardArt != null ? 1f : 0f);
+                // 有卡面图时用不透明背景，无图时用深色背景
+                enemySkillCardImage.color = skill.skillCardArt != null
+                    ? new Color(1, 1, 1, 1f)
+                    : new Color(0.05f, 0.03f, 0.1f, 0.95f);
             }
-            if (enemySkillNameText != null) enemySkillNameText.text = skill.skillName;
-            if (enemySkillDescText != null) enemySkillDescText.text = skill.description;
+            if (enemySkillNameText != null)
+            {
+                enemySkillNameText.text = skill.skillName;
+                enemySkillNameText.color = new Color(1f, 0.95f, 0.7f, 1f);
+            }
+            if (enemySkillDescText != null)
+            {
+                enemySkillDescText.text = skill.description;
+                enemySkillDescText.color = new Color(0.9f, 0.85f, 0.95f, 1f);
+            }
 
             // 淡入
             yield return StartCoroutine(FadeEnemySkillCard(0f, 1f, enemySkillCardFadeTime));
@@ -1286,7 +1301,6 @@ public class BattleManager : MonoBehaviour
         _turnCount++;
         _actionPoints = maxActionPoints;
         _playerArmor = 0;
-        _hasSwitchedThisTurn = false;
         _eventsThisTurn.Clear(); // 清除本回合事件
 
         DrawCards(drawPerTurn);
@@ -1305,7 +1319,18 @@ public class BattleManager : MonoBehaviour
 
     private void CheckBattleEnd()
     {
-        if (_enemyHP <= 0) EndBattle(true);
+        if (_enemyHP <= 0)
+        {
+            // 阶段1血量打完：如果有阶段2，先切换而不是胜利
+            if (_enemyPhase == 1 && enemyConfig != null && enemyConfig.phase2MaxHP > 0)
+            {
+                CheckEnemyPhaseSwitch();
+            }
+            else
+            {
+                EndBattle(true);
+            }
+        }
         else if (_playerHP <= 0) EndBattle(false);
     }
 
@@ -1376,6 +1401,19 @@ public class BattleManager : MonoBehaviour
 
         if (sanityText != null) sanityText.text = $"{_playerSanity}/{_playerMaxSanity}";
         if (sanityBarFill != null) sanityBarFill.fillAmount = (float)_playerSanity / _playerMaxSanity;
+
+        if (gazeValueText != null)
+        {
+            if (enemyConfig != null && enemyConfig.gazeMaxValue > 0)
+            {
+                gazeValueText.gameObject.SetActive(true);
+                gazeValueText.text = $"凝视 {_gazeValue}/{enemyConfig.gazeMaxValue}";
+            }
+            else
+            {
+                gazeValueText.gameObject.SetActive(false);
+            }
+        }
 
         if (handLayout != null)
             handLayout.RefreshPlayable(IsCardPlayable);
