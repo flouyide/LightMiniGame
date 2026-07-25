@@ -48,11 +48,9 @@ public class BattleManager : MonoBehaviour
     [Tooltip("可选：配置玩家持久基础属性（力量/敏捷/吸血/暴击率/暴击伤害），由特殊事件 ModifyAttribute 修改，战斗开始时读入替换上方临时变量")]
     [SerializeField] private PlayerConfig playerConfig;
 
-    [Header("敌人属性")]
-    [SerializeField] private int enemyMaxHP = 100;
-    [SerializeField] private int enemyArmor = 0;
-    [SerializeField] private int enemyAttackDamage = 5;
-    [SerializeField] private string enemyName = "精英1";
+    [Header("敌人配置")]
+    [Tooltip("敌人配置资产，不同战斗替换此资产即可")]
+    [SerializeField] private EnemyConfig enemyConfig;
 
     [Header("回合设置")]
     [SerializeField] private int maxActionPoints = 3;
@@ -79,7 +77,22 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI enemyNameText;
     [SerializeField] private TextMeshProUGUI enemyIntentText;
     [SerializeField] private TextMeshProUGUI enemyDamageText;
+    [Tooltip("伤害数字预制体（TextMeshProUGUI，用于多段伤害飘字）。留空则用 enemyDamageText 单个文本。")]
+    [SerializeField] private GameObject damagePopupPrefab;
     [SerializeField] private Image enemyHPBarFill;
+    [Tooltip("敌人立绘 Image（阶段切换时替换 Sprite）")]
+    [SerializeField] private Image enemyPortraitImage;
+
+    [Header("UI引用 - 敌人技能卡面")]
+    [Tooltip("敌人出招时显示的技能卡面板（Image + 子 TextMeshProUGUI）")]
+    [SerializeField] private GameObject enemySkillCard;
+    [SerializeField] private Image enemySkillCardImage;
+    [SerializeField] private TextMeshProUGUI enemySkillNameText;
+    [SerializeField] private TextMeshProUGUI enemySkillDescText;
+    [Tooltip("技能卡显示持续时间（秒）")]
+    [SerializeField] private float enemySkillCardDuration = 1.5f;
+    [Tooltip("技能卡淡入淡出时间（秒）")]
+    [SerializeField] private float enemySkillCardFadeTime = 0.3f;
 
     [Header("UI引用 - 回合")]
     [SerializeField] private TextMeshProUGUI phaseHintText;
@@ -152,7 +165,12 @@ public class BattleManager : MonoBehaviour
     private int _baseDrawPerTurn;   // 每场战斗前的抽牌基数（来自 Inspector 的 drawPerTurn，开局捕获一次）
     private int _actionPoints;
     private int _enemyHP;
+    private int _enemyMaxHP;
     private int _enemyArmor;
+    private int _enemyPhase = 1;
+    private int _gazeValue = 0;
+    private int _turnInCycle = 0;       // 阶段1的回合循环计数
+    private int _lockedCharIdx = -1;    // 被光束扫描锁定的角色索引
     private int _turnCount = 1;
     private bool _isPlayerTurn = true;
     private bool _battleEnded = false;
@@ -309,7 +327,7 @@ public class BattleManager : MonoBehaviour
     // BattleCanvas 默认禁用，故场景加载时 Start() 不会自动开战。
     private void Start()
     {
-        // 空实现：真正初始化放在 BeginBattle()，确保 BattleCanvas 被启用后才执行
+        BeginBattle();
     }
 
     /// <summary>绑定一次性 UI 监听（仅执行一次）。</summary>
@@ -343,9 +361,6 @@ public class BattleManager : MonoBehaviour
 
     private void Update()
     {
-        if (_waitingEnemyConfirm && Input.GetKeyDown(KeyCode.P))
-            ExecuteEnemyAction();
-
         // 测试：按 1 降低 1 点理智
         if (Input.GetKeyDown(KeyCode.Alpha1))
             ModifySanity(-1);
@@ -354,6 +369,39 @@ public class BattleManager : MonoBehaviour
     // ========================================================================
     // 战斗初始化
     // ========================================================================
+
+    /// <summary>外部接口：更换敌人配置（不重新加载场景）</summary>
+    public void SetEnemy(EnemyConfig config)
+    {
+        enemyConfig = config;
+    }
+
+    /// <summary>从 EnemyConfig 初始化敌人状态</summary>
+    private void InitEnemy()
+    {
+        if (enemyConfig != null)
+        {
+            _enemyMaxHP = enemyConfig.maxHP;
+            _enemyHP = enemyConfig.maxHP;
+            _enemyArmor = enemyConfig.armor;
+            _enemyPhase = 1;
+            _gazeValue = 0;
+            _turnInCycle = 0;
+            _lockedCharIdx = -1;
+            UpdateEnemyPortrait();
+        }
+        else
+        {
+            _enemyMaxHP = 100;
+            _enemyHP = 100;
+            _enemyArmor = 0;
+            _enemyPhase = 1;
+            _gazeValue = 0;
+            _turnInCycle = 0;
+            _lockedCharIdx = -1;
+            Debug.LogWarning("[BattleManager] enemyConfig 未配置，使用默认敌人");
+        }
+    }
 
     public void StartBattle()
     {
@@ -427,8 +475,8 @@ public class BattleManager : MonoBehaviour
         // 灵巧：每回合额外抽牌 = 基础值 + 敏捷（赋值式，避免多场战斗逐场累加）
         drawPerTurn = _baseDrawPerTurn + _playerAgility;
 
-        _enemyHP = enemyMaxHP;
-        _enemyArmor = enemyArmor;
+        // 从 EnemyConfig 读取敌人数据
+        InitEnemy();
         _battleEnded = false;
         _isPlayerTurn = true;
 
@@ -808,36 +856,65 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 在敌人右侧显示伤害数字并飘起消失
+    /// 在敌人右侧显示伤害数字并飘起消失。支持多段同时显示（每次调用独立飘字）。
     /// </summary>
     private void ShowEnemyDamage(int amount)
     {
-        if (enemyDamageText == null) return;
-        enemyDamageText.gameObject.SetActive(true);
-        enemyDamageText.text = amount.ToString();
-        enemyDamageText.color = new Color(1f, 0.3f, 0.2f, 1f);
-        var rt = enemyDamageText.GetComponent<RectTransform>();
-        rt.anchoredPosition = new Vector2(150, -20);
-        StopCoroutine(nameof(DamagePopupRoutine));
-        StartCoroutine(DamagePopupRoutine());
+        if (amount <= 0) return;
+
+        GameObject popupObj = null;
+        TextMeshProUGUI popupText = null;
+        RectTransform popupRect = null;
+
+        if (damagePopupPrefab != null)
+        {
+            popupObj = Instantiate(damagePopupPrefab, transform);
+            popupText = popupObj.GetComponentInChildren<TextMeshProUGUI>();
+            popupRect = popupObj.GetComponent<RectTransform>();
+            if (popupRect == null && popupText != null)
+                popupRect = popupText.GetComponent<RectTransform>();
+        }
+        else if (enemyDamageText != null)
+        {
+            // 回退：用单个文本（多段时会互相覆盖）
+            popupObj = enemyDamageText.gameObject;
+            popupText = enemyDamageText;
+            popupRect = enemyDamageText.GetComponent<RectTransform>();
+            StopCoroutine(nameof(DamagePopupRoutine));
+        }
+
+        if (popupText == null || popupRect == null) return;
+
+        // 随机偏移避免完全重叠
+        float offsetX = Random.Range(-20f, 20f);
+        Vector2 startPos = new Vector2(150 + offsetX, -20);
+
+        popupObj.SetActive(true);
+        popupText.text = amount.ToString();
+        popupText.color = new Color(1f, 0.3f, 0.2f, 1f);
+        popupRect.anchoredPosition = startPos;
+
+        StartCoroutine(DamagePopupRoutine(popupRect, popupText, startPos, popupObj));
     }
 
-    private IEnumerator DamagePopupRoutine()
+    private IEnumerator DamagePopupRoutine(RectTransform rt, TextMeshProUGUI text, Vector2 startPos, GameObject obj)
     {
-        var rt = enemyDamageText.GetComponent<RectTransform>();
         float elapsed = 0f;
         float duration = 0.9f;
-        Vector2 startPos = new Vector2(150, -20);
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             rt.anchoredPosition = startPos + new Vector2(0, 80f * t);
-            enemyDamageText.color = new Color(1f, 0.3f, 0.2f, 1f - t);
+            text.color = new Color(1f, 0.3f, 0.2f, 1f - t);
             yield return null;
         }
-        enemyDamageText.gameObject.SetActive(false);
+
+        if (damagePopupPrefab != null && obj != enemyDamageText?.gameObject)
+            Destroy(obj);
+        else
+            obj.SetActive(false);
     }
 
     // ========================================================================
@@ -992,17 +1069,17 @@ public class BattleManager : MonoBehaviour
 
     private void StartEnemyTurn()
     {
-        _waitingEnemyConfirm = true;
+        _waitingEnemyConfirm = false;
         if (phaseHintText != null)
-            phaseHintText.text = "按 P 键继续敌人行动";
+            phaseHintText.text = "敌人回合";
         if (enemyIntentText != null)
-            enemyIntentText.text = "敌人准备行动...";
+            enemyIntentText.text = "敌人正在行动...";
         UpdateUI();
+        ExecuteEnemyAction();
     }
 
     private void ExecuteEnemyAction()
     {
-        _waitingEnemyConfirm = false;
         if (phaseHintText != null)
             phaseHintText.text = "";
 
@@ -1011,12 +1088,197 @@ public class BattleManager : MonoBehaviour
 
         if (_enemyHP > 0 && !_battleEnded)
         {
-            DealDamageToPlayer(enemyAttackDamage);
-            UpdateUI();
-            if (_playerHP <= 0) { EndBattle(false); return; }
+            // 检查阶段切换
+            CheckEnemyPhaseSwitch();
+
+            EnemySkill skill = GetCurrentEnemySkill();
+            if (skill != null)
+            {
+                StartCoroutine(ExecuteEnemySkillCoroutine(skill));
+            }
+            else
+            {
+                // 无技能配置，走旧逻辑（固定伤害）
+                DealDamageToPlayer(5);
+                UpdateUI();
+                if (_playerHP <= 0) { EndBattle(false); return; }
+                StartPlayerTurn();
+            }
+        }
+        else
+        {
+            StartPlayerTurn();
+        }
+    }
+
+    /// <summary>获取当前回合应执行的敌人技能</summary>
+    private EnemySkill GetCurrentEnemySkill()
+    {
+        if (enemyConfig == null) return null;
+
+        if (_enemyPhase == 1)
+        {
+            if (enemyConfig.phase1Skills == null || enemyConfig.phase1Skills.Count == 0) return null;
+            return enemyConfig.phase1Skills[_turnInCycle % enemyConfig.phase1Skills.Count];
+        }
+        else
+        {
+            // 阶段2：凝视值满时触发特殊技能
+            if (_gazeValue >= enemyConfig.gazeMaxValue && enemyConfig.phase2GazeSkill.skillName != null)
+                return enemyConfig.phase2GazeSkill;
+
+            // 否则执行常规技能（如果有多个则循环）
+            if (enemyConfig.phase2Skills == null || enemyConfig.phase2Skills.Count == 0) return null;
+            return enemyConfig.phase2Skills[_turnInCycle % enemyConfig.phase2Skills.Count];
+        }
+    }
+
+    /// <summary>敌人技能执行协程：显示卡面 → 执行效果 → 隐藏卡面 → 检查战斗结束</summary>
+    private IEnumerator ExecuteEnemySkillCoroutine(EnemySkill skill)
+    {
+        // 显示技能卡面
+        if (enemySkillCard != null)
+        {
+            enemySkillCard.SetActive(true);
+            if (enemySkillCardImage != null)
+            {
+                enemySkillCardImage.sprite = skill.skillCardArt;
+                enemySkillCardImage.color = new Color(1, 1, 1, skill.skillCardArt != null ? 1f : 0f);
+            }
+            if (enemySkillNameText != null) enemySkillNameText.text = skill.skillName;
+            if (enemySkillDescText != null) enemySkillDescText.text = skill.description;
+
+            // 淡入
+            yield return StartCoroutine(FadeEnemySkillCard(0f, 1f, enemySkillCardFadeTime));
+            // 停留
+            yield return new WaitForSeconds(enemySkillCardDuration);
+            // 淡出
+            yield return StartCoroutine(FadeEnemySkillCard(1f, 0f, enemySkillCardFadeTime));
+            enemySkillCard.SetActive(false);
+        }
+        else
+        {
+            yield return null;
         }
 
+        // 执行技能效果
+        ExecuteEnemySkill(skill);
+
+        UpdateUI();
+        if (_playerHP <= 0) { EndBattle(false); yield break; }
+
         StartPlayerTurn();
+    }
+
+    /// <summary>执行单个敌人技能的实际效果</summary>
+    private void ExecuteEnemySkill(EnemySkill skill)
+    {
+        if (skill == null) return;
+
+        // 锁定角色
+        if (skill.lockCharacter)
+            _lockedCharIdx = _activeCharIdx;
+
+        // 命中判定（光束命中：只有锁定角色未切换才生效）
+        bool hitsResolved = true;
+        if (skill.hitsLockedCharacter && _lockedCharIdx >= 0)
+        {
+            hitsResolved = (_lockedCharIdx == _activeCharIdx);
+            _lockedCharIdx = -1; // 消耗锁定
+        }
+
+        if (hitsResolved)
+        {
+            if (skill.damage > 0)
+                DealDamageToPlayer(skill.damage);
+            if (skill.sanityReduction != 0)
+                ModifySanity(skill.sanityReduction);
+            if (skill.strengthReduction != 0)
+                _playerStrength = Mathf.Max(0, _playerStrength + skill.strengthReduction);
+        }
+
+        // 凝视值变化
+        if (skill.resetGaze)
+            _gazeValue = 0;
+        else if (skill.gazeChange != 0)
+            _gazeValue = Mathf.Max(0, _gazeValue + skill.gazeChange);
+
+        // 推进循环计数
+        _turnInCycle++;
+    }
+
+    /// <summary>检查并执行敌人阶段切换</summary>
+    private void CheckEnemyPhaseSwitch()
+    {
+        if (enemyConfig == null) return;
+
+        bool sanityLow = _playerSanity <= enemyConfig.phase2SanityThreshold;
+
+        // 阶段1→2：阶段1血量打完 或 理智低于阈值
+        if (_enemyPhase == 1 && (_enemyHP <= 0 || sanityLow))
+        {
+            _enemyPhase = 2;
+            _turnInCycle = 0;
+            _enemyMaxHP = enemyConfig.phase2MaxHP > 0 ? enemyConfig.phase2MaxHP : _enemyMaxHP;
+            _enemyHP = _enemyMaxHP;
+            _enemyArmor = 0;
+            UpdateEnemyPortrait();
+            Debug.Log($"[BattleManager] 敌人进入阶段2「睁眼」 HP重置为 {_enemyHP}/{_enemyMaxHP}");
+        }
+        // 阶段2→1：理智恢复且阶段1还有血
+        else if (_enemyPhase == 2 && !sanityLow && enemyConfig.phase2MaxHP > 0)
+        {
+            _enemyPhase = 1;
+            _turnInCycle = 0;
+            _enemyMaxHP = enemyConfig.maxHP;
+            _enemyHP = enemyConfig.maxHP;
+            UpdateEnemyPortrait();
+            Debug.Log($"[BattleManager] 敌人回到阶段1「注视」 HP重置为 {_enemyHP}/{_enemyMaxHP}");
+        }
+    }
+
+    /// <summary>根据当前阶段更新敌人立绘</summary>
+    private void UpdateEnemyPortrait()
+    {
+        if (enemyPortraitImage == null || enemyConfig == null) return;
+        var portrait = _enemyPhase == 1 ? enemyConfig.phase1Portrait : enemyConfig.phase2Portrait;
+        if (portrait != null)
+        {
+            enemyPortraitImage.sprite = portrait;
+            enemyPortraitImage.color = Color.white;
+        }
+        else
+        {
+            enemyPortraitImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+        }
+    }
+
+    /// <summary>技能卡面淡入/淡出</summary>
+    private IEnumerator FadeEnemySkillCard(float fromAlpha, float toAlpha, float duration)
+    {
+        if (enemySkillCardImage == null && enemySkillNameText == null) yield break;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            float alpha = Mathf.Lerp(fromAlpha, toAlpha, t);
+
+            if (enemySkillCardImage != null)
+            {
+                var c = enemySkillCardImage.color; c.a = alpha; enemySkillCardImage.color = c;
+            }
+            if (enemySkillNameText != null)
+            {
+                var c = enemySkillNameText.color; c.a = alpha; enemySkillNameText.color = c;
+            }
+            if (enemySkillDescText != null)
+            {
+                var c = enemySkillDescText.color; c.a = alpha; enemySkillDescText.color = c;
+            }
+            yield return null;
+        }
     }
 
     private void StartPlayerTurn()
@@ -1084,16 +1346,25 @@ public class BattleManager : MonoBehaviour
             handLayout.UpdateHand(_hand, IsCardPlayable);
     }
 
+    /// <summary>获取敌人意图文本（预览下一回合技能）</summary>
+    private string GetEnemyIntentText()
+    {
+        if (enemyConfig == null) return "造成5伤害";
+        var skill = GetCurrentEnemySkill();
+        if (skill == null) return "...";
+        return skill.skillName;
+    }
+
     private void UpdateUI()
     {
         if (hpText != null) hpText.text = $"{_playerHP}/{playerMaxHP}";
         if (actionPointText != null) actionPointText.text = _actionPoints.ToString();
         if (armorText != null) armorText.text = _playerArmor > 0 ? $"护甲: {_playerArmor}" : "";
-        if (enemyHPText != null) enemyHPText.text = $"{_enemyHP}/{enemyMaxHP}";
+        if (enemyHPText != null) enemyHPText.text = $"{_enemyHP}/{_enemyMaxHP}";
         if (enemyArmorText != null) enemyArmorText.text = _enemyArmor > 0 ? $"护甲: {_enemyArmor}" : "";
-        if (enemyNameText != null) enemyNameText.text = enemyName;
+        if (enemyNameText != null) enemyNameText.text = enemyConfig != null ? enemyConfig.enemyName : "敌人";
         if (enemyIntentText != null && !_battleEnded && !_waitingEnemyConfirm)
-            enemyIntentText.text = _isPlayerTurn ? $"造成{enemyAttackDamage}伤害" : "";
+            enemyIntentText.text = _isPlayerTurn ? GetEnemyIntentText() : "";
 
         if (strengthText != null) strengthText.text = _playerStrength > 0 ? $"力量: {_playerStrength}" : "";
         if (dexterityText != null) dexterityText.text = _playerDexterity > 0 ? $"敏捷: {_playerDexterity}" : "";
@@ -1101,7 +1372,7 @@ public class BattleManager : MonoBehaviour
         if (playerHPBarFill != null)
             playerHPBarFill.fillAmount = (float)_playerHP / playerMaxHP;
         if (enemyHPBarFill != null)
-            enemyHPBarFill.fillAmount = (float)_enemyHP / enemyMaxHP;
+            enemyHPBarFill.fillAmount = _enemyMaxHP > 0 ? (float)_enemyHP / _enemyMaxHP : 0;
 
         if (sanityText != null) sanityText.text = $"{_playerSanity}/{_playerMaxSanity}";
         if (sanityBarFill != null) sanityBarFill.fillAmount = (float)_playerSanity / _playerMaxSanity;
