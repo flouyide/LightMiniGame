@@ -39,8 +39,8 @@ namespace LightMiniGame.CardEditor
         int GetBattleCounter(string counterName);
 
         // === 修改方法 ===
-        void DealDamageToEnemy(int enemyIndex, int amount, bool ignoreArmor, bool isCrit = false);
-        void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false);
+        void DealDamageToEnemy(int enemyIndex, int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0);
+        void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0);
         void HealPlayer(int amount);
         void AddPlayerArmor(int amount);
         void AddPlayerEnergy(int amount);

@@ -16,7 +16,8 @@ MonoBehaviour:
   cardName: "\u5F39\u94FE"
   baseDescription: "\u6B64\u540E\u6BCF\u6B21\u66B4\u51FB\uFF0C\u8FD4\u8FD8 1 \u70B9\u80FD\u91CF\u5E76\u589E\u52A0
     1 \u70B9\u70ED\u5EA6\u3002"
-  upgradeDescription: "\u6548\u679C\u4E0D\u53D8\u3002"
+  upgradeDescription: "\u6B64\u540E\u6BCF\u6B21\u66B4\u51FB\uFF0C\u8FD4\u8FD8 1 \u70B9\u80FD\u91CF\u5E76\u589E\u52A0
+    1 \u70B9\u70ED\u5EA6\u3002"
   cardArt: {fileID: 0}
   darkCardArt: {fileID: 0}
   grade: 1
@@ -24,6 +25,7 @@ MonoBehaviour:
   existence: 0
   baseCost: 1
   upgradeCost: 1
+  price: 10
   keyword: 0
   upgradable: 0
   baseEffects: []

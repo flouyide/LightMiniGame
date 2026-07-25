@@ -24,6 +24,9 @@ public class EffectExecutor
     private static readonly LightMiniGame.CardEditor.EffectType T_Custom = LightMiniGame.CardEditor.EffectType.Custom;
     private readonly BattleCardContext _ctx;
 
+    /// <summary>能力触发回调，由 AbilitySystem 注册。暴击等事件发生时回调。</summary>
+    public System.Action<AbilityTrigger> _onAbilityTrigger;
+
     public EffectExecutor(BattleCardContext ctx) { _ctx = ctx; }
 
     /// <summary>
@@ -107,6 +110,9 @@ public class EffectExecutor
             return;
         }
 
+        // 破甲：本次攻击有X点穿透护甲
+        int armorBreak = (eff.applyArmorBreak && eff.armorBreakAmount > 0) ? eff.armorBreakAmount : 0;
+
         for (int hit = 0; hit < times; hit++)
         {
             // 逐段独立判定暴击
@@ -116,28 +122,23 @@ public class EffectExecutor
 
             if (eff.target == EffectTarget.AllEnemies)
             {
-                _ctx.DealDamageToAllEnemies(hitDamage, eff.ignoreArmor, isCrit);
+                _ctx.DealDamageToAllEnemies(hitDamage, eff.ignoreArmor, isCrit, armorBreak);
             }
             else
             {
                 int actualTarget = targetIndex >= 0 ? targetIndex : _ctx.SelectedEnemyIndex;
                 if (actualTarget >= 0)
-                    _ctx.DealDamageToEnemy(actualTarget, hitDamage, eff.ignoreArmor, isCrit);
+                    _ctx.DealDamageToEnemy(actualTarget, hitDamage, eff.ignoreArmor, isCrit, armorBreak);
             }
 
-            // 暴击事件
+            // 暴击事件 → 触发暴击类能力
             if (isCrit)
-                _ctx.RecordEvent("OnCrit");
-
-            // 施加破甲
-            if (eff.applyArmorBreak && eff.armorBreakAmount > 0)
             {
-                int breakTarget = targetIndex >= 0 ? targetIndex : _ctx.SelectedEnemyIndex;
-                if (breakTarget >= 0)
-                    _ctx.ApplyStatusToEnemy(breakTarget, StatusType.ArmorBreak, eff.armorBreakAmount);
+                _ctx.RecordEvent("OnCrit");
+                _onAbilityTrigger?.Invoke(AbilityTrigger.OnCrit);
             }
 
-            Debug.Log($"[EffectExecutor] 伤害第{hit + 1}/{times}击: {hitDamage}{(isCrit ? " 暴击" : "")} → 目标[{targetIndex}]");
+            Debug.Log($"[EffectExecutor] 伤害第{hit + 1}/{times}击: {hitDamage}{(isCrit ? " 暴击" : "")}{(armorBreak > 0 ? $" 破甲{armorBreak}" : "")} → 目标[{targetIndex}]");
         }
     }
 

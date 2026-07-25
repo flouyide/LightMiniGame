@@ -42,11 +42,11 @@ public class BattleCardContext : ICardRuntimeContext
     public int GetBattleCounter(string counterName) => _battle.GetBattleCounter(counterName);
 
     // === 修改方法 ===
-    public void DealDamageToEnemy(int enemyIndex, int amount, bool ignoreArmor, bool isCrit = false)
-        => _battle.DealDamageToEnemy(enemyIndex, amount, ignoreArmor, isCrit);
+    public void DealDamageToEnemy(int enemyIndex, int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0)
+        => _battle.DealDamageToEnemy(enemyIndex, amount, ignoreArmor, isCrit, armorBreak);
 
-    public void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false)
-        => _battle.DealDamageToAllEnemies(amount, ignoreArmor, isCrit);
+    public void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0)
+        => _battle.DealDamageToAllEnemies(amount, ignoreArmor, isCrit, armorBreak);
 
     public void HealPlayer(int amount) => _battle.HealPlayer(amount);
     public void AddPlayerArmor(int amount) => _battle.AddPlayerArmor(amount);

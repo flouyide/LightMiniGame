@@ -156,6 +156,7 @@ public class BattleManager : MonoBehaviour
 
     // === CardEntry 效果系统支持 ===
     private EffectExecutor _effectExecutor;
+    private AbilitySystem _abilitySystem;
     private readonly Dictionary<string, int> _customData = new();
     private readonly HashSet<string> _eventsThisTurn = new();
     private readonly HashSet<string> _eventsThisBattle = new();
@@ -179,6 +180,7 @@ public class BattleManager : MonoBehaviour
     private bool _waitingEnemyConfirm = false;
     private bool _isDarkMode = false;
     private Coroutine _sanityTrembleRoutine;
+    private Coroutine _damagePopupRoutine;
     private bool _listenersWired = false;
 
     private SettingsPanelUI _settingsPanel;
@@ -223,16 +225,16 @@ public class BattleManager : MonoBehaviour
     public bool HasEventOccurred(string eventName) => _eventsThisTurn.Contains(eventName) || _eventsThisBattle.Contains(eventName);
     public void RecordEvent(string eventName) { _eventsThisTurn.Add(eventName); _eventsThisBattle.Add(eventName); }
 
-    public void DealDamageToEnemy(int index, int amount, bool ignoreArmor, bool isCrit = false)
+    public void DealDamageToEnemy(int index, int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0)
     {
         if (index < 0 || index >= EnemyCount) return;
-        int actual = DealDamageToEnemy(amount, ignoreArmor);
+        int actual = DealDamageToEnemy(amount, ignoreArmor, armorBreak);
         if (actual > 0) ShowEnemyDamage(actual, isCrit);
     }
 
-    public void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false)
+    public void DealDamageToAllEnemies(int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0)
     {
-        int actual = DealDamageToEnemy(amount, ignoreArmor);
+        int actual = DealDamageToEnemy(amount, ignoreArmor, armorBreak);
         if (actual > 0) ShowEnemyDamage(actual, isCrit);
     }
 
@@ -490,6 +492,13 @@ public class BattleManager : MonoBehaviour
 
         _hand.Clear();
         _actionPoints = maxActionPoints;
+
+        // 初始化效果系统
+        var ctx = new BattleCardContext(this);
+        _effectExecutor = new EffectExecutor(ctx);
+        _abilitySystem = new AbilitySystem(_effectExecutor, ctx);
+        _effectExecutor._onAbilityTrigger = (trigger) => _abilitySystem?.OnTrigger(trigger);
+
         DrawCards(initialDraw);
 
         UpdateCharacterSwitchUI();
@@ -607,9 +616,27 @@ public class BattleManager : MonoBehaviour
         if (card.sourceEntry != null)
         {
             if (_effectExecutor == null)
-                _effectExecutor = new EffectExecutor(new BattleCardContext(this));
+            {
+                var ctx = new BattleCardContext(this);
+                _effectExecutor = new EffectExecutor(ctx);
+                _abilitySystem = new AbilitySystem(_effectExecutor, ctx);
+                _effectExecutor._onAbilityTrigger = (trigger) => _abilitySystem?.OnTrigger(trigger);
+            }
+            var entry = card.sourceEntry;
+
+            // 能力卡：激活能力，不执行效果列表
+            if (entry.cardType == LightMiniGame.CardEditor.CardType.Ability)
+            {
+                var ability = entry.GetAbility(card.isUpgraded);
+                if (ability != null && _abilitySystem != null)
+                    _abilitySystem.Activate(ability, entry, card.isUpgraded);
+                UpdateUI();
+                return;
+            }
+
+            // 普通卡：执行效果列表
             var effects = card.GetEffects(card.isUpgraded);
-            _effectExecutor.ExecuteEffects(effects, card.sourceEntry, card.isUpgraded);
+            _effectExecutor.ExecuteEffects(effects, entry, card.isUpgraded);
             UpdateUI();
             CheckBattleEnd();
             return;
@@ -696,17 +723,34 @@ public class BattleManager : MonoBehaviour
     // 伤害计算
     // ========================================================================
 
-    private int DealDamageToEnemy(int damage, bool ignoreArmor)
+    private int DealDamageToEnemy(int damage, bool ignoreArmor, int armorBreak = 0)
     {
-        int actualDamage = damage;
-        if (!ignoreArmor && _enemyArmor > 0)
+        int actualDamage = 0;
+
+        // 破甲：额外X点伤害直接扣血，无视护甲
+        int pierce = Mathf.Max(0, armorBreak);
+        if (pierce > 0)
+        {
+            _enemyHP -= pierce;
+            if (_enemyHP < 0) _enemyHP = 0;
+            actualDamage += pierce;
+        }
+
+        // 基础伤害走护甲
+        if (!ignoreArmor && _enemyArmor > 0 && damage > 0)
         {
             int absorbed = Mathf.Min(_enemyArmor, damage);
             _enemyArmor -= absorbed;
-            actualDamage -= absorbed;
+            damage -= absorbed;
         }
-        _enemyHP -= actualDamage;
-        if (_enemyHP < 0) _enemyHP = 0;
+
+        if (damage > 0)
+        {
+            _enemyHP -= damage;
+            if (_enemyHP < 0) _enemyHP = 0;
+            actualDamage += damage;
+        }
+
         return actualDamage;
     }
 
@@ -884,7 +928,7 @@ public class BattleManager : MonoBehaviour
             popupObj = enemyDamageText.gameObject;
             popupText = enemyDamageText;
             popupRect = enemyDamageText.GetComponent<RectTransform>();
-            StopAllCoroutines();
+            if (_damagePopupRoutine != null) StopCoroutine(_damagePopupRoutine);
         }
 
         if (popupText == null || popupRect == null) return;
@@ -898,7 +942,7 @@ public class BattleManager : MonoBehaviour
         popupText.fontSize = isCrit ? 28 : 20;
         popupRect.anchoredPosition = startPos;
 
-        StartCoroutine(DamagePopupRoutine(popupRect, popupText, startPos, popupObj));
+        _damagePopupRoutine = StartCoroutine(DamagePopupRoutine(popupRect, popupText, startPos, popupObj));
     }
 
     private IEnumerator DamagePopupRoutine(RectTransform rt, TextMeshProUGUI text, Vector2 startPos, GameObject obj)
@@ -971,8 +1015,14 @@ public class BattleManager : MonoBehaviour
             oldChar.discardPile.Add(card);
         _hand.Clear();
 
+        // 挂起当前角色的能力
+        _abilitySystem?.SuspendAll();
+
         _activeCharIdx = 1 - _activeCharIdx;
         _hasSwitchedThisBattle = true;
+
+        // 恢复切换后角色的能力
+        _abilitySystem?.ResumeAll();
 
         DrawCards(drawPerTurn);
 
@@ -1067,6 +1117,9 @@ public class BattleManager : MonoBehaviour
         if (endTurnButton != null) endTurnButton.interactable = false;
         if (switchCharacterButton != null) switchCharacterButton.interactable = false;
         UpdateCharacterSwitchUI();
+
+        // 回合结束时触发能力
+        _abilitySystem?.OnTrigger(AbilityTrigger.TurnEnd);
 
         StartEnemyTurn();
     }
@@ -1302,6 +1355,8 @@ public class BattleManager : MonoBehaviour
         _actionPoints = maxActionPoints;
         _playerArmor = 0;
         _eventsThisTurn.Clear(); // 清除本回合事件
+        _abilitySystem?.OnTurnStart(); // 重置能力本回合触发计数
+        _abilitySystem?.OnTrigger(AbilityTrigger.TurnStart); // 回合开始触发
 
         DrawCards(drawPerTurn);
         _isPlayerTurn = true;
