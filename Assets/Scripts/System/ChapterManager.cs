@@ -531,7 +531,8 @@ public class ChapterManager : MonoBehaviour
                 break;
             case EffectType.EnterBattle:
                 // 作为选项效果：挂起效果序列，战斗结束（ReturnFromBattle）后续体，继续后续效果并最终触发 onComplete
-                suspended = EnterBattle(() => ProcessEffect(effects, next, onComplete));
+                // 该次战斗的出战敌人由 EffectData.enterBattleEnemy 指定（留空=回退 BattleManager 默认敌人）
+                suspended = EnterBattle(null, () => ProcessEffect(effects, next, onComplete), effect.enterBattleEnemy);
                 break;
 
             case EffectType.ModifyAttribute:
@@ -767,7 +768,7 @@ public class ChapterManager : MonoBehaviour
     ///   避免「进入战斗的同时立刻推进章节 / 战后再次推进」的双调用问题。
     /// </summary>
     /// <returns>true=已发起战斗（调用方应暂停序列，等战斗结束后续体）；false=未发起（如已在战斗中）。</returns>
-    public bool EnterBattle(System.Action onResolved = null)
+    public bool EnterBattle(PageEventData data = null, System.Action onResolved = null, EnemyConfig startEnemy = null)
     {
         if (_inBattle) return false;          // 防止重复进入
         _inBattle = true;
@@ -781,6 +782,8 @@ public class ChapterManager : MonoBehaviour
         {
             bm.StartActiveChar = _activeCharacter;   // 局外当前激活角色作为战斗起始激活角色
             bm.StartInactiveChar = _inactiveCharacter;
+            // 出战敌人优先取 startEnemy（EnterBattle 效果自带），其次取 Battle 事件 data.enemy，都空则回退 BattleManager 默认敌人
+            bm.StartEnemy = startEnemy ?? (data != null ? data.enemy : null);
             bm.OnBattleEnded -= OnBattleEnded;
             bm.OnBattleEnded += OnBattleEnded;
             bm.BeginBattle();        // 读取局外属性 + 启动战斗

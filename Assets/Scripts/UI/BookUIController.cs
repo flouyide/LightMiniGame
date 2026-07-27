@@ -235,7 +235,8 @@ public class BookUIController : MonoBehaviour
         else if (data.eventType == PageEventType.Battle)
         {
             // 战斗类型：进入战斗（ChapterManager 负责切换 Canvas 并驱动 BattleManager 读取局外属性）
-            chapterManager.EnterBattle();
+            // 把当前事件数据透传，使 BattleManager 使用本事件配置的敌人（PageEventData.enemy）
+            chapterManager.EnterBattle(data);
         }
         else
         {

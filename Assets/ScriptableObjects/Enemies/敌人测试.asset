@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac676fbe4e26547eb9f86e31bd682f65, type: 3}
+  m_Name: "\u654C\u4EBA\u6D4B\u8BD5"
+  m_EditorClassIdentifier: 
+  enemyName: "\u654C\u4EBA\u6D4B\u8BD5"
+  maxHP: 60
+  phase2MaxHP: 50
+  armor: 0
+  phase1Portrait: {fileID: 21300000, guid: ed0beb3a1b0da1d4b9ba5d2306af202f, type: 3}
+  phase2Portrait: {fileID: 21300000, guid: e0cf6fac4e7d6d9488f4da3635aaa8eb, type: 3}
+  phase2HPThresholdPercent: 50
+  phase2SanityThreshold: 4
+  gazeMaxValue: 3
+  phase1Skills:
+  - skillName: "\u5149\u675F\u626B\u63CF"
+    description: "\u9501\u5B9A\u5F53\u524D\u89D2\u8272\u3002\u51DD\u89C6\u503C+1"
+    skillCardArt: {fileID: 0}
+    damage: 0
+    sanityReduction: 0
+    strengthReduction: 0
+    lockCharacter: 1
+    hitsLockedCharacter: 0
+    gazeChange: 1
+    resetGaze: 0
+  - skillName: "\u5149\u675F\u547D\u4E2D"
+    description: "\u82E5\u89D2\u8272\u672A\u5207\u6362\uFF1A\u7406\u667A-3\u3002\u51DD\u89C6\u503C+1"
+    skillCardArt: {fileID: 0}
+    damage: 0
+    sanityReduction: -3
+    strengthReduction: 0
+    lockCharacter: 0
+    hitsLockedCharacter: 1
+    gazeChange: 1
+    resetGaze: 0
+  - skillName: "\u76F4\u89C6"
+    description: "\u7406\u667A-5\u3002\u51DD\u89C6\u503C\u91CD\u7F6E\u4E3A0"
+    skillCardArt: {fileID: 0}
+    damage: 0
+    sanityReduction: -5
+    strengthReduction: 0
+    lockCharacter: 0
+    hitsLockedCharacter: 0
+    gazeChange: 0
+    resetGaze: 1
+  - skillName: "\u5149\u675F\u547D\u4E2D"
+    description: "\u51DD\u89C6\u503C+1"
+    skillCardArt: {fileID: 0}
+    damage: 0
+    sanityReduction: -3
+    strengthReduction: 0
+    lockCharacter: 0
+    hitsLockedCharacter: 1
+    gazeChange: 1
+    resetGaze: 0
+  phase2Skills:
+  - skillName: "\u773C\u7403\u96E8"
+    description: "\u9020\u621012\u4F24\u5BB3\uFF0C\u529B\u91CF-2\uFF0C\u7406\u667A-3\u3002\u51DD\u89C6\u503C+1"
+    skillCardArt: {fileID: 0}
+    damage: 12
+    sanityReduction: -3
+    strengthReduction: -2
+    lockCharacter: 0
+    hitsLockedCharacter: 0
+    gazeChange: 1
+    resetGaze: 0
+  phase2GazeSkill:
+    skillName: "\u51DD\u671B\u6DF1\u6E0A"
+    description: "\u7406\u667A>4\u65F6\u7406\u667A-5\uFF1B\u7406\u667A<=4\u65F6\u9020\u621020\u4F24\u5BB3\u3002\u51DD\u89C6\u503C\u91CD\u7F6E"
+    skillCardArt: {fileID: 0}
+    damage: 20
+    sanityReduction: -5
+    strengthReduction: 0
+    lockCharacter: 0
+    hitsLockedCharacter: 0
+    gazeChange: 0
+    resetGaze: 1

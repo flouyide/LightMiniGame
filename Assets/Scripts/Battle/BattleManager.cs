@@ -48,8 +48,8 @@ public class BattleManager : MonoBehaviour
     [Tooltip("可选：配置玩家持久基础属性（力量/敏捷/吸血/暴击率/暴击伤害），由特殊事件 ModifyAttribute 修改，战斗开始时读入替换上方临时变量")]
     [SerializeField] private PlayerConfig playerConfig;
 
-    [Header("敌人配置")]
-    [Tooltip("敌人配置资产，不同战斗替换此资产即可")]
+    [Header("敌人配置（默认/回退）")]
+    [Tooltip("默认敌人配置资产；仅在 Battle 事件的 PageEventData.enemy 未指定时作为回退使用")]
     [SerializeField] private EnemyConfig enemyConfig;
 
     [Header("回合设置")]
@@ -162,11 +162,11 @@ public class BattleManager : MonoBehaviour
     private readonly HashSet<string> _eventsThisBattle = new();
     private readonly Dictionary<string, int> _turnCounters = new();
     private readonly Dictionary<string, int> _battleCounters = new();
-    private int _selectedEnemyIndex = 0;
     private bool _sanityPhaseTriggered;  // 理智转阶段是否已触发（防止重复触发）
     private const int SanityPhaseThreshold = 4;  // 理智转阶段阈值
     private int _baseDrawPerTurn;   // 每场战斗前的抽牌基数（来自 Inspector 的 drawPerTurn，开局捕获一次）
     private int _actionPoints;
+    // === 单敌人状态（当前每个 Battle 事件只有一个敌人）===
     private int _enemyHP;
     private int _enemyMaxHP;
     private int _enemyArmor;
@@ -204,16 +204,20 @@ public class BattleManager : MonoBehaviour
     public int PlayerArmor => _playerArmor;
     public int PlayerBleed => 0;
     public int ActionPoints => _actionPoints;
-    public int EnemyCount => 1; // 当前只有一个敌人
-    public int SelectedEnemyIndex => _selectedEnemyIndex;
+    public int EnemyCount => 1; // 当前每个 Battle 事件只有一个敌人
+    public int SelectedEnemyIndex => 0;
     public int HandCount => _hand.Count;
     public int DrawPileCount => ActiveChar?.drawPile.Count ?? 0;
     public int DiscardPileCount => ActiveChar?.discardPile.Count ?? 0;
 
-    public int GetEnemyHP(int index) => index == 0 ? _enemyHP : 0;
-    public int GetEnemyArmor(int index) => index == 0 ? _enemyArmor : 0;
+    public int GetEnemyHP(int index) => _enemyHP;
+    public int GetEnemyArmor(int index) => _enemyArmor;
     public int GetEnemyBleed(int index) => 0;
     public int GetEnemyArmorBreak(int index) => 0;
+
+    /// <summary>局外（ChapterManager）在进入战斗前指定的敌人（单个）。
+    /// 为空则回退到 Inspector 的默认 enemyConfig。</summary>
+    public EnemyConfig StartEnemy { get; set; }
 
     public int GetTurnCounter(string name) => _turnCounters.TryGetValue(name, out var v) ? v : 0;
     public int GetBattleCounter(string name) => _battleCounters.TryGetValue(name, out var v) ? v : 0;
@@ -227,7 +231,6 @@ public class BattleManager : MonoBehaviour
 
     public void DealDamageToEnemy(int index, int amount, bool ignoreArmor, bool isCrit = false, int armorBreak = 0)
     {
-        if (index < 0 || index >= EnemyCount) return;
         int actual = DealDamageToEnemy(amount, ignoreArmor, armorBreak);
         if (actual > 0) ShowEnemyDamage(actual, isCrit);
     }
@@ -328,10 +331,10 @@ public class BattleManager : MonoBehaviour
     // ========================================================================
 
     // 战斗由 ChapterManager 在进入战斗时显式调用 BeginBattle() 启动；
-    // BattleCanvas 默认禁用，故场景加载时 Start() 不会自动开战。
+    // BattleCanvas 默认禁用，故场景加载时 Start() 不会自动开战（保持空实现）。
     private void Start()
     {
-        BeginBattle();
+        // 空实现：真正初始化放在 BeginBattle()
     }
 
     /// <summary>绑定一次性 UI 监听（仅执行一次）。</summary>
@@ -374,20 +377,23 @@ public class BattleManager : MonoBehaviour
     // 战斗初始化
     // ========================================================================
 
-    /// <summary>外部接口：更换敌人配置（不重新加载场景）</summary>
+    /// <summary>外部接口：设置本次战斗的敌人配置（不重新加载场景）。
+    /// 传入非 null 时覆盖 Inspector 的默认 enemyConfig；传入 null 时复位为默认 enemyConfig。</summary>
     public void SetEnemy(EnemyConfig config)
     {
-        enemyConfig = config;
+        if (config != null) enemyConfig = config;
     }
 
-    /// <summary>从 EnemyConfig 初始化敌人状态</summary>
+    /// <summary>从当前敌人来源（StartEnemy 优先，否则 enemyConfig 默认）初始化单敌数据。</summary>
     private void InitEnemy()
     {
-        if (enemyConfig != null)
+        EnemyConfig cfg = StartEnemy != null ? StartEnemy : enemyConfig;
+        if (cfg != null)
         {
-            _enemyMaxHP = enemyConfig.maxHP;
-            _enemyHP = enemyConfig.maxHP;
-            _enemyArmor = enemyConfig.armor;
+            enemyConfig = cfg;   // 关键：让技能/阶段/立绘/名字等逻辑统一读取“当前出战敌人”（可能是事件指定的 StartEnemy）
+            _enemyMaxHP = cfg.maxHP;
+            _enemyHP = cfg.maxHP;
+            _enemyArmor = cfg.armor;
             _enemyPhase = 1;
             _gazeValue = 0;
             _turnInCycle = 0;
@@ -403,7 +409,7 @@ public class BattleManager : MonoBehaviour
             _gazeValue = 0;
             _turnInCycle = 0;
             _lockedCharIdx = -1;
-            Debug.LogWarning("[BattleManager] enemyConfig 未配置，使用默认敌人");
+            Debug.LogWarning("[BattleManager] 未配置任何敌人（StartEnemy 为空且默认 enemyConfig 为空），使用默认敌人 100HP");
         }
     }
 
@@ -479,7 +485,7 @@ public class BattleManager : MonoBehaviour
         // 灵巧：每回合额外抽牌 = 基础值 + 敏捷（赋值式，避免多场战斗逐场累加）
         drawPerTurn = _baseDrawPerTurn + _playerAgility;
 
-        // 从 EnemyConfig 读取敌人数据
+        // 从敌人来源（StartEnemy 或默认 enemyConfig）初始化单个敌人
         InitEnemy();
         _battleEnded = false;
         _isPlayerTurn = true;
