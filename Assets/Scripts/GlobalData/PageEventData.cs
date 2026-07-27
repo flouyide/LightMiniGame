@@ -82,6 +82,10 @@ public class EffectData
     public KeywordType keywordToAdd;                                 // AddKeywordToCard：要附加的词条（位标枚举，Inspector 可多选）
     [Range(0.1f, 1f)]
     public float discountRatio = 0.6f;                               // EnterDiscountShop：折扣比例（0.6=6折）；原 ChapterConfig.discountShopRatio 已迁移至此，按事件单独配置
+
+    // —— EnterBattle 专用：自由配置一个出战敌人（留空=使用 BattleManager 默认敌人）——
+    [Tooltip("EnterBattle：该次战斗的出战敌人（单个）。留空则使用 BattleManager 上的默认敌人。")]
+    public EnemyConfig enterBattleEnemy;                            // EnterBattle：出战敌人
 }
 
 /// <summary>
@@ -121,6 +125,10 @@ public class PageEventData
     {
         new() { optionText = "确定" }
     };
+
+    [Header("战斗配置（Battle 类型用）")]
+    [Tooltip("该 Battle 事件要出战的敌人（单个）。留空则使用 BattleManager 上的默认敌人。")]
+    public EnemyConfig enemy;                       // Battle：出战敌人（策划在 Inspector 拖一个 EnemyConfig）
 
     [Header("默认效果（Battle/Shop/Rest 类型用，点击\"进入\"后直接应用）")]
     public List<EffectData> defaultEffects = new();

@@ -1903,10 +1903,7 @@ MonoBehaviour:
   playerStrength: 3
   playerDexterity: 3
   playerConfig: {fileID: 11400000, guid: 9c1bb1a8fc6d166448f6d77beb295aba, type: 2}
-  enemyMaxHP: 100
-  enemyArmor: 0
-  enemyAttackDamage: 5
-  enemyName: "\u7CBE\u82F11"
+  enemyConfig: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
   maxActionPoints: 3
   drawPerTurn: 3
   initialDraw: 3
@@ -1925,7 +1922,16 @@ MonoBehaviour:
   enemyNameText: {fileID: 200609496}
   enemyIntentText: {fileID: 200609495}
   enemyDamageText: {fileID: 200609494}
+  damagePopupPrefab: {fileID: 0}
   enemyHPBarFill: {fileID: 200609493}
+  enemyPortraitImage: {fileID: 0}
+  gazeValueText: {fileID: 0}
+  enemySkillCard: {fileID: 0}
+  enemySkillCardImage: {fileID: 0}
+  enemySkillNameText: {fileID: 0}
+  enemySkillDescText: {fileID: 0}
+  enemySkillCardDuration: 2.5
+  enemySkillCardFadeTime: 0.5
   phaseHintText: {fileID: 200609492}
   endTurnButton: {fileID: 200609491}
   switchCharacterButton: {fileID: 200609490}

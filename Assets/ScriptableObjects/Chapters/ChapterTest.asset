@@ -37,6 +37,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 10
         itemDesc: 
@@ -46,6 +47,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u6218\uFF01"
       effects:
       - type: 6
@@ -57,6 +59,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5
+        enterBattleEnemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
     - optionText: "\u83B7\u5F97\u5361\u724C\uFF0C\u6DFB\u52A0\u8BCD\u6761"
       effects:
       - type: 11
@@ -68,6 +71,7 @@ MonoBehaviour:
         card: {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
         keywordToAdd: 0
         discountRatio: 0.5
+        enterBattleEnemy: {fileID: 0}
       - type: 14
         amount: 0
         itemDesc: 
@@ -77,6 +81,8 @@ MonoBehaviour:
         card: {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
         keywordToAdd: 1
         discountRatio: 0.5
+        enterBattleEnemy: {fileID: 0}
+    enemy: {fileID: 0}
     defaultEffects:
     - type: 6
       amount: 0
@@ -87,7 +93,8 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
-  - eventId: final
+      enterBattleEnemy: {fileID: 0}
+  - eventId: finalBattle
     displayName: "\u7ED3\u5C3E"
     description: Debug only
     icon: {fileID: 0}
@@ -109,6 +116,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 10
         itemDesc: 
@@ -118,6 +126,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u7279\u4EF7\u5546\u5E97"
       effects:
       - type: 12
@@ -129,6 +138,8 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5
+        enterBattleEnemy: {fileID: 0}
+    enemy: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
     defaultEffects:
     - type: 6
       amount: 0
@@ -139,6 +150,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
+      enterBattleEnemy: {fileID: 0}
   NormalBG: {fileID: 0}
   AbnormalBG: {fileID: 0}
   sanityThreshold: 50
