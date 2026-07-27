@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43400627399e0cc4ebc0696532edbd69, type: 3}
-  m_Name: "\u521D\u59CB\u5361\u7EC4\u6D4B\u8BD5\u75282"
+  m_Name: "\u67AA\u68B0\u5E08\u5361\u7EC4"
   m_EditorClassIdentifier: 
   character: {fileID: 11400000, guid: 05c4874963545144daee7fef33724012, type: 2}
   startingCards:

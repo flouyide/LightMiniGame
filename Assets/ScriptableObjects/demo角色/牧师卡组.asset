@@ -9,23 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5cf3b4494bcbb4853948a2c49a731413, type: 3}
-  m_Name: CardDatabase
+  m_Script: {fileID: 11500000, guid: 43400627399e0cc4ebc0696532edbd69, type: 3}
+  m_Name: "\u7267\u5E08\u5361\u7EC4"
   m_EditorClassIdentifier: 
-  cards:
-  - {fileID: 11400000, guid: 0c32533053f9843d0ad3e07a5badbb73, type: 2}
-  - {fileID: 11400000, guid: 8d7e348ec937a4d01911eca1e9729110, type: 2}
-  - {fileID: 11400000, guid: ecbf9f7ba61ff4e86ad1e2eebb2633de, type: 2}
-  - {fileID: 11400000, guid: c3c3c660339724cb8a701ca154ec2fcd, type: 2}
-  - {fileID: 11400000, guid: 8221096f21e0a4552b1eca66bdb4a969, type: 2}
-  - {fileID: 11400000, guid: e67a755fbba244d328279a5a31049970, type: 2}
-  - {fileID: 11400000, guid: 98a49f89ca8ac4fd3a7fff33ad43c7df, type: 2}
-  - {fileID: 11400000, guid: 6f01faa6b1b9042928b5c822f21fcc44, type: 2}
-  - {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
-  - {fileID: 11400000, guid: c05c6d9c4dbfb40f2a461b95cb7fed35, type: 2}
-  - {fileID: 11400000, guid: 5d836bdbbaeeb40c4ab92b846684b25a, type: 2}
-  - {fileID: 11400000, guid: 7d602a16326ef421684c13b4cebe5c2c, type: 2}
-  - {fileID: 11400000, guid: b00f5a64901de4d5bb52557685109a03, type: 2}
+  character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
+  startingCards:
   - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
   - {fileID: 11400000, guid: b88d8a79b48ea724a836f0955d8cad72, type: 2}
   - {fileID: 11400000, guid: b30cd7fa4a9c8b140bfdccf6dfe90e9e, type: 2}
@@ -49,9 +37,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b1cf540cf25e1234eb53c27bffc62d68, type: 2}
   - {fileID: 11400000, guid: 6a5890fdb38b7a14d8c59d783d90765e, type: 2}
   - {fileID: 11400000, guid: e6150c05b98a31e4f9f678a8f2d83510, type: 2}
-  - {fileID: 11400000, guid: 52da2188ad1107742b6100a93fc0645f, type: 2}
   - {fileID: 11400000, guid: d9aacb1d6f0df6b43aa66688a24066ce, type: 2}
-  - {fileID: 11400000, guid: a3cee0d87cb66854899d744a6f385555, type: 2}
-  - {fileID: 11400000, guid: 8c7c91670d8959641963d07e0b5a9dfa, type: 2}
-  - {fileID: 11400000, guid: a9fcbde3d2b602d47bf85e4d85cd4727, type: 2}
-  - {fileID: 11400000, guid: 4be6a0c195033d0459e656b18f41c63b, type: 2}
+  - {fileID: 11400000, guid: b88d8a79b48ea724a836f0955d8cad72, type: 2}
