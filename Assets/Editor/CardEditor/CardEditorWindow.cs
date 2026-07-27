@@ -238,7 +238,14 @@ namespace LightMiniGame.CardEditor.Editor
             EditorGUILayout.LabelField("基础信息", EditorStyles.boldLabel);
 
             card.cardId = EditorGUILayout.TextField("卡牌 ID", card.cardId);
+
+            // 记录改名前的名称，用于重命名 .asset 文件
+            string oldName = card.cardName;
             card.cardName = EditorGUILayout.TextField("卡牌名称", card.cardName);
+            if (oldName != card.cardName && !string.IsNullOrEmpty(card.cardName))
+            {
+                RenameCardAsset(card, card.cardName);
+            }
             card.cardArt = (Sprite)EditorGUILayout.ObjectField("卡面原画", card.cardArt, typeof(Sprite), false);
             card.darkCardArt = (Sprite)EditorGUILayout.ObjectField("黑暗卡面", card.darkCardArt, typeof(Sprite), false);
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
@@ -856,6 +863,21 @@ namespace LightMiniGame.CardEditor.Editor
         // ========================================================================
         // 卡牌操作
         // ========================================================================
+        private void RenameCardAsset(CardEntry card, string newName)
+        {
+            if (card == null || string.IsNullOrEmpty(newName)) return;
+            var path = AssetDatabase.GetAssetPath(card);
+            if (string.IsNullOrEmpty(path)) return;
+
+            var dir = System.IO.Path.GetDirectoryName(path);
+            var newPath = AssetDatabase.GenerateUniqueAssetPath($"{dir}/{newName}.asset");
+            if (newPath != path)
+            {
+                AssetDatabase.RenameAsset(path, newName);
+                AssetDatabase.SaveAssets();
+            }
+        }
+
         private void CreateCard()
         {
             var dir = "Assets/ScriptableObjects/Cards";

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameConfig
   m_EditorClassIdentifier: 
   chapters:
-  - {fileID: 11400000, guid: bd8847b694c9aac499cd1b27c5d3b90d, type: 2}
+  - {fileID: 11400000, guid: 379fc95e17f0dba429e61b57026b4c4e, type: 2}
   - {fileID: 11400000, guid: 379fc95e17f0dba429e61b57026b4c4e, type: 2}
   - {fileID: 11400000, guid: 379fc95e17f0dba429e61b57026b4c4e, type: 2}
   characters:

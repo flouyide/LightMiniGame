@@ -28,6 +28,7 @@ MonoBehaviour:
     options:
     - optionText: "\u786E\u5B9A"
       effects: []
+    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
     defaultEffects:
     - type: 6
       amount: 0
@@ -38,6 +39,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
+      enterBattleEnemy: {fileID: 0}
   - eventId: ch1_battle_slime
     displayName: "\u53F2\u83B1\u59C6\u6CBC\u6CFD"
     description: "\u524D\u65B9\u7684\u9053\u8DEF\u88AB\u4E00\u7247\u9ECF\u7CCA\u7CCA\u7684\u53F2\u83B1\u59C6\u6CBC\u6CFD\u6321\u4F4F\u4E86\u3002\u8FD9\u4E9B\u53F2\u83B1\u59C6\u867D\u7136\u884C\u52A8\u7F13\u6162\uFF0C\u4F46\u6570\u91CF\u4F17\u591A\u3002"
@@ -51,6 +53,7 @@ MonoBehaviour:
     options:
     - optionText: "\u786E\u5B9A"
       effects: []
+    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
     defaultEffects:
     - type: 6
       amount: 0
@@ -61,6 +64,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
+      enterBattleEnemy: {fileID: 0}
   - eventId: ch1_battle_wolf
     displayName: "\u72FC\u7FA4\u5DE1\u903B"
     description: "\u4F60\u542C\u5230\u8FDC\u5904\u4F20\u6765\u4F4E\u6C89\u7684\u55E5\u53EB\u58F0\u3002\u4E00\u7FA4\u9965\u997F\u7684\u91CE\u72FC\u6B63\u5728\u9644\u8FD1\u5DE1\u903B\uFF0C\u5B83\u4EEC\u5DF2\u7ECF\u53D1\u73B0\u4E86\u4F60\u3002"
@@ -74,6 +78,7 @@ MonoBehaviour:
     options:
     - optionText: "\u786E\u5B9A"
       effects: []
+    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
     defaultEffects:
     - type: 6
       amount: 0
@@ -84,6 +89,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
+      enterBattleEnemy: {fileID: 0}
   - eventId: ch1_shop_traveler
     displayName: "\u65C5\u884C\u5546\u4EBA"
     description: "\u4E00\u4E2A\u70ED\u60C5\u7684\u65C5\u884C\u5546\u4EBA\u63A8\u7740\u5C0F\u8F66\u505C\u5728\u8DEF\u8FB9\uFF0C\u8F66\u4E0A\u7684\u8D27\u7269\u7433\u7405\u6EE1\u76EE\u3002"
@@ -97,6 +103,7 @@ MonoBehaviour:
     options:
     - optionText: "\u786E\u5B9A"
       effects: []
+    enemy: {fileID: 0}
     defaultEffects: []
   - eventId: ch1_rest_campfire
     displayName: "\u7BDD\u706B\u8425\u5730"
@@ -111,6 +118,7 @@ MonoBehaviour:
     options:
     - optionText: "\u786E\u5B9A"
       effects: []
+    enemy: {fileID: 0}
     defaultEffects:
     - type: 9
       amount: 15
@@ -121,6 +129,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
+      enterBattleEnemy: {fileID: 0}
   - eventId: ch1_event_chest
     displayName: "\u795E\u79D8\u5B9D\u7BB1"
     description: "\u8DEF\u8FB9\u7684\u6811\u6839\u4E0B\u653E\u7740\u4E00\u4E2A\u53E4\u6734\u7684\u5B9D\u7BB1\uFF0C\u4E0A\u9762\u8986\u76D6\u7740\u82D4\u85D3\uFF0C\u6563\u53D1\u7740\u795E\u79D8\u7684\u5149\u8292\u3002"
@@ -143,6 +152,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u5C0F\u5FC3\u68C0\u67E5"
       effects:
       - type: 9
@@ -154,6 +164,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 4
         amount: 1
         itemDesc: "\u83B7\u5F97\u4E86\u4E00\u4EF6\u968F\u673A\u9053\u5177"
@@ -163,8 +174,10 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u4E0D\u4E88\u7406\u4F1A"
       effects: []
+    enemy: {fileID: 0}
     defaultEffects: []
   - eventId: ch1_event_traveler
     displayName: "\u53D7\u4F24\u7684\u65C5\u4EBA"
@@ -188,6 +201,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 10
         itemDesc: 
@@ -197,6 +211,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u7ED9\u4E88\u91D1\u5E01"
       effects:
       - type: 9
@@ -208,6 +223,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 11
         amount: 1
         itemDesc: 
@@ -217,6 +233,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u89C6\u800C\u4E0D\u89C1"
       effects:
       - type: 9
@@ -228,6 +245,8 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
+    enemy: {fileID: 0}
     defaultEffects: []
   - eventId: ch1_event_altar
     displayName: "\u53E4\u8001\u796D\u575B"
@@ -251,6 +270,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 1
         itemDesc: 
@@ -260,6 +280,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u8654\u8BDA\u7948\u7977"
       effects:
       - type: 9
@@ -271,6 +292,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 15
         itemDesc: 
@@ -280,6 +302,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u7834\u574F\u796D\u575B"
       effects:
       - type: 14
@@ -291,6 +314,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.602
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 10
         itemDesc: 
@@ -300,6 +324,8 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
+    enemy: {fileID: 0}
     defaultEffects: []
   - eventId: ch1_event_crossroad
     displayName: "\u5C94\u8DEF\u9009\u62E9"
@@ -323,6 +349,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u8D70\u9634\u6697\u5C0F\u8DEF"
       effects:
       - type: 9
@@ -334,6 +361,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 40
         itemDesc: 
@@ -343,6 +371,8 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
+    enemy: {fileID: 0}
     defaultEffects: []
   - eventId: ch1_event_abandoned_camp
     displayName: "\u5E9F\u5F03\u8425\u5730"
@@ -366,6 +396,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
       - type: 9
         amount: 15
         itemDesc: 
@@ -375,6 +406,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u7A0D\u4F5C\u4F11\u606F"
       effects:
       - type: 9
@@ -386,8 +418,10 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
     - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
       effects: []
+    enemy: {fileID: 0}
     defaultEffects: []
   NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
   AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
