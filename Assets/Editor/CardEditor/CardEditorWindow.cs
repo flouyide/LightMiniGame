@@ -858,7 +858,7 @@ namespace LightMiniGame.CardEditor.Editor
         // ========================================================================
         private void CreateCard()
         {
-            var dir = "Assets/ScriptableObjects/CardEditor";
+            var dir = "Assets/ScriptableObjects/Cards";
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             var card = CreateInstance<CardEntry>();
@@ -887,7 +887,7 @@ namespace LightMiniGame.CardEditor.Editor
         {
             if (source == null) return;
 
-            var dir = "Assets/ScriptableObjects/CardEditor";
+            var dir = "Assets/ScriptableObjects/Cards";
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             var card = CreateInstance<CardEntry>();
