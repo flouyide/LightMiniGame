@@ -49,7 +49,7 @@ MonoBehaviour:
     applyArmorBreak: 0
     armorBreakAmount: 0
     buffTarget: 0
-    modAttribute: 0
+    modAttribute: 14
     modifyMethod: 1
     statusType: 0
     statusStacks: 1
@@ -112,7 +112,7 @@ MonoBehaviour:
     applyArmorBreak: 0
     armorBreakAmount: 0
     buffTarget: 0
-    modAttribute: 0
+    modAttribute: 14
     modifyMethod: 1
     statusType: 0
     statusStacks: 1
