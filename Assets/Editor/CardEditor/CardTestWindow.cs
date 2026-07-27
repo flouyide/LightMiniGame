@@ -417,6 +417,13 @@ namespace LightMiniGame.CardEditor.Editor
                 case ModifiableAttribute.HandCost:
                     Log($"    手牌费用 {method} {amount} (需运行时处理)");
                     break;
+                case ModifiableAttribute.CurrentSanity:
+                    _playerSanity = ApplyModify(_playerSanity, amount, eff.modifyMethod);
+                    Log($"    当前理智 → {_playerSanity}");
+                    break;
+                case ModifiableAttribute.MaxSanity:
+                    Log($"    最大理智 {method} {amount} (需运行时处理)");
+                    break;
             }
         }
 

@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: "\u6D4B\u8BD5again"
+  m_Name: test
   m_EditorClassIdentifier: 
-  cardId: card_1eb0d077
-  cardName: "\u6D4B\u8BD5again"
+  cardId: card_a7903eb5
+  cardName: test
   baseDescription: 
   upgradeDescription: 
   cardArt: {fileID: 0}
   darkCardArt: {fileID: 0}
-  grade: 2
+  grade: 0
   cardType: 0
   existence: 0
   baseCost: 1
@@ -26,7 +26,38 @@ MonoBehaviour:
   price: 10
   keyword: 0
   upgradable: 1
-  baseEffects: []
+  baseEffects:
+  - enabled: 1
+    effectName: "\u6548\u679C 1"
+    effectType: 4
+    source: 0
+    target: 1
+    value:
+      formulaType: 0
+      baseValue: 0
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 14
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
   upgradeEffects: []
   baseAbility:
     abilityName: 

@@ -206,7 +206,9 @@ namespace LightMiniGame.CardEditor
         EnergyPerTurn,       // 每回合获得能量
         BleedValue,          // 流血值
         Currency,            // 货币
-        HandCost             // 手牌费用
+        HandCost,            // 手牌费用
+        CurrentSanity,       // 当前理智
+        MaxSanity            // 最大理智
     }
 
     // ========================================================================

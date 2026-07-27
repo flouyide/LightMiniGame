@@ -416,6 +416,8 @@ namespace LightMiniGame.CardEditor
             ModifiableAttribute.BleedValue => "流血值",
             ModifiableAttribute.Currency => "货币",
             ModifiableAttribute.HandCost => "手牌费用",
+            ModifiableAttribute.CurrentSanity => "当前理智",
+            ModifiableAttribute.MaxSanity => "最大理智",
             _ => a.ToString()
         };
 

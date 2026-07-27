@@ -23,6 +23,7 @@ MonoBehaviour:
   existence: 0
   baseCost: 1
   upgradeCost: 1
+  price: 10
   keyword: 0
   upgradable: 1
   baseEffects:
@@ -65,7 +66,7 @@ MonoBehaviour:
     target: 1
     value:
       formulaType: 0
-      baseValue: 9
+      baseValue: 6
       attributeRef: 0
       coefficient: 1
       counterRef: 0

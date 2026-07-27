@@ -296,6 +296,8 @@ public class BattleManager : MonoBehaviour
         ModifiableAttribute.CurrentHP => _playerHP,
         ModifiableAttribute.DrawPerTurn => drawPerTurn,
         ModifiableAttribute.EnergyPerTurn => maxActionPoints,
+        ModifiableAttribute.CurrentSanity => _playerSanity,
+        ModifiableAttribute.MaxSanity => _playerMaxSanity,
         _ => 0
     };
 
@@ -311,6 +313,8 @@ public class BattleManager : MonoBehaviour
             case ModifiableAttribute.CurrentHP: _playerHP = Mathf.Clamp(value, 0, playerMaxHP); break;
             case ModifiableAttribute.DrawPerTurn: drawPerTurn = value; break;
             case ModifiableAttribute.EnergyPerTurn: maxActionPoints = value; break;
+            case ModifiableAttribute.CurrentSanity: ModifySanity(value - _playerSanity); break;
+            case ModifiableAttribute.MaxSanity: _playerMaxSanity = value; break;
         }
     }
 
@@ -388,6 +392,7 @@ public class BattleManager : MonoBehaviour
     private void InitEnemy()
     {
         EnemyConfig cfg = StartEnemy != null ? StartEnemy : enemyConfig;
+        Debug.Log($"[BattleManager] InitEnemy: StartEnemy={StartEnemy?.enemyName ?? "NULL"}, enemyConfig={enemyConfig?.enemyName ?? "NULL"}, using={cfg?.enemyName ?? "NULL"}");
         if (cfg != null)
         {
             enemyConfig = cfg;   // 关键：让技能/阶段/立绘/名字等逻辑统一读取“当前出战敌人”（可能是事件指定的 StartEnemy）
@@ -1208,7 +1213,6 @@ public class BattleManager : MonoBehaviour
             if (enemySkillCardImage != null)
             {
                 enemySkillCardImage.sprite = skill.skillCardArt;
-                // 有卡面图时用不透明背景，无图时用深色背景
                 enemySkillCardImage.color = skill.skillCardArt != null
                     ? new Color(1, 1, 1, 1f)
                     : new Color(0.05f, 0.03f, 0.1f, 0.95f);
@@ -1224,17 +1228,17 @@ public class BattleManager : MonoBehaviour
                 enemySkillDescText.color = new Color(0.9f, 0.85f, 0.95f, 1f);
             }
 
-            // 淡入
             yield return StartCoroutine(FadeEnemySkillCard(0f, 1f, enemySkillCardFadeTime));
-            // 停留
             yield return new WaitForSeconds(enemySkillCardDuration);
-            // 淡出
             yield return StartCoroutine(FadeEnemySkillCard(1f, 0f, enemySkillCardFadeTime));
             enemySkillCard.SetActive(false);
         }
         else
         {
-            yield return null;
+            // 无技能卡面板时，用意图文本显示技能名并等待
+            if (enemyIntentText != null)
+                enemyIntentText.text = $"【{skill.skillName}】{skill.description}";
+            yield return new WaitForSeconds(2f);
         }
 
         // 执行技能效果

@@ -24,6 +24,7 @@ MonoBehaviour:
   existence: 0
   baseCost: 2
   upgradeCost: 2
+  price: 10
   keyword: 0
   upgradable: 1
   baseEffects:
