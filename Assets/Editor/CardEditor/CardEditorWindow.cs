@@ -257,7 +257,6 @@ namespace LightMiniGame.CardEditor.Editor
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
             card.baseCost = EditorGUILayout.IntField("基础费用", card.baseCost);
     card.upgradable = EditorGUILayout.BeginToggleGroup("升级", card.upgradable);
-            EditorGUILayout.EndToggleGroup();
             if (card.upgradable)
             {
                 card.upgradeCost = EditorGUILayout.IntField("升级后费用", card.upgradeCost);
