@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1aa7a65bd6777a64a96d7cc180c1bd0f, type: 3}
-  m_Name: "\u9E21\u7172"
+  m_Name: "\u67AA\u68B0\u5E08"
   m_EditorClassIdentifier: 
   characterId: defect
-  displayName: "\u5728\u542F\u52A8\u7684\u9E21\u7172"
+  displayName: "\u67AA\u68B0\u5E08"
   avatar: {fileID: 21300000, guid: 37efb4b8255584d40b098d08d69a62e3, type: 3}
-  startingLibrary: {fileID: 11400000, guid: 6b804e5802a4ee046bb33c71d0eb50ba, type: 2}
+  startingLibrary: {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: 6f316edbfed9a844a85963bd8f5b49ed, type: 2}
   maxLibrarySize: 100

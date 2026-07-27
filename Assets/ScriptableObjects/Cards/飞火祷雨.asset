@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u98DE\u706B\u7977\u96E8"
+  m_EditorClassIdentifier: 
+  cardId: card_772dca5b
+  cardName: "\u98DE\u706B\u7977\u96E8"
+  baseDescription: "\u83B7\u5F978\u70B9\u683C\u6321\uFF0C\u4E0B\u4E24\u4E2A\u56DE\u5408\u5F00\u59CB\u65F6\u83B7\u5F978\u70B9\u683C\u6321\u3002"
+  upgradeDescription: "\u83B7\u5F9712\u70B9\u683C\u6321\uFF0C\u4E0B\u4E24\u4E2A\u56DE\u5408\u5F00\u59CB\u65F6\u83B7\u5F9712\u70B9\u683C\u6321\u3002"
+  cardArt: {fileID: 0}
+  darkCardArt: {fileID: 0}
+  grade: 1
+  cardType: 1
+  existence: 0
+  baseCost: 2
+  upgradeCost: 2
+  price: 10
+  keyword: 0
+  upgradable: 1
+  baseEffects: []
+  upgradeEffects: []
+  baseAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  upgradeAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  customCardScript: {fileID: 0}
+  designerNotes: 
