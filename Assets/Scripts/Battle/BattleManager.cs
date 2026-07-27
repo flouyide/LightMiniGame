@@ -65,11 +65,11 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI armorText;
     [SerializeField] private TextMeshProUGUI strengthText;
     [SerializeField] private TextMeshProUGUI dexterityText;
-    [SerializeField] private Image playerHPBarFill;
+    [SerializeField] private Slider playerHPBar;
 
     [Header("UI引用 - 理智")]
     [SerializeField] private TextMeshProUGUI sanityText;
-    [SerializeField] private Image sanityBarFill;
+    [SerializeField] private Slider sanityBar;
 
     [Header("UI引用 - 敌人")]
     [SerializeField] private TextMeshProUGUI enemyHPText;
@@ -79,7 +79,7 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI enemyDamageText;
     [Tooltip("伤害数字预制体（TextMeshProUGUI，用于多段伤害飘字）。留空则用 enemyDamageText 单个文本。")]
     [SerializeField] private GameObject damagePopupPrefab;
-    [SerializeField] private Image enemyHPBarFill;
+    [SerializeField] private Slider enemyHPBar;
     [Tooltip("敌人立绘 Image（阶段切换时替换 Sprite）")]
     [SerializeField] private Image enemyPortraitImage;
     [Tooltip("凝视值文本（显示在敌人上方）")]
@@ -808,7 +808,7 @@ public class BattleManager : MonoBehaviour
             StartCoroutine(DarkOverlayFadeRoutine());
 
         // 4. 理智条颤抖效果
-        if (sanityBarFill != null)
+        if (sanityBar != null)
         {
             if (_sanityTrembleRoutine != null) StopCoroutine(_sanityTrembleRoutine);
             _sanityTrembleRoutine = StartCoroutine(SanityTrembleRoutine());
@@ -881,9 +881,10 @@ public class BattleManager : MonoBehaviour
     /// <summary>理智条颤抖效果：持续在原始位置上做小幅随机偏移，理智恢复后停止</summary>
     private IEnumerator SanityTrembleRoutine()
     {
-        var rt = sanityBarFill.GetComponent<RectTransform>();
+        var rt = sanityBar.GetComponent<RectTransform>();
         Vector2 basePos = rt.anchoredPosition;
-        float intensity = 3f;  // 颤抖幅度（像素）
+        float intensity = 3f;
+        var fill = sanityBar.fillRect?.GetComponent<UnityEngine.UI.Image>();
 
         while (_playerSanity <= SanityPhaseThreshold && !_battleEnded)
         {
@@ -891,16 +892,17 @@ public class BattleManager : MonoBehaviour
             float oy = Random.Range(-intensity, intensity);
             rt.anchoredPosition = basePos + new Vector2(ox, oy);
 
-            // 变暗效果
-            Color darkTint = new Color(0.5f, 0.3f, 0.6f, 1f);
-            sanityBarFill.color = Color.Lerp(sanityBarFill.color, darkTint, 0.1f);
+            if (fill != null)
+            {
+                Color darkTint = new Color(0.5f, 0.3f, 0.6f, 1f);
+                fill.color = Color.Lerp(fill.color, darkTint, 0.1f);
+            }
 
             yield return null;
         }
 
-        // 恢复
         rt.anchoredPosition = basePos;
-        sanityBarFill.color = new Color(0.3f, 0.5f, 0.85f, 1f);
+        if (fill != null) fill.color = new Color(0.3f, 0.5f, 0.85f, 1f);
         _sanityTrembleRoutine = null;
     }
 
@@ -1449,13 +1451,23 @@ public class BattleManager : MonoBehaviour
         if (strengthText != null) strengthText.text = _playerStrength > 0 ? $"力量: {_playerStrength}" : "";
         if (dexterityText != null) dexterityText.text = _playerDexterity > 0 ? $"敏捷: {_playerDexterity}" : "";
 
-        if (playerHPBarFill != null)
-            playerHPBarFill.fillAmount = (float)_playerHP / playerMaxHP;
-        if (enemyHPBarFill != null)
-            enemyHPBarFill.fillAmount = _enemyMaxHP > 0 ? (float)_enemyHP / _enemyMaxHP : 0;
+        if (playerHPBar != null)
+        {
+            playerHPBar.maxValue = playerMaxHP;
+            playerHPBar.value = _playerHP;
+        }
+        if (enemyHPBar != null)
+        {
+            enemyHPBar.maxValue = _enemyMaxHP;
+            enemyHPBar.value = _enemyHP;
+        }
 
         if (sanityText != null) sanityText.text = $"{_playerSanity}/{_playerMaxSanity}";
-        if (sanityBarFill != null) sanityBarFill.fillAmount = (float)_playerSanity / _playerMaxSanity;
+        if (sanityBar != null)
+        {
+            sanityBar.maxValue = _playerMaxSanity;
+            sanityBar.value = _playerSanity;
+        }
 
         if (gazeValueText != null)
         {
