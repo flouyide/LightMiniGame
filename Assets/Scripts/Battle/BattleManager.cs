@@ -126,6 +126,10 @@ public class BattleManager : MonoBehaviour
     [Tooltip("黑暗遮罩淡入持续时间（秒）")]
     [SerializeField] private float darkOverlayFadeDuration = 1f;
 
+    [Header("UI引用 - 战斗背景")]
+    [Tooltip("战斗背景容器 GameObject；其下的 Image 组件用于显示战斗背景（正常 / 低理智）。留空则不切换背景。")]
+    [SerializeField] private GameObject background;
+
     // ========================================================================
     // 运行时状态
     // ========================================================================
@@ -182,6 +186,7 @@ public class BattleManager : MonoBehaviour
     private Coroutine _sanityTrembleRoutine;
     private Coroutine _damagePopupRoutine;
     private bool _listenersWired = false;
+    private Image _backgroundImage;   // Background GameObject 下的背景 Image（按理智切换）
 
     private SettingsPanelUI _settingsPanel;
 
@@ -218,6 +223,13 @@ public class BattleManager : MonoBehaviour
     /// <summary>局外（ChapterManager）在进入战斗前指定的敌人（单个）。
     /// 为空则回退到 Inspector 的默认 enemyConfig。</summary>
     public EnemyConfig StartEnemy { get; set; }
+
+    /// <summary>战斗背景配置（由 Battle 事件的 PageEventData 注入）。
+    /// StartNormalBattleBackground / StartLowSanityBattleBackground 分别为正常与低理智背景图，
+    /// StartBackgroundSanityThreshold 为切换阈值（玩家理智 &lt;= 该值时用低理智背景）。</summary>
+    public Sprite StartNormalBattleBackground { get; set; }
+    public Sprite StartLowSanityBattleBackground { get; set; }
+    public int StartBackgroundSanityThreshold { get; set; } = 4;
 
     public int GetTurnCounter(string name) => _turnCounters.TryGetValue(name, out var v) ? v : 0;
     public int GetBattleCounter(string name) => _battleCounters.TryGetValue(name, out var v) ? v : 0;
@@ -420,6 +432,9 @@ public class BattleManager : MonoBehaviour
 
     public void StartBattle()
     {
+        // 解析战斗背景 Image（Background GameObject 下，含自身与子物体）
+        _backgroundImage = background != null ? background.GetComponentInChildren<Image>() : null;
+
         if (gameConfig == null || gameConfig.characters == null || gameConfig.characters.Count < 2)
         {
             Debug.LogError("[BattleManager] GameConfig 未配置或角色不足2个，无法开始战斗");
@@ -514,6 +529,7 @@ public class BattleManager : MonoBehaviour
 
         UpdateCharacterSwitchUI();
         UpdateUI();
+        ApplyBackground();   // 按初始理智设置战斗背景
 
         Debug.Log($"[BattleManager] 战斗开始！角色1: {ActiveChar.data?.Label}, 角色2: {InactiveChar.data?.Label}");
     }
@@ -799,6 +815,7 @@ public class BattleManager : MonoBehaviour
         CheckEnemyPhaseSwitch();
 
         UpdateUI();
+        ApplyBackground();   // 理智变化实时切换背景
     }
 
     /// <summary>理智转阶段钩子（理智降至阈值 4 时触发，每场战斗仅一次）</summary>
@@ -1331,6 +1348,21 @@ public class BattleManager : MonoBehaviour
         {
             enemyPortraitImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
         }
+    }
+
+    /// <summary>
+    /// 根据当前玩家理智值切换战斗背景：
+    /// 理智 &lt;= StartBackgroundSanityThreshold 且配置了低理智背景时，显示 lowSanityBattleBackground，
+    /// 否则显示 normalBattleBackground。两者都为空则保持 Background 上既有 Sprite。
+    /// </summary>
+    private void ApplyBackground()
+    {
+        if (_backgroundImage == null) return;
+        Sprite bg = (_playerSanity <= StartBackgroundSanityThreshold && StartLowSanityBattleBackground != null)
+            ? StartLowSanityBattleBackground
+            : StartNormalBattleBackground;
+        if (bg != null)
+            _backgroundImage.sprite = bg;
     }
 
     /// <summary>技能卡面淡入/淡出</summary>

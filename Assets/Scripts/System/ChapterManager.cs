@@ -784,6 +784,10 @@ public class ChapterManager : MonoBehaviour
             bm.StartInactiveChar = _inactiveCharacter;
             // 出战敌人优先取 startEnemy（EnterBattle 效果自带），其次取 Battle 事件 data.enemy，都空则回退 BattleManager 默认敌人
             bm.StartEnemy = startEnemy ?? (data != null ? data.enemy : null);
+            // 战斗背景（来自 Battle 事件的 PageEventData；null=保留 BattleManager.Background 上既有 Sprite）
+            bm.StartNormalBattleBackground = data != null ? data.normalBattleBackground : null;
+            bm.StartLowSanityBattleBackground = data != null ? data.lowSanityBattleBackground : null;
+            bm.StartBackgroundSanityThreshold = data != null ? data.backgroundSanityThreshold : 4;
             bm.OnBattleEnded -= OnBattleEnded;
             bm.OnBattleEnded += OnBattleEnded;
             bm.BeginBattle();        // 读取局外属性 + 启动战斗

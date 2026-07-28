@@ -130,6 +130,14 @@ public class PageEventData
     [Tooltip("该 Battle 事件要出战的敌人（单个）。留空则使用 BattleManager 上的默认敌人。")]
     public EnemyConfig enemy;                       // Battle：出战敌人（策划在 Inspector 拖一个 EnemyConfig）
 
+    [Header("战斗背景（Battle 类型用）")]
+    [Tooltip("正常理智时的战斗背景图，应用到 BattleManager.Background 下的 Image。留空则沿用 Background 上既有 Sprite。")]
+    public Sprite normalBattleBackground;           // 正常理智背景
+    [Tooltip("低理智（玩家理智 <= backgroundSanityThreshold）时的战斗背景图。留空则回退到 normalBattleBackground。")]
+    public Sprite lowSanityBattleBackground;        // 低理智背景
+    [Tooltip("切换为低理智背景的理智阈值：玩家理智 <= 此值时使用 lowSanityBattleBackground。")]
+    public int backgroundSanityThreshold = 4;       // 背景切换理智阈值
+
     [Header("默认效果（Battle/Shop/Rest 类型用，点击\"进入\"后直接应用）")]
     public List<EffectData> defaultEffects = new();
 }

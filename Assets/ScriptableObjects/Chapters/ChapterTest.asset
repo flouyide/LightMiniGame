@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93eb46175a208ce42bfce2066b949083, type: 3}
   m_Name: ChapterTest
   m_EditorClassIdentifier: 
-  chapterName: "\u7B2C\u4E00\u7AE0"
+  chapterName: "\u6D4B\u8BD5\u7AE0"
   maxSelections: 10
   events:
   - eventId: event_test
@@ -83,6 +83,9 @@ MonoBehaviour:
         discountRatio: 0.5
         enterBattleEnemy: {fileID: 0}
     enemy: {fileID: 0}
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
     defaultEffects:
     - type: 6
       amount: 0
@@ -139,7 +142,10 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0.5
         enterBattleEnemy: {fileID: 0}
-    enemy: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
+    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
+    normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
+    backgroundSanityThreshold: 5
     defaultEffects:
     - type: 6
       amount: 0
@@ -151,6 +157,6 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemy: {fileID: 0}
-  NormalBG: {fileID: 0}
-  AbnormalBG: {fileID: 0}
-  sanityThreshold: 50
+  NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
+  sanityThreshold: 5
