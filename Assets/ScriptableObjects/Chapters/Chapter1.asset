@@ -13,83 +13,8 @@ MonoBehaviour:
   m_Name: Chapter1
   m_EditorClassIdentifier: 
   chapterName: "\u7B2C\u4E00\u7AE0"
-  maxSelections: 10
+  maxSelections: 4
   events:
-  - eventId: ch1_battle_goblin
-    displayName: "\u54E5\u5E03\u6797\u4F0F\u51FB"
-    description: "\u4E00\u7FA4\u54E5\u5E03\u6797\u4ECE\u8DEF\u8FB9\u7684\u704C\u6728\u4E1B\u4E2D\u8DF3\u51FA\u6765\uFF0C\u6325\u821E\u7740\u7C97\u7CD9\u7684\u6B66\u5668\u5411\u4F60\u51B2\u6765\uFF01"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 1
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u786E\u5B9A"
-      effects: []
-    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
-    defaultEffects:
-    - type: 6
-      amount: 0
-      itemDesc: 
-      attributeOp: 0
-      targetAttribute: 0
-      relic: {fileID: 0}
-      card: {fileID: 0}
-      keywordToAdd: 0
-      discountRatio: 0.6
-      enterBattleEnemy: {fileID: 0}
-  - eventId: ch1_battle_slime
-    displayName: "\u53F2\u83B1\u59C6\u6CBC\u6CFD"
-    description: "\u524D\u65B9\u7684\u9053\u8DEF\u88AB\u4E00\u7247\u9ECF\u7CCA\u7CCA\u7684\u53F2\u83B1\u59C6\u6CBC\u6CFD\u6321\u4F4F\u4E86\u3002\u8FD9\u4E9B\u53F2\u83B1\u59C6\u867D\u7136\u884C\u52A8\u7F13\u6162\uFF0C\u4F46\u6570\u91CF\u4F17\u591A\u3002"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 1
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u786E\u5B9A"
-      effects: []
-    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
-    defaultEffects:
-    - type: 6
-      amount: 0
-      itemDesc: 
-      attributeOp: 0
-      targetAttribute: 0
-      relic: {fileID: 0}
-      card: {fileID: 0}
-      keywordToAdd: 0
-      discountRatio: 0.6
-      enterBattleEnemy: {fileID: 0}
-  - eventId: ch1_battle_wolf
-    displayName: "\u72FC\u7FA4\u5DE1\u903B"
-    description: "\u4F60\u542C\u5230\u8FDC\u5904\u4F20\u6765\u4F4E\u6C89\u7684\u55E5\u53EB\u58F0\u3002\u4E00\u7FA4\u9965\u997F\u7684\u91CE\u72FC\u6B63\u5728\u9644\u8FD1\u5DE1\u903B\uFF0C\u5B83\u4EEC\u5DF2\u7ECF\u53D1\u73B0\u4E86\u4F60\u3002"
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 1
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u786E\u5B9A"
-      effects: []
-    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
-    defaultEffects:
-    - type: 6
-      amount: 0
-      itemDesc: 
-      attributeOp: 0
-      targetAttribute: 0
-      relic: {fileID: 0}
-      card: {fileID: 0}
-      keywordToAdd: 0
-      discountRatio: 0.6
-      enterBattleEnemy: {fileID: 0}
   - eventId: ch1_shop_traveler
     displayName: "\u65C5\u884C\u5546\u4EBA"
     description: "\u4E00\u4E2A\u70ED\u60C5\u7684\u65C5\u884C\u5546\u4EBA\u63A8\u7740\u5C0F\u8F66\u505C\u5728\u8DEF\u8FB9\uFF0C\u8F66\u4E0A\u7684\u8D27\u7269\u7433\u7405\u6EE1\u76EE\u3002"
@@ -423,6 +348,55 @@ MonoBehaviour:
       effects: []
     enemy: {fileID: 0}
     defaultEffects: []
+  - eventId: ch1_event_abandoned_camp
+    displayName: "\u9ED1\u65E5"
+    description: "\u4E0D\u53EF\u76F4\u89C6"
+    icon: {fileID: 0}
+    eventType: 0
+    isRepeatable: 0
+    isFinalNode: 1
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemy: {fileID: 0}
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
+    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
+    defaultEffects: []
   NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
   AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
-  sanityThreshold: 50
+  sanityThreshold: 4

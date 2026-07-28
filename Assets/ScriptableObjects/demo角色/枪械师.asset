@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterId: defect
   displayName: "\u67AA\u68B0\u5E08"
-  avatar: {fileID: 21300000, guid: 37efb4b8255584d40b098d08d69a62e3, type: 3}
+  avatar: {fileID: 21300000, guid: e6924a7fcdaac514a9fb47b23402d68d, type: 3}
   startingLibrary: {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: 6f316edbfed9a844a85963bd8f5b49ed, type: 2}
