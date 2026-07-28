@@ -144,7 +144,7 @@ public class BattleManager : MonoBehaviour
 
     private CharBattleState[] _chars = new CharBattleState[2];
     private int _activeCharIdx = 0;
-    private bool _hasSwitchedThisBattle = false;
+    private bool _hasSwitchedThisTurn = false;
 
     private readonly List<CardData> _hand = new();
     private int _playerHP;
@@ -456,7 +456,7 @@ public class BattleManager : MonoBehaviour
             if (idx >= 0) startIdx = idx;
         }
         _activeCharIdx = startIdx;
-        _hasSwitchedThisBattle = false;
+        _hasSwitchedThisTurn = false;
         _turnCount = 1;
         _playerArmor = 0;
         _sanityPhaseTriggered = false;
@@ -1030,7 +1030,7 @@ public class BattleManager : MonoBehaviour
     private void OnSwitchCharacterClicked()
     {
         if (!_isPlayerTurn || _battleEnded) return;
-        if (_hasSwitchedThisBattle)
+        if (_hasSwitchedThisTurn)
         {
             Debug.Log("[BattleManager] 本场战斗已切换过角色");
             return;
@@ -1049,7 +1049,7 @@ public class BattleManager : MonoBehaviour
         _abilitySystem?.SuspendAll();
 
         _activeCharIdx = 1 - _activeCharIdx;
-        _hasSwitchedThisBattle = true;
+        _hasSwitchedThisTurn = true;
 
         // 恢复切换后角色的能力
         _abilitySystem?.ResumeAll();
@@ -1079,13 +1079,13 @@ public class BattleManager : MonoBehaviour
                 inactiveCharPortrait.sprite = InactiveChar.data.avatar;
         }
 
-        bool canSwitch = _isPlayerTurn && !_battleEnded && !_hasSwitchedThisBattle;
+        bool canSwitch = _isPlayerTurn && !_battleEnded && !_hasSwitchedThisTurn;
         if (switchCharacterButton != null)
             switchCharacterButton.interactable = canSwitch;
         if (switchAvailableIndicator != null)
             switchAvailableIndicator.SetActive(canSwitch);
         if (switchUsedIndicator != null)
-            switchUsedIndicator.SetActive(_hasSwitchedThisBattle);
+            switchUsedIndicator.SetActive(_hasSwitchedThisTurn);
     }
 
     // ========================================================================
@@ -1398,6 +1398,7 @@ public class BattleManager : MonoBehaviour
         _turnCount++;
         _actionPoints = maxActionPoints;
         _playerArmor = 0;
+        _hasSwitchedThisTurn = false;
         _eventsThisTurn.Clear(); // 清除本回合事件
         _abilitySystem?.OnTurnStart(); // 重置能力本回合触发计数
         _abilitySystem?.OnTrigger(AbilityTrigger.TurnStart); // 回合开始触发
