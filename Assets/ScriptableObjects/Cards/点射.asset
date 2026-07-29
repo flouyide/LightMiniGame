@@ -1,0 +1,114 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u70B9\u5C04"
+  m_EditorClassIdentifier: 
+  cardId: card_488360a7
+  cardName: "\u70B9\u5C04"
+  baseDescription: "\u9020\u62106\u70B9\u4F24\u5BB3"
+  upgradeDescription: "\u9020\u62109\u70B9\u4F24\u5BB3"
+  cardArt: {fileID: 0}
+  darkCardArt: {fileID: 0}
+  grade: 0
+  cardType: 0
+  existence: 0
+  baseCost: 1
+  upgradeCost: 1
+  price: 10
+  keyword: 0
+  upgradable: 1
+  baseEffects:
+  - enabled: 1
+    effectName: "\u6548\u679C 1"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 1
+      baseValue: 6
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  upgradeEffects:
+  - enabled: 1
+    effectName: "\u6548\u679C 1"
+    effectType: 0
+    source: 0
+    target: 1
+    value:
+      formulaType: 1
+      baseValue: 9
+      attributeRef: 0
+      coefficient: 1
+      counterRef: 0
+    times: 1
+    conditions: []
+    conditionLogic: 0
+    timing: 0
+    duration: 0
+    durationValue: 1
+    alwaysCrit: 0
+    ignoreArmor: 0
+    applyArmorBreak: 0
+    armorBreakAmount: 0
+    buffTarget: 0
+    modAttribute: 0
+    modifyMethod: 0
+    statusType: 0
+    statusStacks: 1
+    stackable: 1
+    handCostTarget: 0
+    costChange: 0
+    customEffectScript: {fileID: 0}
+    customParams: 
+  baseAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  upgradeAbility:
+    abilityName: 
+    abilityDescription: 
+    trigger: 0
+    triggerConditions: []
+    triggerConditionLogic: 0
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    triggeredEffects: []
+    customAbilityScript: {fileID: 0}
+  customCardScript: {fileID: 0}
+  designerNotes: 

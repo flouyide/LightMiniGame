@@ -63,8 +63,8 @@ MonoBehaviour:
     - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
       effects: []
     enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
-    normalBattleBackground: {fileID: 0}
-    lowSanityBattleBackground: {fileID: 0}
+    normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
     backgroundSanityThreshold: 4
     defaultEffects: []
   - eventId: ch1_event_rest
@@ -341,6 +341,34 @@ MonoBehaviour:
         itemDesc: 
         attributeOp: 1
         targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemy: {fileID: 0}
+    enemy: {fileID: 0}
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    defaultEffects: []
+  - eventId: ch1_event_05
+    displayName: "\u6295\u5F71\u4EEA\u6821\u51C6"
+    description: " \u4F60\u7528\u56DE\u5F62\u9488\u8C03\u7126\u6295\u5F71\u4EEA\uFF0C\u753B\u9762\u9510\u5229\u77AC\u95F4\uFF0C\u4F60\u77A5\u89C1\u540C\u4E8B\u5173\u8282\u5904\u7684\u62FC\u63A5\u7F1D\u9699"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u6536\u56DE\u76EE\u5149\uFF08\u63D0\u53471\u654F\u6377\uFF09"
+      effects:
+      - type: 9
+        amount: 1
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 1
         relic: {fileID: 0}
         card: {fileID: 0}
         keywordToAdd: 0
