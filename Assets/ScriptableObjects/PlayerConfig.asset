@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHP: 65
   startHP: 65
-  startGold: 9999
+  startGold: 20
   startSanity: 10
   maxSanity: 10
   maxActionPoints: 3
   drawPerTurn: 5
-  strength: 10
-  agility: 60
+  strength: 0
+  agility: 0
   lifesteal: 0
   critRate: 0
   critDamage: 0
