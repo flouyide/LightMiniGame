@@ -418,6 +418,10 @@ namespace LightMiniGame.CardEditor
             ModifiableAttribute.HandCost => "手牌费用",
             ModifiableAttribute.CurrentSanity => "当前理智",
             ModifiableAttribute.MaxSanity => "最大理智",
+            ModifiableAttribute.PlayerDamageMultiplier => "玩家总伤害倍率",
+            ModifiableAttribute.PlayerDamageTakenMultiplier => "玩家受击倍率",
+            ModifiableAttribute.EnemyDamageMultiplier => "敌人总伤害倍率",
+            ModifiableAttribute.EnemyDamageTakenMultiplier => "敌人受击倍率",
             _ => a.ToString()
         };
 
