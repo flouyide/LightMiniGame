@@ -140,7 +140,7 @@ namespace LightMiniGame.CardEditor
     // ========================================================================
     // 持续时间
     // ========================================================================
-    public enum EffectDuration
+    public enum EffectDurationLegacy
     {
         OneAction,          // 持续一次行动
         SpecifiedTurns,     // 持续指定回合

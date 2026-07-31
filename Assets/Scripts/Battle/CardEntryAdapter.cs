@@ -55,7 +55,7 @@ public static class CardEntryAdapter
         cd.value = entry.price;   // 商店售价（金币）
 
         // 费用
-        cd.actionPointCost = entry.baseCost;
+        cd.actionPointCost = entry.normalCost;
 
         // 品级映射
         cd.grade = entry.grade switch

@@ -164,9 +164,16 @@ public class BattleManager : MonoBehaviour
     private int _enemyDamageMultiplier = 100;         // 敌人总伤害倍率
     private int _enemyDamageTakenMultiplier = 100;    // 敌人受击倍率
 
+    // === 正式热度系统 ===
+    private int _currentHeat = 0;
+    private int _heatGainedThisTurn = 0;
+    private int _heatLostThisTurn = 0;
+    private bool _overloadedThisTurn = false;
+    private GameRuleConfig _ruleConfig;
+
     // === CardEntry 效果系统支持 ===
-    private EffectExecutor _effectExecutor;
-    private AbilitySystem _abilitySystem;
+    private EffectExecutorV2 _effectExecutorV2;
+    private TriggerSystem _triggerSystem;
     private readonly Dictionary<string, int> _customData = new();
     private readonly HashSet<string> _eventsThisTurn = new();
     private readonly HashSet<string> _eventsThisBattle = new();
@@ -534,10 +541,43 @@ public class BattleManager : MonoBehaviour
         _actionPoints = maxActionPoints;
 
         // 初始化效果系统
+        _ruleConfig = GameRuleConfig.Load();
         var ctx = new BattleCardContext(this);
-        _effectExecutor = new EffectExecutor(ctx);
-        _abilitySystem = new AbilitySystem(_effectExecutor, ctx);
-        _effectExecutor._onAbilityTrigger = (trigger) => _abilitySystem?.OnTrigger(trigger);
+        _triggerSystem = new TriggerSystem(null);
+        _effectExecutorV2 = new EffectExecutorV2(ctx, _triggerSystem);
+        // 通过反射替换 _triggerSystem 内部 executor（避免创建两个实例）
+        // 更简单的方式：用同一个实例，先创建 executor 再注入
+        _triggerSystem = new TriggerSystem(_effectExecutorV2);
+        // 关键：让 executor 指向正确的 triggerSystem（第二个实例）
+        // EffectExecutorV2 的 _triggerSystem 是 readonly，需要重新创建
+        _effectExecutorV2 = new EffectExecutorV2(ctx, _triggerSystem);
+
+        // 初始化热度系统
+        _currentHeat = 0;
+        _heatGainedThisTurn = 0;
+        _heatLostThisTurn = 0;
+        _overloadedThisTurn = false;
+        _customData["Heat"] = 0;
+        _customData["PlayerDamageMultiplier"] = _playerDamageMultiplier;
+        _customData["PlayerDamageTakenMultiplier"] = _playerDamageTakenMultiplier;
+
+        // 初始化计数器
+        _turnCounters["CardsPlayed"] = 0;
+        _turnCounters["AttackCardsPlayed"] = 0;
+        _turnCounters["AttacksPerformed"] = 0;
+        _turnCounters["CriticalHits"] = 0;
+        _turnCounters["DamageTaken"] = 0;
+        _turnCounters["DamageDealt"] = 0;
+        _turnCounters["HeatGained"] = 0;
+        _turnCounters["HeatLost"] = 0;
+        _turnCounters["CharactersSwitched"] = 0;
+        _turnCounters["EnemiesKilled"] = 0;
+        _turnCounters["BlockGained"] = 0;
+        _turnCounters["CardsDrawn"] = 0;
+        _turnCounters["CardsDiscarded"] = 0;
+        _turnCounters["CardsExhausted"] = 0;
+
+        _triggerSystem.OnCombatStart();
 
         DrawCards(initialDraw);
 
@@ -640,6 +680,26 @@ public class BattleManager : MonoBehaviour
 
         _actionPoints -= cost;
 
+        // 热度系统：打出攻击牌增加热度
+        if (card.sourceEntry != null && card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack)
+        {
+            int heatGain = _ruleConfig != null ? _ruleConfig.heat.heatGainedPerAttackCard : 3;
+            _currentHeat += heatGain;
+            _heatGainedThisTurn += heatGain;
+            _turnCounters["HeatGained"] = _heatGainedThisTurn;
+            _customData["Heat"] = _currentHeat;
+            _triggerSystem?.FireEvent(TriggerEvent.OnHeatGained);
+            Debug.Log($"[BattleManager] 热度 +{heatGain} → {_currentHeat}");
+        }
+
+        // 计数器：出牌
+        _turnCounters["CardsPlayed"]++;
+        if (card.sourceEntry != null)
+        {
+            if (card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack) _turnCounters["AttackCardsPlayed"]++;
+        }
+        _customData["ActualPaidCost"] = cost;
+
         ApplyCardEffects(card);
         HandleCardConsumption(card);
 
@@ -653,33 +713,36 @@ public class BattleManager : MonoBehaviour
 
     private void ApplyCardEffects(CardData card)
     {
-        // 如果有关联的 CardEntry，走统一效果执行器
         if (card.sourceEntry != null)
         {
-            if (_effectExecutor == null)
-            {
-                var ctx = new BattleCardContext(this);
-                _effectExecutor = new EffectExecutor(ctx);
-                _abilitySystem = new AbilitySystem(_effectExecutor, ctx);
-                _effectExecutor._onAbilityTrigger = (trigger) => _abilitySystem?.OnTrigger(trigger);
-            }
             var entry = card.sourceEntry;
 
-            // 能力卡：激活能力，不执行效果列表
-            if (entry.cardType == LightMiniGame.CardEditor.CardType.Ability)
+            // 自动形态选择：理智 <= 阈值且配置了低理智形态时使用低理智形态
+            int sanityThreshold = _ruleConfig != null ? _ruleConfig.sanity.lowSanityThreshold : 4;
+            card.isLowSanityForm = entry.ShouldUseLowSanityForm(_playerSanity, sanityThreshold);
+
+            // 执行 EffectNode 列表（统一路径，能力卡和普通卡都走这里）
+            if (entry.HasEffectNodes(card.isLowSanityForm))
             {
-                var ability = entry.GetAbility(card.isUpgraded);
-                if (ability != null && _abilitySystem != null)
-                    _abilitySystem.Activate(ability, entry, card.isUpgraded);
+                var nodes = entry.GetEffectNodes(card.isLowSanityForm);
+                _triggerSystem?.FireEvent(TriggerEvent.OnCardPlayed);
+                _effectExecutorV2.ExecuteEffectList(nodes);
                 UpdateUI();
+                CheckBattleEnd();
                 return;
             }
 
-            // 普通卡：执行效果列表
-            var effects = card.GetEffects(card.isUpgraded);
-            _effectExecutor.ExecuteEffects(effects, entry, card.isUpgraded);
+            Debug.LogWarning($"[BattleManager] 卡牌 {entry.cardName} 没有 EffectNode 配置，跳过效果执行");
             UpdateUI();
-            CheckBattleEnd();
+            return;
+        }
+
+        // 回退：无 CardEntry 的旧 CardData（直接走旧的硬编码路径）
+        switch (card.cardType)
+        {
+            case CardType.Attack: ApplyAttackCard(card); break;
+            case CardType.Skill: ApplyArmorCard(card); break;
+            case CardType.Ability: ApplyBuffCard(card); break;
             return;
         }
 
@@ -893,16 +956,16 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 单张卡牌升级：仅设置 isUpgraded 标记并施加灾厄词条。
+    /// 单张卡牌低理智化：仅设置 isLowSanityForm 标记并施加灾厄词条。
     /// 升级后的效果由 EffectExecutor 通过 card.GetEffects(true) 自动读取 CardEntry.upgradeEffects，
     /// 无需写回 CardData flat fields。
     /// </summary>
     private void UpgradeSingleCard(CardData card)
     {
         if (card == null) return;
-        if (card.isUpgraded) return;
+        if (card.isLowSanityForm) return;
 
-        card.isUpgraded = true;
+        card.isLowSanityForm = true;
         card.keywords |= KeywordType.Calamity;
     }
 
@@ -1066,13 +1129,32 @@ public class BattleManager : MonoBehaviour
         _hand.Clear();
 
         // 挂起当前角色的能力
-        _abilitySystem?.SuspendAll();
+        // 触发器系统角色切换
 
         _activeCharIdx = 1 - _activeCharIdx;
         _hasSwitchedThisTurn = true;
 
+        // 计数器：切换角色
+        _turnCounters["CharactersSwitched"]++;
+
+        // 热度系统：切换角色时额外衰减（在回合结束 ProcessHeatDecay 中通过 _hasSwitchedThisBattle 判断）
+        // 切换后热度立即衰减
+        int switchDecay = _ruleConfig != null ? _ruleConfig.heat.switchedCharacterHeatDecayPerTurn : 6;
+        if (_currentHeat > 0)
+        {
+            int actualDecay = Mathf.Min(_currentHeat, switchDecay);
+            _currentHeat -= actualDecay;
+            _heatLostThisTurn += actualDecay;
+            _turnCounters["HeatLost"] = _heatLostThisTurn;
+            _customData["Heat"] = _currentHeat;
+            Debug.Log($"[BattleManager] 切换角色热度衰减 -{actualDecay} → {_currentHeat}");
+        }
+
         // 恢复切换后角色的能力
-        _abilitySystem?.ResumeAll();
+        // (TriggerSystem handles suspend/resume)
+
+        // 触发器系统角色切换
+        _triggerSystem?.OnCharacterSwitch(_activeCharIdx);
 
         DrawCards(drawPerTurn);
 
@@ -1169,10 +1251,62 @@ public class BattleManager : MonoBehaviour
         UpdateCharacterSwitchUI();
 
         // 回合结束时触发能力
-        _abilitySystem?.OnTrigger(AbilityTrigger.TurnEnd);
+        // (TriggerSystem handles turn end)
+
+        // 热度系统：回合结束时衰减
+        ProcessHeatDecay();
+
+        // 热度系统：过热检查
+        CheckOverheat();
+
+        // 统一触发器系统回合结束
+        _triggerSystem?.OnTurnEnd();
 
         StartEnemyTurn();
     }
+
+    /// <summary>热度衰减：正常回合结束衰减，切换过角色衰减更多</summary>
+    private void ProcessHeatDecay()
+    {
+        if (_currentHeat <= 0) return;
+        int decay = _hasSwitchedThisTurn
+            ? (_ruleConfig != null ? _ruleConfig.heat.switchedCharacterHeatDecayPerTurn : 6)
+            : (_ruleConfig != null ? _ruleConfig.heat.normalHeatDecayPerTurn : 1);
+
+        int actualDecay = Mathf.Min(_currentHeat, decay);
+        _currentHeat -= actualDecay;
+        _heatLostThisTurn += actualDecay;
+        _turnCounters["HeatLost"] = _heatLostThisTurn;
+        _customData["Heat"] = _currentHeat;
+        if (actualDecay > 0)
+            _triggerSystem?.FireEvent(TriggerEvent.OnHeatReduced);
+        Debug.Log($"[BattleManager] 热度衰减 -{actualDecay} → {_currentHeat}");
+    }
+
+    /// <summary>过热检查：热度达到阈值时触发过载</summary>
+    private void CheckOverheat()
+    {
+        if (_overloadedThisTurn) return;
+        int threshold = _ruleConfig != null ? _ruleConfig.heat.overheatThreshold : 25;
+        if (_currentHeat >= threshold)
+        {
+            _overloadedThisTurn = true;
+            int statusStacks = _ruleConfig != null ? _ruleConfig.heat.overloadStatusStacks : 1;
+            StatusType overloadStatus = MapStatusType2ToOld(_ruleConfig != null ? _ruleConfig.heat.overloadStatus : StatusType2.Jammed);
+            ApplyStatusToPlayer(overloadStatus, statusStacks);
+            _triggerSystem?.FireEvent(TriggerEvent.OnOverload);
+            Debug.Log($"[BattleManager] 过热！热度 {_currentHeat} >= {threshold}，施加卡壳 {statusStacks}层");
+        }
+    }
+
+    private StatusType MapStatusType2ToOld(StatusType2 s) => s switch
+    {
+        StatusType2.Jammed => StatusType.Insane,
+        StatusType2.Madness => StatusType.Insane,
+        StatusType2.ArmorBreak => StatusType.ArmorBreak,
+        StatusType2.Bleed => StatusType.Bleed,
+        _ => StatusType.Insane
+    };
 
     private void StartEnemyTurn()
     {
@@ -1420,8 +1554,13 @@ public class BattleManager : MonoBehaviour
         _playerArmor = 0;
         _hasSwitchedThisTurn = false;
         _eventsThisTurn.Clear(); // 清除本回合事件
-        _abilitySystem?.OnTurnStart(); // 重置能力本回合触发计数
-        _abilitySystem?.OnTrigger(AbilityTrigger.TurnStart); // 回合开始触发
+
+        // 重置本回合计数器
+        ResetTurnCounters();
+
+        // (TriggerSystem handles turn start)
+        // (TriggerSystem handles via OnTurnStart)
+        _triggerSystem?.OnTurnStart(); // 统一触发器系统回合开始
 
         DrawCards(drawPerTurn);
         _isPlayerTurn = true;
@@ -1431,6 +1570,27 @@ public class BattleManager : MonoBehaviour
         UpdateUI();
 
         Debug.Log($"[BattleManager] 回合 {_turnCount} 开始，当前角色: {ActiveChar.data?.Label}");
+    }
+
+    /// <summary>重置本回合计数器</summary>
+    private void ResetTurnCounters()
+    {
+        _heatGainedThisTurn = 0;
+        _heatLostThisTurn = 0;
+        _overloadedThisTurn = false;
+        var keys = new List<string>(_turnCounters.Keys);
+        foreach (var k in keys)
+        {
+            // 只重置以 ThisTurn 结尾的计数器
+            if (k.Contains("ThisTurn") || k == "CardsPlayed" || k == "AttackCardsPlayed" ||
+                k == "AttacksPerformed" || k == "CriticalHits" || k == "DamageTaken" ||
+                k == "DamageDealt" || k == "HeatGained" || k == "HeatLost" ||
+                k == "CharactersSwitched" || k == "EnemiesKilled" || k == "BlockGained" ||
+                k == "CardsDrawn" || k == "CardsDiscarded" || k == "CardsExhausted")
+            {
+                _turnCounters[k] = 0;
+            }
+        }
     }
 
     // ========================================================================

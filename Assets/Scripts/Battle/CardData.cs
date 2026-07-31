@@ -81,21 +81,21 @@ public class CardData : ScriptableObject
     public CardEntry sourceEntry;
 
     /// <summary>运行时标记：本张卡是否已升级（不持久化，每场战斗重置）</summary>
-    [NonSerialized] public bool isUpgraded = false;
+    [NonSerialized] public bool isLowSanityForm = false;
 
     /// <summary>
-    /// 获取当前效果列表。如果有关联的 CardEntry，从其读取；否则返回 null（走旧路径）。
+    /// 获取当前效果列表（EffectNode 格式）。如果有关联的 CardEntry，从其读取；否则返回 null。
     /// </summary>
-    public List<CardEffect> GetEffects(bool upgraded)
+    public List<EffectNode> GetEffectNodes(bool lowSanity)
     {
         if (sourceEntry == null) return null;
-        return sourceEntry.GetEffects(upgraded);
+        return sourceEntry.GetEffectNodes(lowSanity);
     }
 
     /// <summary>
     /// 获取当前费用。如果有关联的 CardEntry，从其读取。
     /// </summary>
-    public int GetEffectiveCost() => sourceEntry != null ? sourceEntry.GetCost(isUpgraded) : actionPointCost;
+    public int GetEffectiveCost() => sourceEntry != null ? sourceEntry.GetCost(isLowSanityForm) : actionPointCost;
 
     /// <summary>
     /// 获取品级中文名

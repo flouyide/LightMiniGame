@@ -68,7 +68,7 @@ namespace LightMiniGame.CardEditor
                 query = query.Where(c => c.cardName != null && c.cardName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
             if (grade.HasValue) query = query.Where(c => c.grade == grade.Value);
             if (type.HasValue) query = query.Where(c => c.cardType == type.Value);
-            if (cost.HasValue) query = query.Where(c => c.baseCost == cost.Value);
+            if (cost.HasValue) query = query.Where(c => c.normalCost == cost.Value);
             if (kw.HasValue) query = query.Where(c => c.keyword == kw.Value);
             return query.ToList();
         }

@@ -331,7 +331,7 @@ public class CardDisplay : MonoBehaviour
         // 如果有关联的 CardEntry，优先从 CardEntry 读取显示数据
         if (data.sourceEntry != null)
         {
-            ApplyCardEntry(data.sourceEntry, data.isUpgraded);
+            ApplyCardEntry(data.sourceEntry, data.isLowSanityForm);
             // 运行时字段覆盖（费用可能被修改过，keywords 可能被理智转阶段改过）
             actionPointCost = data.GetEffectiveCost();
             keywords = data.keywords;

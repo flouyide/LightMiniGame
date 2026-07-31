@@ -17,7 +17,7 @@ namespace LightMiniGame.CardEditor.Editor
         private CardDatabase _database;
         private List<CardEntry> _filteredCards = new List<CardEntry>();
         private CardEntry _selectedCard;
-        private bool _viewingUpgrade;  // 右栏当前查看的是基础(false)还是升级(true)
+        private bool _viewingLowSanity;  // 右栏当前查看的是基础(false)还是升级(true)
         private Vector2 _leftScroll, _middleScroll, _rightScroll;
 
         // === 筛选 ===
@@ -199,7 +199,7 @@ namespace LightMiniGame.CardEditor.Editor
                     if (GUILayout.Button(card.cardName ?? "(未命名)", EditorStyles.label))
                     {
                         _selectedCard = card;
-                        _viewingUpgrade = false;
+                        _viewingLowSanity = false;
                         _validationResults.Clear();
                     }
                     EditorGUILayout.EndHorizontal();
@@ -255,21 +255,21 @@ namespace LightMiniGame.CardEditor.Editor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
-            card.baseCost = EditorGUILayout.IntField("基础费用", card.baseCost);
-    card.upgradable = EditorGUILayout.BeginToggleGroup("升级", card.upgradable);
-            if (card.upgradable)
+            card.normalCost = EditorGUILayout.IntField("普通费用", card.normalCost);
+    card.hasLowSanityForm = EditorGUILayout.BeginToggleGroup("是否配置低理智形态", card.hasLowSanityForm);
+            if (card.hasLowSanityForm)
             {
-                card.upgradeCost = EditorGUILayout.IntField("升级后费用", card.upgradeCost);
+                card.lowSanityCost = EditorGUILayout.IntField("低理智费用", card.lowSanityCost);
             }
             EditorGUILayout.EndToggleGroup();
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("描述", EditorStyles.boldLabel);
-            card.baseDescription = EditorGUILayout.TextArea(card.baseDescription, GUILayout.MinHeight(50));
-            if (card.upgradable)
+            card.normalDescription = EditorGUILayout.TextArea(card.normalDescription, GUILayout.MinHeight(50));
+            if (card.hasLowSanityForm)
             {
-                EditorGUILayout.LabelField("升级后描述:", EditorStyles.miniLabel);
-                card.upgradeDescription = EditorGUILayout.TextArea(card.upgradeDescription, GUILayout.MinHeight(50));
+                EditorGUILayout.LabelField("低理智描述:", EditorStyles.miniLabel);
+                card.lowSanityDescription = EditorGUILayout.TextArea(card.lowSanityDescription, GUILayout.MinHeight(50));
             }
 
             EditorGUILayout.Space();
@@ -298,25 +298,25 @@ namespace LightMiniGame.CardEditor.Editor
             }
             else
             {
-                // 基础/升级切换
-                if (_selectedCard.upgradable)
+                // 普通形态/低理智形态切换
+                if (_selectedCard.hasLowSanityForm)
                 {
                     EditorGUILayout.BeginHorizontal();
                     var oldLabel = GUI.skin.label.fontSize;
                     GUI.skin.label.fontSize = 13;
-                    var baseColor = !_viewingUpgrade ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
-                    var upgradeColor = _viewingUpgrade ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
+                    var baseColor = !_viewingLowSanity ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
+                    var upgradeColor = _viewingLowSanity ? new Color(0.4f, 0.8f, 0.4f) : Color.white;
                     var oldBg = GUI.backgroundColor;
                     GUI.backgroundColor = baseColor;
-                    if (GUILayout.Button("基础效果", GUILayout.Height(24)))
+                    if (GUILayout.Button("普通形态效果", GUILayout.Height(24)))
                     {
-                        _viewingUpgrade = false;
+                        _viewingLowSanity = false;
                         _validationResults.Clear();
                     }
                     GUI.backgroundColor = upgradeColor;
-                    if (GUILayout.Button("升级效果", GUILayout.Height(24)))
+                    if (GUILayout.Button("低理智形态效果", GUILayout.Height(24)))
                     {
-                        _viewingUpgrade = true;
+                        _viewingLowSanity = true;
                         _validationResults.Clear();
                     }
                     GUI.backgroundColor = oldBg;
@@ -324,9 +324,9 @@ namespace LightMiniGame.CardEditor.Editor
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button("从基础复制到升级", EditorStyles.miniButton))
+                    if (GUILayout.Button("从普通形态复制到低理智", EditorStyles.miniButton))
                         CopyBaseToUpgrade();
-                    if (GUILayout.Button("清空升级效果", EditorStyles.miniButton))
+                    if (GUILayout.Button("清空低理智形态效果", EditorStyles.miniButton))
                         ClearUpgradeEffects();
                     EditorGUILayout.EndHorizontal();
                 }
@@ -334,9 +334,14 @@ namespace LightMiniGame.CardEditor.Editor
                 EditorGUILayout.Space();
 
                 if (_selectedCard.cardType == CardType.Ability)
-                    DrawAbilityEditor();
+                {
+                    // 能力卡也用 EffectNode 编辑器（RegisterTrigger 就是能力效果）
+                    DrawEffectNodeList();
+                }
                 else
-                    DrawEffectList();
+                {
+                    DrawEffectNodeList();
+                }
 
                 EditorGUILayout.Space();
 
@@ -356,437 +361,28 @@ namespace LightMiniGame.CardEditor.Editor
         }
 
         // ========================================================================
-        // 效果列表
+        // 新 EffectNode 效果列表
         // ========================================================================
-        private void DrawEffectList()
+        private void DrawEffectNodeList()
         {
-            var effects = _viewingUpgrade ? _selectedCard.upgradeEffects : _selectedCard.baseEffects;
-            if (effects == null) effects = new List<CardEffect>();
-
-            EditorGUILayout.LabelField(_viewingUpgrade ? "升级效果列表" : "基础效果列表", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("效果按列表顺序依次结算。可拖动排序（↑↓）、复制、启用/禁用。", MessageType.Info);
-
-            for (int i = 0; i < effects.Count; i++)
+            EditorGUILayout.Space(10);
+            var nodes = _viewingLowSanity ? _selectedCard.lowSanityEffectNodes : _selectedCard.normalEffectNodes;
+            if (nodes == null)
             {
-                DrawEffectItem(effects, i);
+                nodes = new List<EffectNode>();
+                if (_viewingLowSanity) _selectedCard.lowSanityEffectNodes = nodes;
+                else _selectedCard.normalEffectNodes = nodes;
             }
 
-            if (GUILayout.Button("+ 添加效果", GUILayout.Height(24)))
-            {
-                effects.Add(new CardEffect { effectName = $"效果 {effects.Count + 1}" });
-            }
+            EditorGUILayout.LabelField(_viewingLowSanity ? "低理智形态效果（新格式）" : "普通形态效果（新格式）", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("新格式效果优先于旧格式。如果这里配置了效果，战斗时将使用新格式执行。", MessageType.Info);
+
+            EffectNodeEditor.DrawEffectList(nodes, _viewingLowSanity ? "低理智形态效果" : "普通形态效果");
+
+            if (GUI.changed && _selectedCard != null)
+                EditorUtility.SetDirty(_selectedCard);
         }
 
-        private void DrawEffectItem(List<CardEffect> effects, int index)
-        {
-            var eff = effects[index];
-            string foldoutKey = $"{(_viewingUpgrade ? "U" : "B")}_{index}";
-            if (!_effectFoldouts.ContainsKey(foldoutKey)) _effectFoldouts[foldoutKey] = true;
-
-            EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.BeginHorizontal();
-
-            eff.enabled = EditorGUILayout.Toggle(eff.enabled, GUILayout.Width(20));
-            var oldBg = GUI.color;
-            if (!eff.enabled) GUI.color = new Color(0.6f, 0.6f, 0.6f);
-
-            _effectFoldouts[foldoutKey] = EditorGUILayout.Foldout(_effectFoldouts[foldoutKey], $"{index + 1}. {eff.effectName} [{CardEffect.GetEffectTypeName(eff.effectType)}]", true);
-
-            // 排序按钮
-            EditorGUI.BeginDisabledGroup(index == 0);
-            if (GUILayout.Button("↑", EditorStyles.miniButtonLeft, GUILayout.Width(22)))
-            {
-                (effects[index], effects[index - 1]) = (effects[index - 1], effects[index]);
-                return;
-            }
-            EditorGUI.EndDisabledGroup();
-            EditorGUI.BeginDisabledGroup(index == effects.Count - 1);
-            if (GUILayout.Button("↓", EditorStyles.miniButtonMid, GUILayout.Width(22)))
-            {
-                (effects[index], effects[index + 1]) = (effects[index + 1], effects[index]);
-                return;
-            }
-            EditorGUI.EndDisabledGroup();
-            if (GUILayout.Button("复制", EditorStyles.miniButtonMid, GUILayout.Width(40)))
-            {
-                effects.Insert(index + 1, eff.Clone());
-                return;
-            }
-            if (GUILayout.Button("删除", EditorStyles.miniButtonRight, GUILayout.Width(40)))
-            {
-                effects.RemoveAt(index);
-                return;
-            }
-
-            GUI.color = oldBg;
-            EditorGUILayout.EndHorizontal();
-
-            if (_effectFoldouts[foldoutKey])
-            {
-                EditorGUI.BeginDisabledGroup(!eff.enabled);
-
-                // 效果名称
-                eff.effectName = EditorGUILayout.TextField("效果名称", eff.effectName);
-
-                // 效果类型
-                eff.effectType = (EffectType)EditorGUILayout.Popup("效果类型", (int)eff.effectType,
-                    new[] { "伤害", "护甲", "抽牌", "回费", "修改属性", "修改手牌费用", "施加状态", "自定义" });
-
-                // 发起者 & 目标
-                eff.source = (EffectSource)EditorGUILayout.Popup("效果发起者", (int)eff.source,
-                    new[] { "玩家", "选定敌人", "随机敌人", "所有敌人", "自定义" });
-                eff.target = (EffectTarget)EditorGUILayout.Popup("效果目标", (int)eff.target,
-                    new[] { "玩家", "选定敌人", "随机敌人", "所有敌人", "切换后角色", "发起者自身", "自定义" });
-
-                EditorGUILayout.Space();
-
-                // 按效果类型显示字段
-                switch (eff.effectType)
-                {
-                    case EffectType.Damage: DrawDamageFields(eff); break;
-                    case EffectType.Armor: DrawArmorFields(eff); break;
-                    case EffectType.DrawCard: DrawDrawCardFields(eff); break;
-                    case EffectType.RestoreEnergy: DrawEnergyFields(eff); break;
-                    case EffectType.ModifyAttribute: DrawModifyAttributeFields(eff); break;
-                    case EffectType.ModifyHandCost: DrawHandCostFields(eff); break;
-                    case EffectType.ApplyStatus: DrawStatusFields(eff); break;
-                    case EffectType.Custom: DrawCustomEffectFields(eff); break;
-                }
-
-                EditorGUILayout.Space();
-
-                // 时机与持续
-                DrawTimingAndDuration(eff);
-
-                EditorGUILayout.Space();
-
-                // 条件
-                DrawConditions(eff);
-
-                EditorGUI.EndDisabledGroup();
-            }
-
-            EditorGUILayout.EndVertical();
-        }
-
-        // ========================================================================
-        // 攻击效果字段
-        // ========================================================================
-        private void DrawDamageFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("伤害配置", EditorStyles.boldLabel);
-            DrawValueExpression(eff.value, "伤害数值", AttributeRef.Strength);
-            eff.times = EditorGUILayout.IntField("攻击次数", eff.times);
-            if (eff.times < 1) eff.times = 1;
-            eff.alwaysCrit = EditorGUILayout.Toggle("必定暴击", eff.alwaysCrit);
-            eff.ignoreArmor = EditorGUILayout.Toggle("无视护甲", eff.ignoreArmor);
-
-            EditorGUILayout.BeginHorizontal();
-            eff.applyArmorBreak = EditorGUILayout.Toggle("施加破甲", eff.applyArmorBreak);
-            if (eff.applyArmorBreak)
-            {
-                eff.armorBreakAmount = EditorGUILayout.IntField("破甲数值", eff.armorBreakAmount);
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-
-        // ========================================================================
-        // 护甲效果字段
-        // ========================================================================
-        private void DrawArmorFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("护甲配置", EditorStyles.boldLabel);
-            DrawValueExpression(eff.value, "护甲数值", AttributeRef.Dexterity);
-            EditorGUILayout.HelpBox("护甲是否在回合结束时保留由玩家的全局战斗属性决定，不由每张卡单独配置。", MessageType.Info);
-        }
-
-        // ========================================================================
-        // 抽牌效果字段
-        // ========================================================================
-        private void DrawDrawCardFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("抽牌配置", EditorStyles.boldLabel);
-            DrawValueExpression(eff.value, "抽牌数量", AttributeRef.Strength);
-        }
-
-        // ========================================================================
-        // 回费效果字段
-        // ========================================================================
-        private void DrawEnergyFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("回费配置", EditorStyles.boldLabel);
-            DrawValueExpression(eff.value, "回复能量", AttributeRef.Strength);
-        }
-
-        // ========================================================================
-        // 修改属性字段
-        // ========================================================================
-        private void DrawModifyAttributeFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("增减益配置", EditorStyles.boldLabel);
-            eff.buffTarget = (BuffTarget)EditorGUILayout.Popup("增减益目标", (int)eff.buffTarget,
-                new[] { "玩家", "敌人", "当前手牌", "下一张牌", "指定类型牌", "自定义" });
-            eff.modAttribute = (ModifiableAttribute)EditorGUILayout.Popup("修改属性", (int)eff.modAttribute,
-                new[] { "力量", "敏捷", "玩家暴击率", "敌人被暴击率", "玩家暴击伤害", "敌人暴击伤害",
-                        "破甲值", "最大生命值", "当前生命值", "每回合抽牌数", "每回合能量", "流血值", "货币", "手牌费用", "当前理智", "最大理智",
-                        "玩家总伤害倍率", "玩家受击倍率", "敌人总伤害倍率", "敌人受击倍率" });
-            eff.modifyMethod = (ModifyMethod)EditorGUILayout.Popup("修改方式", (int)eff.modifyMethod,
-                new[] { "增加", "减少", "乘算", "覆盖" });
-            DrawValueExpression(eff.value, "修改数值", AttributeRef.Strength);
-        }
-
-        // ========================================================================
-        // 手牌费用字段
-        // ========================================================================
-        private void DrawHandCostFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("手牌费用配置", EditorStyles.boldLabel);
-            eff.handCostTarget = (HandCostTarget)EditorGUILayout.Popup("费用目标", (int)eff.handCostTarget,
-                new[] { "下一张牌", "当前手牌" });
-            eff.costChange = EditorGUILayout.IntField("费用变化值", eff.costChange);
-        }
-
-        // ========================================================================
-        // 状态效果字段
-        // ========================================================================
-        private void DrawStatusFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("状态配置", EditorStyles.boldLabel);
-            eff.statusType = (StatusType)EditorGUILayout.Popup("状态类型", (int)eff.statusType,
-                new[] { "流血", "破甲", "力量", "敏捷", "疯狂", "下次攻击增伤", "下一张牌减费", "暴击率提升", "暴击伤害提升" });
-            eff.statusStacks = EditorGUILayout.IntField("层数", eff.statusStacks);
-            if (eff.statusStacks < 1) eff.statusStacks = 1;
-            eff.stackable = EditorGUILayout.Toggle("可叠加", eff.stackable);
-        }
-
-        // ========================================================================
-        // 自定义效果字段
-        // ========================================================================
-        private void DrawCustomEffectFields(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("自定义效果配置", EditorStyles.boldLabel);
-            eff.customEffectScript = (CustomEffectScript)EditorGUILayout.ObjectField("效果脚本", eff.customEffectScript, typeof(CustomEffectScript), false);
-            if (eff.customEffectScript != null)
-                EditorGUILayout.LabelField($"已绑定: {eff.customEffectScript.GetDisplayName()}", EditorStyles.miniLabel);
-            else
-                EditorGUILayout.HelpBox("请绑定自定义效果脚本（继承 CustomEffectScript 的 ScriptableObject）。", MessageType.Warning);
-            EditorGUILayout.LabelField("自定义参数:");
-            eff.customParams = EditorGUILayout.TextArea(eff.customParams, GUILayout.MinHeight(40));
-        }
-
-        // ========================================================================
-        // 数值表达式
-        // ========================================================================
-        private void DrawValueExpression(ValueExpression val, string label, AttributeRef defaultAttr)
-        {
-            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
-            val.formulaType = (ValueFormulaType)EditorGUILayout.Popup("公式类型", (int)val.formulaType,
-                new[] { "固定值", "基础值 + 属性", "基础值 + 属性 × 系数", "基础值 + 计数 × 系数" });
-            val.baseValue = EditorGUILayout.IntField("基础数值", val.baseValue);
-
-            switch (val.formulaType)
-            {
-                case ValueFormulaType.BasePlusAttribute:
-                case ValueFormulaType.BasePlusAttributeTimesCoeff:
-                    val.attributeRef = (AttributeRef)EditorGUILayout.Popup("引用属性", (int)val.attributeRef, GetAttributeRefNames());
-                    if (val.formulaType == ValueFormulaType.BasePlusAttributeTimesCoeff)
-                        val.coefficient = EditorGUILayout.FloatField("系数", val.coefficient);
-                    break;
-                case ValueFormulaType.BasePlusCounterTimesCoeff:
-                    val.counterRef = (AttributeRef)EditorGUILayout.Popup("引用计数", (int)val.counterRef, GetAttributeRefNames());
-                    val.coefficient = EditorGUILayout.FloatField("系数", val.coefficient);
-                    break;
-            }
-        }
-
-        private string[] GetAttributeRefNames() => new[]
-        {
-            "力量", "敏捷", "当前生命", "最大生命", "已损失生命",
-            "当前理智", "本回合已损失理智", "本场战斗累计失去理智",
-            "流血值", "破甲值", "暴击率", "暴击伤害"
-        };
-
-        // ========================================================================
-        // 时机与持续时间
-        // ========================================================================
-        private void DrawTimingAndDuration(CardEffect eff)
-        {
-            EditorGUILayout.LabelField("时机与持续", EditorStyles.boldLabel);
-            eff.timing = (EffectTiming)EditorGUILayout.Popup("生效时机", (int)eff.timing,
-                new[] { "立即", "下回合开始", "下次攻击", "下一张牌", "下次切换", "每次切换" });
-            eff.duration = (EffectDuration)EditorGUILayout.Popup("持续时间", (int)eff.duration,
-                new[] { "一次行动", "指定回合", "战斗持续", "本局永久" });
-            if (eff.duration == EffectDuration.SpecifiedTurns)
-                eff.durationValue = EditorGUILayout.IntField("持续回合数", eff.durationValue);
-            else if (eff.duration == EffectDuration.OneAction)
-                eff.durationValue = EditorGUILayout.IntField("持续次数", eff.durationValue);
-        }
-
-        // ========================================================================
-        // 条件编辑
-        // ========================================================================
-        private void DrawConditions(CardEffect eff)
-        {
-            _showConditions = EditorGUILayout.Foldout(_showConditions, $"生效条件 ({eff.conditions?.Count ?? 0})");
-            if (!_showConditions) return;
-
-            if (eff.conditions == null) eff.conditions = new List<EffectCondition>();
-
-            if (eff.conditions.Count > 0)
-            {
-                eff.conditionLogic = (ConditionLogic)EditorGUILayout.Popup("条件逻辑", (int)eff.conditionLogic,
-                    new[] { "全部满足 (AND)", "任意满足 (OR)" });
-            }
-
-            for (int i = 0; i < eff.conditions.Count; i++)
-            {
-                var cond = eff.conditions[i];
-                EditorGUILayout.BeginVertical("box");
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"条件 {i + 1}", EditorStyles.miniBoldLabel);
-                if (GUILayout.Button("删除", EditorStyles.miniButton, GUILayout.Width(40)))
-                {
-                    eff.conditions.RemoveAt(i);
-                    return;
-                }
-                EditorGUILayout.EndHorizontal();
-
-                cond.conditionType = (ConditionType)EditorGUILayout.Popup("条件类型", (int)cond.conditionType,
-                    new[] { "发起者属性检查", "目标属性检查", "事件发生", "发起者状态检查", "目标状态检查",
-                            "本回合计数", "本场战斗计数", "自定义" });
-
-                switch (cond.conditionType)
-                {
-                    case ConditionType.SourceAttributeCheck:
-                    case ConditionType.TargetAttributeCheck:
-                    case ConditionType.TurnCounterCheck:
-                    case ConditionType.BattleCounterCheck:
-                        cond.attributeRef = (AttributeRef)EditorGUILayout.Popup("属性", (int)cond.attributeRef, GetAttributeRefNames());
-                        cond.comparison = (ComparisonOp)EditorGUILayout.Popup("比较方式", (int)cond.comparison,
-                            new[] { "小于", "小于等于", "等于", "大于等于", "大于", "不等于" });
-                        cond.compareValue = EditorGUILayout.FloatField("比较值", cond.compareValue);
-                        break;
-                    case ConditionType.EventOccurred:
-                        cond.eventName = EditorGUILayout.TextField("事件名称", cond.eventName);
-                        break;
-                    case ConditionType.SourceHasStatus:
-                    case ConditionType.TargetHasStatus:
-                        cond.statusType = (StatusType)EditorGUILayout.Popup("状态类型", (int)cond.statusType,
-                            new[] { "流血", "破甲", "力量", "敏捷", "疯狂", "下次攻击增伤", "下一张牌减费", "暴击率提升", "暴击伤害提升" });
-                        break;
-                    case ConditionType.Custom:
-                        cond.customConditionScript = (CustomConditionScript)EditorGUILayout.ObjectField("条件脚本", cond.customConditionScript, typeof(CustomConditionScript), false);
-                        if (cond.customConditionScript != null)
-                            EditorGUILayout.LabelField($"已绑定: {cond.customConditionScript.GetDisplayName()}", EditorStyles.miniLabel);
-                        break;
-                }
-                EditorGUILayout.EndVertical();
-            }
-
-            if (GUILayout.Button("+ 添加条件", EditorStyles.miniButton))
-                eff.conditions.Add(new EffectCondition());
-        }
-
-        // ========================================================================
-        // 能力编辑
-        // ========================================================================
-        private void DrawAbilityEditor()
-        {
-            var ability = _viewingUpgrade ? _selectedCard.upgradeAbility : _selectedCard.baseAbility;
-            if (ability == null) ability = new AbilityData();
-
-            EditorGUILayout.LabelField(_viewingUpgrade ? "升级能力配置" : "基础能力配置", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("能力卡：持续监听触发器，事件发生时执行一组普通效果。", MessageType.Info);
-
-            ability.abilityName = EditorGUILayout.TextField("能力名称", ability.abilityName);
-            ability.abilityDescription = EditorGUILayout.TextArea(ability.abilityDescription, GUILayout.MinHeight(40));
-
-            ability.trigger = (AbilityTrigger)EditorGUILayout.Popup("触发时机", (int)ability.trigger,
-                new[] { "回合开始", "回合结束", "暴击时", "失去理智时", "理智低于阈值",
-                        "获得减益时", "每回合首次攻击", "施加破甲时", "自定义事件" });
-
-            // 触发条件
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("触发条件", EditorStyles.boldLabel);
-            if (ability.triggerConditions == null) ability.triggerConditions = new List<EffectCondition>();
-            if (ability.triggerConditions.Count > 0)
-            {
-                ability.triggerConditionLogic = (ConditionLogic)EditorGUILayout.Popup("条件逻辑", (int)ability.triggerConditionLogic,
-                    new[] { "全部满足 (AND)", "任意满足 (OR)" });
-            }
-            for (int i = 0; i < ability.triggerConditions.Count; i++)
-            {
-                EditorGUILayout.BeginVertical("box");
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"触发条件 {i + 1}", EditorStyles.miniBoldLabel);
-                if (GUILayout.Button("删除", EditorStyles.miniButton, GUILayout.Width(40)))
-                {
-                    ability.triggerConditions.RemoveAt(i);
-                    return;
-                }
-                EditorGUILayout.EndHorizontal();
-                DrawConditionSimple(ability.triggerConditions[i]);
-                EditorGUILayout.EndVertical();
-            }
-            if (GUILayout.Button("+ 添加触发条件", EditorStyles.miniButton))
-                ability.triggerConditions.Add(new EffectCondition());
-
-            // 触发限制
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("触发限制", EditorStyles.boldLabel);
-            ability.maxTriggers = EditorGUILayout.IntField("总触发次数 (0=无限)", ability.maxTriggers);
-            ability.maxTriggersPerTurn = EditorGUILayout.IntField("每回合触发次数 (0=无限)", ability.maxTriggersPerTurn);
-
-            // 自定义能力脚本
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("自定义能力脚本", EditorStyles.boldLabel);
-            ability.customAbilityScript = (CustomAbilityScript)EditorGUILayout.ObjectField("脚本", ability.customAbilityScript, typeof(CustomAbilityScript), false);
-
-            // 触发后效果
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("触发后执行的效果", EditorStyles.boldLabel);
-            if (ability.triggeredEffects == null) ability.triggeredEffects = new List<CardEffect>();
-
-            for (int i = 0; i < ability.triggeredEffects.Count; i++)
-            {
-                DrawEffectItem(ability.triggeredEffects, i);
-            }
-            if (GUILayout.Button("+ 添加触发效果", GUILayout.Height(24)))
-                ability.triggeredEffects.Add(new CardEffect { effectName = $"效果 {ability.triggeredEffects.Count + 1}" });
-        }
-
-        private void DrawConditionSimple(EffectCondition cond)
-        {
-            cond.conditionType = (ConditionType)EditorGUILayout.Popup("条件类型", (int)cond.conditionType,
-                new[] { "发起者属性检查", "目标属性检查", "事件发生", "发起者状态检查", "目标状态检查",
-                        "本回合计数", "本场战斗计数", "自定义" });
-            switch (cond.conditionType)
-            {
-                case ConditionType.SourceAttributeCheck:
-                case ConditionType.TargetAttributeCheck:
-                case ConditionType.TurnCounterCheck:
-                case ConditionType.BattleCounterCheck:
-                    cond.attributeRef = (AttributeRef)EditorGUILayout.Popup("属性", (int)cond.attributeRef, GetAttributeRefNames());
-                    cond.comparison = (ComparisonOp)EditorGUILayout.Popup("比较", (int)cond.comparison,
-                        new[] { "<", "≤", "=", "≥", ">", "≠" });
-                    cond.compareValue = EditorGUILayout.FloatField("值", cond.compareValue);
-                    break;
-                case ConditionType.EventOccurred:
-                    cond.eventName = EditorGUILayout.TextField("事件名称", cond.eventName);
-                    break;
-                case ConditionType.SourceHasStatus:
-                case ConditionType.TargetHasStatus:
-                    cond.statusType = (StatusType)EditorGUILayout.Popup("状态", (int)cond.statusType,
-                        new[] { "流血", "破甲", "力量", "敏捷", "疯狂", "下次攻击增伤", "下一张牌减费", "暴击率提升", "暴击伤害提升" });
-                    break;
-                case ConditionType.Custom:
-                    cond.customConditionScript = (CustomConditionScript)EditorGUILayout.ObjectField("脚本", cond.customConditionScript, typeof(CustomConditionScript), false);
-                    break;
-            }
-        }
-
-        // ========================================================================
-        // 预览
         // ========================================================================
         private void DrawPreview()
         {
@@ -795,7 +391,7 @@ namespace LightMiniGame.CardEditor.Editor
 
             // 卡牌标题
             EditorGUILayout.LabelField($"【{CardEntry.GetGradeName(card.grade)}】{card.cardName}", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"类型: {CardEntry.GetCardTypeName(card.cardType)}  费用: {(_viewingUpgrade && card.upgradable ? card.upgradeCost : card.baseCost)}  存在形式: {CardEntry.GetExistenceName(card.existence)}");
+            EditorGUILayout.LabelField($"类型: {CardEntry.GetCardTypeName(card.cardType)}  费用: {(_viewingLowSanity && card.hasLowSanityForm ? card.lowSanityCost : card.normalCost)}  存在形式: {CardEntry.GetExistenceName(card.existence)}");
             if (card.keyword != CardKeyword.None)
                 EditorGUILayout.LabelField($"词条: {CardEntry.GetKeywordName(card.keyword)}");
 
@@ -803,13 +399,13 @@ namespace LightMiniGame.CardEditor.Editor
 
             // 描述
             EditorGUILayout.LabelField("描述:", EditorStyles.boldLabel);
-            var desc = card.GetDescription(_viewingUpgrade && card.upgradable);
+            var desc = card.GetDescription(_viewingLowSanity && card.hasLowSanityForm);
             EditorGUILayout.LabelField(desc, EditorStyles.wordWrappedLabel);
 
             // 效果列表
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("效果结算顺序:", EditorStyles.boldLabel);
-            var effects = card.GetEffects(_viewingUpgrade && card.upgradable);
+            var effects = card.GetEffectNodes(_viewingLowSanity && card.hasLowSanityForm);
             for (int i = 0; i < effects.Count; i++)
             {
                 if (!effects[i].enabled) continue;
@@ -819,10 +415,9 @@ namespace LightMiniGame.CardEditor.Editor
             // 能力信息
             if (card.cardType == CardType.Ability)
             {
-                var ability = card.GetAbility(_viewingUpgrade && card.upgradable);
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("能力信息:", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField(ability.GetDescription(), EditorStyles.wordWrappedLabel);
+                EditorGUILayout.LabelField("(通过 RegisterTrigger 效果节点配置)", EditorStyles.wordWrappedLabel);
             }
 
             EditorGUILayout.EndVertical();
@@ -886,10 +481,10 @@ namespace LightMiniGame.CardEditor.Editor
             var card = CreateInstance<CardEntry>();
             card.cardId = $"card_{System.Guid.NewGuid().ToString("N").Substring(0, 8)}";
             card.cardName = "新卡牌";
-            card.baseEffects = new List<CardEffect>();
-            card.upgradeEffects = new List<CardEffect>();
-            card.baseAbility = new AbilityData();
-            card.upgradeAbility = new AbilityData();
+            card.normalEffectNodes = new List<EffectNode>();
+            card.lowSanityEffectNodes = new List<EffectNode>();
+            card.normalEffectNodes = new List<EffectNode>();
+            card.lowSanityEffectNodes = new List<EffectNode>();
 
             var path = AssetDatabase.GenerateUniqueAssetPath($"{dir}/{card.cardName}.asset");
             AssetDatabase.CreateAsset(card, path);
@@ -900,7 +495,7 @@ namespace LightMiniGame.CardEditor.Editor
             AssetDatabase.SaveAssets();
 
             _selectedCard = card;
-            _viewingUpgrade = false;
+            _viewingLowSanity = false;
             RefreshFilter();
             EditorGUIUtility.PingObject(card);
         }
@@ -915,23 +510,23 @@ namespace LightMiniGame.CardEditor.Editor
             var card = CreateInstance<CardEntry>();
             card.cardId = $"{source.cardId}_copy_{System.Guid.NewGuid().ToString("N").Substring(0, 4)}";
             card.cardName = source.cardName + " (副本)";
-            card.baseDescription = source.baseDescription;
-            card.upgradeDescription = source.upgradeDescription;
+            card.normalDescription = source.normalDescription;
+            card.lowSanityDescription = source.lowSanityDescription;
             card.cardArt = source.cardArt;
             card.darkCardArt = source.darkCardArt;
             card.grade = source.grade;
             card.cardType = source.cardType;
             card.existence = source.existence;
-            card.baseCost = source.baseCost;
-            card.upgradeCost = source.upgradeCost;
+            card.normalCost = source.normalCost;
+            card.lowSanityCost = source.lowSanityCost;
             card.keyword = source.keyword;
-            card.upgradable = source.upgradable;
+            card.hasLowSanityForm = source.hasLowSanityForm;
             card.designerNotes = source.designerNotes;
             card.customCardScript = source.customCardScript;
-            card.baseEffects = source.baseEffects?.ConvertAll(e => e.Clone()) ?? new List<CardEffect>();
-            card.upgradeEffects = source.upgradeEffects?.ConvertAll(e => e.Clone()) ?? new List<CardEffect>();
-            card.baseAbility = source.baseAbility?.Clone() ?? new AbilityData();
-            card.upgradeAbility = source.upgradeAbility?.Clone() ?? new AbilityData();
+            card.normalEffectNodes = source.normalEffectNodes?.ConvertAll(e => e.Clone()) ?? new List<EffectNode>();
+            card.lowSanityEffectNodes = source.lowSanityEffectNodes?.ConvertAll(e => e.Clone()) ?? new List<EffectNode>();
+            card.normalEffectNodes = source.normalEffectNodes?.ConvertAll(e => e.Clone()) ?? new List<EffectNode>();
+            card.lowSanityEffectNodes = source.lowSanityEffectNodes?.ConvertAll(e => e.Clone()) ?? new List<EffectNode>();
 
             var path = AssetDatabase.GenerateUniqueAssetPath($"{dir}/{card.cardName}.asset");
             AssetDatabase.CreateAsset(card, path);
@@ -942,7 +537,7 @@ namespace LightMiniGame.CardEditor.Editor
             AssetDatabase.SaveAssets();
 
             _selectedCard = card;
-            _viewingUpgrade = false;
+            _viewingLowSanity = false;
             RefreshFilter();
             EditorGUIUtility.PingObject(card);
         }
@@ -973,11 +568,11 @@ namespace LightMiniGame.CardEditor.Editor
             if (_selectedCard == null) return;
             if (_selectedCard.cardType == CardType.Ability)
             {
-                _selectedCard.upgradeAbility = _selectedCard.baseAbility?.Clone() ?? new AbilityData();
             }
             else
             {
-                _selectedCard.upgradeEffects = _selectedCard.baseEffects?.ConvertAll(e => e.Clone()) ?? new List<CardEffect>();
+                _selectedCard.lowSanityEffectNodes = _selectedCard.normalEffectNodes?.ConvertAll(e => e.Clone()) ?? new List<EffectNode>();
+                _selectedCard.lowSanityEffectNodes = _selectedCard.normalEffectNodes?.ConvertAll(e => e.Clone()) ?? new List<EffectNode>();
             }
             EditorUtility.SetDirty(_selectedCard);
         }
@@ -987,11 +582,11 @@ namespace LightMiniGame.CardEditor.Editor
             if (_selectedCard == null) return;
             if (_selectedCard.cardType == CardType.Ability)
             {
-                _selectedCard.upgradeAbility = new AbilityData();
             }
             else
             {
-                _selectedCard.upgradeEffects = new List<CardEffect>();
+                _selectedCard.lowSanityEffectNodes = new List<EffectNode>();
+                _selectedCard.lowSanityEffectNodes = new List<EffectNode>();
             }
             EditorUtility.SetDirty(_selectedCard);
         }
@@ -1039,7 +634,7 @@ namespace LightMiniGame.CardEditor.Editor
                 if (_filterGradeIdx > 0) query = query.Where(c => (int)c.grade == _filterGradeIdx - 1);
                 if (_filterTypeIdx > 0) query = query.Where(c => (int)c.cardType == _filterTypeIdx - 1);
                 if (_filterKeywordIdx > 0) query = query.Where(c => (int)c.keyword == _filterKeywordIdx - 1);
-                if (_filterCost >= 0) query = query.Where(c => c.baseCost == _filterCost);
+                if (_filterCost >= 0) query = query.Where(c => c.normalCost == _filterCost);
             }
 
             _filteredCards = query.ToList();

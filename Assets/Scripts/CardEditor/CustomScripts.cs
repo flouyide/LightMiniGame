@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace LightMiniGame.CardEditor
 {
@@ -76,7 +78,7 @@ namespace LightMiniGame.CardEditor
         /// 返回 true = 继续执行能力配置的触发后效果列表；
         /// 返回 false = 跳过触发效果，全部由本脚本接管。
         /// </summary>
-        public virtual bool OnTrigger(ICardRuntimeContext ctx, AbilityData ability)
+        public virtual bool OnTrigger(ICardRuntimeContext ctx, List<EffectNode> triggeredEffects)
         {
             return true; // 默认不拦截，触发效果照常执行
         }
