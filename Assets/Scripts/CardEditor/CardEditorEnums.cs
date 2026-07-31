@@ -208,7 +208,11 @@ namespace LightMiniGame.CardEditor
         Currency,            // 货币
         HandCost,            // 手牌费用
         CurrentSanity,       // 当前理智
-        MaxSanity            // 最大理智
+        MaxSanity,           // 最大理智
+        PlayerDamageMultiplier,        // 玩家总伤害倍率
+        PlayerDamageTakenMultiplier,   // 玩家受击倍率
+        EnemyDamageMultiplier,         // 敌人总伤害倍率
+        EnemyDamageTakenMultiplier     // 敌人受击倍率
     }
 
     // ========================================================================

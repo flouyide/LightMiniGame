@@ -158,6 +158,12 @@ public class BattleManager : MonoBehaviour
     private int _playerSanity;
     private int _playerMaxSanity;
 
+    // === 伤害倍率（以百分比存储，100 = 1.0倍） ===
+    private int _playerDamageMultiplier = 100;       // 玩家总伤害倍率
+    private int _playerDamageTakenMultiplier = 100;  // 玩家受击倍率
+    private int _enemyDamageMultiplier = 100;         // 敌人总伤害倍率
+    private int _enemyDamageTakenMultiplier = 100;    // 敌人受击倍率
+
     // === CardEntry 效果系统支持 ===
     private EffectExecutor _effectExecutor;
     private AbilitySystem _abilitySystem;
@@ -310,6 +316,10 @@ public class BattleManager : MonoBehaviour
         ModifiableAttribute.EnergyPerTurn => maxActionPoints,
         ModifiableAttribute.CurrentSanity => _playerSanity,
         ModifiableAttribute.MaxSanity => _playerMaxSanity,
+        ModifiableAttribute.PlayerDamageMultiplier => _playerDamageMultiplier,
+        ModifiableAttribute.PlayerDamageTakenMultiplier => _playerDamageTakenMultiplier,
+        ModifiableAttribute.EnemyDamageMultiplier => _enemyDamageMultiplier,
+        ModifiableAttribute.EnemyDamageTakenMultiplier => _enemyDamageTakenMultiplier,
         _ => 0
     };
 
@@ -327,6 +337,10 @@ public class BattleManager : MonoBehaviour
             case ModifiableAttribute.EnergyPerTurn: maxActionPoints = value; break;
             case ModifiableAttribute.CurrentSanity: ModifySanity(value - _playerSanity); break;
             case ModifiableAttribute.MaxSanity: _playerMaxSanity = value; break;
+            case ModifiableAttribute.PlayerDamageMultiplier: _playerDamageMultiplier = value; break;
+            case ModifiableAttribute.PlayerDamageTakenMultiplier: _playerDamageTakenMultiplier = value; break;
+            case ModifiableAttribute.EnemyDamageMultiplier: _enemyDamageMultiplier = value; break;
+            case ModifiableAttribute.EnemyDamageTakenMultiplier: _enemyDamageTakenMultiplier = value; break;
         }
     }
 
@@ -752,15 +766,18 @@ public class BattleManager : MonoBehaviour
 
     private int DealDamageToEnemy(int damage, bool ignoreArmor, int armorBreak = 0)
     {
+        // 应用伤害倍率：最终伤害 = 基础伤害 * 玩家总伤害倍率 * 敌人受击倍率
+        float mult = (_playerDamageMultiplier / 100f) * (_enemyDamageTakenMultiplier / 100f);
+        damage = Mathf.RoundToInt(damage * mult);
+        int armorBreakScaled = Mathf.RoundToInt(Mathf.Max(0, armorBreak) * mult);
         int actualDamage = 0;
 
         // 破甲：额外X点伤害直接扣血，无视护甲
-        int pierce = Mathf.Max(0, armorBreak);
-        if (pierce > 0)
+        if (armorBreakScaled > 0)
         {
-            _enemyHP -= pierce;
+            _enemyHP -= armorBreakScaled;
             if (_enemyHP < 0) _enemyHP = 0;
-            actualDamage += pierce;
+            actualDamage += armorBreakScaled;
         }
 
         // 基础伤害走护甲
@@ -783,6 +800,9 @@ public class BattleManager : MonoBehaviour
 
     private void DealDamageToPlayer(int damage)
     {
+        // 应用伤害倍率：敌人对玩家的最终伤害 = 敌人攻击数值 * 敌人总伤害倍率 * 玩家受击倍率
+        float mult = (_enemyDamageMultiplier / 100f) * (_playerDamageTakenMultiplier / 100f);
+        damage = Mathf.RoundToInt(damage * mult);
         int actualDamage = damage;
         if (_playerArmor > 0)
         {

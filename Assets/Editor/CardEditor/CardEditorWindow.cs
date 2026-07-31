@@ -528,7 +528,8 @@ namespace LightMiniGame.CardEditor.Editor
                 new[] { "玩家", "敌人", "当前手牌", "下一张牌", "指定类型牌", "自定义" });
             eff.modAttribute = (ModifiableAttribute)EditorGUILayout.Popup("修改属性", (int)eff.modAttribute,
                 new[] { "力量", "敏捷", "玩家暴击率", "敌人被暴击率", "玩家暴击伤害", "敌人暴击伤害",
-                        "破甲值", "最大生命值", "当前生命值", "每回合抽牌数", "每回合能量", "流血值", "货币", "手牌费用", "当前理智", "最大理智" });
+                        "破甲值", "最大生命值", "当前生命值", "每回合抽牌数", "每回合能量", "流血值", "货币", "手牌费用", "当前理智", "最大理智",
+                        "玩家总伤害倍率", "玩家受击倍率", "敌人总伤害倍率", "敌人受击倍率" });
             eff.modifyMethod = (ModifyMethod)EditorGUILayout.Popup("修改方式", (int)eff.modifyMethod,
                 new[] { "增加", "减少", "乘算", "覆盖" });
             DrawValueExpression(eff.value, "修改数值", AttributeRef.Strength);

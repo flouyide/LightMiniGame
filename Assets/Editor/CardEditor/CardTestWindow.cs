@@ -25,6 +25,10 @@ namespace LightMiniGame.CardEditor.Editor
         private int _playerSanity = 100;
         private int _playerEnergy = 3;
         private int _playerBleed = 0;
+        private int _playerDmgMult = 100;       // 玩家总伤害倍率
+        private int _playerDmgTakenMult = 100;   // 玩家受击倍率
+        private int _enemyDmgMult = 100;         // 敌人总伤害倍率
+        private int _enemyDmgTakenMult = 100;    // 敌人受击倍率
 
         private int _enemyCount = 1;
         private int _enemyHP = 50;
@@ -301,12 +305,16 @@ namespace LightMiniGame.CardEditor.Editor
         {
             int baseDamage = EvaluateValue(eff.value);
             Log($"  [伤害] 基础伤害: {eff.value.GetDescription()} = {baseDamage}");
+            Log($"  [倍率] 玩家伤害={_playerDmgMult}% 敌人受击={_enemyDmgTakenMult}%");
 
             for (int hit = 0; hit < eff.times; hit++)
             {
                 bool isCrit = eff.alwaysCrit || UnityEngine.Random.value < _playerCritRate;
-                int hitDamage = baseDamage;
+                // 最终伤害 = 配置伤害 * 玩家总伤害倍率 * 敌人受击倍率 (* 暴击伤害系数)
+                float mult = (_playerDmgMult / 100f) * (_enemyDmgTakenMult / 100f);
+                int hitDamage = Mathf.RoundToInt(baseDamage * mult);
                 if (isCrit) hitDamage = Mathf.RoundToInt(hitDamage * _playerCritDamage);
+                int hitDamageBeforeArmor = hitDamage;
 
                 bool ignoreArmor = eff.ignoreArmor;
                 int armorReduction = 0;
@@ -324,13 +332,15 @@ namespace LightMiniGame.CardEditor.Editor
                 string critText = isCrit ? $" ✓暴击(x{_playerCritDamage:F1})" : " ✗未暴击";
                 string armorText = armorReduction > 0 ? $" 护甲抵消{armorReduction}" : "";
                 string ignoreText = ignoreArmor ? " 无视护甲" : "";
+                string multText = mult != 1f ? $" 倍率后={hitDamageBeforeArmor}" : "";
 
-                Log($"  第{hit + 1}击: 伤害={hitDamage}{critText}{armorText}{ignoreText} → 敌人HP={_enemyHP}/{_enemyMaxHP}");
+                Log($"  第{hit + 1}击: 伤害={hitDamage}{multText}{critText}{armorText}{ignoreText} → 敌人HP={_enemyHP}/{_enemyMaxHP}");
 
                 if (eff.applyArmorBreak && eff.armorBreakAmount > 0)
                 {
-                    _enemyArmorBreak += eff.armorBreakAmount;
-                    Log($"    施加破甲 {eff.armorBreakAmount}，敌人破甲值={_enemyArmorBreak}");
+                    int breakAmount = Mathf.RoundToInt(eff.armorBreakAmount * mult);
+                    _enemyArmorBreak += breakAmount;
+                    Log($"    施加破甲 {breakAmount}，敌人破甲值={_enemyArmorBreak}");
                 }
             }
         }
@@ -423,6 +433,22 @@ namespace LightMiniGame.CardEditor.Editor
                     break;
                 case ModifiableAttribute.MaxSanity:
                     Log($"    最大理智 {method} {amount} (需运行时处理)");
+                    break;
+                case ModifiableAttribute.PlayerDamageMultiplier:
+                    _playerDmgMult = ApplyModify(_playerDmgMult, amount, eff.modifyMethod);
+                    Log($"    玩家总伤害倍率 → {_playerDmgMult}%");
+                    break;
+                case ModifiableAttribute.PlayerDamageTakenMultiplier:
+                    _playerDmgTakenMult = ApplyModify(_playerDmgTakenMult, amount, eff.modifyMethod);
+                    Log($"    玩家受击倍率 → {_playerDmgTakenMult}%");
+                    break;
+                case ModifiableAttribute.EnemyDamageMultiplier:
+                    _enemyDmgMult = ApplyModify(_enemyDmgMult, amount, eff.modifyMethod);
+                    Log($"    敌人总伤害倍率 → {_enemyDmgMult}%");
+                    break;
+                case ModifiableAttribute.EnemyDamageTakenMultiplier:
+                    _enemyDmgTakenMult = ApplyModify(_enemyDmgTakenMult, amount, eff.modifyMethod);
+                    Log($"    敌人受击倍率 → {_enemyDmgTakenMult}%");
                     break;
             }
         }
