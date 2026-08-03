@@ -457,12 +457,27 @@ namespace LightMiniGame.CardEditor.Editor
             EditorGUILayout.EndHorizontal();
 
             // 运算节点显示子节点
-            if (node.operands != null && node.operands.Count > 0 &&
-                node.nodeType is ValueNodeType.Add or ValueNodeType.Subtract or ValueNodeType.Multiply
+            bool isOpNode = node.nodeType is ValueNodeType.Add or ValueNodeType.Subtract or ValueNodeType.Multiply
                 or ValueNodeType.Divide or ValueNodeType.Min or ValueNodeType.Max or ValueNodeType.Clamp
                 or ValueNodeType.Floor or ValueNodeType.Ceil or ValueNodeType.Round or ValueNodeType.Absolute
-                or ValueNodeType.Negate or ValueNodeType.Percentage or ValueNodeType.EveryNConvertToM)
+                or ValueNodeType.Negate or ValueNodeType.Percentage or ValueNodeType.EveryNConvertToM;
+
+            if (isOpNode)
             {
+                // 运算节点 operands 为空时自动补齐默认子节点
+                if (node.operands == null) node.operands = new List<ValueNode>();
+                int requiredCount = node.nodeType switch
+                {
+                    ValueNodeType.Add or ValueNodeType.Subtract or ValueNodeType.Multiply or ValueNodeType.Divide
+                        or ValueNodeType.Min or ValueNodeType.Max or ValueNodeType.Percentage => 2,
+                    ValueNodeType.Clamp => 3,
+                    ValueNodeType.Floor or ValueNodeType.Ceil or ValueNodeType.Round
+                        or ValueNodeType.Absolute or ValueNodeType.Negate or ValueNodeType.EveryNConvertToM => 1,
+                    _ => 0
+                };
+                while (node.operands.Count < requiredCount)
+                    node.operands.Add(ValueNode.Constant(0));
+
                 EditorGUI.indentLevel++;
                 string opKey = $"vn_{node.GetHashCode()}";
                 if (!_foldouts.ContainsKey(opKey)) _foldouts[opKey] = true;
@@ -477,7 +492,7 @@ namespace LightMiniGame.CardEditor.Editor
                     EditorGUILayout.BeginHorizontal();
                     if (GUILayout.Button("+ 子节点", EditorStyles.miniButton))
                         node.operands.Add(ValueNode.Constant(0));
-                    if (node.operands.Count > 0 && GUILayout.Button("- 移除末尾", EditorStyles.miniButton))
+                    if (node.operands.Count > requiredCount && GUILayout.Button("- 移除末尾", EditorStyles.miniButton))
                         node.operands.RemoveAt(node.operands.Count - 1);
                     EditorGUILayout.EndHorizontal();
                 }
