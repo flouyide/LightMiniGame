@@ -63,6 +63,7 @@ public class BattleCardContext : ICardRuntimeContext
     public int GetCustomData(string key) => _battle.GetCustomData(key);
     public void SetCustomData(string key, int value) => _battle.SetCustomData(key, value);
     public void ModifyCustomData(string key, int delta) => _battle.ModifyCustomData(key, delta);
+    public void ModifySanity(int delta) => _battle.ModifySanity(delta);
 
     // === 事件记录 ===
     public bool HasEventOccurred(string eventName) => _battle.HasEventOccurred(eventName);

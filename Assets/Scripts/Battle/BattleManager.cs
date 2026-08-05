@@ -579,7 +579,7 @@ public class BattleManager : MonoBehaviour
 
         _triggerSystem.OnCombatStart();
 
-        DrawCards(initialDraw);
+        DrawCards(drawPerTurn);
 
         UpdateCharacterSwitchUI();
         UpdateUI();
@@ -597,20 +597,29 @@ public class BattleManager : MonoBehaviour
         var globalLib = GlobalCardLibrary.Instance;
         if (globalLib != null && globalLib.IsRegistered(charData))
         {
-            foreach (var inst in globalLib.GetCards(charData))
+            var cards = globalLib.GetCards(charData);
+            foreach (var inst in cards)
             {
                 if (inst != null && inst.template != null)
                     state.drawPile.Add(inst.template);
             }
             if (state.drawPile.Count > 0)
             {
-                Debug.Log($"[BattleManager] {charData.Label} 使用运行时牌库: {state.drawPile.Count} 张");
+                var cardNames = string.Join(", ", cards);
+                Debug.Log($"[BattleManager] {charData.Label} (id={charData.characterId}) 使用运行时牌库: {state.drawPile.Count} 张 [{cardNames}]");
                 return;
             }
         }
 
         // 其次：卡牌编辑器的 CardEntry 初始牌组
-        List<CardEntry> entryCards = state == _chars[0] ? character1Cards : character2Cards;
+        // 按 characterId 匹配 Inspector 配置的卡组（而非固定索引）
+        List<CardEntry> entryCards = null;
+        if (gameConfig != null && gameConfig.characters.Count >= 2 && charData != null)
+        {
+            if (charData == gameConfig.characters[0]) entryCards = character1Cards;
+            else if (charData == gameConfig.characters[1]) entryCards = character2Cards;
+        }
+        if (entryCards == null) entryCards = state == _chars[0] ? character1Cards : character2Cards;
         if (entryCards != null && entryCards.Count > 0)
         {
             var cardDataList = CardEntryAdapter.ConvertToCardData(entryCards);
@@ -1166,6 +1175,7 @@ public class BattleManager : MonoBehaviour
 
     private void UpdateCharacterSwitchUI()
     {
+        Debug.Log($"[UpdateCharacterSwitchUI] activeIdx={_activeCharIdx}, ActiveChar={ActiveChar?.data?.displayName}, InactiveChar={InactiveChar?.data?.displayName}");
         if (ActiveChar?.data != null)
         {
             if (activeCharNameText != null)

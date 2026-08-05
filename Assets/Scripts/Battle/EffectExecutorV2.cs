@@ -545,8 +545,7 @@ public class EffectExecutorV2
                 if (node.resourceOp == ResourceOperation.Add || node.resourceOp == ResourceOperation.Subtract)
                 {
                     int delta = node.resourceOp == ResourceOperation.Subtract ? -amount : amount;
-                    // 通过 ModifySanity 间接调用
-                    _ctx.ModifyCustomData("SanityDelta", delta);
+                    _ctx.ModifySanity(delta);
                     _lastResult[EffectResultType.ActualSanityLost] = delta < 0 ? -delta : 0;
                     _lastResult[EffectResultType.ActualValue] = delta;
                     _triggerSystem?.FireEvent(TriggerEvent.OnSanityChanged);
