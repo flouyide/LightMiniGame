@@ -28,8 +28,6 @@ MonoBehaviour:
   price: 10
   keyword: 0
   hasLowSanityForm: 0
-  normalEffects: []
-  lowSanityEffects: []
   normalEffectNodes:
   - enabled: 1
     displayName: "\u8FD4\u8FD8\u80FD\u91CF"
@@ -168,88 +166,6 @@ MonoBehaviour:
     customOperation: {fileID: 11400000, guid: 2d6eae6157579407da207a20d9419f51, type: 2}
     customParams: '{"heatIncrease": 1}'
   lowSanityEffectNodes: []
-  normalAbility:
-    abilityName: "\u5F39\u94FE"
-    abilityDescription: "\u6BCF\u6B21\u66B4\u51FB\u8FD4\u8FD81\u70B9\u80FD\u91CF\u5E76\u589E\u52A01\u70B9\u70ED\u5EA6"
-    trigger: 2
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects:
-    - enabled: 1
-      effectName: "\u8FD4\u8FD8\u80FD\u91CF"
-      effectType: 3
-      source: 0
-      target: 0
-      value:
-        formulaType: 0
-        baseValue: 1
-        attributeRef: 0
-        coefficient: 1
-        counterRef: 0
-      times: 1
-      conditions: []
-      conditionLogic: 0
-      timing: 0
-      duration: 0
-      durationValue: 1
-      alwaysCrit: 0
-      ignoreArmor: 0
-      applyArmorBreak: 0
-      armorBreakAmount: 0
-      buffTarget: 0
-      modAttribute: 0
-      modifyMethod: 0
-      statusType: 0
-      statusStacks: 1
-      stackable: 1
-      handCostTarget: 0
-      costChange: 0
-      customEffectScript: {fileID: 0}
-      customParams: 
-    - enabled: 1
-      effectName: "\u589E\u52A0\u70ED\u5EA6"
-      effectType: 7
-      source: 0
-      target: 0
-      value:
-        formulaType: 0
-        baseValue: 0
-        attributeRef: 0
-        coefficient: 1
-        counterRef: 0
-      times: 1
-      conditions: []
-      conditionLogic: 0
-      timing: 0
-      duration: 0
-      durationValue: 1
-      alwaysCrit: 0
-      ignoreArmor: 0
-      applyArmorBreak: 0
-      armorBreakAmount: 0
-      buffTarget: 0
-      modAttribute: 0
-      modifyMethod: 0
-      statusType: 0
-      statusStacks: 1
-      stackable: 1
-      handCostTarget: 0
-      costChange: 0
-      customEffectScript: {fileID: 11400000, guid: 2d6eae6157579407da207a20d9419f51, type: 2}
-      customParams: '{"heatIncrease": 1}'
-    customAbilityScript: {fileID: 0}
-  lowSanityAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: "\u80FD\u529B\u5361\uFF1A\u89E6\u53D1\u65F6\u673A\u4E3A\u66B4\u51FB\u65F6\u3002\u70ED\u5EA6(Heat)\u589E\u52A0\u9700\u901A\u8FC7\u81EA\u5B9A\u4E49\u6548\u679C\u811A\u672C\u5B9E\u73B0\u3002"
   references:
