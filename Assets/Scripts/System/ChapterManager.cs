@@ -590,7 +590,8 @@ public class ChapterManager : MonoBehaviour
                 PlayerHP = Mathf.Clamp(PlayerHP + delta, 0, PlayerMaxHP);
                 break;
             case PlayerBaseAttribute.Sanity:
-                PlayerSanity = Mathf.Max(0, PlayerSanity + delta);
+                // 理智有上限：以 PlayerMaxSanity（开局取自 PlayerConfig.maxSanity）封顶，避免通过事件效果获得理智时溢出
+                PlayerSanity = Mathf.Clamp(PlayerSanity + delta, 0, PlayerMaxSanity);
                 break;
 
             default:

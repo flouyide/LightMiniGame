@@ -138,6 +138,6 @@ public class PageEventData
     [Tooltip("切换为低理智背景的理智阈值：玩家理智 <= 此值时使用 lowSanityBattleBackground。")]
     public int backgroundSanityThreshold = 4;       // 背景切换理智阈值
 
-    [Header("默认效果（Battle/Shop/Rest 类型用，点击\"进入\"后直接应用）")]
+    [Header("默认效果")]
     public List<EffectData> defaultEffects = new();
 }
