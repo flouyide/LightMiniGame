@@ -45,6 +45,9 @@ namespace LightMiniGame.CardEditor
         [Tooltip("存在形式（普通形态）")]
         public CardExistence existence = CardExistence.Normal;
 
+        [Tooltip("存在形式（低理智形态），默认与普通形态相同")]
+        public CardExistence lowSanityExistence = CardExistence.Normal;
+
         [Tooltip("普通形态费用")]
         [FormerlySerializedAs("baseCost")]
         public int normalCost = 1;
@@ -88,6 +91,8 @@ namespace LightMiniGame.CardEditor
 
         public int GetCost(bool lowSanity) => lowSanity ? lowSanityCost : normalCost;
 
+        public CardExistence GetExistence(bool lowSanity) => lowSanity ? lowSanityExistence : existence;
+
         public string GetDescription(bool lowSanity)
         {
             string desc = lowSanity ? lowSanityDescription : normalDescription;
@@ -112,8 +117,9 @@ namespace LightMiniGame.CardEditor
                 if (!effects[i].enabled) continue;
                 sb.AppendLine($"{i + 1}. {effects[i].GetDescription()}");
             }
-            if (existence != CardExistence.Normal)
-                sb.AppendLine(existence == CardExistence.BattleRemove ? "（战斗内移除）" : "（永久移除）");
+            var ex = GetExistence(lowSanity);
+            if (ex != CardExistence.Normal)
+                sb.AppendLine(ex == CardExistence.BattleRemove ? "（战斗内移除）" : "（永久移除）");
             return sb.ToString().TrimEnd();
         }
 

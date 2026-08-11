@@ -709,10 +709,21 @@ public class BattleManager : MonoBehaviour
         }
         _customData["ActualPaidCost"] = cost;
 
+        // 提前确定形态（供 ApplyCardEffects 和 HandleCardConsumption 共用）
+        if (card.sourceEntry != null)
+        {
+            int sanityThreshold = _ruleConfig != null ? _ruleConfig.sanity.lowSanityThreshold : 4;
+            card.isLowSanityForm = card.sourceEntry.ShouldUseLowSanityForm(_playerSanity, sanityThreshold);
+            Debug.Log($"[BattleManager] 卡牌={card.sourceEntry.cardName} 理智={_playerSanity} 阈值={sanityThreshold} isLowSanityForm={card.isLowSanityForm} 存在形式={card.sourceEntry.GetExistence(card.isLowSanityForm)}");
+        }
+
         ApplyCardEffects(card);
         HandleCardConsumption(card);
 
-        _hand.RemoveAt(handIndex);
+        if (_hand.Contains(card))
+            _hand.Remove(card);
+        else
+            _hand.RemoveAt(handIndex);
         RefreshHandUI();
 
         UpdateUI();
@@ -726,11 +737,8 @@ public class BattleManager : MonoBehaviour
         {
             var entry = card.sourceEntry;
 
-            // 自动形态选择：理智 <= 阈值且配置了低理智形态时使用低理智形态
-            int sanityThreshold = _ruleConfig != null ? _ruleConfig.sanity.lowSanityThreshold : 4;
-            card.isLowSanityForm = entry.ShouldUseLowSanityForm(_playerSanity, sanityThreshold);
-
             // 执行 EffectNode 列表（统一路径，能力卡和普通卡都走这里）
+            // 形态已在 PlayCard 中提前确定
             if (entry.HasEffectNodes(card.isLowSanityForm))
             {
                 var nodes = entry.GetEffectNodes(card.isLowSanityForm);
@@ -820,6 +828,25 @@ public class BattleManager : MonoBehaviour
 
     private void HandleCardConsumption(CardData card)
     {
+        // 如果有关联的 CardEntry，按当前形态选择存在形式
+        if (card.sourceEntry != null)
+        {
+            var ex = card.sourceEntry.GetExistence(card.isLowSanityForm);
+            Debug.Log($"[BattleManager] HandleCardConsumption: {card.sourceEntry.cardName} isLowSanityForm={card.isLowSanityForm} existence={ex}");
+            switch (ex)
+            {
+                case CardExistence.Normal:
+                    ActiveChar.discardPile.Add(card);
+                    break;
+                case CardExistence.BattleRemove:
+                case CardExistence.PermanentRemove:
+                    ActiveChar.consumedPile.Add(card);
+                    break;
+            }
+            return;
+        }
+
+        // 回退：旧 CardData 的固定 consumeType
         switch (card.consumeType)
         {
             case ConsumeType.None:

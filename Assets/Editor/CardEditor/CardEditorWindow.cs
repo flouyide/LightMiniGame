@@ -250,7 +250,7 @@ namespace LightMiniGame.CardEditor.Editor
             card.darkCardArt = (Sprite)EditorGUILayout.ObjectField("黑暗卡面", card.darkCardArt, typeof(Sprite), false);
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
             card.cardType = (CardType)EditorGUILayout.Popup("卡牌类型", (int)card.cardType, new[] { "攻击", "技能", "能力" });
-            card.existence = (CardExistence)EditorGUILayout.Popup("存在形式", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
+            card.existence = (CardExistence)EditorGUILayout.Popup("存在形式(普通)", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
             card.keyword = (CardKeyword)EditorGUILayout.Popup("词条", (int)card.keyword, new[] { "无", "回响", "灾厄", "命运" });
 
             EditorGUILayout.Space();
@@ -260,6 +260,7 @@ namespace LightMiniGame.CardEditor.Editor
             if (card.hasLowSanityForm)
             {
                 card.lowSanityCost = EditorGUILayout.IntField("低理智费用", card.lowSanityCost);
+                card.lowSanityExistence = (CardExistence)EditorGUILayout.Popup("存在形式(低理智)", (int)card.lowSanityExistence, new[] { "普通", "战斗内移除", "永久移除" });
             }
             EditorGUILayout.EndToggleGroup();
 
@@ -391,7 +392,8 @@ namespace LightMiniGame.CardEditor.Editor
 
             // 卡牌标题
             EditorGUILayout.LabelField($"【{CardEntry.GetGradeName(card.grade)}】{card.cardName}", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"类型: {CardEntry.GetCardTypeName(card.cardType)}  费用: {(_viewingLowSanity && card.hasLowSanityForm ? card.lowSanityCost : card.normalCost)}  存在形式: {CardEntry.GetExistenceName(card.existence)}");
+            var ex = _viewingLowSanity && card.hasLowSanityForm ? card.GetExistence(true) : card.existence;
+            EditorGUILayout.LabelField($"类型: {CardEntry.GetCardTypeName(card.cardType)}  费用: {(_viewingLowSanity && card.hasLowSanityForm ? card.lowSanityCost : card.normalCost)}  存在形式: {CardEntry.GetExistenceName(ex)}");
             if (card.keyword != CardKeyword.None)
                 EditorGUILayout.LabelField($"词条: {CardEntry.GetKeywordName(card.keyword)}");
 
