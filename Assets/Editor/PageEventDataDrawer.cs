@@ -30,7 +30,7 @@ public class PageEventDataDrawer : PropertyDrawer
     // Battle 系列配置字段（所有类型都绘制，无害；如需 Event 隐藏可在此剔除）
     private static readonly string[] BattleFields =
     {
-        "enemy",
+        "enemies",
         "normalBattleBackground",
         "lowSanityBattleBackground",
         "backgroundSanityThreshold",

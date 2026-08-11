@@ -26,6 +26,8 @@ public class BattleCardContext : ICardRuntimeContext
 
     // === 敌人状态 ===
     public int EnemyCount => _battle.EnemyCount;
+    public int EnemySlotCount => _battle.EnemySlotCount;
+    public bool IsEnemyAlive(int index) => _battle.IsEnemyAlive(index);
     public int GetEnemyHP(int index) => _battle.GetEnemyHP(index);
     public int GetEnemyArmor(int index) => _battle.GetEnemyArmor(index);
     public int GetEnemyBleed(int index) => _battle.GetEnemyBleed(index);
