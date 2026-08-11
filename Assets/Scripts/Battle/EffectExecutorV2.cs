@@ -483,9 +483,42 @@ public class EffectExecutorV2
     private void ExecuteModifyAttribute(EffectNode node)
     {
         int amount = EvaluateValue(node.value);
-        _ctx.ModifyPlayerAttribute(MapAttr(node.attributeType), MapMethod(node.resourceOp), amount);
+
+        // Buff 属性路由到 BuffSystem
+        var attr = node.attributeType;
+        var op = node.resourceOp;
+        if (op == ResourceOperation.Add || op == ResourceOperation.Subtract)
+        {
+            int delta = op == ResourceOperation.Subtract ? -amount : amount;
+            switch (attr)
+            {
+                case LightMiniGame.CardEditor.PlayerAttributeType.Strength:
+                    _ctx.AddBuff(BuffAttributeType.Strength, delta);
+                    _lastResult[EffectResultType.ActualValue] = delta;
+                    Log($"  [Buff] 力量 {delta}");
+                    return;
+                case LightMiniGame.CardEditor.PlayerAttributeType.Dexterity:
+                    _ctx.AddBuff(BuffAttributeType.Dexterity, delta);
+                    _lastResult[EffectResultType.ActualValue] = delta;
+                    Log($"  [Buff] 敏捷 {delta}");
+                    return;
+                case LightMiniGame.CardEditor.PlayerAttributeType.CriticalChance:
+                    _ctx.AddBuff(BuffAttributeType.CriticalChance, delta);
+                    _lastResult[EffectResultType.ActualValue] = delta;
+                    Log($"  [Buff] 暴击率 {delta}");
+                    return;
+                case LightMiniGame.CardEditor.PlayerAttributeType.CriticalDamageMultiplier:
+                    _ctx.AddBuff(BuffAttributeType.CriticalDamage, delta);
+                    _lastResult[EffectResultType.ActualValue] = delta;
+                    Log($"  [Buff] 暴伤 {delta}");
+                    return;
+            }
+        }
+
+        // 非属性 buff 走旧路径
+        _ctx.ModifyPlayerAttribute(MapAttr(attr), MapMethod(op), amount);
         _lastResult[EffectResultType.ActualValue] = amount;
-        Log($"  [修改属性] {ValueNode.GetAttrName(node.attributeType)} {node.resourceOp} {amount}");
+        Log($"  [修改属性] {ValueNode.GetAttrName(attr)} {op} {amount}");
     }
 
     private ModifiableAttribute MapAttr(LightMiniGame.CardEditor.PlayerAttributeType a) => a switch

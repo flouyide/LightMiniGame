@@ -149,6 +149,14 @@ public class BattleManager : MonoBehaviour
     private readonly List<CardData> _hand = new();
     private int _playerHP;
     private int _playerArmor;
+    // 基础值（从局外读入，不被 buff 修改）
+    private int _playerBaseStrength;
+    private int _playerBaseDexterity;
+    private int _playerBaseAgility;
+    private int _playerBaseLifesteal;
+    private int _playerBaseCritRate;
+    private int _playerBaseCritDamage;
+    // 旧字段保留作为运行时缓存（= 基础值，兼容旧路径直接修改）
     private int _playerStrength;
     private int _playerDexterity;
     private int _playerAgility;
@@ -174,6 +182,11 @@ public class BattleManager : MonoBehaviour
     // === CardEntry 效果系统支持 ===
     private EffectExecutorV2 _effectExecutorV2;
     private TriggerSystem _triggerSystem;
+    // === Buff 系统 ===
+    private BuffSystem _playerBuffs;
+    private BuffSystem _enemyBuffs;
+    [Header("Buff 数据资产（每属性一个，Inspector 配置图标）")]
+    [SerializeField] private BuffData[] buffDataAssets;
     private readonly Dictionary<string, int> _customData = new();
     private readonly HashSet<string> _eventsThisTurn = new();
     private readonly HashSet<string> _eventsThisBattle = new();
@@ -214,10 +227,10 @@ public class BattleManager : MonoBehaviour
 
     public int PlayerHP => _playerHP;
     public int PlayerMaxHP => playerMaxHP;
-    public int PlayerStrength => _playerStrength;
-    public int PlayerDexterity => _playerDexterity;
-    public float PlayerCritRate => _playerCritRate / 100f;
-    public float PlayerCritDamage => _playerCritDamage / 100f;
+    public int PlayerStrength => _playerBuffs?.GetEffectiveValue(BuffAttributeType.Strength, _playerBaseStrength) ?? _playerStrength;
+    public int PlayerDexterity => _playerBuffs?.GetEffectiveValue(BuffAttributeType.Dexterity, _playerBaseDexterity) ?? _playerDexterity;
+    public float PlayerCritRate => (_playerBuffs?.GetEffectiveValue(BuffAttributeType.CriticalChance, _playerBaseCritRate) ?? _playerCritRate) / 100f;
+    public float PlayerCritDamage => (_playerBuffs?.GetEffectiveValue(BuffAttributeType.CriticalDamage, _playerBaseCritDamage) ?? _playerCritDamage) / 100f;
     public int PlayerSanity => _playerSanity;
     public int PlayerArmor => _playerArmor;
     public int PlayerBleed => 0;
@@ -272,6 +285,26 @@ public class BattleManager : MonoBehaviour
 
     public void ModifyPlayerAttribute(ModifiableAttribute attr, ModifyMethod method, int amount)
     {
+        // Buff 属性路由到 BuffSystem（Add 方式）
+        if (_playerBuffs != null && method == ModifyMethod.Add)
+        {
+            switch (attr)
+            {
+                case ModifiableAttribute.Strength:
+                    _playerBuffs.AddBuff(BuffAttributeType.Strength, amount);
+                    return;
+                case ModifiableAttribute.Dexterity:
+                    _playerBuffs.AddBuff(BuffAttributeType.Dexterity, amount);
+                    return;
+                case ModifiableAttribute.PlayerCritRate:
+                    _playerBuffs.AddBuff(BuffAttributeType.CriticalChance, amount);
+                    return;
+                case ModifiableAttribute.PlayerCritDamage:
+                    _playerBuffs.AddBuff(BuffAttributeType.CriticalDamage, amount);
+                    return;
+            }
+        }
+
         int newVal = method switch
         {
             ModifyMethod.Add => GetModAttrValue(attr) + amount,
@@ -281,6 +314,24 @@ public class BattleManager : MonoBehaviour
             _ => GetModAttrValue(attr)
         };
         SetModAttrValue(attr, newVal);
+    }
+
+    /// <summary>添加玩家 buff（供 EffectExecutorV2 调用）</summary>
+    public void AddPlayerBuff(BuffAttributeType type, int stacks, int duration = 0)
+    {
+        _playerBuffs?.AddBuff(type, stacks, duration);
+    }
+
+    /// <summary>获取玩家 buff 显示列表（供 UI 调用）</summary>
+    public List<DisplayedBuff> GetPlayerDisplayedBuffs() => _playerBuffs?.GetDisplayedBuffs() ?? new List<DisplayedBuff>();
+
+    /// <summary>获取 BuffData 资产（按属性类型）</summary>
+    public BuffData GetBuffData(BuffAttributeType type)
+    {
+        if (buffDataAssets == null) return null;
+        foreach (var bd in buffDataAssets)
+            if (bd != null && bd.attributeType == type) return bd;
+        return null;
     }
 
     public void ApplyStatusToEnemy(int index, StatusType status, int stacks)
@@ -293,6 +344,27 @@ public class BattleManager : MonoBehaviour
 
     public void ApplyStatusToPlayer(StatusType status, int stacks)
     {
+        // 路由到 BuffSystem
+        if (_playerBuffs != null)
+        {
+            switch (status)
+            {
+                case StatusType.Strength:
+                    _playerBuffs.AddBuff(BuffAttributeType.Strength, stacks);
+                    return;
+                case StatusType.Dexterity:
+                    _playerBuffs.AddBuff(BuffAttributeType.Dexterity, stacks);
+                    return;
+                case StatusType.CritRateBoost:
+                    _playerBuffs.AddBuff(BuffAttributeType.CriticalChance, stacks);
+                    return;
+                case StatusType.CritDamageBoost:
+                    _playerBuffs.AddBuff(BuffAttributeType.CriticalDamage, stacks);
+                    return;
+            }
+        }
+
+        // 旧路径回退
         switch (status)
         {
             case StatusType.Strength: _playerStrength += stacks; break;
@@ -513,6 +585,7 @@ public class BattleManager : MonoBehaviour
             _playerLifesteal = playerConfig.lifesteal;
             _playerCritRate = playerConfig.critRate;
             _playerCritDamage = playerConfig.critDamage;
+            _playerDexterity = 0;
             Debug.LogWarning("[BattleManager] 未找到 ChapterManager，回退读入 PlayerConfig 初始值（无跨战斗累积）");
         }
         else
@@ -520,8 +593,27 @@ public class BattleManager : MonoBehaviour
             _playerHP = playerMaxHP;
             _playerMaxSanity = 10;
             _playerSanity = 10;
+            _playerDexterity = 0;
             Debug.LogWarning("[BattleManager] 未配置 ChapterManager / PlayerConfig，持久属性为 0");
         }
+
+        // 同步基础值到 base 字段
+        _playerBaseStrength = _playerStrength;
+        _playerBaseDexterity = _playerDexterity;
+        _playerBaseAgility = _playerAgility;
+        _playerBaseLifesteal = _playerLifesteal;
+        _playerBaseCritRate = _playerCritRate;
+        _playerBaseCritDamage = _playerCritDamage;
+
+        // 初始化 Buff 系统
+        _playerBuffs = new BuffSystem();
+        _playerBuffs.SetMinValue(BuffAttributeType.Strength, int.MinValue);     // 力量可负
+        _playerBuffs.SetMinValue(BuffAttributeType.Dexterity, int.MinValue);    // 敏捷可负
+        _playerBuffs.SetMinValue(BuffAttributeType.Recovery, 0);                 // 回复最小0
+        _playerBuffs.SetMinValue(BuffAttributeType.LifeSteal, 0);                // 吸血最小0
+        _playerBuffs.SetMinValue(BuffAttributeType.CriticalChance, 0);           // 暴击率最小0
+        _playerBuffs.SetMinValue(BuffAttributeType.CriticalDamage, 2);           // 暴伤最小2
+        _enemyBuffs = new BuffSystem(); // 敌人使用相同约束（可后续扩展）
 
         // 灵巧：每回合额外抽牌 = 基础值 + 敏捷（赋值式，避免多场战斗逐场累加）
         drawPerTurn = _baseDrawPerTurn + _playerAgility;
@@ -1299,6 +1391,10 @@ public class BattleManager : MonoBehaviour
         // 统一触发器系统回合结束
         _triggerSystem?.OnTurnEnd();
 
+        // Buff 系统回合结束（递减持续回合，移除过期 buff）
+        _playerBuffs?.OnTurnEnd();
+        _enemyBuffs?.OnTurnEnd();
+
         StartEnemyTurn();
     }
 
@@ -1656,6 +1752,8 @@ public class BattleManager : MonoBehaviour
         _battleEnded = true;
         _isPlayerTurn = false;
         _waitingEnemyConfirm = false;
+        _playerBuffs?.Clear();
+        _enemyBuffs?.Clear();
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }
         if (victoryPanel != null) victoryPanel.SetActive(victory);
         if (defeatPanel != null) defeatPanel.SetActive(!victory);

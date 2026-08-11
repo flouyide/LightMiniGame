@@ -368,7 +368,10 @@ PrefabInstance:
       objectReference: {fileID: -8530084090043915268, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 6944403637092775985, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1841864892}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
 --- !u!114 &200609482 stripped
@@ -992,6 +995,11 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7669155576410212690, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
   m_PrefabInstance: {fileID: 200609481}
   m_PrefabAsset: {fileID: 0}
+--- !u!224 &985773947 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6944403637092775985, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+  m_PrefabInstance: {fileID: 200609481}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1033066886 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2994301708964544695, guid: 8b33405e3455a604888bc039388316bf, type: 3}
@@ -1391,6 +1399,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1841864891
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1841864892}
+  - component: {fileID: 1841864894}
+  - component: {fileID: 1841864893}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: BuffBar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1841864892
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1841864891}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 985773947}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 230}
+  m_SizeDelta: {x: 0, y: 40}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &1841864893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1841864891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8376f240ac8a747beaa55e598004a7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buffIconPrefab: {fileID: 6333580259674741734, guid: baba7874fbcc74913aa249b7fd388663, type: 3}
+  buffContainer: {fileID: 1841864892}
+  isPlayer: 1
+--- !u!114 &1841864894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1841864891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 3
+  m_Spacing: 4
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
 --- !u!114 &1842713027 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5775289760119559513, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
@@ -2063,6 +2150,13 @@ MonoBehaviour:
   darkOverlayAlpha: 0.3
   darkOverlayFadeDuration: 1
   background: {fileID: 2034148810}
+  buffDataAssets:
+  - {fileID: 11400000, guid: ccad82d8b2b004e579fcae9e66f3640e, type: 2}
+  - {fileID: 11400000, guid: 1b33bdcba45af4e4ea3a4c9e95cca7c2, type: 2}
+  - {fileID: 11400000, guid: 62c1b4e4e7fb144389f7e0a9f78473e8, type: 2}
+  - {fileID: 11400000, guid: 3bf770687e63847fca079956a7956d2c, type: 2}
+  - {fileID: 11400000, guid: e81ec51de1eb242a6a763a4096bd03c3, type: 2}
+  - {fileID: 11400000, guid: 94e7904ad44754c87b838b21980cecd7, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

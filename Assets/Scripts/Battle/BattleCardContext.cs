@@ -64,6 +64,7 @@ public class BattleCardContext : ICardRuntimeContext
     public void SetCustomData(string key, int value) => _battle.SetCustomData(key, value);
     public void ModifyCustomData(string key, int delta) => _battle.ModifyCustomData(key, delta);
     public void ModifySanity(int delta) => _battle.ModifySanity(delta);
+    public void AddBuff(BuffAttributeType type, int stacks, int duration = 0) => _battle.AddPlayerBuff(type, stacks, duration);
 
     // === 事件记录 ===
     public bool HasEventOccurred(string eventName) => _battle.HasEventOccurred(eventName);
