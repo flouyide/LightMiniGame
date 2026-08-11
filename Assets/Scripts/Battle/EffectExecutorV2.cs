@@ -428,8 +428,8 @@ public class EffectExecutorV2
                 int targetIdx = node.target.unitTarget switch
                 {
                     CombatUnitTarget.SelectedEnemy => _ctx.SelectedEnemyIndex,
-                    CombatUnitTarget.RandomEnemy => _ctx.EnemyCount > 0 ? UnityEngine.Random.Range(0, _ctx.EnemyCount) : -1,
-                    CombatUnitTarget.LowestHPEnemy => 0, // 简化：当前只有一个敌人
+                    CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
+                    CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
                     _ => _ctx.SelectedEnemyIndex
                 };
                 if (targetIdx >= 0)
@@ -596,14 +596,49 @@ public class EffectExecutorV2
         }
         else
         {
-            int targetIdx = node.target.unitTarget == CombatUnitTarget.AllEnemies ? -1 : _ctx.SelectedEnemyIndex;
-            if (targetIdx >= 0)
-                _ctx.ApplyStatusToEnemy(targetIdx, MapStatus(node.statusType), stacks);
+            // AllEnemies 传 -1（全体存活敌人），由 BattleManager 展开；其余按槽位索引
+            if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
+                _ctx.ApplyStatusToEnemy(-1, MapStatus(node.statusType), stacks);
+            else
+                _ctx.ApplyStatusToEnemy(_ctx.SelectedEnemyIndex, MapStatus(node.statusType), stacks);
             Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 敌人");
         }
         _lastResult[EffectResultType.StatusStacksAdded] = stacks;
         _lastResult[EffectResultType.ActualValue] = stacks;
         _triggerSystem?.FireEvent(TriggerEvent.OnStatusApplied);
+    }
+
+    // ========================================================================
+    // 敌人目标解析（多敌人：槽位索引稳定，死亡不压缩；在存活槽位中选择）
+    // ========================================================================
+
+    /// <summary>在存活敌人槽位中随机取一个；无存活敌人返回 -1</summary>
+    private int GetRandomAliveEnemyIndex()
+    {
+        int alive = _ctx.EnemyCount;
+        if (alive <= 0) return -1;
+        int pick = UnityEngine.Random.Range(0, alive);
+        int slots = _ctx.EnemySlotCount;
+        for (int i = 0; i < slots; i++)
+        {
+            if (!_ctx.IsEnemyAlive(i)) continue;
+            if (pick-- == 0) return i;
+        }
+        return -1;
+    }
+
+    /// <summary>取存活敌人中 HP 最低者的槽位；无存活敌人返回 -1</summary>
+    private int GetLowestHPEnemyIndex()
+    {
+        int best = -1, bestHP = int.MaxValue;
+        int slots = _ctx.EnemySlotCount;
+        for (int i = 0; i < slots; i++)
+        {
+            if (!_ctx.IsEnemyAlive(i)) continue;
+            int hp = _ctx.GetEnemyHP(i);
+            if (hp < bestHP) { bestHP = hp; best = i; }
+        }
+        return best;
     }
 
     private StatusType MapStatus(StatusType2 s) => s switch

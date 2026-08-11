@@ -49,7 +49,8 @@ public static class BattleSceneBuilder
         var canvasGO = CreateCanvas();
         CreateBackground(canvasGO);
 
-        var enemyRefs = CreateEnemyArea(canvasGO.transform);
+        var enemyContainer = CreateEnemyArea(canvasGO.transform);
+        var enemyViewPrefab = CreateEnemyViewPrefab();
         var playerRefs = CreatePlayerArea(canvasGO.transform);
         var handLayout = CreateHandArea(canvasGO.transform, attackTpl, armorTpl, buffTpl);
         var bottomRefs = CreateBottomRight(canvasGO.transform);
@@ -68,8 +69,8 @@ public static class BattleSceneBuilder
 
         so.FindProperty("gameConfig").objectReferenceValue = gameConfig;
         so.FindProperty("attackCardPrefab").objectReferenceValue = attackTpl;
-        so.FindProperty("armorCardPrefab").objectReferenceValue = armorTpl;
-        so.FindProperty("buffCardPrefab").objectReferenceValue = buffTpl;
+        so.FindProperty("skillCardPrefab").objectReferenceValue = armorTpl;
+        so.FindProperty("abilityCardPrefab").objectReferenceValue = buffTpl;
         so.FindProperty("handLayout").objectReferenceValue = handLayout;
 
         // 玩家 UI
@@ -78,15 +79,12 @@ public static class BattleSceneBuilder
         so.FindProperty("armorText").objectReferenceValue = playerRefs.armorText;
         so.FindProperty("strengthText").objectReferenceValue = playerRefs.strengthText;
         so.FindProperty("dexterityText").objectReferenceValue = playerRefs.dexterityText;
-        so.FindProperty("playerHPBarFill").objectReferenceValue = playerRefs.hpBarFill;
+        so.FindProperty("playerHPBar").objectReferenceValue = playerRefs.hpBar;
 
-        // 敌人 UI
-        so.FindProperty("enemyHPText").objectReferenceValue = enemyRefs.hpText;
-        so.FindProperty("enemyArmorText").objectReferenceValue = enemyRefs.armorText;
-        so.FindProperty("enemyNameText").objectReferenceValue = enemyRefs.nameText;
-        so.FindProperty("enemyIntentText").objectReferenceValue = enemyRefs.intentText;
-        so.FindProperty("enemyHPBarFill").objectReferenceValue = enemyRefs.hpBarFill;
-        so.FindProperty("enemyDamageText").objectReferenceValue = enemyRefs.damageText;
+        // 敌人 UI（多敌人：容器 + 视图预制体，敌人运行时生成）
+        so.FindProperty("enemyContainer").objectReferenceValue = enemyContainer;
+        if (enemyViewPrefab != null)
+            so.FindProperty("enemyViewPrefab").objectReferenceValue = enemyViewPrefab.GetComponent<EnemyView>();
 
         // 回合 UI (no turnText)
         so.FindProperty("phaseHintText").objectReferenceValue = topRefs.phaseHintText;
@@ -226,69 +224,125 @@ public static class BattleSceneBuilder
     }
 
     // ====================================================================
-    // 敌人区（中上）— HP条在敌人图片正上方，不重叠；伤害数字在右侧
+    // 敌人区（中上）— 多敌人：空容器，敌人视图运行时由 BattleManager 生成摆放
     // ====================================================================
 
-    private static (TextMeshProUGUI nameText, TextMeshProUGUI hpText, TextMeshProUGUI armorText,
-        TextMeshProUGUI intentText, TextMeshProUGUI damageText, Image hpBarFill) CreateEnemyArea(Transform parent)
+    private static RectTransform CreateEnemyArea(Transform parent)
     {
-        var area = CreateChild(parent, "EnemyArea");
-        Rect(area, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(0, 120), V2(600, 400));
+        var area = CreateChild(parent, "EnemyContainer");
+        Rect(area, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(0, 120), V2(1200, 400));
+        return area.GetComponent<RectTransform>();
+    }
 
-        // 敌人占位图（居中偏下）
-        var sprite = CreateChild(area.transform, "EnemySprite");
-        Rect(sprite, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(0, -20), V2(200, 260));
-        sprite.AddComponent<Image>().color = new Color(0.7f, 0.15f, 0.15f, 0.3f);
+    // ====================================================================
+    // EnemyView 预制体（单个敌人视图：立绘/名字/HP条/护甲/意图/凝视/飘字锚点）
+    // ====================================================================
 
-        // 敌人名（在HP条上方）
-        var nameObj = CreateChild(area.transform, "EnemyNameText");
+    private const string EnemyViewPrefabPath = "Assets/Prefabs/Battle/EnemyView.prefab";
+
+    private static GameObject CreateEnemyViewPrefab()
+    {
+        var root = new GameObject("EnemyView");
+        var rootRect = root.AddComponent<RectTransform>();
+        rootRect.sizeDelta = V2(400, 400);
+
+        // 立绘（居中偏下）
+        var portrait = CreateChild(root.transform, "Portrait");
+        Rect(portrait, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(0, -20), V2(200, 260));
+        var portraitImg = portrait.AddComponent<Image>();
+        portraitImg.color = new Color(0.7f, 0.15f, 0.15f, 0.3f);
+        portraitImg.preserveAspect = true;
+
+        // 敌人名（顶部）
+        var nameObj = CreateChild(root.transform, "NameText");
         Rect(nameObj, C(0.5f, 1f), C(0.5f, 1f), C(0.5f, 1f), C(0, -10), V2(300, 28));
         var nameText = nameObj.AddComponent<TextMeshProUGUI>();
-        SetupText(nameText, "精英1", 22, Color.white);
+        SetupText(nameText, "敌人", 22, Color.white);
 
-        // HP条（在敌人图片正上方，留有间距不重叠）
-        var hpBar = CreateChild(area.transform, "EnemyHPBar");
-        Rect(hpBar, C(0.5f, 1f), C(0.5f, 1f), C(0.5f, 1f), C(0, -44), V2(340, 28));
-        hpBar.AddComponent<Image>().color = new Color(0.2f, 0.08f, 0.08f, 1f);
+        // HP条（Slider）+ HP文本
+        var hpBarObj = CreateChild(root.transform, "HPBar");
+        Rect(hpBarObj, C(0.5f, 1f), C(0.5f, 1f), C(0.5f, 1f), C(0, -44), V2(340, 28));
+        hpBarObj.AddComponent<Image>().color = new Color(0.2f, 0.08f, 0.08f, 1f);
+        var hpSlider = hpBarObj.AddComponent<Slider>();
+        hpSlider.minValue = 0f;
+        hpSlider.maxValue = 1f;
+        hpSlider.value = 1f;
+        hpSlider.interactable = false;
+        hpSlider.transition = Selectable.Transition.None;
 
-        var hpFill = CreateChild(hpBar.transform, "EnemyHPBarFill");
+        var hpFill = CreateChild(hpBarObj.transform, "Fill");
         StretchFill(hpFill);
         var hpFillImg = hpFill.AddComponent<Image>();
         hpFillImg.color = new Color(0.85f, 0.3f, 0.3f, 1f);
         hpFillImg.type = Image.Type.Filled;
         hpFillImg.fillMethod = Image.FillMethod.Horizontal;
+        hpSlider.fillRect = hpFill.GetComponent<RectTransform>();
+        hpSlider.targetGraphic = hpFillImg;
 
-        var hpTextObj = CreateChild(hpBar.transform, "EnemyHPText");
+        var hpTextObj = CreateChild(hpBarObj.transform, "HPText");
         StretchFill(hpTextObj);
         var hpText = hpTextObj.AddComponent<TextMeshProUGUI>();
         SetupText(hpText, "100/100", 14, Color.white);
         hpText.enableWordWrapping = false;
 
         // 护甲
-        var armorObj = CreateChild(area.transform, "EnemyArmorText");
+        var armorObj = CreateChild(root.transform, "ArmorText");
         Rect(armorObj, C(0.5f, 1f), C(0.5f, 1f), C(0.5f, 1f), C(0, -80), V2(200, 22));
         var armorText = armorObj.AddComponent<TextMeshProUGUI>();
         SetupText(armorText, "", 16, C(0.6f, 0.8f, 1f, 1f));
 
-        // 伤害数字（敌人右侧）
-        var damageObj = CreateChild(area.transform, "EnemyDamageText");
-        Rect(damageObj, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(150, -20), V2(120, 50));
-        var damageText = damageObj.AddComponent<TextMeshProUGUI>();
-        SetupText(damageText, "", 36, new Color(1f, 0.3f, 0.2f, 1f));
-        damageText.enableWordWrapping = false;
-        damageText.gameObject.SetActive(false);
+        // 凝视值（gazeMaxValue<=0 的敌人运行时自动隐藏）
+        var gazeObj = CreateChild(root.transform, "GazeText");
+        Rect(gazeObj, C(0.5f, 1f), C(0.5f, 1f), C(0.5f, 1f), C(0, -104), V2(200, 22));
+        var gazeText = gazeObj.AddComponent<TextMeshProUGUI>();
+        SetupText(gazeText, "凝视 0/3", 14, C(0.9f, 0.6f, 1f, 1f));
 
         // 意图
-        var intentBg = CreateChild(area.transform, "EnemyIntentBg");
+        var intentBg = CreateChild(root.transform, "IntentBg");
         Rect(intentBg, C(0.5f, 0), C(0.5f, 0), C(0.5f, 0), C(0, 10), V2(220, 30));
         intentBg.AddComponent<Image>().color = new Color(0.2f, 0.35f, 0.6f, 0.8f);
 
-        var intentObj = CreateChild(intentBg.transform, "EnemyIntentText");
+        var intentObj = CreateChild(intentBg.transform, "IntentText");
         StretchFill(intentObj);
         var intentText = intentObj.AddComponent<TextMeshProUGUI>();
-        SetupText(intentText, "造成5伤害", 14, new Color(0.9f, 0.9f, 1f, 1f));
+        SetupText(intentText, "", 14, new Color(0.9f, 0.9f, 1f, 1f));
 
-        return (nameText, hpText, armorText, intentText, damageText, hpFillImg);
+        // 飘字锚点（敌人右侧）
+        var anchor = CreateChild(root.transform, "DamageAnchor");
+        Rect(anchor, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(150, -20), V2(120, 50));
+
+        // 飘字模板（隐藏，运行时由 EnemyView.ShowDamage 克隆到 damageAnchor 下）
+        var popup = CreateChild(root.transform, "DamagePopupTemplate");
+        Rect(popup, C(0.5f, 0.5f), C(0.5f, 0.5f), C(0.5f, 0.5f), C(0, 0), V2(120, 50));
+        var popupText = popup.AddComponent<TextMeshProUGUI>();
+        SetupText(popupText, "", 28, new Color(1f, 0.3f, 0.2f, 1f));
+        popupText.enableWordWrapping = false;
+        popup.SetActive(false);
+
+        var view = root.AddComponent<EnemyView>();
+        var vso = new SerializedObject(view);
+        vso.FindProperty("portraitImage").objectReferenceValue = portraitImg;
+        vso.FindProperty("nameText").objectReferenceValue = nameText;
+        vso.FindProperty("hpText").objectReferenceValue = hpText;
+        vso.FindProperty("hpBar").objectReferenceValue = hpSlider;
+        vso.FindProperty("armorText").objectReferenceValue = armorText;
+        vso.FindProperty("intentText").objectReferenceValue = intentText;
+        vso.FindProperty("gazeText").objectReferenceValue = gazeText;
+        vso.FindProperty("damageAnchor").objectReferenceValue = anchor.GetComponent<RectTransform>();
+        vso.FindProperty("damagePopupPrefab").objectReferenceValue = popup;
+        vso.ApplyModifiedPropertiesWithoutUndo();
+
+        EnsureFolder("Assets/Prefabs", "Battle");
+        var prefab = PrefabUtility.SaveAsPrefabAsset(root, EnemyViewPrefabPath);
+        Object.DestroyImmediate(root);
+        Debug.Log($"[BattleSceneBuilder] EnemyView 预制体已生成: {EnemyViewPrefabPath}");
+        return prefab;
+    }
+
+    private static void EnsureFolder(string parent, string name)
+    {
+        if (!AssetDatabase.IsValidFolder($"{parent}/{name}"))
+            AssetDatabase.CreateFolder(parent, name);
     }
 
     // ====================================================================
@@ -296,16 +350,22 @@ public static class BattleSceneBuilder
     // ====================================================================
 
     private static (TextMeshProUGUI hpText, TextMeshProUGUI apText, TextMeshProUGUI armorText,
-        TextMeshProUGUI strengthText, TextMeshProUGUI dexterityText, Image hpBarFill)
+        TextMeshProUGUI strengthText, TextMeshProUGUI dexterityText, Slider hpBar)
         CreatePlayerArea(Transform parent)
     {
         var area = CreateChild(parent, "PlayerArea");
         Rect(area, C(0, 0), C(0, 0), C(0, 0), C(30, 30), V2(400, 140));
 
-        // HP条
+        // HP条（Slider：BattleManager.UpdateUI 以 maxValue/value 驱动）
         var hpBar = CreateChild(area.transform, "PlayerHPBar");
         Rect(hpBar, C(0, 1f), C(0, 1f), C(0, 1f), C(0, -10), V2(260, 28));
         hpBar.AddComponent<Image>().color = new Color(0.2f, 0.08f, 0.08f, 1f);
+        var hpSlider = hpBar.AddComponent<Slider>();
+        hpSlider.minValue = 0f;
+        hpSlider.maxValue = 100f;
+        hpSlider.value = 100f;
+        hpSlider.interactable = false;
+        hpSlider.transition = Selectable.Transition.None;
 
         var hpFill = CreateChild(hpBar.transform, "PlayerHPBarFill");
         StretchFill(hpFill);
@@ -313,6 +373,8 @@ public static class BattleSceneBuilder
         hpFillImg.color = new Color(0.85f, 0.3f, 0.3f, 1f);
         hpFillImg.type = Image.Type.Filled;
         hpFillImg.fillMethod = Image.FillMethod.Horizontal;
+        hpSlider.fillRect = hpFill.GetComponent<RectTransform>();
+        hpSlider.targetGraphic = hpFillImg;
 
         var hpTextObj = CreateChild(hpBar.transform, "HPText");
         StretchFill(hpTextObj);
@@ -360,7 +422,7 @@ public static class BattleSceneBuilder
         var drawLabelText = drawLabel.AddComponent<TextMeshProUGUI>();
         SetupText(drawLabelText, "抽牌堆", 12, C(0.6f, 0.6f, 0.7f, 1f));
 
-        return (hpText, apText, armorText, strengthText, dexterityText, hpFillImg);
+        return (hpText, apText, armorText, strengthText, dexterityText, hpSlider);
     }
 
     // ====================================================================

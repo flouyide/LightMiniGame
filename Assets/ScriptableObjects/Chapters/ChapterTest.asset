@@ -37,7 +37,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
-        enterBattleEnemy: {fileID: 0}
+        enterBattleEnemies: []
       - type: 9
         amount: 10
         itemDesc: 
@@ -47,7 +47,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
-        enterBattleEnemy: {fileID: 0}
+        enterBattleEnemies: []
     - optionText: "\u6218\uFF01"
       effects:
       - type: 6
@@ -59,7 +59,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5
-        enterBattleEnemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
+        enterBattleEnemies: []
     - optionText: "\u83B7\u5F97\u5361\u724C\uFF0C\u6DFB\u52A0\u8BCD\u6761"
       effects:
       - type: 11
@@ -71,7 +71,7 @@ MonoBehaviour:
         card: {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
         keywordToAdd: 0
         discountRatio: 0.5
-        enterBattleEnemy: {fileID: 0}
+        enterBattleEnemies: []
       - type: 14
         amount: 0
         itemDesc: 
@@ -81,8 +81,8 @@ MonoBehaviour:
         card: {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
         keywordToAdd: 1
         discountRatio: 0.5
-        enterBattleEnemy: {fileID: 0}
-    enemy: {fileID: 0}
+        enterBattleEnemies: []
+    enemies: []
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4
@@ -96,7 +96,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
-      enterBattleEnemy: {fileID: 0}
+      enterBattleEnemies: []
   - eventId: finalBattle
     displayName: "\u7ED3\u5C3E"
     description: Debug only
@@ -119,7 +119,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
-        enterBattleEnemy: {fileID: 0}
+        enterBattleEnemies: []
       - type: 9
         amount: 10
         itemDesc: 
@@ -129,7 +129,7 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
-        enterBattleEnemy: {fileID: 0}
+        enterBattleEnemies: []
     - optionText: "\u7279\u4EF7\u5546\u5E97"
       effects:
       - type: 12
@@ -141,8 +141,14 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5
-        enterBattleEnemy: {fileID: 0}
-    enemy: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
+      anchoredPosition: {x: 200, y: 0}
+      actionOrder: 1
+    - config: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
+      anchoredPosition: {x: -200, y: 0}
+      actionOrder: 1
     normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
     backgroundSanityThreshold: 5
@@ -156,7 +162,7 @@ MonoBehaviour:
       card: {fileID: 0}
       keywordToAdd: 0
       discountRatio: 0.6
-      enterBattleEnemy: {fileID: 0}
+      enterBattleEnemies: []
   NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
   AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
   sanityThreshold: 5

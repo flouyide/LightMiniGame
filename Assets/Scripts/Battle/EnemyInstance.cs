@@ -1,0 +1,152 @@
+using LightMiniGame.CardEditor;
+using UnityEngine;
+
+/// <summary>
+/// 战斗内单个敌人的运行时实例（纯数据 + 自身逻辑，非 MonoBehaviour）。
+/// 多敌人框架下每个敌人独立维护 阶段/凝视值/技能轮转/锁定角色 状态，互不影响。
+/// 职责边界：
+/// - 本类：只读写"单个敌人状态"的逻辑（技能轮转、阶段切换、受击结算、自身状态）。
+/// - BattleManager：技能对玩家的结算、协程编排、意图文本、战斗结束判定、全局伤害倍率。
+/// </summary>
+public class EnemyInstance
+{
+    /// <summary>槽位索引（生成顺序，稳定不变；死亡后槽位保留不压缩）</summary>
+    public int SlotIndex;
+    public EnemyConfig Config;
+    /// <summary>行动顺序值（来自 EnemySpawnInfo.actionOrder）：数值小的先行动；相同值随机先后</summary>
+    public int ActionOrder;
+
+    public int HP;
+    public int MaxHP;
+    public int Armor;
+
+    /// <summary>当前阶段（1=注视形态，2=睁眼形态）</summary>
+    public int Phase = 1;
+    /// <summary>凝视值（阶段2专属，满 gazeMaxValue 触发特殊技能）</summary>
+    public int GazeValue;
+    /// <summary>技能轮转计数（每行动一次 +1）</summary>
+    public int TurnInCycle;
+    /// <summary>锁定的角色索引（-1 = 未锁定；光束扫描类技能用）</summary>
+    public int LockedCharIdx = -1;
+    /// <summary>是否已死亡（HP≤0 且无阶段2，或阶段2被打死）</summary>
+    public bool IsDead;
+
+    /// <summary>对应视图，由 BattleManager 生成后注入</summary>
+    public EnemyView View;
+
+    public string Name => Config != null ? Config.enemyName : "敌人";
+    public int GazeMaxValue => Config != null ? Config.gazeMaxValue : 0;
+    /// <summary>是否有阶段2</summary>
+    public bool HasPhase2 => Config != null && Config.phase2MaxHP > 0;
+
+    /// <summary>
+    /// 按 阶段 + 轮转计数 + 凝视值 取当前回合应执行的技能（可能为 null，由调用方兜底）。
+    /// </summary>
+    public EnemySkill GetCurrentSkill()
+    {
+        if (Config == null) return null;
+
+        // 阶段1：按顺序循环执行 phase1Skills
+        if (Phase == 1)
+        {
+            if (Config.phase1Skills == null || Config.phase1Skills.Count == 0) return null;
+            return Config.phase1Skills[TurnInCycle % Config.phase1Skills.Count];
+        }
+
+        // 阶段2：凝视值满 → 触发特殊技能
+        if (GazeMaxValue > 0 && GazeValue >= GazeMaxValue && Config.phase2GazeSkill != null)
+            return Config.phase2GazeSkill;
+
+        // 阶段2：常规技能按轮转执行
+        if (Config.phase2Skills != null && Config.phase2Skills.Count > 0)
+            return Config.phase2Skills[TurnInCycle % Config.phase2Skills.Count];
+
+        return Config.phase2GazeSkill;
+    }
+
+    /// <summary>
+    /// 应用凝视值变化（技能执行时由 BattleManager 调用，沿用原单敌人语义）：
+    /// resetGaze 清零；否则 gazeChange≠0 时增减（可为负，下限 0，无封顶）。
+    /// </summary>
+    public void ApplyGazeChange(EnemySkill skill)
+    {
+        if (skill == null) return;
+        if (skill.resetGaze) GazeValue = 0;
+        else if (skill.gazeChange != 0)
+            GazeValue = Mathf.Max(0, GazeValue + skill.gazeChange);
+    }
+
+    /// <summary>
+    /// 检查并执行阶段切换。返回是否发生了切换（供 BattleManager 刷视图/记日志）。
+    /// 阶段1 → 阶段2：HP≤0（打穿）或玩家理智≤阈值；切换时清空护甲。
+    /// 阶段2 → 阶段1：玩家理智恢复到阈值以上（需配置 phase2MaxHP）。
+    /// 两个方向都会重置技能轮转计数。HP 打穿但无阶段2时不做任何事（死亡由 BattleManager 判定）。
+    /// </summary>
+    public bool CheckPhaseSwitch(int playerSanity)
+    {
+        if (Config == null) return false;
+
+        bool sanityLow = playerSanity <= Config.phase2SanityThreshold;
+
+        // 阶段1→2：阶段1血量打完 或 理智低于阈值
+        if (Phase == 1 && (HP <= 0 || sanityLow))
+        {
+            Phase = 2;
+            TurnInCycle = 0;
+            MaxHP = Config.phase2MaxHP > 0 ? Config.phase2MaxHP : MaxHP;
+            HP = MaxHP;
+            Armor = 0;
+            return true;
+        }
+        // 阶段2→1：理智恢复且配置了阶段2
+        if (Phase == 2 && !sanityLow && Config.phase2MaxHP > 0)
+        {
+            Phase = 1;
+            TurnInCycle = 0;
+            MaxHP = Config.maxHP;
+            HP = MaxHP;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 受击结算（伤害倍率已在 BattleManager 算好）。返回实际造成的总伤害。
+    /// armorBreak&gt;0 时为"破甲伤害"：额外 X 点直接扣血、无视护甲（沿用原单敌人 DealDamageToEnemy 语义）。
+    /// 注意与 ApplyStatus(ArmorBreak) 区分：后者才是削减护甲值。
+    /// </summary>
+    public int TakeDamage(int damage, bool ignoreArmor, int armorBreak)
+    {
+        int actualDamage = 0;
+
+        // 破甲：额外X点伤害直接扣血，无视护甲
+        if (armorBreak > 0)
+        {
+            HP = Mathf.Max(0, HP - armorBreak);
+            actualDamage += armorBreak;
+        }
+
+        // 基础伤害走护甲
+        if (!ignoreArmor && Armor > 0 && damage > 0)
+        {
+            int absorbed = Mathf.Min(Armor, damage);
+            Armor -= absorbed;
+            damage -= absorbed;
+        }
+
+        if (damage > 0)
+        {
+            HP = Mathf.Max(0, HP - damage);
+            actualDamage += damage;
+        }
+
+        return actualDamage;
+    }
+
+    /// <summary>施加状态（当前仅 ArmorBreak 减甲；敌人暂无流血/其他状态系统）</summary>
+    public void ApplyStatus(StatusType status, int stacks)
+    {
+        if (status == StatusType.ArmorBreak)
+            Armor = Mathf.Max(0, Armor - stacks);
+    }
+}

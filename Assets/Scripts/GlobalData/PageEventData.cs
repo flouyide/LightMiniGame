@@ -83,9 +83,9 @@ public class EffectData
     [Range(0.1f, 1f)]
     public float discountRatio = 0.6f;                               // EnterDiscountShop：折扣比例（0.6=6折）；原 ChapterConfig.discountShopRatio 已迁移至此，按事件单独配置
 
-    // —— EnterBattle 专用：自由配置一个出战敌人（留空=使用 BattleManager 默认敌人）——
-    [Tooltip("EnterBattle：该次战斗的出战敌人（单个）。留空则使用 BattleManager 上的默认敌人。")]
-    public EnemyConfig enterBattleEnemy;                            // EnterBattle：出战敌人
+    // —— EnterBattle 专用：自由配置出战敌人列表（留空=使用 BattleManager 默认敌人）——
+    [Tooltip("EnterBattle：该次战斗的出战敌人列表（含位置）。留空则使用 BattleManager 上的默认敌人。")]
+    public List<EnemySpawnInfo> enterBattleEnemies = new();          // EnterBattle：出战敌人列表
 }
 
 /// <summary>
@@ -127,8 +127,8 @@ public class PageEventData
     };
 
     [Header("战斗配置（Battle 类型用）")]
-    [Tooltip("该 Battle 事件要出战的敌人（单个）。留空则使用 BattleManager 上的默认敌人。")]
-    public EnemyConfig enemy;                       // Battle：出战敌人（策划在 Inspector 拖一个 EnemyConfig）
+    [Tooltip("该 Battle 事件要出战的敌人列表（含位置与行动顺序值，1-N 个）。留空则使用 BattleManager 上的默认敌人。")]
+    public List<EnemySpawnInfo> enemies = new();    // Battle：出战敌人列表（策划在 Inspector 配置）
 
     [Header("战斗背景（Battle 类型用）")]
     [Tooltip("正常理智时的战斗背景图，应用到 BattleManager.Background 下的 Image。留空则沿用 Background 上既有 Sprite。")]

@@ -22,7 +22,12 @@ namespace LightMiniGame.CardEditor
         int PlayerBleed { get; }
 
         // === 敌人状态 ===
+        /// <summary>存活敌人数量（死亡敌人不计）</summary>
         int EnemyCount { get; }
+        /// <summary>敌人槽位总数（含已死亡；槽位索引 0..EnemySlotCount-1 稳定，死亡不压缩）</summary>
+        int EnemySlotCount { get; }
+        /// <summary>指定槽位的敌人是否存活（越界返回 false）</summary>
+        bool IsEnemyAlive(int index);
         int GetEnemyHP(int index);
         int GetEnemyArmor(int index);
         int GetEnemyBleed(int index);

@@ -531,8 +531,8 @@ public class ChapterManager : MonoBehaviour
                 break;
             case EffectType.EnterBattle:
                 // 作为选项效果：挂起效果序列，战斗结束（ReturnFromBattle）后续体，继续后续效果并最终触发 onComplete
-                // 该次战斗的出战敌人由 EffectData.enterBattleEnemy 指定（留空=回退 BattleManager 默认敌人）
-                suspended = EnterBattle(null, () => ProcessEffect(effects, next, onComplete), effect.enterBattleEnemy);
+                // 该次战斗的出战敌人由 EffectData.enterBattleEnemies 指定（留空=回退 BattleManager 默认敌人）
+                suspended = EnterBattle(null, () => ProcessEffect(effects, next, onComplete), effect.enterBattleEnemies);
                 break;
 
             case EffectType.ModifyAttribute:
@@ -769,7 +769,7 @@ public class ChapterManager : MonoBehaviour
     ///   避免「进入战斗的同时立刻推进章节 / 战后再次推进」的双调用问题。
     /// </summary>
     /// <returns>true=已发起战斗（调用方应暂停序列，等战斗结束后续体）；false=未发起（如已在战斗中）。</returns>
-    public bool EnterBattle(PageEventData data = null, System.Action onResolved = null, EnemyConfig startEnemy = null)
+    public bool EnterBattle(PageEventData data = null, System.Action onResolved = null, List<EnemySpawnInfo> startEnemies = null)
     {
         if (_inBattle) return false;          // 防止重复进入
         _inBattle = true;
@@ -783,8 +783,9 @@ public class ChapterManager : MonoBehaviour
         {
             bm.StartActiveChar = _activeCharacter;   // 局外当前激活角色作为战斗起始激活角色
             bm.StartInactiveChar = _inactiveCharacter;
-            // 出战敌人优先取 startEnemy（EnterBattle 效果自带），其次取 Battle 事件 data.enemy，都空则回退 BattleManager 默认敌人
-            bm.StartEnemy = startEnemy ?? (data != null ? data.enemy : null);
+            // 出战敌人优先取 startEnemies（EnterBattle 效果自带），其次取 Battle 事件 data.enemies，都空则回退 BattleManager 默认敌人
+            // 行动顺序由每个 EnemySpawnInfo.actionOrder 自带（数值小先动，同值随机），不再单独注入
+            bm.StartEnemies = startEnemies ?? (data != null ? data.enemies : null);
             // 战斗背景（来自 Battle 事件的 PageEventData；null=保留 BattleManager.Background 上既有 Sprite）
             bm.StartNormalBattleBackground = data != null ? data.normalBattleBackground : null;
             bm.StartLowSanityBattleBackground = data != null ? data.lowSanityBattleBackground : null;
