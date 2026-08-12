@@ -192,6 +192,9 @@ public class BattleManager : MonoBehaviour
     private int _actionPoints;
     // === 敌人状态（1-N 个；槽位索引稳定，死亡不压缩）===
     private readonly List<EnemyInstance> _enemies = new();
+    private int _selectedEnemyIndex = 0;          // 拖拽出牌时的目标敌人槽位
+    private int _hoverEnemyIndex = -1;            // 拖拽卡牌当前悬停高亮的敌人槽位（无则 -1）
+    private Camera _uiCameraCache;                // 拖拽命中的 UI 相机（懒解析，Overlay 时为 null）
     private Coroutine _enemyTurnRoutine;
     private int _turnCount = 1;
     private bool _isPlayerTurn = true;
@@ -238,8 +241,8 @@ public class BattleManager : MonoBehaviour
     /// <summary>敌人槽位总数（含已死亡；索引 0..EnemySlotCount-1 稳定对应生成顺序，死亡不压缩）</summary>
     public int EnemySlotCount => _enemies.Count;
 
-    /// <summary>出牌目标选择逻辑暂未实现，固定 0</summary>
-    public int SelectedEnemyIndex => 0;
+    /// <summary>当前出牌目标敌人槽位（由拖拽释放时设置；无拖拽时保持上次值，默认 0）</summary>
+    public int SelectedEnemyIndex => _selectedEnemyIndex;
     public int HandCount => _hand.Count;
     public int DrawPileCount => ActiveChar?.drawPile.Count ?? 0;
     public int DiscardPileCount => ActiveChar?.discardPile.Count ?? 0;
@@ -526,6 +529,8 @@ public class BattleManager : MonoBehaviour
         if (handLayout != null)
         {
             handLayout.SetCardClickCallback(OnCardClicked);
+            handLayout.SetCardDropCallback(OnCardDropped);
+            handLayout.SetCardDragOverCallback(SetCardDragOver);
             handLayout.SetCardPrefabs(attackCardPrefab, skillCardPrefab, abilityCardPrefab);
         }
         if (endTurnButton != null)
@@ -922,6 +927,113 @@ public class BattleManager : MonoBehaviour
         UpdateUI();
         CheckBattleEnd();
         return true;
+    }
+
+    /// <summary>拖拽出牌：对指定敌人槽位出牌。targetEnemyIndex 为 0..N-1 时覆盖本次目标，结束后恢复。</summary>
+    public bool PlayCard(int handIndex, int targetEnemyIndex)
+    {
+        int prev = _selectedEnemyIndex;
+        if (targetEnemyIndex >= 0) _selectedEnemyIndex = targetEnemyIndex;
+        bool ok = PlayCard(handIndex);
+        _selectedEnemyIndex = prev;
+        return ok;
+    }
+
+    /// <summary>拖拽结束回调：攻击牌命中敌人区域出牌；增益/防御牌拖到中央出牌区释放即出牌（无需选敌）。由 CardDragHandler 调用。</summary>
+    private void OnCardDropped(int handIndex, Vector2 screenPos)
+    {
+        if (!_isPlayerTurn || _battleEnded) return;
+        if (handIndex < 0 || handIndex >= _hand.Count) return;
+
+        var card = _hand[handIndex];
+        // 记录本次拖拽最后悬停高亮的敌人（在 ClearEnemyHover 之前缓存，作为释放位置微移的兜底）
+        int lastHovered = _hoverEnemyIndex;
+        int slot = GetEnemySlotAtScreenPosition(screenPos);
+
+        if (RequiresEnemyTarget(card))
+        {
+            // 攻击牌：拖到敌人身上（或刚悬停高亮的敌人上）释放
+            if (slot < 0) slot = lastHovered;
+            ClearEnemyHover();
+            if (slot < 0) return;   // 未命中任何敌人，卡牌弹回
+            PlayCard(handIndex, slot);
+        }
+        else
+        {
+            // 增益/防御牌：拖到中央出牌区放开即出牌，不选择敌人
+            ClearEnemyHover();
+            if (!IsInPlayZone(screenPos)) return;   // 仍拖在手牌区则弹回
+            PlayCard(handIndex, -1);   // -1：不修改目标（此类牌无需敌目标）
+        }
+    }
+
+    /// <summary>
+    /// 拖拽过程中逐帧更新悬停高亮：仅攻击牌命中哪个敌人就高亮哪个，切走/离开时取消。
+    /// 增益/防御牌不锁定敌人，不加高亮。
+    /// </summary>
+    public void SetCardDragOver(int handIndex, Vector2 screenPos)
+    {
+        bool targeting = handIndex >= 0 && handIndex < _hand.Count && RequiresEnemyTarget(_hand[handIndex]);
+        if (!targeting)
+        {
+            ClearEnemyHover();   // 非攻击牌拖动时不锁定敌人
+            return;
+        }
+        int slot = GetEnemySlotAtScreenPosition(screenPos);
+        if (slot == _hoverEnemyIndex) return;
+        ClearEnemyHover();
+        if (slot >= 0)
+        {
+            _hoverEnemyIndex = slot;
+            GetEnemy(slot)?.View?.SetHighlighted(true);
+        }
+    }
+
+    /// <summary>取消当前悬停高亮。</summary>
+    private void ClearEnemyHover()
+    {
+        if (_hoverEnemyIndex >= 0)
+            GetEnemy(_hoverEnemyIndex)?.View?.SetHighlighted(false);
+        _hoverEnemyIndex = -1;
+    }
+
+    /// <summary>该卡是否需要对敌人选目标（攻击牌为是，增益/防御牌为否）。</summary>
+    private bool RequiresEnemyTarget(CardData card)
+    {
+        if (card == null) return false;
+        if (card.sourceEntry != null)
+            return card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack;
+        return card.cardType == CardType.Attack;
+    }
+
+    /// <summary>屏幕坐标是否落在中央出牌区（手牌区上沿以上、敌人上方的中间战场）。</summary>
+    private bool IsInPlayZone(Vector2 screenPos)
+    {
+        RectTransform handRect = handLayout != null ? handLayout.GetComponent<RectTransform>() : null;
+        if (handRect == null)
+            return screenPos.y > Screen.height * 0.3f;   // 兜底：无手牌区时取屏幕上方 70%
+
+        var corners = new Vector3[4];
+        handRect.GetWorldCorners(corners);
+        float handTopY = corners[1].y;   // Overlay 画布下世界坐标==屏幕坐标
+        return screenPos.y > handTopY;
+    }
+
+    /// <summary>返回屏幕坐标命中的存活敌人槽位索引；未命中返回 -1。</summary>
+    public int GetEnemySlotAtScreenPosition(Vector2 screenPos)
+    {
+        if (_uiCameraCache == null && enemyContainer != null)
+            _uiCameraCache = enemyContainer.GetComponentInParent<Canvas>()?.rootCanvas?.worldCamera;
+        for (int i = 0; i < _enemies.Count; i++)
+        {
+            var e = _enemies[i];
+            if (e == null || e.IsDead || e.View == null) continue;
+            var rect = e.View.GetComponent<RectTransform>();
+            if (rect == null) continue;
+            if (RectTransformUtility.RectangleContainsScreenPoint(rect, screenPos, _uiCameraCache))
+                return i;
+        }
+        return -1;
     }
 
     private void ApplyCardEffects(CardData card)

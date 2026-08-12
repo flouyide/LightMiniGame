@@ -33,7 +33,10 @@ public class HandCardLayout : MonoBehaviour
     private readonly List<Quaternion> _targetRotations = new List<Quaternion>();
     private readonly List<Vector3> _targetScales = new List<Vector3>();
     private int _hoveredIndex = -1;
+    private int _draggedIndex = -1;
     private System.Action<int> _onCardClicked;
+    private System.Action<int, UnityEngine.Vector2> _onCardDrop;
+    private System.Action<int, UnityEngine.Vector2> _onCardDragOver;
     private bool _isDarkMode = false;  // 黑暗卡面模式（理智转阶段时开启）
 
     public int CardCount => _cardObjects.Count;
@@ -44,6 +47,30 @@ public class HandCardLayout : MonoBehaviour
     public void SetCardClickCallback(System.Action<int> callback)
     {
         _onCardClicked = callback;
+    }
+
+    /// <summary>设置拖拽出牌回调（handIndex, 释放时屏幕坐标）。未命中目标时由调用方自行处理。</summary>
+    public void SetCardDropCallback(System.Action<int, UnityEngine.Vector2> callback)
+    {
+        _onCardDrop = callback;
+    }
+
+    /// <summary>设置拖拽过程中逐帧回调（handIndex, 拖拽时屏幕坐标），用于实时高亮悬停的敌人。未命中时由调用方自行处理。</summary>
+    public void SetCardDragOverCallback(System.Action<int, UnityEngine.Vector2> callback)
+    {
+        _onCardDragOver = callback;
+    }
+
+    /// <summary>
+    /// 标记正在被拖拽的卡牌索引；拖拽期间该卡不参与布局 lerp（位置由拖拽控制），
+    /// 并置顶。传入 -1 表示结束拖拽。
+    /// </summary>
+    public void SetDraggedIndex(int index)
+    {
+        if (_draggedIndex == index) return;
+        _draggedIndex = index;
+        if (index >= 0 && index < _cardObjects.Count && _cardObjects[index] != null)
+            _cardObjects[index].transform.SetAsLastSibling();
     }
 
     /// <summary>
@@ -129,6 +156,10 @@ public class HandCardLayout : MonoBehaviour
             if (hover != null)
                 hover.Setup(i, this, _onCardClicked);
 
+            var drag = cardObj.GetComponent<CardDragHandler>();
+            if (drag != null)
+                drag.Setup(i, this, _onCardDrop, _onCardDragOver);
+
             cardObj.transform.localPosition = new Vector3(0, -200f, 0);
             _cardObjects.Add(cardObj);
             _cardDisplays.Add(display);
@@ -207,6 +238,12 @@ public class HandCardLayout : MonoBehaviour
         for (int i = 0; i < _cardObjects.Count; i++)
         {
             if (_cardObjects[i] == null) continue;
+            // 拖拽中的卡牌位置由拖拽处理器控制，布局不与其抢位
+            if (i == _draggedIndex)
+            {
+                _cardObjects[i].transform.localRotation = Quaternion.identity;
+                continue;
+            }
             var trans = _cardObjects[i].transform;
             trans.localPosition = Vector3.Lerp(trans.localPosition, _targetPositions[i], dt);
             trans.localRotation = Quaternion.Slerp(trans.localRotation, _targetRotations[i], dt);

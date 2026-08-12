@@ -213,7 +213,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.9, g: 0.8, b: 0.3, a: 1}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -331,7 +331,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.08}
+  m_Color: {r: 0.75, g: 0.22, b: 0.22, a: 0.15}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -408,7 +408,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8, g: 0.6, b: 0.15, a: 1}
+  m_Color: {r: 0.75, g: 0.22, b: 0.22, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -638,7 +638,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.7, g: 0.7, b: 0.7, a: 1}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -763,7 +763,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.15, g: 0.15, b: 0.2, a: 1}
+  m_Color: {r: 0.305, g: 0.146, b: 0.146, a: 0.95}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -793,6 +793,7 @@ GameObject:
   - component: {fileID: 4311271215353219758}
   - component: {fileID: 8026005770347303868}
   - component: {fileID: 7255629573048873253}
+  - component: {fileID: -2489973452674285907}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: BattleCard
@@ -871,6 +872,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efce555f428384b29940d5c7f5560c8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cardName: "\u65B0\u5361\u724C"
+  description: 
+  cardType: 0
+  cardArt: {fileID: 0}
+  value: 10
+  grade: 0
+  actionPointCost: 1
+  consumeType: 0
+  keywords: 0
+  attackCount: 1
+  attackValueType: 0
+  attackValue: 5
+  attackAttribute: 0
+  ignoreArmor: 0
+  armorValueType: 0
+  armorValue: 5
+  armorAttribute: 1
+  buffDuration: 1
+  buffDurationTurns: 3
+  buffStacks: 1
+  buffEffects: []
   nameText: {fileID: 6710279287266729485}
   descText: {fileID: 8094870212500405193}
   costText: {fileID: 9180127650243724556}
@@ -882,6 +904,10 @@ MonoBehaviour:
   artImage: {fileID: 5856223964069125298}
   typeBadgeImage: {fileID: 7869352822221606672}
   costBadgeImage: {fileID: 6369871427203737562}
+  keywordTooltip: {fileID: 0}
+  tooltipText: {fileID: 0}
+  tooltipBgColor: {r: 0.15, g: 0.1, b: 0.2, a: 0.9}
+  tooltipTextColor: {r: 0.85, g: 0.8, b: 0.95, a: 1}
   attackColor: {r: 0.75, g: 0.22, b: 0.22, a: 1}
   armorColor: {r: 0.22, g: 0.45, b: 0.78, a: 1}
   buffColor: {r: 0.22, g: 0.68, b: 0.35, a: 1}
@@ -891,6 +917,12 @@ MonoBehaviour:
   epicColor: {r: 0.7, g: 0.3, b: 0.9, a: 1}
   legendaryColor: {r: 1, g: 0.7, b: 0.1, a: 1}
   unplayableColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.6}
+  darkFrameSprite: {fileID: 0}
+  darkBackgroundSprite: {fileID: 0}
+  darkFrameColor: {r: 0.35, g: 0.1, b: 0.45, a: 1}
+  darkBackgroundColor: {r: 0.08, g: 0.04, b: 0.12, a: 0.95}
+  darkTextColor: {r: 0.75, g: 0.6, b: 0.85, a: 1}
+  corruptedBadgeColor: {r: 0.6, g: 0.15, b: 0.75, a: 1}
 --- !u!114 &7255629573048873253
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -901,6 +933,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10bd7bedab8b647d68ed3800d368bb9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &-2489973452674285907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6442506445445124701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cae76509155f4b11ae1c97c95efcdbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &7256948412439930808
@@ -963,7 +1007,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_Color: {r: 0.55, g: 0.55, b: 0.55, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1046,7 +1090,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u5361\u724C\u540D\u79F0"
+  m_text: "\u65B0\u5361\u724C"
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
@@ -1182,7 +1226,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u63CF\u8FF0"
+  m_text: "\u9020\u62101\u6B215\u70B9\u4F24\u5BB3"
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
@@ -1193,7 +1237,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.85, g: 0.85, b: 0.85, a: 1}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1312,7 +1356,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.3, g: 0.3, b: 0.4, a: 0.9}
+  m_Color: {r: 0.75, g: 0.22, b: 0.22, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

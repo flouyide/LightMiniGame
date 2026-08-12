@@ -40,6 +40,6 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        _onCardClicked?.Invoke(_handIndex);
+        // 出牌改为拖拽释放（见 CardDragHandler），点击不再直接出牌，避免误触对固定敌人出牌。
     }
 }

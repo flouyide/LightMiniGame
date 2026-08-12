@@ -28,6 +28,7 @@ public class EnemyView : MonoBehaviour
 
     private EnemyInstance _inst;
     private Coroutine _popupRoutine;
+    private bool _highlighted = false;
 
     /// <summary>绑定运行时实例并全量刷新显示</summary>
     public void Bind(EnemyInstance inst)
@@ -36,6 +37,20 @@ public class EnemyView : MonoBehaviour
         gameObject.SetActive(true);
         Refresh();
         SetIntent("");
+    }
+
+    /// <summary>
+    /// 标记/取消该敌人为当前受击对象（拖拽卡牌悬停其上时高亮）。
+    /// 通过临时染色立绘实现，取消高亮时恢复原色。
+    /// </summary>
+    public void SetHighlighted(bool highlighted)
+    {
+        if (_highlighted == highlighted) return;
+        _highlighted = highlighted;
+        if (portraitImage == null) return;
+        portraitImage.color = _highlighted
+            ? new Color(1f, 1f, 0.45f)
+            : (_inst != null && _inst.Phase == 2 ? Color.red : Color.white);
     }
 
     /// <summary>从绑定实例拉取最新状态重绘（HP/护甲/立绘/凝视/名字）。受伤、阶段切换后调用。</summary>
