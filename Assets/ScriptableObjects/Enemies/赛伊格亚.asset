@@ -84,3 +84,15 @@ MonoBehaviour:
     hitsLockedCharacter: 0
     gazeChange: 0
     resetGaze: 1
+  difficulty: 0
+  actionPriority: 1
+  strength: 0
+  agility: 0
+  inCritRate: 0
+  damageTakenMultiplier: 1
+  damageDealtMultiplier: 1
+  highSanityCardCount: 0
+  lowSanityCardCount: 0
+  abilities: []
+  lootTable:
+    entries: []

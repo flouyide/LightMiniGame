@@ -23,151 +23,12 @@ MonoBehaviour:
   grade: 0
   cardType: 0
   existence: 0
+  lowSanityExistence: 0
   normalCost: 1
   lowSanityCost: 1
   price: 10
   keyword: 0
   hasLowSanityForm: 1
-  normalEffects:
-  - enabled: 1
-    effectName: "\u4E3B\u4F24\u5BB3"
-    effectType: 0
-    source: 0
-    target: 1
-    value:
-      formulaType: 0
-      baseValue: 6
-      attributeRef: 0
-      coefficient: 1
-      counterRef: 0
-    times: 1
-    conditions: []
-    conditionLogic: 0
-    timing: 0
-    duration: 0
-    durationValue: 1
-    alwaysCrit: 0
-    ignoreArmor: 0
-    applyArmorBreak: 0
-    armorBreakAmount: 0
-    buffTarget: 0
-    modAttribute: 0
-    modifyMethod: 0
-    statusType: 0
-    statusStacks: 1
-    stackable: 1
-    handCostTarget: 0
-    costChange: 0
-    customEffectScript: {fileID: 0}
-    customParams: 
-  - enabled: 1
-    effectName: "\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3"
-    effectType: 0
-    source: 0
-    target: 1
-    value:
-      formulaType: 0
-      baseValue: 6
-      attributeRef: 0
-      coefficient: 1
-      counterRef: 0
-    times: 1
-    conditions:
-    - conditionType: 2
-      attributeRef: 0
-      comparison: 3
-      compareValue: 0
-      eventName: OnCrit
-      statusType: 0
-      customConditionScript: {fileID: 0}
-    conditionLogic: 0
-    timing: 0
-    duration: 0
-    durationValue: 1
-    alwaysCrit: 0
-    ignoreArmor: 0
-    applyArmorBreak: 0
-    armorBreakAmount: 0
-    buffTarget: 0
-    modAttribute: 0
-    modifyMethod: 0
-    statusType: 0
-    statusStacks: 1
-    stackable: 1
-    handCostTarget: 0
-    costChange: 0
-    customEffectScript: {fileID: 0}
-    customParams: 
-  lowSanityEffects:
-  - enabled: 1
-    effectName: "\u4E3B\u4F24\u5BB3"
-    effectType: 0
-    source: 0
-    target: 1
-    value:
-      formulaType: 0
-      baseValue: 9
-      attributeRef: 0
-      coefficient: 1
-      counterRef: 0
-    times: 1
-    conditions: []
-    conditionLogic: 0
-    timing: 0
-    duration: 0
-    durationValue: 1
-    alwaysCrit: 0
-    ignoreArmor: 0
-    applyArmorBreak: 0
-    armorBreakAmount: 0
-    buffTarget: 0
-    modAttribute: 0
-    modifyMethod: 0
-    statusType: 0
-    statusStacks: 1
-    stackable: 1
-    handCostTarget: 0
-    costChange: 0
-    customEffectScript: {fileID: 0}
-    customParams: 
-  - enabled: 1
-    effectName: "\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3"
-    effectType: 0
-    source: 0
-    target: 1
-    value:
-      formulaType: 0
-      baseValue: 9
-      attributeRef: 0
-      coefficient: 1
-      counterRef: 0
-    times: 1
-    conditions:
-    - conditionType: 2
-      attributeRef: 0
-      comparison: 3
-      compareValue: 0
-      eventName: OnCrit
-      statusType: 0
-      customConditionScript: {fileID: 0}
-    conditionLogic: 0
-    timing: 0
-    duration: 0
-    durationValue: 1
-    alwaysCrit: 0
-    ignoreArmor: 0
-    applyArmorBreak: 0
-    armorBreakAmount: 0
-    buffTarget: 0
-    modAttribute: 0
-    modifyMethod: 0
-    statusType: 0
-    statusStacks: 1
-    stackable: 1
-    handCostTarget: 0
-    costChange: 0
-    customEffectScript: {fileID: 0}
-    customParams: 
   normalEffectNodes:
   - enabled: 1
     displayName: "\u4E3B\u4F24\u5BB3"
@@ -490,26 +351,6 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
-  normalAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
-  lowSanityAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

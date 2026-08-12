@@ -36,6 +36,15 @@ public class EnemySkill
 [CreateAssetMenu(menuName = "CardGame/Enemy Config", fileName = "NewEnemy")]
 public class EnemyConfig : ScriptableObject
 {
+    /// <summary>
+    /// 旧 .asset 反序列化时，新字段（lootTable/abilities）可能为 null；OnEnable 兜底初始化。
+    /// 新建资产因字段默认值也会经过这里，保证运行时非空。
+    /// </summary>
+    private void OnEnable()
+    {
+        if (abilities == null) abilities = new List<EnemyAbilityEntry>();
+        if (lootTable == null) lootTable = new LootTable();
+    }
     [Header("基础信息")]
     [Tooltip("敌人名称")]
     public string enemyName = "敌人";
@@ -67,4 +76,38 @@ public class EnemyConfig : ScriptableObject
     public List<EnemySkill> phase2Skills;
     [Tooltip("阶段2凝视值满时触发的技能")]
     public EnemySkill phase2GazeSkill;
+
+    // ===== 5.3 文档扩展字段（保留所有原字段，旧 .asset 自动取默认值兼容） =====
+
+    [Header("难度")]
+    [Tooltip("难度类型（影响掉落物：弱怪/强怪/精英/boss）")]
+    public Difficulty difficulty = Difficulty.Weak;
+
+    [Header("属性")]
+    [Tooltip("多敌人情况下的出招优先级（1最高，同优先级则随机顺序；运行时由 SpawnInfo.actionOrder 决定，此字段仅作编辑器提示）")]
+    public int actionPriority = 1;
+    [Tooltip("力量：影响敌人技能伤害")]
+    public int strength = 0;
+    [Tooltip("敏捷：预留（每回合额外行动/闪避等）")]
+    public int agility = 0;
+    [Tooltip("被暴击率（百分比，0=5%默认）")]
+    public int inCritRate = 0;
+    [Tooltip("受到伤害倍率（1=正常）。运行时应用待第二阶段 EnemyInstance 改造")]
+    public float damageTakenMultiplier = 1f;
+    [Tooltip("造成伤害倍率（1=正常）。运行时应用待第二阶段 EnemyInstance 改造")]
+    public float damageDealtMultiplier = 1f;
+
+    [Header("出招牌库（高理智=phase1 / 低理智=phase2）")]
+    [Tooltip("高理智出招数（从 phase1Skills 中抽/轮转的数量；0=全部轮转）")]
+    public int highSanityCardCount = 0;
+    [Tooltip("低理智出招数（从 phase2Skills 中抽/轮转的数量；0=全部轮转）")]
+    public int lowSanityCardCount = 0;
+
+    [Header("能力")]
+    [Tooltip("敌人自带的能力（精英/boss 专用）。每项引用一个 RelicData + 触发备注")]
+    public List<EnemyAbilityEntry> abilities;
+
+    [Header("掉落物")]
+    [Tooltip("按难度枚举配置的掉落物表。使用 LootTable.GetPreset(difficulty) 一键填充")]
+    public LootTable lootTable = new LootTable();
 }
