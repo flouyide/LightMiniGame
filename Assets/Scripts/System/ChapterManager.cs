@@ -15,6 +15,8 @@ public class ChapterManager : MonoBehaviour
     [SerializeField] private GameConfig gameConfig;
     [SerializeField] private PlayerConfig playerConfig;
     [SerializeField] private MasterRelicLibrary masterRelicLibrary;  // 总遗物库（GrantRelic 随机抽遗物用）
+    [Tooltip("总牌库：掉落卡牌时按品级从中随机抽取。留空则战斗掉落卡牌时跳过")]
+    [SerializeField] private MasterCardLibrary masterCardLibrary;  // 总牌库（掉落卡牌用）
 
     [Header("调试")]
     [Tooltip("跳过前N章，直接从第N+1章开始（0=从第一章开始）")]
@@ -103,6 +105,14 @@ public class ChapterManager : MonoBehaviour
         PlayerGold -= amount;
         OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
         return true;
+    }
+
+    /// <summary>增加金币（用于战斗掉落/奖励等）。广播玩家属性变化以刷新金币 UI。</summary>
+    public void AddGold(int amount)
+    {
+        if (amount <= 0) return;
+        PlayerGold += amount;
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
     }
 
     private const int RefreshCount = 3;
@@ -677,7 +687,7 @@ public class ChapterManager : MonoBehaviour
         return all[UnityEngine.Random.Range(0, all.Count)];
     }
 
-    private RelicData DrawRandomRelic(CharacterData ch)
+    public RelicData DrawRandomRelic(CharacterData ch)
     {
         if (masterRelicLibrary == null || ch == null) return null;
         var pool = masterRelicLibrary.GetRelics(ch);
@@ -687,6 +697,29 @@ public class ChapterManager : MonoBehaviour
         foreach (var r in pool)
             if (r != null && (gri == null || !gri.Has(ch, r)))
                 candidates.Add(r);
+        if (candidates.Count == 0) return null;
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+    }
+
+    /// <summary>从总牌库中按品级随机抽取一张卡牌（用于战斗掉落）。返回 null 表示无可用卡牌。</summary>
+    public CardData DrawRandomCard(CharacterData ch, CardGrade grade)
+    {
+        if (masterCardLibrary == null || ch == null) return null;
+        var pool = masterCardLibrary.GetCards(ch);
+        if (pool == null || pool.Count == 0) return null;
+
+        // 按指定品级过滤；若指定品级无卡牌，降级取最近低品级（避免空掉落）
+        var candidates = pool.FindAll(c => c != null && c.grade == grade);
+        if (candidates.Count == 0)
+        {
+            // 降级：取不高于该品级的卡牌
+            candidates = pool.FindAll(c => c != null && c.grade <= grade);
+        }
+        if (candidates.Count == 0)
+        {
+            // 兜底：取全部卡牌
+            candidates = pool;
+        }
         if (candidates.Count == 0) return null;
         return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }

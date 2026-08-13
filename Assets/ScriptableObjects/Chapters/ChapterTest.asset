@@ -163,6 +163,69 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
+  - eventId: finalBattle
+    displayName: "\u6218\u6597\u6D4B\u8BD5"
+    description: Debug only
+    icon: {fileID: 0}
+    eventType: 0
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+50\u91D1\u5E01\uFF0C-10HP"
+      effects:
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
+      anchoredPosition: {x: -200, y: 0}
+      actionOrder: 1
+    normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
+    backgroundSanityThreshold: 5
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
   NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
   AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
   sanityThreshold: 5

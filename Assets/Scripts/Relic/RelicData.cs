@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace LightMiniGame.Shop
 {
@@ -31,5 +34,25 @@ namespace LightMiniGame.Shop
         [Header("排序")]
         [Tooltip("在总遗物库中的排序权重，越大越靠前（可选）")]
         public int sortOrder;
+
+        [Header("效果脚本")]
+        [Tooltip("实现该遗物效果的效果类全名（含命名空间，如 LightMiniGame.RelicEffects.IronRingEffect）。运行时通过反射实例化")]
+        public string effectScriptName;
+
+#if UNITY_EDITOR
+        [Tooltip("编辑器中拖入实现遗物效果的脚本文件（自动填充 effectScriptName）")]
+        public MonoScript effectScript;
+
+        /// <summary>编辑器中拖入脚本后自动同步类名到 effectScriptName，保证运行时可用</summary>
+        private void OnValidate()
+        {
+            if (effectScript != null)
+            {
+                var type = effectScript.GetClass();
+                if (type != null)
+                    effectScriptName = type.FullName;
+            }
+        }
+#endif
     }
 }
