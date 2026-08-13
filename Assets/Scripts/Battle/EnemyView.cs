@@ -18,7 +18,6 @@ public class EnemyView : MonoBehaviour
     [SerializeField] private Slider hpBar;
     [SerializeField] private TextMeshProUGUI armorText;
     [SerializeField] private TextMeshProUGUI intentText;
-    [SerializeField] private TextMeshProUGUI gazeText;
 
     [Header("伤害飘字")]
     [Tooltip("飘字出生点（空 RectTransform）")]
@@ -70,14 +69,6 @@ public class EnemyView : MonoBehaviour
             if (sprite != null) portraitImage.sprite = sprite;
             // 阶段2红色高亮（沿用原单敌人逻辑）
             portraitImage.color = _inst.Phase == 2 ? Color.red : Color.white;
-        }
-
-        if (gazeText != null)
-        {
-            bool showGaze = cfg != null && cfg.gazeMaxValue > 0;
-            if (gazeText.gameObject.activeSelf != showGaze)
-                gazeText.gameObject.SetActive(showGaze);
-            if (showGaze) gazeText.text = $"凝视 {_inst.GazeValue}/{cfg.gazeMaxValue}";
         }
     }
 

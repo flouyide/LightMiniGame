@@ -14,33 +14,26 @@ public class EnemyConfigEditor : Editor
     {
         // —— 基础信息 ——
         { "enemyName",       "敌人名称" },
-        { "maxHP",           "最大生命值" },
-        { "phase2MaxHP",     "阶段2最大生命值（0=不切阶段）" },
+        { "maxHP",           "高理智最大生命值" },
+        { "phase2MaxHP",     "低理智最大生命值" },
         { "armor",           "初始护甲" },
-        { "phase1Portrait",  "阶段1立绘（注视形态）" },
-        { "phase2Portrait",  "阶段2立绘（睁眼形态）" },
+        { "phase1Portrait",  "高理智立绘" },
+        { "phase2Portrait",  "低理智立绘" },
 
-        // —— 阶段切换 ——
-        { "phase2HPThresholdPercent", "HP低于此百分比时进入阶段2" },
-        { "phase2SanityThreshold",    "玩家理智低于等于此值时进入阶段2" },
-        { "gazeMaxValue",             "凝视值上限（达到触发特殊技能）" },
-
-        // —— 阶段1/2 技能 ——
-        { "phase1Skills",      "阶段1技能列表（按回合顺序循环执行）" },
-        { "phase2Skills",      "阶段2常规技能（每回合执行）" },
-        { "phase2GazeSkill",   "阶段2凝视值满时触发的技能" },
+        // —— 阶段1/2 卡组 ——
+        { "phase1Skills",      "高理智卡组列表" },
+        { "phase2Skills",      "低理智卡组列表" },
 
         // —— 5.3 文档扩展字段 ——
         { "difficulty",             "难度类型" },
-        { "actionPriority",         "出招优先级（1最高，同值随机；运行时由 SpawnInfo.actionOrder 决定）" },
+        { "actionPriority",         "出招优先级" },
         { "strength",               "力量" },
-        { "agility",                "敏捷" },
-        { "inCritRate",             "被暴击率（百分比，0=5%默认）" },
-        { "damageTakenMultiplier",  "受到伤害倍率（1=正常）" },
-        { "damageDealtMultiplier",  "造成伤害倍率（1=正常）" },
-        { "highSanityCardCount",    "高理智出招数（0=全部轮转）" },
-        { "lowSanityCardCount",     "低理智出招数（0=全部轮转）" },
-        { "abilities",              "能力列表（精英/boss 敌人遗物）" },
+        { "dexterity",                "敏捷" },
+        { "damageTakenMultiplier",  "受到伤害倍率" },
+        { "damageDealtMultiplier",  "造成伤害倍率" },
+        { "highSanityCardCount",    "高理智出招数" },
+        { "lowSanityCardCount",     "低理智出招数" },
+        { "abilities",              "能力列表" },
         { "lootTable",               "掉落物表" },
     };
 

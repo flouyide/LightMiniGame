@@ -159,12 +159,11 @@ public class BattleManager : MonoBehaviour
     private int _playerCritDamage;
     private int _playerSanity;
     private int _playerMaxSanity;
+    private int _sanityThreshold;   // 理智阈值：玩家理智低于此值时所有敌人进入低理智阶段
 
-    // === 伤害倍率（以百分比存储，100 = 1.0倍） ===
-    private int _playerDamageMultiplier = 100;       // 玩家总伤害倍率
-    private int _playerDamageTakenMultiplier = 100;  // 玩家受击倍率
-    private int _enemyDamageMultiplier = 100;         // 敌人总伤害倍率
-    private int _enemyDamageTakenMultiplier = 100;    // 敌人受击倍率
+    // === 伤害倍率（以百分比存储，100 = 1.0倍；从 PlayerConfig / EnemyConfig 读入） ===
+    private int _playerDamageMultiplier = 100;       // 玩家造成伤害倍率（来自 PlayerConfig）
+    private int _playerDamageTakenMultiplier = 100;  // 玩家受击倍率（来自 PlayerConfig）
 
     // === 正式热度系统 ===
     private int _currentHeat = 0;
@@ -322,7 +321,7 @@ public class BattleManager : MonoBehaviour
 
         if (inst.Phase == 1 && inst.HasPhase2)
         {
-            inst.CheckPhaseSwitch(_playerSanity);   // HP≤0 触发转阶段（内部重置 HP/MaxHP/护甲/轮转）
+            inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold);   // HP≤0 触发转阶段（内部重置 HP/MaxHP/护甲/轮转）
             inst.View?.Refresh();
             Debug.Log($"[BattleManager] {inst.Name}（槽位{inst.SlotIndex}）HP打穿，进入阶段2！HP重置为 {inst.HP}/{inst.MaxHP}");
         }
@@ -442,13 +441,13 @@ public class BattleManager : MonoBehaviour
         }
 
         // 旧路径回退
-        switch (status)
+        /*switch (status)
         {
             case StatusType.Strength: _playerStrength += stacks; break;
             case StatusType.Dexterity: _playerDexterity += stacks; break;
             case StatusType.CritRateBoost: _playerCritRate += stacks; break;
             case StatusType.CritDamageBoost: _playerCritDamage += stacks; break;
-        }
+        }*/
     }
 
     public int RequestSelectCardFromHand(string prompt) => -1; // 简化：暂不支持运行时选牌
@@ -474,8 +473,7 @@ public class BattleManager : MonoBehaviour
         ModifiableAttribute.MaxSanity => _playerMaxSanity,
         ModifiableAttribute.PlayerDamageMultiplier => _playerDamageMultiplier,
         ModifiableAttribute.PlayerDamageTakenMultiplier => _playerDamageTakenMultiplier,
-        ModifiableAttribute.EnemyDamageMultiplier => _enemyDamageMultiplier,
-        ModifiableAttribute.EnemyDamageTakenMultiplier => _enemyDamageTakenMultiplier,
+        // EnemyDamageMultiplier / EnemyDamageTakenMultiplier 已迁入 EnemyConfig（个体倍率），不再全局可改
         _ => 0
     };
 
@@ -495,8 +493,7 @@ public class BattleManager : MonoBehaviour
             case ModifiableAttribute.MaxSanity: _playerMaxSanity = value; break;
             case ModifiableAttribute.PlayerDamageMultiplier: _playerDamageMultiplier = value; break;
             case ModifiableAttribute.PlayerDamageTakenMultiplier: _playerDamageTakenMultiplier = value; break;
-            case ModifiableAttribute.EnemyDamageMultiplier: _enemyDamageMultiplier = value; break;
-            case ModifiableAttribute.EnemyDamageTakenMultiplier: _enemyDamageTakenMultiplier = value; break;
+            // EnemyDamageMultiplier / EnemyDamageTakenMultiplier 已迁入 EnemyConfig（个体倍率），不再全局可改
         }
     }
 
@@ -605,7 +602,6 @@ public class BattleManager : MonoBehaviour
                 HP = cfg.maxHP,
                 Armor = cfg.armor,
                 Phase = 1,
-                GazeValue = 0,
                 TurnInCycle = 0,
                 LockedCharIdx = -1,
                 IsDead = false,
@@ -670,11 +666,14 @@ public class BattleManager : MonoBehaviour
             _baseDrawPerTurn = cm.PlayerDrawPerTurn;
             _playerMaxSanity = cm.PlayerMaxSanity;
             _playerSanity = cm.PlayerSanity;
+            _sanityThreshold = cm.PlayerSanityThreshold;
             _playerStrength = cm.PlayerStrength;
             _playerAgility = cm.PlayerAgility;
             _playerLifesteal = cm.PlayerLifesteal;
             _playerCritRate = cm.PlayerCritRate;
             _playerCritDamage = cm.PlayerCritDamage;
+            _playerDamageMultiplier = cm.PlayerDamageMultiplier;
+            _playerDamageTakenMultiplier = cm.PlayerDamageTakenMultiplier;
             Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
         }
         else if (playerConfig != null)
@@ -686,11 +685,14 @@ public class BattleManager : MonoBehaviour
             _baseDrawPerTurn = playerConfig.drawPerTurn;
             _playerMaxSanity = playerConfig.maxSanity;
             _playerSanity = playerConfig.startSanity;
+            _sanityThreshold = playerConfig.sanityThreshold;
             _playerStrength = playerConfig.strength;
             _playerAgility = playerConfig.agility;
             _playerLifesteal = playerConfig.lifesteal;
             _playerCritRate = playerConfig.critRate;
             _playerCritDamage = playerConfig.critDamage;
+            _playerDamageMultiplier = playerConfig.playerDamageMultiplier;
+            _playerDamageTakenMultiplier = playerConfig.playerDamageTakenMultiplier;
             _playerDexterity = 0;
             Debug.LogWarning("[BattleManager] 未找到 ChapterManager，回退读入 PlayerConfig 初始值（无跨战斗累积）");
         }
@@ -699,6 +701,9 @@ public class BattleManager : MonoBehaviour
             _playerHP = playerMaxHP;
             _playerMaxSanity = 10;
             _playerSanity = 10;
+            _sanityThreshold = 4;
+            _playerDamageMultiplier = 100;
+            _playerDamageTakenMultiplier = 100;
             _playerDexterity = 0;
             Debug.LogWarning("[BattleManager] 未配置 ChapterManager / PlayerConfig，持久属性为 0");
         }
@@ -1174,24 +1179,31 @@ public class BattleManager : MonoBehaviour
     // 伤害计算
     // ========================================================================
 
-    /// <summary>对指定敌人结算伤害（玩家伤害倍率 × 敌人受击倍率 → 破甲/护甲 → 扣血），返回实际伤害。
+    /// <summary>对指定敌人结算伤害（玩家造成伤害倍率 × 敌人受击倍率 → 破甲/护甲 → 扣血），返回实际伤害。
+    /// 玩家倍率来自 PlayerConfig（全局），敌人受击倍率来自该敌人 EnemyConfig（个体）。
     /// 不触发飘字/阶段/结束判定，由调用方处理。</summary>
     private int DealDamageToEnemy(EnemyInstance inst, int damage, bool ignoreArmor, int armorBreak = 0)
     {
         if (inst == null || inst.IsDead) return 0;
 
-        // 应用伤害倍率：最终伤害 = 基础伤害 * 玩家总伤害倍率 * 敌人受击倍率
-        float mult = (_playerDamageMultiplier / 100f) * (_enemyDamageTakenMultiplier / 100f);
+        // 应用伤害倍率：最终伤害 = 基础伤害 * 玩家造成伤害倍率 * 敌人受击倍率
+        int enemyTakenMult = inst.Config != null ? inst.Config.damageTakenMultiplier : 100;
+        float mult = (_playerDamageMultiplier / 100f) * (enemyTakenMult / 100f);
         damage = Mathf.RoundToInt(damage * mult);
         int armorBreakScaled = Mathf.RoundToInt(Mathf.Max(0, armorBreak) * mult);
 
         return inst.TakeDamage(damage, ignoreArmor, armorBreakScaled);
     }
 
-    private void DealDamageToPlayer(int damage)
+    private void DealDamageToPlayer(int damage, EnemyInstance inst)
     {
-        // 应用伤害倍率：敌人对玩家的最终伤害 = 敌人攻击数值 * 敌人总伤害倍率 * 玩家受击倍率
-        float mult = (_enemyDamageMultiplier / 100f) * (_playerDamageTakenMultiplier / 100f);
+        // 敌人力量加成：直接加到基础伤害上（同杀戮尖塔力量对攻击牌的影响）
+        if (inst != null && inst.Config != null)
+            damage += inst.Config.strength;
+
+        // 应用伤害倍率：敌人对玩家的最终伤害 = (技能伤害 + 力量) * 敌人造成伤害倍率 * 玩家受击倍率
+        int enemyDealtMult = inst != null && inst.Config != null ? inst.Config.damageDealtMultiplier : 100;
+        float mult = (enemyDealtMult / 100f) * (_playerDamageTakenMultiplier / 100f);
         damage = Mathf.RoundToInt(damage * mult);
         int actualDamage = damage;
         if (_playerArmor > 0)
@@ -1225,7 +1237,7 @@ public class BattleManager : MonoBehaviour
         foreach (var e in _enemies)
         {
             if (e == null || e.IsDead) continue;
-            if (e.CheckPhaseSwitch(_playerSanity))
+            if (e.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 e.View?.Refresh();
                 Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）理智触发阶段切换 → 阶段{e.Phase}，HP重置为 {e.HP}/{e.MaxHP}");
@@ -1498,6 +1510,7 @@ public class BattleManager : MonoBehaviour
                 _playerStrength, _playerAgility, _playerLifesteal,
                 _playerCritRate, _playerCritDamage,
                 maxActionPoints, drawPerTurn,
+                _playerDamageMultiplier, _playerDamageTakenMultiplier,
                 ActiveChar?.data, InactiveChar?.data);   // 把战斗结束时的激活/未激活角色同步回局外
         }
         OnBattleEnded?.Invoke();
@@ -1610,10 +1623,13 @@ public class BattleManager : MonoBehaviour
         _isPlayerTurn = false;
         if (phaseHintText != null)
             phaseHintText.text = "敌人回合";
-        // 敌人回合开始：刷新每个存活敌人的意图预览（其当前将执行的技能），不再清空
+        // 敌人回合开始：重置每个存活敌人的护甲为 0（同玩家每回合清护甲），再刷新意图预览
         foreach (var e in _enemies)
-            if (e != null && !e.IsDead)
-                e.View?.SetIntent(GetEnemyIntentText(e));
+        {
+            if (e == null || e.IsDead) continue;
+            e.ResetArmorOnTurnStart();
+            e.View?.SetIntent(GetEnemyIntentText(e));
+        }
         UpdateUI();
 
         foreach (int slot in GetEnemyActionOrder())
@@ -1623,7 +1639,7 @@ public class BattleManager : MonoBehaviour
             if (inst == null || inst.IsDead) continue;   // 死亡跳过
 
             // 行动前阶段判定（HP≤0 或理智阈值 → 阶段2；理智恢复 → 阶段1）
-            if (inst.CheckPhaseSwitch(_playerSanity))
+            if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
@@ -1637,10 +1653,9 @@ public class BattleManager : MonoBehaviour
             }
             else
             {
-                // 无技能配置：固定伤害（也设置意图，避免行动时意图栏空白）
-                inst.View?.SetIntent("【攻击】");
-                Debug.Log($"[BattleManager] {inst.Name} 无可用技能，固定造成5伤害");
-                DealDamageToPlayer(5);
+                // 无技能配置：空过敌人回合（不造成伤害）
+                inst.View?.SetIntent("…");
+                Debug.Log($"[BattleManager] {inst.Name} 无可用技能，空过本回合");
             }
 
             inst.TurnInCycle++;   // 技能轮转计数（每次行动 +1）
@@ -1760,15 +1775,20 @@ public class BattleManager : MonoBehaviour
         if (hitsResolved)
         {
             if (skill.damage > 0)
-                DealDamageToPlayer(skill.damage);
+                DealDamageToPlayer(skill.damage, inst);
             if (skill.sanityReduction != 0)
                 ModifySanity(skill.sanityReduction);
             if (skill.strengthReduction != 0)
                 _playerStrength = Mathf.Max(0, _playerStrength + skill.strengthReduction);
+            // 获得护甲：基础值 + 敌人 dexterity（同杀戮尖塔敏捷加格挡）
+            if (skill.gainBlock > 0)
+            {
+                int block = skill.gainBlock + (inst.Config != null ? inst.Config.dexterity : 0);
+                inst.AddArmor(block);
+                Debug.Log($"[BattleManager] {inst.Name} 获得 {block} 护甲（基础 {skill.gainBlock} + 敏捷 {inst.Config?.dexterity ?? 0}）");
+            }
         }
 
-        // 凝视值变化（该敌人独立维护）
-        inst.ApplyGazeChange(skill);
         inst.View?.Refresh();
     }
 
@@ -1931,9 +1951,9 @@ public class BattleManager : MonoBehaviour
     private string GetEnemyIntentText(EnemyInstance inst)
     {
         if (inst == null || inst.IsDead) return "";
-        if (inst.Config == null) return "造成5伤害";
+        if (inst.Config == null) return "…";
         var skill = inst.GetCurrentSkill();
-        if (skill == null) return "造成5伤害";   // 无技能配置时走固定 5 伤害
+        if (skill == null) return "…";   // 无技能配置：空过本回合
         return skill.skillName;
     }
 

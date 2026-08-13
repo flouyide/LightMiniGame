@@ -70,6 +70,7 @@ public class ChapterManager : MonoBehaviour
     public int PlayerGold { get; private set; }
     public int PlayerSanity { get; private set; }   // 理智（背景切换依据）
     public int PlayerMaxSanity { get; private set; }   // 理智上限
+    public int PlayerSanityThreshold { get; private set; }   // 理智阈值：低于此值时所有敌人进入低理智阶段
     public int PlayerMaxActionPoints { get; private set; }  // 每回合行动点
     public int PlayerDrawPerTurn { get; private set; }      // 每回合基础抽牌数
 
@@ -82,6 +83,8 @@ public class ChapterManager : MonoBehaviour
     public int PlayerLifesteal { get; private set; }
     public int PlayerCritRate { get; private set; }
     public int PlayerCritDamage { get; private set; }
+    public int PlayerDamageMultiplier { get; private set; }       // 玩家造成伤害倍率（百分比，100=正常）
+    public int PlayerDamageTakenMultiplier { get; private set; } // 玩家受击倍率（百分比，100=正常）
 
     /// <summary>当前章节配置（供 BookUIController 读取背景图与阈值）。</summary>
     public ChapterConfig CurrentChapter => _currentChapter;
@@ -132,6 +135,7 @@ public class ChapterManager : MonoBehaviour
             PlayerGold = playerConfig.startGold;
             PlayerSanity = playerConfig.startSanity;
             PlayerMaxSanity = playerConfig.maxSanity;
+            PlayerSanityThreshold = playerConfig.sanityThreshold;
             PlayerMaxActionPoints = playerConfig.maxActionPoints;
             PlayerDrawPerTurn = playerConfig.drawPerTurn;
             // 持久基础属性：每次开局从 PlayerConfig（仅作初始值来源）重新读入
@@ -140,6 +144,8 @@ public class ChapterManager : MonoBehaviour
             PlayerLifesteal  = playerConfig.lifesteal;
             PlayerCritRate   = playerConfig.critRate;
             PlayerCritDamage = playerConfig.critDamage;
+            PlayerDamageMultiplier     = playerConfig.playerDamageMultiplier;
+            PlayerDamageTakenMultiplier = playerConfig.playerDamageTakenMultiplier;
         }
         else
         {
@@ -148,9 +154,12 @@ public class ChapterManager : MonoBehaviour
             PlayerGold = 50;
             PlayerSanity = 10;
             PlayerMaxSanity = 10;
+            PlayerSanityThreshold = 4;
             PlayerMaxActionPoints = 3;
             PlayerDrawPerTurn = 3;
             PlayerStrength = PlayerAgility = PlayerLifesteal = PlayerCritRate = PlayerCritDamage = 0;
+            PlayerDamageMultiplier = 100;
+            PlayerDamageTakenMultiplier = 100;
             Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
         }
     }
@@ -843,6 +852,7 @@ public class ChapterManager : MonoBehaviour
     public void ApplyBattleResult(int hp, int maxHp, int sanity, int maxSanity,
         int strength, int agility, int lifesteal, int critRate, int critDamage,
         int maxActionPoints, int drawPerTurn,
+        int playerDamageMultiplier, int playerDamageTakenMultiplier,
         CharacterData activeChar = null, CharacterData inactiveChar = null)
     {
         PlayerMaxHP   = maxHp > 0 ? maxHp : PlayerMaxHP;
@@ -856,6 +866,8 @@ public class ChapterManager : MonoBehaviour
         PlayerLifesteal  = lifesteal;
         PlayerCritRate   = critRate;
         PlayerCritDamage  = critDamage;
+        PlayerDamageMultiplier      = playerDamageMultiplier;
+        PlayerDamageTakenMultiplier = playerDamageTakenMultiplier;
 
         // 战斗结束时的激活/未激活角色同步回局外：若战斗内切换过角色，则保留切换结果，
         // 局外角色栏与下次进入战斗都以此时状态为准。

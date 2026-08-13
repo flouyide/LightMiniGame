@@ -291,12 +291,6 @@ public static class BattleSceneBuilder
         var armorText = armorObj.AddComponent<TextMeshProUGUI>();
         SetupText(armorText, "", 16, C(0.6f, 0.8f, 1f, 1f));
 
-        // 凝视值（gazeMaxValue<=0 的敌人运行时自动隐藏）
-        var gazeObj = CreateChild(root.transform, "GazeText");
-        Rect(gazeObj, C(0.5f, 1f), C(0.5f, 1f), C(0.5f, 1f), C(0, -104), V2(200, 22));
-        var gazeText = gazeObj.AddComponent<TextMeshProUGUI>();
-        SetupText(gazeText, "凝视 0/3", 14, C(0.9f, 0.6f, 1f, 1f));
-
         // 意图
         var intentBg = CreateChild(root.transform, "IntentBg");
         Rect(intentBg, C(0.5f, 0), C(0.5f, 0), C(0.5f, 0), C(0, 10), V2(220, 30));
@@ -327,7 +321,6 @@ public static class BattleSceneBuilder
         vso.FindProperty("hpBar").objectReferenceValue = hpSlider;
         vso.FindProperty("armorText").objectReferenceValue = armorText;
         vso.FindProperty("intentText").objectReferenceValue = intentText;
-        vso.FindProperty("gazeText").objectReferenceValue = gazeText;
         vso.FindProperty("damageAnchor").objectReferenceValue = anchor.GetComponent<RectTransform>();
         vso.FindProperty("damagePopupPrefab").objectReferenceValue = popup;
         vso.ApplyModifiedPropertiesWithoutUndo();

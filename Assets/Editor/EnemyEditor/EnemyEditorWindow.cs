@@ -306,7 +306,6 @@ public class EnemyEditorWindow : EditorWindow
         EditorGUILayout.Space(2);
         SerialProp("phase1Skills", new GUIContent("高理智牌库（phase1）"));
         SerialProp("phase2Skills", new GUIContent("低理智牌库（phase2）"));
-        SerialProp("phase2GazeSkill", new GUIContent("阶段2凝视满技能"));
         EditorGUI.indentLevel--;
     }
 
