@@ -35,6 +35,8 @@ public class CardDisplayEditor : Editor
 
         EditorGUILayout.Space();
 
+        serializedObject.Update();
+
         // === 按类型显示专属属性 ===
         switch (card.cardType)
         {
@@ -48,6 +50,64 @@ public class CardDisplayEditor : Editor
                 DrawBuffFields(card);
                 break;
         }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("UI 引用（Prefab 内部绑定）", EditorStyles.boldLabel);
+
+        // 绘制所有 UI 引用字段（nameText/descText/costText 等）
+        var nameTextProp = serializedObject.FindProperty("nameText");
+        var descTextProp = serializedObject.FindProperty("descText");
+        var costTextProp = serializedObject.FindProperty("costText");
+        var typeTextProp = serializedObject.FindProperty("typeText");
+        var keywordTextProp = serializedObject.FindProperty("keywordText");
+        var gradeTextProp = serializedObject.FindProperty("gradeText");
+        var frameImageProp = serializedObject.FindProperty("frameImage");
+        var bgImageProp = serializedObject.FindProperty("backgroundImage");
+        var artImageProp = serializedObject.FindProperty("artImage");
+        var typeBadgeProp = serializedObject.FindProperty("typeBadgeImage");
+        var costBadgeProp = serializedObject.FindProperty("costBadgeImage");
+
+        EditorGUILayout.PropertyField(nameTextProp);
+        EditorGUILayout.PropertyField(descTextProp);
+        EditorGUILayout.PropertyField(costTextProp);
+        EditorGUILayout.PropertyField(typeTextProp);
+        EditorGUILayout.PropertyField(keywordTextProp);
+        EditorGUILayout.PropertyField(gradeTextProp);
+        EditorGUILayout.PropertyField(frameImageProp);
+        EditorGUILayout.PropertyField(bgImageProp);
+        EditorGUILayout.PropertyField(artImageProp);
+        EditorGUILayout.PropertyField(typeBadgeProp);
+        EditorGUILayout.PropertyField(costBadgeProp);
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("词条悬浮提示", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordTooltip"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("tooltipText"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("tooltipBgColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("tooltipTextColor"));
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("类型颜色", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("attackColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("armorColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("buffColor"));
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("品级颜色", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("commonColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("fineColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("rareColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("epicColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("legendaryColor"));
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("黑暗卡面", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkFrameSprite"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkBackgroundSprite"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkFrameColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkBackgroundColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkTextColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("corruptedBadgeColor"));
 
         serializedObject.ApplyModifiedProperties();
 

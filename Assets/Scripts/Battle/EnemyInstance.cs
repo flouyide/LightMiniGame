@@ -13,7 +13,7 @@ public class EnemyInstance
     /// <summary>槽位索引（生成顺序，稳定不变；死亡后槽位保留不压缩）</summary>
     public int SlotIndex;
     public EnemyConfig Config;
-    /// <summary>行动顺序值（来自 EnemySpawnInfo.actionOrder）：数值小的先行动；相同值随机先后</summary>
+    /// <summary>行动顺序值（来自 EnemyConfig.actionPriority）：数值小的先行动；相同值随机先后</summary>
     public int ActionOrder;
 
     public int HP;

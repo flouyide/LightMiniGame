@@ -597,7 +597,7 @@ public class BattleManager : MonoBehaviour
             {
                 SlotIndex = _enemies.Count,
                 Config = cfg,
-                ActionOrder = info.actionOrder,
+                ActionOrder = cfg.actionPriority,
                 MaxHP = cfg.maxHP,
                 HP = cfg.maxHP,
                 Armor = cfg.armor,
@@ -1680,8 +1680,8 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 敌人行动顺序（槽位索引迭代）：按各敌人 EnemySpawnInfo.actionOrder 升序（数值小的先行动）；
-    /// 相同 actionOrder 的敌人每回合从中随机先后（组内洗牌）。
+    /// 敌人行动顺序（槽位索引迭代）：按各敌人 EnemyConfig.actionPriority 升序（数值小的先行动）；
+    /// 相同 actionPriority 的敌人每回合从中随机先后（组内洗牌）。
     /// 产出是全体槽位的一个排列——每个敌人每回合恰好行动一次，已行动过的不会再次行动。
     /// </summary>
     private IEnumerable<int> GetEnemyActionOrder()

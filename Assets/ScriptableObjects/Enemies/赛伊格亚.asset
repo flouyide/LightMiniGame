@@ -75,4 +75,10 @@ MonoBehaviour:
   lowSanityCardCount: 0
   abilities: []
   lootTable:
-    entries: []
+    entries:
+    - kind: 0
+      currencyAmount: 0
+      cardRarities: 
+      cardDrawCount: 0
+      cardPickCount: 0
+      relicRarities: 

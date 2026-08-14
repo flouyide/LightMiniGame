@@ -826,7 +826,7 @@ public class ChapterManager : MonoBehaviour
             bm.StartActiveChar = _activeCharacter;   // 局外当前激活角色作为战斗起始激活角色
             bm.StartInactiveChar = _inactiveCharacter;
             // 出战敌人优先取 startEnemies（EnterBattle 效果自带），其次取 Battle 事件 data.enemies，都空则回退 BattleManager 默认敌人
-            // 行动顺序由每个 EnemySpawnInfo.actionOrder 自带（数值小先动，同值随机），不再单独注入
+            // 行动顺序由每个 EnemyConfig.actionPriority 自带（数值小先动，同值随机），不再单独注入
             bm.StartEnemies = startEnemies ?? (data != null ? data.enemies : null);
             // 战斗背景（来自 Battle 事件的 PageEventData；null=保留 BattleManager.Background 上既有 Sprite）
             bm.StartNormalBattleBackground = data != null ? data.normalBattleBackground : null;

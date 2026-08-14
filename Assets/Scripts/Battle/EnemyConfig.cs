@@ -68,7 +68,7 @@ public class EnemyConfig : ScriptableObject
     public Difficulty difficulty = Difficulty.Weak;
 
     [Header("属性")]
-    [Tooltip("多敌人情况下的出招优先级（1最高，同优先级则随机顺序；运行时由 SpawnInfo.actionOrder 决定，此字段仅作编辑器提示）")]
+    [Tooltip("多敌人情况下的出招优先级（1最高，同优先级则随机顺序）。战斗时作为敌人行动顺序值：数值小的先行动；相同值的敌人每回合从中随机先后")]
     public int actionPriority = 1;
     [Tooltip("力量：加到敌人每个技能的伤害上")]
     public int strength = 0;
