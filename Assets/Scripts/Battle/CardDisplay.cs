@@ -108,6 +108,9 @@ public class CardDisplay : MonoBehaviour
 
     private bool _playable = true;
     private bool _darkMode = false;
+    private FusionCardDelta _fusion;  // 融合覆盖层（从 CardData.fusion 读入，显示时优先覆盖）
+
+    private CardData _data;  // 源 CardData（融合精确数字定位用）
     private Sprite _darkCardArt;  // 从 CardData 读入的黑暗卡面
 
     // 缓存正常模式颜色/精灵，退出黑暗模式时恢复
@@ -187,7 +190,11 @@ public class CardDisplay : MonoBehaviour
     {
         // 基础文本
         if (nameText) nameText.text = cardName;
-        if (costText) costText.text = actionPointCost.ToString();
+        // 费用：融合覆盖优先于原始费用
+        if (costText)
+            costText.text = (_fusion != null && _fusion.overrideCost)
+                ? _fusion.cost.ToString()
+                : actionPointCost.ToString();
         if (typeText) typeText.text = CardData.GetCardTypeName(cardType);
         if (gradeText) gradeText.text = CardData.GetGradeName(grade);
         if (descText) descText.text = GetDisplayDescription();
@@ -328,6 +335,10 @@ public class CardDisplay : MonoBehaviour
     {
         if (data == null) return;
 
+        // 融合覆盖层：卡片数值被融合修改后优先显示覆盖值
+        _data = data;
+        _fusion = data.fusion;
+
         // 如果有关联的 CardEntry，优先从 CardEntry 读取显示数据
         if (data.sourceEntry != null)
         {
@@ -412,6 +423,55 @@ public class CardDisplay : MonoBehaviour
     }
 
     // ========================================================================
+    // 数字字符定位（融合原位精确高亮用）
+    // ========================================================================
+
+    /// <summary>
+    /// 返回该卡描述文本中“targetNumber”这一串数字字符的包围盒（世界坐标）。
+    /// 用于融合时在卡面数字原位上精确定位高亮。找不到返回 false。
+    /// </summary>
+    public bool TryGetNumberRect(string targetNumber, out Vector2 worldCenter, out Vector2 worldSize)
+    {
+        worldCenter = Vector2.zero;
+        worldSize = Vector2.zero;
+        if (descText == null || string.IsNullOrEmpty(targetNumber)) return false;
+
+        descText.ForceMeshUpdate(true);
+        var info = descText.textInfo;
+        if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
+
+        string text = descText.text;
+        int startIdx = text.IndexOf(targetNumber, System.StringComparison.Ordinal);
+        if (startIdx < 0) return false;
+        int endIdx = startIdx + targetNumber.Length - 1;
+
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+        bool found = false;
+
+        for (int i = 0; i < info.characterCount; i++)
+        {
+            var ch = info.characterInfo[i];
+            if (ch.index < startIdx || ch.index > endIdx) continue;
+            if (!ch.isVisible) continue;
+
+            Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
+            Vector3 tr = descText.transform.TransformPoint(ch.topRight);
+            Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
+            Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
+
+            min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+            max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+            found = true;
+        }
+
+        if (!found) return false;
+        worldCenter = (Vector2)((min + max) * 0.5f);
+        worldSize = new Vector2(max.x - min.x, max.y - min.y);
+        return true;
+    }
+
+    // ========================================================================
     // 描述生成（复用CardData的静态方法）
     // ========================================================================
 
@@ -426,16 +486,18 @@ public class CardDisplay : MonoBehaviour
         switch (cardType)
         {
             case CardType.Attack:
+                int effAtk = (_fusion != null && _fusion.overrideAttack) ? _fusion.attackValue : attackValue;
                 string dmg = attackValueType == ValueType.Fixed
-                    ? attackValue.ToString()
-                    : $"({attackValue}+{CardData.GetAttributeName(attackAttribute)})";
+                    ? effAtk.ToString()
+                    : $"({effAtk}+{CardData.GetAttributeName(attackAttribute)})";
                 sb.Append($"造成{attackCount}次").Append(dmg).Append("点伤害");
                 if (ignoreArmor) sb.Append("\n无视护甲");
                 break;
             case CardType.Skill:
+                int effArm = (_fusion != null && _fusion.overrideArmor) ? _fusion.armorValue : armorValue;
                 string armor = armorValueType == ValueType.Fixed
-                    ? armorValue.ToString()
-                    : $"({armorValue}+{CardData.GetAttributeName(armorAttribute)})";
+                    ? effArm.ToString()
+                    : $"({effArm}+{CardData.GetAttributeName(armorAttribute)})";
                 sb.Append($"获得{armor}点护甲");
                 break;
             case CardType.Ability:

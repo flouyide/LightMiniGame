@@ -66,6 +66,40 @@ public class BattleCardContext : ICardRuntimeContext
     public void SetCustomData(string key, int value) => _battle.SetCustomData(key, value);
     public void ModifyCustomData(string key, int delta) => _battle.ModifyCustomData(key, delta);
     public void ModifySanity(int delta) => _battle.ModifySanity(delta);
+
+    // === 融合覆盖读取（供 EffectExecutor 在打出卡时覆盖数值）===
+
+    /// <summary>若当前手牌融合覆盖了攻击值则返回 true 并输出覆盖值。</summary>
+    public bool TryGetFusionAttack(out int value)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        if (f != null && f.overrideAttack) { value = f.attackValue; return true; }
+        value = 0; return false;
+    }
+
+    /// <summary>若当前手牌融合覆盖了护甲值则返回 true。</summary>
+    public bool TryGetFusionArmor(out int value)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        if (f != null && f.overrideArmor) { value = f.armorValue; return true; }
+        value = 0; return false;
+    }
+
+    /// <summary>若当前手牌融合覆盖了抽牌数则返回 true。</summary>
+    public bool TryGetFusionDraw(out int value)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        if (f != null && f.overrideDraw) { value = f.drawCount; return true; }
+        value = 0; return false;
+    }
+
+    /// <summary>若当前手牌融合覆盖了回费数则返回 true。</summary>
+    public bool TryGetFusionRestore(out int value)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        if (f != null && f.overrideRestore) { value = f.restoreAP; return true; }
+        value = 0; return false;
+    }
     public void AddBuff(BuffAttributeType type, int stacks, int duration = 0) => _battle.AddPlayerBuff(type, stacks, duration);
 
     // === 事件记录 ===

@@ -83,6 +83,9 @@ public class CardData : ScriptableObject
     /// <summary>运行时标记：本张卡是否已升级（不持久化，每场战斗重置）</summary>
     [NonSerialized] public bool isLowSanityForm = false;
 
+    /// <summary>融合覆盖层（战斗内运行时覆盖，不写入SO；进阶1开启后允许跨战斗持久化）</summary>
+    [NonSerialized] public FusionCardDelta fusion;
+
     /// <summary>
     /// 获取当前效果列表（EffectNode 格式）。如果有关联的 CardEntry，从其读取；否则返回 null。
     /// </summary>
@@ -93,9 +96,80 @@ public class CardData : ScriptableObject
     }
 
     /// <summary>
-    /// 获取当前费用。如果有关联的 CardEntry，从其读取。
+    /// 获取当前费用。如果有关联的 CardEntry，从其读取；融合覆盖优先。
     /// </summary>
-    public int GetEffectiveCost() => sourceEntry != null ? sourceEntry.GetCost(isLowSanityForm) : actionPointCost;
+    public int GetEffectiveCost()
+    {
+        int baseCost = sourceEntry != null ? sourceEntry.GetCost(isLowSanityForm) : actionPointCost;
+        return (fusion != null && fusion.overrideCost) ? fusion.cost : baseCost;
+    }
+
+    /// <summary>有效攻击值（融合覆盖优先；供显示/执行统一使用）。</summary>
+    public int EffectiveAttack
+    {
+        get
+        {
+            int baseVal = sourceEntry != null ? normalAttackValue(attackValue, sourceEntry) : attackValue;
+            return (fusion != null && fusion.overrideAttack) ? fusion.attackValue : baseVal;
+        }
+    }
+
+    /// <summary>有效护甲值（融合覆盖优先）。</summary>
+    public int EffectiveArmor
+    {
+        get
+        {
+            int baseVal = sourceEntry != null ? normalArmorValue(armorValue, sourceEntry) : armorValue;
+            return (fusion != null && fusion.overrideArmor) ? fusion.armorValue : baseVal;
+        }
+    }
+
+    private static int normalAttackValue(int fallback, CardEntry e)
+        => ResolveFromEffects(e, EffectOperation.DealDamage, fallback);
+
+    private static int normalArmorValue(int fallback, CardEntry e)
+        => ResolveFromEffects(e, EffectOperation.GainBlock, fallback);
+
+    /// <summary>
+    /// 从 CardEntry 效果列表里找到首个指定操作的效果节点，若其数值是常量节点则返回该值，
+    /// 否则回退到 fallback。这保证融合展示/回填与描述中显示的数值一致（如“造成6点伤害”→6）。
+    /// </summary>
+    private static int ResolveFromEffects(CardEntry e, EffectOperation op, int fallback)
+    {
+        if (e == null) return fallback;
+        var nodes = e.GetEffectNodes(false);   // 普通形态
+        if (nodes == null || nodes.Count == 0) return fallback;
+        foreach (var n in nodes)
+        {
+            if (n == null || !n.enabled || n.operation != op || n.value == null) continue;
+            int v;
+            if (TryStaticValue(n.value, out v)) return v;
+        }
+        return fallback;
+    }
+
+    /// <summary>若 ValueNode 是“整数常量”，返回其值；否则 false。</summary>
+    private static bool TryStaticValue(ValueNode node, out int value)
+    {
+        value = 0;
+        if (node == null) return false;
+        if (node.nodeType == ValueNodeType.IntegerConstant) { value = node.intValue; return true; }
+        return false;
+    }
+
+    /// <summary>是否攻击牌（供融合提供方与执行用）。</summary>
+    public bool IsAttackCard()
+    {
+        if (sourceEntry != null) return sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack;
+        return cardType == CardType.Attack;
+    }
+
+    /// <summary>是否护甲牌。</summary>
+    public bool IsSkillCard()
+    {
+        if (sourceEntry != null) return sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Skill;
+        return cardType == CardType.Skill;
+    }
 
     /// <summary>
     /// 获取品级中文名

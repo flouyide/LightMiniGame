@@ -189,6 +189,16 @@ public class BattleManager : MonoBehaviour
     private const int SanityPhaseThreshold = 4;  // 理智转阶段阈值
     private int _baseDrawPerTurn;   // 每场战斗前的抽牌基数（来自 Inspector 的 drawPerTurn，开局捕获一次）
     private int _actionPoints;
+
+    // === 融合（Fusion）机制 ===
+    private bool _fusionUsedThisTurn;   // 本回合是否已进行过融合操作（每回合限一次）
+    /// <summary>进阶1开关：融合修改是否永久保留（跨战斗）。默认 false，由后续事件触发打开。</summary>
+    public bool persistFusion;
+    /// <summary>进阶2开关：是否开放血量/血量上限进入可融合数值（低理智下不可选）。默认 false，由后续事件触发打开。</summary>
+    public bool includeHPInFusion;
+    private FusionController _fusionController;
+    private CardData _currentFusionCard;   // 当前正在执行效果的手牌（供 effect 读取 fusion 覆盖）
+
     // === 敌人状态（1-N 个；槽位索引稳定，死亡不压缩）===
     private readonly List<EnemyInstance> _enemies = new();
     private int _selectedEnemyIndex = 0;          // 拖拽出牌时的目标敌人槽位
@@ -205,6 +215,7 @@ public class BattleManager : MonoBehaviour
     private Image _backgroundImage;   // Background GameObject 下的背景 Image（按理智切换）
 
     private SettingsPanelUI _settingsPanel;
+    private ChapterManager _cachedChapterManager;   // 懒缓存，供货币代理使用
 
     public bool IsPlayerTurn => _isPlayerTurn && !_battleEnded;
 
@@ -337,6 +348,183 @@ public class BattleManager : MonoBehaviour
     public void AddPlayerArmor(int amount) => _playerArmor += amount;
     public void AddActionPoints(int amount) => _actionPoints = Mathf.Max(0, _actionPoints + amount);
 
+    // ========================================================================
+    // 融合（Fusion）读写 API（供 FusionController 回填数值）
+    // ========================================================================
+
+    /// <summary>直接设定玩家当前行动点（融合回填用，防负）。</summary>
+    public void SetActionPoints(int value) => _actionPoints = Mathf.Max(0, value);
+
+    /// <summary>直接设定玩家当前护甲（融合回填用，防负）。</summary>
+    public void SetPlayerArmor(int value) => _playerArmor = Mathf.Max(0, value);
+
+    /// <summary>直接设定玩家当前 HP（夹取 0..max）。</summary>
+    public void SetPlayerHP(int value) => _playerHP = Mathf.Clamp(value, 0, playerMaxHP);
+
+    /// <summary>直接设定玩家血量上限（≥1），同步夹取当前 HP。</summary>
+    public void SetPlayerMaxHP(int value)
+    {
+        playerMaxHP = Mathf.Max(1, value);
+        _playerHP = Mathf.Min(_playerHP, playerMaxHP);
+    }
+
+    /// <summary>指定槽位敌人是否存活（供融合提供方用）。</summary>
+    public bool FusionIsEnemyAlive(int slot) => GetEnemy(slot) is { IsDead: false };
+
+    /// <summary>指定槽位敌人的 HP（供融合提供方用；死亡返回 0）。</summary>
+    public int FusionEnemyHP(int slot)
+    {
+        var e = GetEnemy(slot);
+        return e != null && !e.IsDead ? e.HP : 0;
+    }
+
+    /// <summary>指定槽位敌人的最大 HP。</summary>
+    public int FusionEnemyMaxHP(int slot)
+    {
+        var e = GetEnemy(slot);
+        return e != null ? e.MaxHP : 0;
+    }
+
+    /// <summary>指定槽位敌人的护甲。</summary>
+    public int FusionEnemyArmor(int slot)
+    {
+        var e = GetEnemy(slot);
+        return e != null && !e.IsDead ? e.Armor : 0;
+    }
+
+    /// <summary>回填：设定指定槽位敌人 HP（夹取 0..MaxHP）。</summary>
+    public void FusionSetEnemyHP(int slot, int value)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return;
+        e.HP = Mathf.Clamp(value, 0, e.MaxHP);
+        e.View?.Refresh();
+    }
+
+    /// <summary>回填：设定指定槽位敌人 MaxHP（≥1，同步夹取 HP）。</summary>
+    public void FusionSetEnemyMaxHP(int slot, int value)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return;
+        e.MaxHP = Mathf.Max(1, value);
+        e.HP = Mathf.Min(e.HP, e.MaxHP);
+        e.View?.Refresh();
+    }
+
+    /// <summary>回填：设定指定槽位敌人护甲（防负）。</summary>
+    public void FusionSetEnemyArmor(int slot, int value)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return;
+        e.Armor = Mathf.Max(0, value);
+        e.View?.Refresh();
+    }
+
+    /// <summary>回填：设定指定槽位敌人当前意图卡牌伤害值（防负）。</summary>
+    public void FusionSetEnemyIntentDamage(int slot, int value)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return;
+        var skill = e.GetCurrentSkill();
+        if (skill == null) return;
+        skill.damage = Mathf.Max(0, value);
+        e.View?.Refresh();
+    }
+
+    /// <summary>读取指定槽位敌人当前意图卡牌伤害值（无技能返回 0）。</summary>
+    public int FusionEnemyIntentDamage(int slot)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return 0;
+        var skill = e.GetCurrentSkill();
+        return skill != null ? skill.damage : 0;
+    }
+
+    /// <summary>当前玩家货币（只读代理到 ChapterManager；战斗中其它系统不消费则无冲突）。</summary>
+    public int PlayerGold
+    {
+        get
+        {
+            var cm = GetChapterManager();
+            return cm != null ? cm.PlayerGold : 0;
+        }
+    }
+
+    /// <summary>直接覆盖玩家货币（融合回填用，防负；战后由 ApplyBattleResult 持久）。</summary>
+    public void SetPlayerGold(int value)
+    {
+        var cm = GetChapterManager();
+        if (cm == null) return;
+        int val = Mathf.Max(0, value);
+        int diff = val - cm.PlayerGold;
+        if (diff != 0) cm.AddGold(diff);   // 复用 AddGold 以广播 UI（内部 clamp≥0）
+    }
+
+    private ChapterManager GetChapterManager()
+    {
+        if (_cachedChapterManager == null)
+            _cachedChapterManager = chapterManager != null ? chapterManager : FindObjectOfType<ChapterManager>();
+        return _cachedChapterManager;
+    }
+
+    /// <summary>本回合是否已用过融合操作（每回合限一次）。</summary>
+    public bool FusionUsedThisTurn => _fusionUsedThisTurn;
+
+    /// <summary>标记融合已用（由 FusionController 在确认时调用）。</summary>
+    public void MarkFusionUsed() => _fusionUsedThisTurn = true;
+
+    /// <summary>注册/获取融合控制器（BattleManager.BeginBattle 自动创建并挂载）。</summary>
+    public FusionController FusionController => _fusionController;
+
+    /// <summary>当前正在执行效果的手牌；EffectExecutor 借此读取 fusion 覆盖。</summary>
+    public CardData CurrentFusionCard => _currentFusionCard;
+
+    // ========================================================================
+    // 融合：场上数值的“原位锚点”（供 FusionController 生成高亮徽章）
+    // ========================================================================
+
+    /// <summary>玩家行动点徽章锚点（左下角 ActionPointBadge）。</summary>
+    public RectTransform ActionPointAnchor => actionPointText != null ? actionPointText.rectTransform : null;
+
+    /// <summary>玩家护甲文本锚点。</summary>
+    public RectTransform ArmorAnchor => armorText != null ? armorText.rectTransform : null;
+
+    /// <summary>玩家 HP 文本锚点。</summary>
+    public RectTransform HPAnchor => hpText != null ? hpText.rectTransform : null;
+
+    /// <summary>玩家理智文本锚点（若存在）。</summary>
+    public RectTransform SanityAnchor => sanityText != null ? sanityText.rectTransform : null;
+
+    /// <summary>指定槽位敌人的视图锚点（敌人整体；死亡返回 null）。位置取自 enemyContainer 子物体。</summary>
+    public RectTransform GetEnemyAnchor(int slot)
+    {
+        if (enemyContainer == null || slot < 0 || slot >= enemyContainer.childCount) return null;
+        return enemyContainer.GetChild(slot) as RectTransform;
+    }
+
+    /// <summary>指定手牌索引的卡面视图锚点（用于原位徽章定位；越界返回 null）。</summary>
+    public RectTransform GetHandCardAnchor(int index)
+        => handLayout != null ? handLayout.GetCardViewTransform(index) : null;
+
+    /// <summary>指定手牌索引的 CardDisplay（越界返回 null），用于数字字符精确定位。</summary>
+    public CardDisplay GetHandCardDisplay(int index)
+        => handLayout != null ? handLayout.GetCardDisplay(index) : null;
+
+    /// <summary>手动触发一次理智扣除（融合进入时用，作为代价而非条件，允许负值 clamp≥0）。</summary>
+    public void DeductSanityAsCost(int amount)
+    {
+        if (amount <= 0) return;
+        ModifySanity(-amount);
+    }
+
+    /// <summary>融合完成后刷新战斗 UI（手牌 + 顶部状态 + 敌人）并刷新融合按钮。</summary>
+    public void SetDirtyUI()
+    {
+        UpdateUI();
+        RefreshHandUI();
+        if (_fusionController != null) _fusionController.UpdateEntryInteractable();
+    }
+
     public void ModifyPlayerAttribute(ModifiableAttribute attr, ModifyMethod method, int amount)
     {
         // Buff 属性路由到 BuffSystem（Add 方式）
@@ -459,6 +647,71 @@ public class BattleManager : MonoBehaviour
         RefreshHandUI();
     }
 
+    // ========================================================================
+    // 融合：手牌数值读取/回写（写进 CardData.fusion 覆盖层，显示+打出同时生效）
+    // ========================================================================
+
+    /// <summary>取指定索引手牌的 CardData（越界返回 null），供融合提供方读取数值。</summary>
+    public CardData GetHandCardData(int index)
+        => (index >= 0 && index < _hand.Count) ? _hand[index] : null;
+
+    /// <summary>保证卡牌已有融合覆盖层。</summary>
+    private static FusionCardDelta EnsureFusion(CardData card)
+    {
+        if (card.fusion == null) card.fusion = new FusionCardDelta();
+        return card.fusion;
+    }
+
+    /// <summary>回填：重设手牌费用（融合）并刷新手牌。</summary>
+    public void SetHandCardCost(int index, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.overrideCost = true;
+        f.cost = Mathf.Max(0, value);
+        RefreshHandUI();
+    }
+
+    /// <summary>回填：重设手牌攻击值（融合）并刷新。</summary>
+    public void SetHandCardAttack(int index, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.overrideAttack = true;
+        f.attackValue = Mathf.Max(0, value);
+        RefreshHandUI();
+    }
+
+    /// <summary>回填：重设手牌护甲值（融合）并刷新。</summary>
+    public void SetHandCardArmor(int index, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.overrideArmor = true;
+        f.armorValue = Mathf.Max(0, value);
+        RefreshHandUI();
+    }
+
+    /// <summary>手牌每张是否可融合地面（保底避免无意义。当前所有手牌均可参与费用/攻击/护甲）。</summary>
+    public bool HandCardHasAttack(CardData card)
+    {
+        if (card == null) return false;
+        if (card.sourceEntry != null)
+            return card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack;
+        return card.cardType == CardType.Attack;
+    }
+
+    public bool HandCardHasArmor(CardData card)
+    {
+        if (card == null) return false;
+        if (card.sourceEntry != null)
+            return card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Skill;
+        return card.cardType == CardType.Skill;
+    }
+
     private int GetModAttrValue(ModifiableAttribute attr) => attr switch
     {
         ModifiableAttribute.Strength => _playerStrength,
@@ -548,6 +801,14 @@ public class BattleManager : MonoBehaviour
     {
         if (!_listenersWired) { WireListeners(); _listenersWired = true; }
         _baseDrawPerTurn = drawPerTurn;   // 捕获抽牌基数（Inspector 配置），避免逐场战斗累加
+
+        // 融合控制器：首次创建并挂载（后续复用），由 UpdateUI 驱动其按钮可用态
+        if (_fusionController == null)
+        {
+            _fusionController = gameObject.AddComponent<FusionController>();
+            _fusionController.Setup(this);
+        }
+        _fusionUsedThisTurn = false;   // 每场战斗重置
         StartBattle();
     }
 
@@ -920,7 +1181,9 @@ public class BattleManager : MonoBehaviour
             Debug.Log($"[BattleManager] 卡牌={card.sourceEntry.cardName} 理智={_playerSanity} 阈值={sanityThreshold} isLowSanityForm={card.isLowSanityForm} 存在形式={card.sourceEntry.GetExistence(card.isLowSanityForm)}");
         }
 
+        _currentFusionCard = card;   // 让 EffectExecutor 在执行效果时读取此卡融合覆盖
         ApplyCardEffects(card);
+        _currentFusionCard = null;   // 执行完清除避免串扰
         HandleCardConsumption(card);
 
         if (_hand.Contains(card))
@@ -1084,7 +1347,7 @@ public class BattleManager : MonoBehaviour
 
     private void ApplyAttackCard(CardData card)
     {
-        int baseDamage = card.attackValue;
+        int baseDamage = card.EffectiveAttack;   // 融合覆盖优先
         if (card.attackValueType == ValueType.AttributeBased)
             baseDamage += GetAttributeValue(card.attackAttribute);
 
@@ -1109,7 +1372,7 @@ public class BattleManager : MonoBehaviour
 
     private void ApplyArmorCard(CardData card)
     {
-        int armor = card.armorValue;
+        int armor = card.EffectiveArmor;   // 融合覆盖优先
         if (card.armorValueType == ValueType.AttributeBased)
             armor += GetAttributeValue(card.armorAttribute);
 
@@ -1844,6 +2107,7 @@ public class BattleManager : MonoBehaviour
         _actionPoints = maxActionPoints;
         _playerArmor = 0;
         _hasSwitchedThisTurn = false;
+        _fusionUsedThisTurn = false;   // 每回合重置融合使用
         _eventsThisTurn.Clear(); // 清除本回合事件
 
         // 重置本回合计数器
@@ -1991,5 +2255,9 @@ public class BattleManager : MonoBehaviour
 
         if (handLayout != null)
             handLayout.RefreshPlayable(IsCardPlayable);
+
+        // 刷新融合入口按钮可用态（每回合一次 / 非玩家回合时置灰）
+        if (_fusionController != null)
+            _fusionController.UpdateEntryInteractable();
     }
 }

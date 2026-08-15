@@ -391,6 +391,9 @@ public class EffectExecutorV2
     private void ExecuteDamage(EffectNode node)
     {
         int baseDamage = EvaluateValue(node.value);
+        // 融合覆盖：手牌攻击值被融合修改时，完全替换基础伤害（力量加成仍按后续叠加）
+        if (_ctx.TryGetFusionAttack(out int fusionAtk))
+            baseDamage = fusionAtk;
         // 力量加成
         if (node.scalingMode == ScalingMode.AddStrength)
             baseDamage += _ctx.PlayerStrength;
@@ -468,6 +471,9 @@ public class EffectExecutorV2
     private void ExecuteGainBlock(EffectNode node)
     {
         int block = EvaluateValue(node.value);
+        // 融合覆盖：护甲值被融合修改时替换基础格挡
+        if (_ctx.TryGetFusionArmor(out int fusionArmor))
+            block = fusionArmor;
         if (node.scalingMode == ScalingMode.AddStrength)
             block += _ctx.PlayerDexterity;
         _ctx.AddPlayerArmor(block);
@@ -704,6 +710,9 @@ public class EffectExecutorV2
     private void ExecuteDrawCards(EffectNode node)
     {
         int count = EvaluateValue(node.value);
+        // 融合覆盖：抽牌数被融合修改时替换
+        if (_ctx.TryGetFusionDraw(out int fusionDraw))
+            count = fusionDraw;
         _ctx.DrawCards(count);
         _lastResult[EffectResultType.CardsDrawn] = count;
         _lastResult[EffectResultType.ActualValue] = count;
@@ -716,6 +725,9 @@ public class EffectExecutorV2
     private void ExecuteRestoreAP(EffectNode node)
     {
         int amount = EvaluateValue(node.value);
+        // 融合覆盖：回费数被融合修改时替换
+        if (_ctx.TryGetFusionRestore(out int fusionRestore))
+            amount = fusionRestore;
         _ctx.AddPlayerEnergy(amount);
         _lastResult[EffectResultType.ActualValue] = amount;
         Log($"  [行动点] +{amount}");

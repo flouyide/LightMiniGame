@@ -41,6 +41,21 @@ public class HandCardLayout : MonoBehaviour
 
     public int CardCount => _cardObjects.Count;
 
+    /// <summary>返回指定索引手牌卡面视图的 RectTransform（越界返回 null），用于原位徽章定位。</summary>
+    public RectTransform GetCardViewTransform(int index)
+    {
+        if (index < 0 || index >= _cardObjects.Count || _cardObjects[index] == null)
+            return null;
+        return _cardObjects[index].transform as RectTransform;
+    }
+
+    /// <summary>返回指定索引手牌的 CardDisplay（越界返回 null），用于数字字符精确定位。</summary>
+    public CardDisplay GetCardDisplay(int index)
+    {
+        if (index < 0 || index >= _cardDisplays.Count) return null;
+        return _cardDisplays[index];
+    }
+
     /// <summary>当前是否处于黑暗卡面模式</summary>
     public bool IsDarkMode => _isDarkMode;
 
