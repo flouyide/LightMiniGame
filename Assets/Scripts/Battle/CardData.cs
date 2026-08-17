@@ -128,6 +128,36 @@ public class CardData : ScriptableObject
         }
     }
 
+    /// <summary>有效增益值：取 CardEntry 首个 ModifyAttribute 效果节点的常量值（融合覆盖优先）。</summary>
+    public int EffectiveBuffValue
+    {
+        get
+        {
+            int baseVal = sourceEntry != null ? ResolveFromEffects(sourceEntry, EffectOperation.ModifyAttribute, 0) : 0;
+            return (fusion != null && fusion.overrideBuff) ? fusion.buffValue : baseVal;
+        }
+    }
+
+    /// <summary>有效抽牌数：取 CardEntry 首个 DrawCards 效果节点的常量值（融合覆盖优先）。</summary>
+    public int EffectiveDraw
+    {
+        get
+        {
+            int baseVal = sourceEntry != null ? ResolveFromEffects(sourceEntry, EffectOperation.DrawCards, 0) : 0;
+            return (fusion != null && fusion.overrideDraw) ? fusion.drawCount : baseVal;
+        }
+    }
+
+    /// <summary>有效回费数：取 CardEntry 首个 Restore ActionPoints 效果节点的常量值（融合覆盖优先）。</summary>
+    public int EffectiveRestoreAP
+    {
+        get
+        {
+            int baseVal = sourceEntry != null ? ResolveFromEffects(sourceEntry, EffectOperation.RestoreActionPoints, 0) : 0;
+            return (fusion != null && fusion.overrideRestore) ? fusion.restoreAP : baseVal;
+        }
+    }
+
     private static int normalAttackValue(int fallback, CardEntry e)
         => ResolveFromEffects(e, EffectOperation.DealDamage, fallback);
 

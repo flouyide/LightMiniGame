@@ -20,6 +20,16 @@ public class EnemyInstance
     public int MaxHP;
     public int Armor;
 
+    /// <summary>运行时力量增益（叠加在 Config.strength 之上，战斗内临时）。</summary>
+    public int StrengthBuff;
+    /// <summary>运行时敏捷增益（叠加在 Config.dexterity 之上，战斗内临时）。</summary>
+    public int DexterityBuff;
+
+    /// <summary>有效力量 = 基础力量 + 运行时增益</summary>
+    public int EffectiveStrength => (Config != null ? Config.strength : 0) + StrengthBuff;
+    /// <summary>有效敏捷 = 基础敏捷 + 运行时增益</summary>
+    public int EffectiveDexterity => (Config != null ? Config.dexterity : 0) + DexterityBuff;
+
     /// <summary>当前阶段（1=高理智形态，2=低理智形态）</summary>
     public int Phase = 1;
     /// <summary>技能轮转计数（每行动一次 +1）</summary>

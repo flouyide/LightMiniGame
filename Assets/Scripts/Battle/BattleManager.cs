@@ -270,6 +270,20 @@ public class BattleManager : MonoBehaviour
     public int GetEnemyBleed(int index) => 0;
     public int GetEnemyArmorBreak(int index) => 0;
 
+    /// <summary>指定槽位敌人的有效力量（含运行时增益；敌人作为效果发起者时作攻击缩放；死亡/越界返回 0）。</summary>
+    public int GetEnemyStrength(int index)
+    {
+        var e = GetEnemy(index);
+        return e != null && !e.IsDead ? e.EffectiveStrength : 0;
+    }
+
+    /// <summary>指定槽位敌人的有效敏捷（含运行时增益；敌人作为效果发起者时作格挡缩放；死亡/越界返回 0）。</summary>
+    public int GetEnemyDexterity(int index)
+    {
+        var e = GetEnemy(index);
+        return e != null && !e.IsDead ? e.EffectiveDexterity : 0;
+    }
+
     /// <summary>按槽位索引取敌人实例（越界返回 null）</summary>
     private EnemyInstance GetEnemy(int slotIndex)
         => (slotIndex >= 0 && slotIndex < _enemies.Count) ? _enemies[slotIndex] : null;
@@ -725,6 +739,39 @@ public class BattleManager : MonoBehaviour
         var f = EnsureFusion(card);
         f.overrideArmor = true;
         f.armorValue = Mathf.Max(0, value);
+        RefreshHandUI();
+    }
+
+    /// <summary>回填：重设手牌增益值（融合）并刷新。注意：增益覆盖目前未接入效果执行，仅记录展示值。</summary>
+    public void SetHandCardBuff(int index, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.overrideBuff = true;
+        f.buffValue = Mathf.Max(0, value);
+        RefreshHandUI();
+    }
+
+    /// <summary>回填：重设手牌抽牌数（融合）并刷新。</summary>
+    public void SetHandCardDraw(int index, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.overrideDraw = true;
+        f.drawCount = Mathf.Max(0, value);
+        RefreshHandUI();
+    }
+
+    /// <summary>回填：重设手牌回费数（融合）并刷新。</summary>
+    public void SetHandCardRestore(int index, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.overrideRestore = true;
+        f.restoreAP = Mathf.Max(0, value);
         RefreshHandUI();
     }
 
@@ -1489,11 +1536,56 @@ public class BattleManager : MonoBehaviour
         return inst.TakeDamage(damage, ignoreArmor, armorBreakScaled);
     }
 
+    /// <summary>给指定槽位敌人叠加护甲（敌人自护盾/给友军护盾），越界/死亡忽略。</summary>
+    public void AddEnemyArmor(int slotIndex, int amount)
+    {
+        var e = GetEnemy(slotIndex);
+        if (e == null || e.IsDead || amount <= 0) return;
+        e.AddArmor(amount);
+        e.View?.Refresh();
+        UpdateUI();
+    }
+
+    /// <summary>
+    /// 给指定槽位敌人施加属性增益（敌人自buff）。仅支持敌人模型存在的属性（力量/敏捷），
+    /// 其它属性敌人不具此概念，返回 false（调用方可忽略或回退）。
+    /// </summary>
+    public bool ApplyEnemyAttributeBuff(int slotIndex, LightMiniGame.CardEditor.PlayerAttributeType attr, int delta)
+    {
+        var e = GetEnemy(slotIndex);
+        if (e == null || e.IsDead) return false;
+
+        switch (attr)
+        {
+            case LightMiniGame.CardEditor.PlayerAttributeType.Strength:
+                e.StrengthBuff += delta;
+                e.View?.Refresh();
+                UpdateUI();
+                return true;
+            case LightMiniGame.CardEditor.PlayerAttributeType.Dexterity:
+                e.DexterityBuff += delta;
+                e.View?.Refresh();
+                UpdateUI();
+                return true;
+            default:
+                // 敌人暂没有 血量/暴击/倍率 等运行时增益的概念，不支持则忽略
+                Debug.Log($"[BattleManager] 敌人({e.Name}) 不支持属性 {attr} 的运行时增益，已忽略");
+                return false;
+        }
+    }
+
+    /// <summary>公开包装：敌人攻击牌/效果调用，对玩家结算伤害（沿用原敌人伤害语义）。</summary>
+    public void DealDamageToPlayer(int damage, int sourceEnemySlot)
+    {
+        var inst = GetEnemy(sourceEnemySlot);
+        DealDamageToPlayer(damage, inst);
+    }
+
     private void DealDamageToPlayer(int damage, EnemyInstance inst)
     {
         // 敌人力量加成：直接加到基础伤害上（同杀戮尖塔力量对攻击牌的影响）
         if (inst != null && inst.Config != null)
-            damage += inst.Config.strength;
+            damage += inst.EffectiveStrength;
 
         // 应用伤害倍率：敌人对玩家的最终伤害 = (技能伤害 + 力量) * 敌人造成伤害倍率 * 玩家受击倍率
         int enemyDealtMult = inst != null && inst.Config != null ? inst.Config.damageDealtMultiplier : 100;
@@ -1508,6 +1600,19 @@ public class BattleManager : MonoBehaviour
         }
         _playerHP -= actualDamage;
         if (_playerHP < 0) _playerHP = 0;
+
+        // 玩家受伤统一一条路径（飘字/事件/死亡判定）
+        if (actualDamage > 0)
+            OnPlayerDamaged(actualDamage);
+    }
+
+    /// <summary>玩家受伤的统一处理入口（飘字提示 + 事件记录）。</summary>
+    private void OnPlayerDamaged(int damage)
+    {
+        _triggerSystem?.FireEvent(TriggerEvent.OnDamageTaken);
+        UpdateUI();
+        if (_playerHP <= 0)
+            EndBattle(false);
     }
 
     /// <summary>
@@ -2023,19 +2128,28 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 执行指定敌人打出的卡牌效果（对玩家结算）。
-    /// TODO（以后实现）：按 CardEntry 的 normalEffectNodes / lowSanityEffectNodes 调用 EffectExecutor
-    /// 对玩家结算（伤害/护甲/理智等），并保留锁定角色等逻辑。当前为占位，敌人暂不出牌效果。
+    /// 执行指定敌人打出的卡牌效果（对玩家/敌人自身结算）。
+    /// 把「发起者（出牌者）= 该敌人」传给 EffectExecutorV2，效果节点按相对目标解析：
+    /// 当前角色/所有角色 → 玩家；效果发起者 → 该敌人自己。
     /// </summary>
     private void ExecuteEnemySkill(EnemyInstance inst, CardEntry skill)
     {
         if (inst == null || skill == null) return;
 
-        // TODO: 敌人出牌逻辑 —— 后续按 CardEntry 效果节点结算（伤害/护甲/理智/锁定等）。
-        //       当前仅记录出牌，实际效果待接入 EffectExecutor。
-        Debug.Log($"[BattleManager] {inst.Name} 出牌：{skill.cardName}（效果结算待实现）");
+        bool lowSanity = _playerSanity <= 4;   // 与卡面/理智形态一致
+        var nodes = skill.GetEffectNodes(lowSanity);
+        if (nodes == null || nodes.Count == 0)
+        {
+            Debug.Log($"[BattleManager] {inst.Name} 出牌：{skill.cardName}（无效果节点，空结算）");
+            inst.View?.Refresh();
+            return;
+        }
+
+        Debug.Log($"[BattleManager] {inst.Name} 出牌：{skill.cardName}（发起者=槽位{inst.SlotIndex}，{nodes.Count}个效果）");
+        _effectExecutorV2.ExecuteEffectListAsEnemy(inst.SlotIndex, nodes);
 
         inst.View?.Refresh();
+        UpdateUI();
     }
 
     /// <summary>阶段切换判定已迁入 EnemyInstance.CheckPhaseSwitch（每个敌人独立维护阶段/凝视/轮转状态）；

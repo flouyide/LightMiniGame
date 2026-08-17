@@ -18,6 +18,10 @@ public class EffectExecutorV2
     // 最近一次效果的结果
     private Dictionary<EffectResultType, int> _lastResult;
 
+    // 当前效果的发起者（出牌者）：<0 表示玩家（默认）；>=0 表示对应槽位的敌人在出牌。
+    // 决定 “相对目标”（当前角色/效果发起者）和属性缩放（力量/敏捷/暴击）解析到哪一边。
+    private int _initiatorEnemySlot = -1;
+
     // 执行日志
     public List<string> ExecutionLog { get; private set; } = new List<string>();
 
@@ -64,6 +68,49 @@ public class EffectExecutorV2
                 _localVars[node.outputVariableName] = resultVal;
                 Log($"  → 保存变量 {node.outputVariableName} = {resultVal}");
             }
+        }
+    }
+
+    /// <summary>供敌人技能调用：设置发起者为指定槽位敌人后再执行效果列表。执行完发起者恢复为玩家。</summary>
+    public void ExecuteEffectListAsEnemy(int enemySlot, List<EffectNode> effects, Dictionary<string, int> externalVars = null)
+    {
+        int prev = _initiatorEnemySlot;
+        _initiatorEnemySlot = enemySlot;
+        try { ExecuteEffectList(effects, externalVars); }
+        finally { _initiatorEnemySlot = prev; }
+    }
+
+    private bool IsEnemyInitiator => _initiatorEnemySlot >= 0;
+
+    /// <summary>发起者（出牌者）的力量：玩家出牌读玩家力量，敌人出牌读该敌人力量。</summary>
+    private int OwnerStrength
+    {
+        get { return IsEnemyInitiator ? _ctx.GetEnemyStrength(_initiatorEnemySlot) : _ctx.PlayerStrength; }
+    }
+
+    /// <summary>发起者（出牌者）的敏捷：玩家出牌读玩家敏捷，敌人出牌读该敌人敏捷。</summary>
+    private int OwnerDexterity
+    {
+        get { return IsEnemyInitiator ? _ctx.GetEnemyDexterity(_initiatorEnemySlot) : _ctx.PlayerDexterity; }
+    }
+
+    /// <summary>判断 target 是否意在“玩家侧”（结算命中玩家）。
+/// 玩家出牌：当前角色/所有角色/效果发起者 → 玩家自身（自buff/自盾）。
+/// 敌人出牌（敌人视角反转）：除「效果发起者」指敌人自己外，其余命中目标一律落在玩家身上——
+/// 敌人打出的“选定敌人/随机敌人/所有敌人/当前角色”这类攻击/施加目标，在敌人视角下都命中玩家。</summary>
+    private bool TargetIsPlayerSide(CombatUnitTarget t)
+    {
+        if (IsEnemyInitiator)
+            return t != CombatUnitTarget.EffectSource;   // 敌人视角：只有“效果发起者”是自己，其余命中玩家
+
+        switch (t)
+        {
+            case CombatUnitTarget.CurrentCharacter:
+            case CombatUnitTarget.AllCharacters:
+            case CombatUnitTarget.EffectSource:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -394,52 +441,66 @@ public class EffectExecutorV2
         // 融合覆盖：手牌攻击值被融合修改时，完全替换基础伤害（力量加成仍按后续叠加）
         if (_ctx.TryGetFusionAttack(out int fusionAtk))
             baseDamage = fusionAtk;
-        // 力量加成
-        if (node.scalingMode == ScalingMode.AddStrength)
-            baseDamage += _ctx.PlayerStrength;
+        // 力量加成：玩家出牌用玩家力量；敌人出牌时力量已由 DealDamageToPlayer（敌人生成语义）叠加，避免重复
+        if (node.scalingMode == ScalingMode.AddStrength && !IsEnemyInitiator)
+            baseDamage += OwnerStrength;
 
         int hitCount = Mathf.Max(1, EvaluateValue(node.repeatCount));
         int totalDamage = 0;
         int critCount = 0;
         bool anyCrit = false;
 
+        // 敌人出牌：命中玩家侧目标时对玩家结算，且敌人不参与暴击
+        bool toPlayer = IsEnemyInitiator && TargetIsPlayerSide(node.target.unitTarget);
+
         for (int hit = 0; hit < hitCount; hit++)
         {
-            bool isCrit = node.criticalCheckMode switch
+            bool isCrit;
+            int hitDamage;
+            if (toPlayer)
             {
-                CriticalCheckMode.PerHit => UnityEngine.Random.value < _ctx.PlayerCritRate,
-                CriticalCheckMode.PerAttack => hit == 0 && UnityEngine.Random.value < _ctx.PlayerCritRate,
-                CriticalCheckMode.Guaranteed => true,
-                CriticalCheckMode.Disabled => false,
-                _ => false
-            };
-
-            int hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * _ctx.PlayerCritDamage) : baseDamage;
-
-            // 破甲
-            int armorBreak = 0;
-            if (node.useArmorBreak)
-                armorBreak = EvaluateValue(node.armorBreakValue);
-
-            // 目标选择
-            if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
-            {
-                _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock);
+                isCrit = false;
+                hitDamage = baseDamage;
+                // 敌人对玩家的破甲语义：沿用敌人伤害，此处不再单独追加
+                _ctx.DealDamageToPlayer(hitDamage, _initiatorEnemySlot);
             }
             else
             {
-                int targetIdx = node.target.unitTarget switch
+                isCrit = node.criticalCheckMode switch
                 {
-                    CombatUnitTarget.SelectedEnemy => _ctx.SelectedEnemyIndex,
-                    CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
-                    CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
-                    _ => _ctx.SelectedEnemyIndex
+                    CriticalCheckMode.PerHit => UnityEngine.Random.value < _ctx.PlayerCritRate,
+                    CriticalCheckMode.PerAttack => hit == 0 && UnityEngine.Random.value < _ctx.PlayerCritRate,
+                    CriticalCheckMode.Guaranteed => true,
+                    CriticalCheckMode.Disabled => false,
+                    _ => false
                 };
-                if (targetIdx >= 0)
+                hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * _ctx.PlayerCritDamage) : baseDamage;
+
+                // 破甲
+                int armorBreak = 0;
+                if (node.useArmorBreak)
+                    armorBreak = EvaluateValue(node.armorBreakValue);
+
+                // 目标选择
+                if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
                 {
-                    _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock);
-                    if (armorBreak > 0)
-                        _ctx.ApplyStatusToEnemy(targetIdx, StatusType.ArmorBreak, armorBreak);
+                    _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock);
+                }
+                else
+                {
+                    int targetIdx = node.target.unitTarget switch
+                    {
+                        CombatUnitTarget.SelectedEnemy => _ctx.SelectedEnemyIndex,
+                        CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
+                        CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
+                        _ => _ctx.SelectedEnemyIndex
+                    };
+                    if (targetIdx >= 0)
+                    {
+                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock);
+                        if (armorBreak > 0)
+                            _ctx.ApplyStatusToEnemy(targetIdx, StatusType.ArmorBreak, armorBreak);
+                    }
                 }
             }
 
@@ -475,12 +536,22 @@ public class EffectExecutorV2
         if (_ctx.TryGetFusionArmor(out int fusionArmor))
             block = fusionArmor;
         if (node.scalingMode == ScalingMode.AddStrength)
-            block += _ctx.PlayerDexterity;
-        _ctx.AddPlayerArmor(block);
-        _lastResult[EffectResultType.ActualBlockGained] = block;
+            block += OwnerDexterity;
+
+        // 敌人出牌：格挡一律加给敌人自己（敌人防御技能=自护盾，无“给玩家加盾”的敌人卡）
+        if (IsEnemyInitiator)
+        {
+            _ctx.AddEnemyArmor(_initiatorEnemySlot, block);
+            Log($"  [格挡] {_initiatorEnemySlot}号敌人 +{block}");
+        }
+        else
+        {
+            _ctx.AddPlayerArmor(block);
+            _lastResult[EffectResultType.ActualBlockGained] = block;
+            Log($"  [格挡] 玩家 +{block}");
+        }
         _lastResult[EffectResultType.ActualValue] = block;
         _triggerSystem?.FireEvent(TriggerEvent.OnBlockGained);
-        Log($"  [格挡] +{block}");
     }
 
     // ========================================================================
@@ -489,10 +560,30 @@ public class EffectExecutorV2
     private void ExecuteModifyAttribute(EffectNode node)
     {
         int amount = EvaluateValue(node.value);
-
-        // Buff 属性路由到 BuffSystem
         var attr = node.attributeType;
         var op = node.resourceOp;
+
+        // 敌人作为发起者且目标为「自己（效果发起者）」时 → 敌人自buff，走带能力检测的敌人增益
+        if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
+        {
+            if (op == ResourceOperation.Add || op == ResourceOperation.Subtract)
+            {
+                int delta = op == ResourceOperation.Subtract ? -amount : amount;
+                bool ok = _ctx.ApplyEnemyAttributeBuff(_initiatorEnemySlot, attr, delta);
+                _lastResult[EffectResultType.ActualValue] = delta;
+                Log(ok
+                    ? $"  [敌人自buff] {ValueNode.GetAttrName(attr)} {delta:+0;-0;0} → {_initiatorEnemySlot}号敌人"
+                    : $"  [敌人自buff] {ValueNode.GetAttrName(attr)} 敌人不支持，忽略");
+            }
+            else
+            {
+                Log($"  [敌人自buff] 敌人仅支持 Add/Subtract，操作 {op} 忽略");
+                _lastResult[EffectResultType.ActualValue] = 0;
+            }
+            return;
+        }
+
+        // Buff 属性路由到 BuffSystem
         if (op == ResourceOperation.Add || op == ResourceOperation.Subtract)
         {
             int delta = op == ResourceOperation.Subtract ? -amount : amount;
@@ -627,11 +718,19 @@ public class EffectExecutorV2
     private void ExecuteApplyStatus(EffectNode node)
     {
         int stacks = EvaluateValue(node.statusValue);
-        if (node.target.unitTarget == CombatUnitTarget.CurrentCharacter ||
-            node.target.unitTarget == CombatUnitTarget.EffectSource)
+
+        // 玩家侧目标：玩家出牌时当前角色/效果发起者指玩家；敌人出牌时当前角色指玩家。
+        // 敌人出牌时 EffectSource（对敌人自己施加）走敌人分支。
+        bool toPlayer = TargetIsPlayerSide(node.target.unitTarget);
+        if (toPlayer)
         {
             _ctx.ApplyStatusToPlayer(MapStatus(node.statusType), stacks);
             Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 玩家");
+        }
+        else if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
+        {
+            _ctx.ApplyStatusToEnemy(_initiatorEnemySlot, MapStatus(node.statusType), stacks);
+            Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → {_initiatorEnemySlot}号敌人");
         }
         else
         {

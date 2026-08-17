@@ -9,6 +9,7 @@ using UnityEngine.UI;
 ///  1) 常驻“融合”按钮（左上角），每回合可用一次。
 ///  2) 点击进入融合状态：立即扣 4 理智 + 全屏暗色蒙版 + 在场上所有可融合数值处
 ///     “原位”生成可点击高亮徽章（紫=未选、红=选中、再点取消；理智锁定的项灰显不可点）。
+///     手牌数值（攻击/护甲/增益/抽牌/回费）会按卡面描述里对应数字的原文位置精确高亮。
 ///  3) 再次点击入口按钮 = 确认融合 → 随机拆分回填 → 蒙版消失，本回合禁用。
 ///  4) 蒙版右下提供“退出”按钮取消。
 /// 全部 UI 由代码在运行时创建，不依赖场景手工摆放。
@@ -137,35 +138,24 @@ public class FusionController : MonoBehaviour
         UpdateEntryInteractable();
     }
 
-    /// <summary>枚举当前可融合数值（带原位锚点）。进阶2开关决定是否含血量；低理智下血量类锁定。</summary>
+    /// <summary>枚举当前要高亮的融合数值（原位锚点）。
+    /// 范围（按需精简）：玩家=能量/当前护甲/货币；敌人=护甲/出招意图卡牌数值；手牌=费用/攻击/护甲/增益/抽牌/回费。
+    /// 血量槽位不参与融合高亮。</summary>
     private List<FusableValue> CollectCandidates()
     {
         var list = new List<FusableValue>();
-        int sanity = _battle.PlayerSanity;
 
-        // —— 玩家基础数值 ——
+        // —— 玩家数值 ——
         list.Add(new FusableValue("player:energy", "能量", _battle.ActionPoints, false,
             v => _battle.SetActionPoints(v))
         { anchor = _battle.ActionPointAnchor, anchorOffset = new Vector2(0, 36) });
-        list.Add(new FusableValue("player:armor", "护甲", _battle.PlayerArmor, false,
+        list.Add(new FusableValue("player:armor", "当前护甲", _battle.PlayerArmor, false,
             v => _battle.SetPlayerArmor(v))
         { anchor = _battle.ArmorAnchor, anchorOffset = new Vector2(0, 0) });
         list.Add(new FusableValue("player:gold", "货币", _battle.PlayerGold, false,
             v => _battle.SetPlayerGold(v)));   // 货币无实时锚点，在徽章构建时放指定位置
 
-        // —— 进阶2：玩家血量 ——
-        if (_battle.includeHPInFusion)
-        {
-            bool lowSanity = sanity <= 4;
-            list.Add(new FusableValue("player:hp", "玩家血量", _battle.PlayerHP, lowSanity,
-                v => _battle.SetPlayerHP(v))
-            { anchor = _battle.HPAnchor, anchorOffset = new Vector2(0, 0) });
-            list.Add(new FusableValue("player:maxhp", "玩家血量上限", _battle.PlayerMaxHP, lowSanity,
-                v => _battle.SetPlayerMaxHP(v))
-            { anchor = _battle.HPAnchor, anchorOffset = new Vector2(0, 24) });
-        }
-
-        // —— 敌人 ——
+        // —— 敌人：护甲 + 出招意图的卡牌数值 ——
         for (int i = 0; i < _battle.EnemySlotCount; i++)
         {
             if (!_battle.FusionIsEnemyAlive(i)) continue;
@@ -176,37 +166,44 @@ public class FusionController : MonoBehaviour
             list.Add(new FusableValue($"enemy:{i}:intent", $"敌人{i + 1}意图", _battle.FusionEnemyIntentDamage(i), false,
                 v => _battle.FusionSetEnemyIntentDamage(i, v))
             { anchor = eanch, anchorOffset = new Vector2(-24, 52) });
-            if (_battle.includeHPInFusion)
-            {
-                bool lowSanity = sanity <= 4;
-                list.Add(new FusableValue($"enemy:{i}:hp", $"敌人{i + 1}血量", _battle.FusionEnemyHP(i), lowSanity,
-                    v => _battle.FusionSetEnemyHP(i, v))
-                { anchor = eanch, anchorOffset = new Vector2(-24, 80) });
-                list.Add(new FusableValue($"enemy:{i}:maxhp", $"敌人{i + 1}血量上限", _battle.FusionEnemyMaxHP(i), lowSanity,
-                    v => _battle.FusionSetEnemyMaxHP(i, v))
-                { anchor = eanch, anchorOffset = new Vector2(24, 80) });
-            }
         }
 
-        // —— 手牌 ——
+        // —— 手牌：费用 + 数值（攻击/护甲/增益/抽牌/回费） ——
         int handN = _battle.HandCount;
         for (int i = 0; i < handN; i++)
         {
             var card = _battle.GetHandCardData(i);
             if (card == null) continue;
             var hanchor = _battle.GetHandCardAnchor(i);
-            var hview = _battle.GetHandCardDisplay(i);   // 用于描述内数字的精确定位
-            list.Add(new FusableValue($"hand:{i}:cost", $"手牌{i + 1}费", card.GetEffectiveCost(), false,
+            var hview = _battle.GetHandCardDisplay(i);   // 用于卡面内数字的精确定位
+            list.Add(new FusableValue($"hand:{i}:cost", $"手牌{i + 1}费用", card.GetEffectiveCost(), false,
                 v => _battle.SetHandCardCost(i, v))
             { anchor = hanchor, cardView = hview, anchorOffset = new Vector2(-28, -28) });
+
             if (_battle.HandCardHasAttack(card) || card.attackValue > 0)
                 list.Add(new FusableValue($"hand:{i}:atk", $"手牌{i + 1}攻击", card.EffectiveAttack, false,
                     v => _battle.SetHandCardAttack(i, v))
                 { anchor = hanchor, cardView = hview, anchorOffset = new Vector2(0, 8) });
+
             if (_battle.HandCardHasArmor(card) || card.armorValue > 0)
                 list.Add(new FusableValue($"hand:{i}:armor", $"手牌{i + 1}护甲", card.EffectiveArmor, false,
                     v => _battle.SetHandCardArmor(i, v))
                 { anchor = hanchor, cardView = hview, anchorOffset = new Vector2(0, 36) });
+
+            if (card.EffectiveBuffValue > 0)
+                list.Add(new FusableValue($"hand:{i}:buff", $"手牌{i + 1}增益", card.EffectiveBuffValue, false,
+                    v => _battle.SetHandCardBuff(i, v))
+                { anchor = hanchor, cardView = hview, anchorOffset = new Vector2(0, 44) });
+
+            if (card.EffectiveDraw > 0)
+                list.Add(new FusableValue($"hand:{i}:draw", $"手牌{i + 1}抽牌", card.EffectiveDraw, false,
+                    v => _battle.SetHandCardDraw(i, v))
+                { anchor = hanchor, cardView = hview, anchorOffset = new Vector2(0, 56) });
+
+            if (card.EffectiveRestoreAP > 0)
+                list.Add(new FusableValue($"hand:{i}:restore", $"手牌{i + 1}回费", card.EffectiveRestoreAP, false,
+                    v => _battle.SetHandCardRestore(i, v))
+                { anchor = hanchor, cardView = hview, anchorOffset = new Vector2(0, 68) });
         }
 
         return list;
@@ -262,6 +259,35 @@ public class FusionController : MonoBehaviour
     /// <summary>为每个候选生成原位徽章（有锚点的按锚点屏幕坐标定位；货币固定在左下区）。</summary>
     private void BuildBadges()
     {
+        // 先按“同一张卡”分组解析描述内数字的精确矩形（攻击/护甲/增益/抽牌/回费），
+        // 避免逐槽位各自找第一个相同数字导致的错位。
+        var precise = new Dictionary<int, (Vector2 center, Vector2 size)>();
+        var byCard = new Dictionary<CardDisplay, List<(int idx, FusableValue fv)>>();
+        for (int i = 0; i < _candidates.Count; i++)
+        {
+            var fv = _candidates[i];
+            if (fv.cardView == null) continue;
+            if (fv.id.EndsWith(":cost")) continue;   // 费用在卡面费用徽章上，不走描述数字
+            if (!byCard.TryGetValue(fv.cardView, out var list))
+            {
+                list = new List<(int idx, FusableValue fv)>();
+                byCard[fv.cardView] = list;
+            }
+            list.Add((i, fv));
+        }
+
+        foreach (var kv in byCard)
+        {
+            var cardView = kv.Key;
+            var list = kv.Value;
+            var values = new List<int>(list.Count);
+            for (int k = 0; k < list.Count; k++) values.Add(list[k].fv.current);
+            if (!cardView.TryGetNumberRects(values, out var centers, out var sizes)) continue;
+            for (int k = 0; k < list.Count; k++)
+                if (centers[k] != Vector2.zero)
+                    precise[list[k].idx] = (centers[k], sizes[k]);
+        }
+
         for (int i = 0; i < _candidates.Count; i++)
         {
             var fv = _candidates[i];
@@ -276,39 +302,36 @@ public class FusionController : MonoBehaviour
                 useOffset = new Vector2(120, 140);
             }
 
-            int idx = i;
-            var go = CreateBadge(anchorRT, fv, idx, useOffset);
+            bool preciseHere = precise.TryGetValue(i, out var wp);
+            var go = CreateBadge(anchorRT, fv, i, useOffset, preciseHere, wp.center, wp.size);
             if (go != null) _badges.Add(go);
         }
     }
 
     /// <summary>以锚点世界坐标定位徽章到面板上（徽章为 _panelRoot 的子物体，故在蒙层之上）。</summary>
-    private GameObject CreateBadge(RectTransform anchorRT, FusableValue fv, int idx, Vector2 offset)
+    private GameObject CreateBadge(RectTransform anchorRT, FusableValue fv, int idx, Vector2 offset,
+        bool precise, Vector2 wCenter, Vector2 wSize)
     {
         var go = new GameObject($"Badge_{idx}_{fv.id}");
         go.transform.SetParent(_panelRoot.transform, false);
         var rt = go.AddComponent<RectTransform>();
-        // 优先用卡面描述内数字的精确矩形定位（worldCenter/worldSize），否则退回锚点位置
-        bool precise = false;
-        if (fv.cardView != null)
+        // 优先用卡面描述内对应数字的精确矩形定位（已由分组解析），否则退回锚点位置
+        bool placedPrecise = false;
+        if (precise && wSize != Vector2.zero)
         {
-            Vector2 wCenter, wSize;
-            if (fv.cardView.TryGetNumberRect(fv.current.ToString(), out wCenter, out wSize))
+            Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, wCenter);
+            Vector2 local;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                _panelRoot.transform as RectTransform, screen, null, out local))
             {
-                Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, wCenter);
-                Vector2 local;
-                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _panelRoot.transform as RectTransform, screen, null, out local))
-                {
-                    rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-                    rt.pivot = new Vector2(0.5f, 0.5f);
-                    rt.anchoredPosition = local;
-                    rt.sizeDelta = new Vector2(Mathf.Max(44, wSize.x + 18), wSize.y + 6);
-                    precise = true;
-                }
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = local;
+                rt.sizeDelta = new Vector2(Mathf.Max(44, wSize.x + 18), wSize.y + 6);
+                placedPrecise = true;
             }
         }
-        if (!precise)
+        if (!placedPrecise)
         {
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);

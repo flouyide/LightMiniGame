@@ -427,8 +427,102 @@ public class CardDisplay : MonoBehaviour
     // ========================================================================
 
     /// <summary>
-    /// 返回该卡描述文本中“targetNumber”这一串数字字符的包围盒（世界坐标）。
-    /// 用于融合时在卡面数字原位上精确定位高亮。找不到返回 false。
+    /// 把“每个可融合数值”映射到该卡描述文本中对应数字字符的包围盒（世界坐标），
+    /// 按值的匹配 + 文档顺序依次配对，返回与传入 values 一一对应的中心点/尺寸数组。
+    /// 避免旧 TryGetNumberRect 只找“第一个出现”导致的错位（如“理智 -1，抽 1 张牌”里
+    /// 抽牌数 1 会被误配到 -1 的 1）。找不到对应数字的槽位返回 false；找到部分则以其计。
+    /// </summary>
+    public bool TryGetNumberRects(List<int> values, out List<Vector2> centers, out List<Vector2> sizes)
+    {
+        centers = new List<Vector2>();
+        sizes = new List<Vector2>();
+        if (values == null || values.Count == 0 || descText == null) return false;
+
+        descText.ForceMeshUpdate(true);
+        var info = descText.textInfo;
+        if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
+
+        // 1) 解析描述文本中所有“有符号整数 token”（按文档顺序），记录其字符跨度。
+        var tokens = new List<Token>();
+        string text = descText.text;
+        int n = text.Length;
+        for (int idx = 0; idx < n; idx++)
+        {
+            if (!char.IsDigit(text[idx])) continue;
+
+            // 向左吸收可选的 '-'（形成负整数，如 “理智 -1”），只吸收紧邻的单个负号
+            int start = idx;
+            if (idx > 0 && text[idx - 1] == '-') start = idx - 1;
+
+            // 向右吸收连续数字
+            int end = idx;
+            while (end + 1 < n && char.IsDigit(text[end + 1])) end++;
+            if (!int.TryParse(text.Substring(start, end - start + 1), out int val)) continue;
+
+            tokens.Add(new Token { startChar = start, endChar = end, value = val });
+            idx = end; // 跳过已处理的数字
+        }
+        if (tokens.Count == 0) return false;
+
+        // 2) 为每个 token 计算世界包围盒
+        var tokenRects = new List<Vector4>(tokens.Count); // x=minX,y=minY,z=maxX,w=maxY
+        foreach (var t in tokens)
+        {
+            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+            Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+            bool found = false;
+            for (int ci = 0; ci < info.characterCount; ci++)
+            {
+                var ch = info.characterInfo[ci];
+                if (ch.index < t.StartChar || ch.index > t.EndChar) continue;
+                if (!ch.isVisible) continue;
+                Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
+                Vector3 tr = descText.transform.TransformPoint(ch.topRight);
+                Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
+                Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
+                min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+                max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+                found = true;
+            }
+            tokenRects.Add(found
+                ? new Vector4(min.x, min.y, max.x, max.y)
+                : new Vector4(0, 0, 0, 0));
+        }
+
+        // 3) 依序为每个可融合数值找“值相等且未被占用”的 token
+        var used = new bool[tokens.Count];
+        bool anySuccess = false;
+        for (int i = 0; i < values.Count; i++)
+        {
+            int target = values[i];
+            bool placed = false;
+            for (int t = 0; t < tokens.Count; t++)
+            {
+                if (used[t] || tokens[t].value != target) continue;
+                used[t] = true;
+                var r = tokenRects[t];
+                centers.Add(new Vector2((r.x + r.z) * 0.5f, (r.y + r.w) * 0.5f));
+                sizes.Add(new Vector2(r.z - r.x, r.w - r.y));
+                placed = true;
+                anySuccess = true;
+                break;
+            }
+            if (!placed)
+            {
+                centers.Add(Vector2.zero);
+                sizes.Add(Vector2.zero);
+            }
+        }
+        return anySuccess;
+    }
+
+    // ========================================================================
+    // 数字字符定位（单数值，保留给旧调用）
+    // ========================================================================
+
+    /// <summary>
+    /// 返回该卡描述文本中“targetNumber”这一串字符的包围盒（世界坐标）。
+    /// 用于融合时在卡面数字位置上精确定位高亮。找不到返回 false。
     /// </summary>
     public bool TryGetNumberRect(string targetNumber, out Vector2 worldCenter, out Vector2 worldSize)
     {
@@ -541,6 +635,19 @@ public class CardDisplay : MonoBehaviour
         CardGrade.Legendary => legendaryColor,
         _ => Color.white
     };
+
+    // ========================================================================
+    // 数字 token（融合原位高亮用）
+    // ========================================================================
+
+    private struct Token
+    {
+        public int startChar;
+        public int endChar;
+        public int value;
+        public int StartChar => startChar;
+        public int EndChar => endChar;
+    }
 
     // ========================================================================
     // Editor 预览（编辑器中修改字段后自动刷新）

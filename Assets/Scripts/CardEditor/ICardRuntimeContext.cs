@@ -34,6 +34,10 @@ namespace LightMiniGame.CardEditor
         int GetEnemyArmorBreak(int index);
         int SelectedEnemyIndex { get; }
 
+        // === 敌人侧属性（敌人作为效果发起者时读取作属性缩放；对玩家不适用）===
+        int GetEnemyStrength(int slotIndex);
+        int GetEnemyDexterity(int slotIndex);
+
         // === 牌堆状态 ===
         int HandCount { get; }
         int DrawPileCount { get; }
@@ -53,6 +57,12 @@ namespace LightMiniGame.CardEditor
         void ModifyPlayerAttribute(ModifiableAttribute attr, ModifyMethod method, int amount);
         void ApplyStatusToEnemy(int enemyIndex, StatusType status, int stacks);
         void ApplyStatusToPlayer(StatusType status, int stacks);
+
+        // === 敌人侧修改（敌人作为效果发起者 / 对敌人自身结算时使用）===
+        /// <summary>给指定槽位敌人叠加护甲（敌人自护盾/给友军护盾）。</summary>
+        void AddEnemyArmor(int slotIndex, int amount);
+        /// <summary>给指定槽位敌人施加属性增益（敌人自buff）。仅敌人支持属性生效，否则返回 false。</summary>
+        bool ApplyEnemyAttributeBuff(int slotIndex, PlayerAttributeType attr, int delta);
 
         // === 自定义数据存取（用于热度等非通用属性）===
         int GetCustomData(string key);

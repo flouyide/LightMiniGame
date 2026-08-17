@@ -34,6 +34,9 @@ public class BattleCardContext : ICardRuntimeContext
     public int GetEnemyArmorBreak(int index) => _battle.GetEnemyArmorBreak(index);
     public int SelectedEnemyIndex => _battle.SelectedEnemyIndex;
 
+    public int GetEnemyStrength(int index) => _battle.GetEnemyStrength(index);
+    public int GetEnemyDexterity(int index) => _battle.GetEnemyDexterity(index);
+
     // === 牌堆状态 ===
     public int HandCount => _battle.HandCount;
     public int DrawPileCount => _battle.DrawPileCount;
@@ -60,6 +63,9 @@ public class BattleCardContext : ICardRuntimeContext
         => _battle.ApplyStatusToEnemy(enemyIndex, status, stacks);
     public void ApplyStatusToPlayer(StatusType status, int stacks)
         => _battle.ApplyStatusToPlayer(status, stacks);
+    public void AddEnemyArmor(int slotIndex, int amount) => _battle.AddEnemyArmor(slotIndex, amount);
+    public bool ApplyEnemyAttributeBuff(int slotIndex, LightMiniGame.CardEditor.PlayerAttributeType attr, int delta) => _battle.ApplyEnemyAttributeBuff(slotIndex, attr, delta);
+    public void DealDamageToPlayer(int amount, int sourceEnemySlot) => _battle.DealDamageToPlayer(amount, sourceEnemySlot);
 
     // === 自定义数据存取 ===
     public int GetCustomData(string key) => _battle.GetCustomData(key);
