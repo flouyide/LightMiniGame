@@ -93,12 +93,14 @@ namespace LightMiniGame.Shop
             if (relic == null) return;
             var lib = RegisterCharacter(character);
             lib?.Add(relic);
+            OnRelicAdded?.Invoke(character, relic);
         }
 
         public void Remove(CharacterData character, RelicData relic)
         {
             var lib = GetLibrary(character);
             lib?.Remove(relic);
+            OnRelicRemoved?.Invoke(character, relic);
         }
 
         public bool Has(CharacterData character, RelicData relic)
@@ -115,6 +117,11 @@ namespace LightMiniGame.Shop
 
         public int GetCount(CharacterData character)
             => GetLibrary(character)?.Count ?? 0;
+
+        /// <summary>遗物被加入某角色遗物库后广播（遗物效果系统据此反射实例化效果）。</summary>
+        public static event Action<CharacterData, RelicData> OnRelicAdded;
+        /// <summary>遗物被从某角色遗物库移除后广播。</summary>
+        public static event Action<CharacterData, RelicData> OnRelicRemoved;
     }
 
     /// <summary>

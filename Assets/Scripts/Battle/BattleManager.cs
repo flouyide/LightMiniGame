@@ -7,6 +7,7 @@ using UnityEngine.Serialization;
 using TMPro;
 using LightMiniGame.Card;
 using LightMiniGame.CardEditor;
+using LightMiniGame.Relic;
 using Random = UnityEngine.Random;
 
 /// <summary>
@@ -165,12 +166,16 @@ public class BattleManager : MonoBehaviour
     private int _playerDamageMultiplier = 100;       // 玩家造成伤害倍率（来自 PlayerConfig）
     private int _playerDamageTakenMultiplier = 100;  // 玩家受击倍率（来自 PlayerConfig）
 
-    // === 正式热度系统 ===
-    private int _currentHeat = 0;
-    private int _heatGainedThisTurn = 0;
-    private int _heatLostThisTurn = 0;
-    private bool _overloadedThisTurn = false;
     private GameRuleConfig _ruleConfig;
+
+    // 遗物效果扩展：过载时所有手牌费用+1（由枪械师初始遗物 GunsmithHeatRelicEffect 驱动）
+    private int _handCostBonus = 0;
+
+    // 热度系统事件钩子（热度逻辑已迁移至枪械师遗物 GunsmithHeatRelicEffect，BattleManager 仅广播时机）
+    public event Action OnAttackCardPlayed;
+    public event Action OnPlayerTurnStarted;
+    public event Action OnPlayerTurnEnded;
+    public event Action OnCharacterSwitched;
 
     // === CardEntry 效果系统支持 ===
     private EffectExecutorV2 _effectExecutorV2;
@@ -284,8 +289,16 @@ public class BattleManager : MonoBehaviour
     public int GetBattleCounter(string name) => _battleCounters.TryGetValue(name, out var v) ? v : 0;
 
     public int GetCustomData(string key) => _customData.TryGetValue(key, out var v) ? v : 0;
-    public void SetCustomData(string key, int value) => _customData[key] = value;
-    public void ModifyCustomData(string key, int delta) => _customData[key] = GetCustomData(key) + delta;
+    public void SetCustomData(string key, int value)
+    {
+        _customData[key] = value;
+        if (key == "Heat") OnHeatChanged?.Invoke(value);
+    }
+    public void ModifyCustomData(string key, int delta)
+    {
+        _customData[key] = GetCustomData(key) + delta;
+        if (key == "Heat") OnHeatChanged?.Invoke(_customData[key]);
+    }
 
     public bool HasEventOccurred(string eventName) => _eventsThisTurn.Contains(eventName) || _eventsThisBattle.Contains(eventName);
     public void RecordEvent(string eventName) { _eventsThisTurn.Add(eventName); _eventsThisBattle.Add(eventName); }
@@ -773,6 +786,9 @@ public class BattleManager : MonoBehaviour
     private CharBattleState ActiveChar => _chars[_activeCharIdx];
     private CharBattleState InactiveChar => _chars[1 - _activeCharIdx];
 
+    /// <summary>当前激活角色的 CharacterData（供遗物效果判断"某角色是否激活"）。</summary>
+    public CharacterData ActiveCharacterData => ActiveChar?.data;
+
     /// <summary>
     /// 局外（ChapterManager）在进入战斗前指定的【起始】激活/未激活角色（CharacterData）。
     /// 为空则按默认：characters[0] 激活、characters[1] 未激活。
@@ -1036,11 +1052,7 @@ public class BattleManager : MonoBehaviour
         // EffectExecutorV2 的 _triggerSystem 是 readonly，需要重新创建
         _effectExecutorV2 = new EffectExecutorV2(ctx, _triggerSystem);
 
-        // 初始化热度系统
-        _currentHeat = 0;
-        _heatGainedThisTurn = 0;
-        _heatLostThisTurn = 0;
-        _overloadedThisTurn = false;
+        // 热度系统：_customData["Heat"] 初始化为 0（热度逻辑由枪械师遗物 GunsmithHeatRelicEffect 驱动）
         _customData["Heat"] = 0;
         _customData["PlayerDamageMultiplier"] = _playerDamageMultiplier;
         _customData["PlayerDamageTakenMultiplier"] = _playerDamageTakenMultiplier;
@@ -1062,6 +1074,9 @@ public class BattleManager : MonoBehaviour
         _turnCounters["CardsExhausted"] = 0;
 
         _triggerSystem.OnCombatStart();
+
+        // 遗物效果：战斗开始钩子（枪械师热度系统在此重置/启动）
+        RelicEffectManager.Instance?.NotifyBattleStart(this);
 
         DrawCards(drawPerTurn);
 
@@ -1144,7 +1159,9 @@ public class BattleManager : MonoBehaviour
                 ShuffleDrawPile(activeChar);
             }
 
-            _hand.Add(activeChar.drawPile[0]);
+            var drawn = activeChar.drawPile[0];
+            drawn.extraCost = _handCostBonus;   // 继承当前过载费用加成
+            _hand.Add(drawn);
             activeChar.drawPile.RemoveAt(0);
         }
         RefreshHandUI();
@@ -1173,16 +1190,10 @@ public class BattleManager : MonoBehaviour
 
         _actionPoints -= cost;
 
-        // 热度系统：打出攻击牌增加热度
+        // 热度系统：打出攻击牌时通知枪械师遗物（由遗物负责加热度）
         if (card.sourceEntry != null && card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack)
         {
-            int heatGain = _ruleConfig != null ? _ruleConfig.heat.heatGainedPerAttackCard : 3;
-            _currentHeat += heatGain;
-            _heatGainedThisTurn += heatGain;
-            _turnCounters["HeatGained"] = _heatGainedThisTurn;
-            _customData["Heat"] = _currentHeat;
-            _triggerSystem?.FireEvent(TriggerEvent.OnHeatGained);
-            Debug.Log($"[BattleManager] 热度 +{heatGain} → {_currentHeat}");
+            OnAttackCardPlayed?.Invoke();
         }
 
         // 计数器：出牌
@@ -1710,18 +1721,8 @@ public class BattleManager : MonoBehaviour
         // 计数器：切换角色
         _turnCounters["CharactersSwitched"]++;
 
-        // 热度系统：切换角色时额外衰减（在回合结束 ProcessHeatDecay 中通过 _hasSwitchedThisBattle 判断）
-        // 切换后热度立即衰减
-        int switchDecay = _ruleConfig != null ? _ruleConfig.heat.switchedCharacterHeatDecayPerTurn : 6;
-        if (_currentHeat > 0)
-        {
-            int actualDecay = Mathf.Min(_currentHeat, switchDecay);
-            _currentHeat -= actualDecay;
-            _heatLostThisTurn += actualDecay;
-            _turnCounters["HeatLost"] = _heatLostThisTurn;
-            _customData["Heat"] = _currentHeat;
-            Debug.Log($"[BattleManager] 切换角色热度衰减 -{actualDecay} → {_currentHeat}");
-        }
+        // 热度系统：通知枪械师遗物已切换角色（由遗物标记本回合按切换衰减量衰减）
+        OnCharacterSwitched?.Invoke();
 
         // 恢复切换后角色的能力
         // (TriggerSystem handles suspend/resume)
@@ -1828,11 +1829,8 @@ public class BattleManager : MonoBehaviour
         // 回合结束时触发能力
         // (TriggerSystem handles turn end)
 
-        // 热度系统：回合结束时衰减
-        ProcessHeatDecay();
-
-        // 热度系统：过热检查
-        CheckOverheat();
+        // 热度系统：通知枪械师遗物回合结束（由遗物执行衰减与过热判定）
+        OnPlayerTurnEnded?.Invoke();
 
         // 统一触发器系统回合结束
         _triggerSystem?.OnTurnEnd();
@@ -1844,48 +1842,34 @@ public class BattleManager : MonoBehaviour
         StartEnemyTurn();
     }
 
-    /// <summary>热度衰减：正常回合结束衰减，切换过角色衰减更多</summary>
-    private void ProcessHeatDecay()
-    {
-        if (_currentHeat <= 0) return;
-        int decay = _hasSwitchedThisTurn
-            ? (_ruleConfig != null ? _ruleConfig.heat.switchedCharacterHeatDecayPerTurn : 6)
-            : (_ruleConfig != null ? _ruleConfig.heat.normalHeatDecayPerTurn : 1);
+    // ========================================================================
+    // 遗物效果扩展：热度驱动（热度逻辑已迁移至枪械师遗物 GunsmithHeatRelicEffect）
+    // BattleManager 仅保留费用附加应用 + 触发器/计数器工具方法 + 热度变化广播，供遗物调用。
+    // ========================================================================
+    /// <summary>过热阈值（遗物效果读取用，默认 25）。</summary>
+    public int OverheatThreshold => _ruleConfig != null ? _ruleConfig.heat.overheatThreshold : 25;
+    /// <summary>每张攻击牌增加的热度（默认 3）。</summary>
+    public int HeatGainPerAttackCard => _ruleConfig != null ? _ruleConfig.heat.heatGainedPerAttackCard : 3;
+    /// <summary>正常回合热度衰减量（默认 1）。</summary>
+    public int NormalHeatDecayPerTurn => _ruleConfig != null ? _ruleConfig.heat.normalHeatDecayPerTurn : 1;
+    /// <summary>切换角色回合热度衰减量（默认 6）。</summary>
+    public int SwitchedHeatDecayPerTurn => _ruleConfig != null ? _ruleConfig.heat.switchedCharacterHeatDecayPerTurn : 6;
 
-        int actualDecay = Mathf.Min(_currentHeat, decay);
-        _currentHeat -= actualDecay;
-        _heatLostThisTurn += actualDecay;
-        _turnCounters["HeatLost"] = _heatLostThisTurn;
-        _customData["Heat"] = _currentHeat;
-        if (actualDecay > 0)
-            _triggerSystem?.FireEvent(TriggerEvent.OnHeatReduced);
-        Debug.Log($"[BattleManager] 热度衰减 -{actualDecay} → {_currentHeat}");
+    /// <summary>热度变化时广播当前热度值（在 SetCustomData/ModifyCustomData 对 "Heat" 键集中触发，遗物订阅以驱动过载）。</summary>
+    public event Action<int> OnHeatChanged;
+
+    /// <summary>设置所有手牌费用附加（过载时 +1）。新抽到的牌也会继承该加成。</summary>
+    public void SetHandCostBonus(int bonus)
+    {
+        _handCostBonus = Mathf.Max(0, bonus);
+        foreach (var c in _hand) if (c != null) c.extraCost = _handCostBonus;
+        RefreshHandUI();
     }
 
-    /// <summary>过热检查：热度达到阈值时触发过载</summary>
-    private void CheckOverheat()
-    {
-        if (_overloadedThisTurn) return;
-        int threshold = _ruleConfig != null ? _ruleConfig.heat.overheatThreshold : 25;
-        if (_currentHeat >= threshold)
-        {
-            _overloadedThisTurn = true;
-            int statusStacks = _ruleConfig != null ? _ruleConfig.heat.overloadStatusStacks : 1;
-            StatusType overloadStatus = MapStatusType2ToOld(_ruleConfig != null ? _ruleConfig.heat.overloadStatus : StatusType2.Jammed);
-            ApplyStatusToPlayer(overloadStatus, statusStacks);
-            _triggerSystem?.FireEvent(TriggerEvent.OnOverload);
-            Debug.Log($"[BattleManager] 过热！热度 {_currentHeat} >= {threshold}，施加卡壳 {statusStacks}层");
-        }
-    }
-
-    private StatusType MapStatusType2ToOld(StatusType2 s) => s switch
-    {
-        StatusType2.Jammed => StatusType.Insane,
-        StatusType2.Madness => StatusType.Insane,
-        StatusType2.ArmorBreak => StatusType.ArmorBreak,
-        StatusType2.Bleed => StatusType.Bleed,
-        _ => StatusType.Insane
-    };
+    /// <summary>供遗物效果触发战斗事件（如 OnHeatGained/OnHeatReduced/OnOverload）。</summary>
+    public void FireTrigger(TriggerEvent ev) => _triggerSystem?.FireEvent(ev);
+    /// <summary>供遗物效果更新回合计数器（如 HeatGained/HeatLost）。</summary>
+    public void SetTurnCounter(string name, int value) => _turnCounters[name] = value;
 
     /// <summary>敌人回合：所有存活敌人按行动顺序轮流行动（不同时行动），全部结束后回到玩家回合</summary>
     private void StartEnemyTurn()
@@ -2116,6 +2100,9 @@ public class BattleManager : MonoBehaviour
         // (TriggerSystem handles via OnTurnStart)
         _triggerSystem?.OnTurnStart(); // 统一触发器系统回合开始
 
+        // 热度系统：通知枪械师遗物回合开始（由遗物重置本回合过载标记等）
+        OnPlayerTurnStarted?.Invoke();
+
         DrawCards(drawPerTurn);
         _isPlayerTurn = true;
 
@@ -2129,9 +2116,6 @@ public class BattleManager : MonoBehaviour
     /// <summary>重置本回合计数器</summary>
     private void ResetTurnCounters()
     {
-        _heatGainedThisTurn = 0;
-        _heatLostThisTurn = 0;
-        _overloadedThisTurn = false;
         var keys = new List<string>(_turnCounters.Keys);
         foreach (var k in keys)
         {
@@ -2175,6 +2159,9 @@ public class BattleManager : MonoBehaviour
         _waitingEnemyConfirm = false;
         _playerBuffs?.Clear();
         _enemyBuffs?.Clear();
+
+        // 遗物效果：战斗结束钩子（枪械师热度系统在此清理）
+        RelicEffectManager.Instance?.NotifyBattleEnd(this, victory);
 
         if (_enemyTurnRoutine != null) { StopCoroutine(_enemyTurnRoutine); _enemyTurnRoutine = null; }
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }

@@ -17,5 +17,5 @@ MonoBehaviour:
   avatar: {fileID: 21300000, guid: e6924a7fcdaac514a9fb47b23402d68d, type: 3}
   startingLibrary: {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
   startingRelics:
-  - {fileID: 11400000, guid: 6f316edbfed9a844a85963bd8f5b49ed, type: 2}
+  - {fileID: 11400000, guid: eeff3d2b2e6ab754cb6dc4e99c563460, type: 2}
   maxLibrarySize: 100

@@ -86,6 +86,9 @@ public class CardData : ScriptableObject
     /// <summary>融合覆盖层（战斗内运行时覆盖，不写入SO；进阶1开启后允许跨战斗持久化）</summary>
     [NonSerialized] public FusionCardDelta fusion;
 
+    /// <summary>运行时费用附加（遗物效果如过载+1使用），不持久化；叠加在基础/融合费用之上。</summary>
+    [NonSerialized] public int extraCost = 0;
+
     /// <summary>
     /// 获取当前效果列表（EffectNode 格式）。如果有关联的 CardEntry，从其读取；否则返回 null。
     /// </summary>
@@ -101,7 +104,8 @@ public class CardData : ScriptableObject
     public int GetEffectiveCost()
     {
         int baseCost = sourceEntry != null ? sourceEntry.GetCost(isLowSanityForm) : actionPointCost;
-        return (fusion != null && fusion.overrideCost) ? fusion.cost : baseCost;
+        int cost = (fusion != null && fusion.overrideCost) ? fusion.cost : baseCost;
+        return Mathf.Max(0, cost + extraCost);
     }
 
     /// <summary>有效攻击值（融合覆盖优先；供显示/执行统一使用）。</summary>

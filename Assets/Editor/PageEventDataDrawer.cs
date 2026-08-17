@@ -16,6 +16,7 @@ public class PageEventDataDrawer : PropertyDrawer
     // 任意类型都始终显示的字段（含 description，确保 Event 类型也显示描述）
     private static readonly string[] AlwaysFields =
     {
+        "eventId",
         "displayName",
         "description",
         "icon",
