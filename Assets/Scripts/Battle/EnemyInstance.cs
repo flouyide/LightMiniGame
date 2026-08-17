@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LightMiniGame.CardEditor;
 using UnityEngine;
 
@@ -32,8 +33,10 @@ public class EnemyInstance
 
     /// <summary>当前阶段（1=高理智形态，2=低理智形态）</summary>
     public int Phase = 1;
-    /// <summary>技能轮转计数（每行动一次 +1）</summary>
+    /// <summary>技能轮转计数（保留字段：阶段切换时依据；选牌已改为随机抽，不再直接用轮转下标）</summary>
     public int TurnInCycle;
+    /// <summary>本回合已随机抽取的技能卡（意图预览与实抽一致）；每个敌人回合开始时重新抽取。</summary>
+    public CardEntry DrawnSkill;
     /// <summary>锁定的角色索引（-1 = 未锁定；光束扫描类技能用）</summary>
     public int LockedCharIdx = -1;
     /// <summary>是否已死亡（HP≤0 且无阶段2，或阶段2被打死）</summary>
@@ -49,26 +52,37 @@ public class EnemyInstance
     /// <summary>是否有阶段2</summary>
     public bool HasPhase2 => Config != null && Config.phase2MaxHP > 0;
 
+    /// <summary>当前阶段对应的技能牌库（阶段1=phase1Skills，阶段2=phase2Skills）。</summary>
+    public List<CardEntry> CurrentSkillPool
+    {
+        get
+        {
+            if (Config == null) return null;
+            return Phase == 1 ? Config.phase1Skills : Config.phase2Skills;
+        }
+    }
+
     /// <summary>
-    /// 按 阶段 + 轮转计数 取当前回合应打出的卡牌（可能为 null，由调用方兜底）。
+    /// 本回合应打出的卡牌：返回已抽取缓存的 DrawnSkill（若尚未抽取则立即随机抽一张并缓存）。
+    /// 每回合开始时调用 ResetDrawnSkill() 清空，使意图预览(GetCurrentSkill)与实抽一致。
     /// </summary>
     public CardEntry GetCurrentSkill()
     {
-        if (Config == null) return null;
-
-        // 阶段1：按顺序循环执行 phase1Skills
-        if (Phase == 1)
-        {
-            if (Config.phase1Skills == null || Config.phase1Skills.Count == 0) return null;
-            return Config.phase1Skills[TurnInCycle % Config.phase1Skills.Count];
-        }
-
-        // 阶段2：常规牌按轮转执行
-        if (Config.phase2Skills != null && Config.phase2Skills.Count > 0)
-            return Config.phase2Skills[TurnInCycle % Config.phase2Skills.Count];
-
-        return null;
+        if (DrawnSkill != null) return DrawnSkill;
+        DrawnSkill = RollRandomSkill();
+        return DrawnSkill;
     }
+
+    /// <summary>从当前阶段牌库随机抽一张卡牌并缓存为该敌人的本回合技能（不重置轮转计数）。</summary>
+    public CardEntry RollRandomSkill()
+    {
+        var pool = CurrentSkillPool;
+        if (pool == null || pool.Count == 0) return null;
+        return pool[Random.Range(0, pool.Count)];
+    }
+
+    /// <summary>清空本回合已抽卡牌（玩家回合开始时调用，使下个敌人回合重新随机）。</summary>
+    public void ResetDrawnSkill() => DrawnSkill = null;
 
     /// <summary>
     /// 检查并执行阶段切换。返回是否发生了切换（供 BattleManager 刷视图/记日志）。
@@ -90,6 +104,7 @@ public class EnemyInstance
             MaxHP = Config.phase2MaxHP > 0 ? Config.phase2MaxHP : MaxHP;
             HP = MaxHP;
             Armor = 0;
+            ResetDrawnSkill();   // 切换阶段 → 牌库变化，清空以重新随机
             return true;
         }
         // 阶段2→1：理智恢复且配置了阶段2
@@ -99,6 +114,7 @@ public class EnemyInstance
             TurnInCycle = 0;
             MaxHP = Config.maxHP;
             HP = MaxHP;
+            ResetDrawnSkill();   // 切换阶段 → 牌库变化，清空以重新随机
             return true;
         }
         return false;

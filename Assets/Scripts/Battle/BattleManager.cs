@@ -91,6 +91,9 @@ public class BattleManager : MonoBehaviour
     [Tooltip("技能卡淡入淡出时间（秒）")]
     [SerializeField] private float enemySkillCardFadeTime = 0.5f;
 
+    // 敌人出牌时动态生成的玩家同款卡面（用于打断时清理，避免泄漏）
+    private GameObject _enemyPlayedCard;
+
     [Header("UI引用 - 回合")]
     [SerializeField] private TextMeshProUGUI phaseHintText;
     [SerializeField] private Button endTurnButton;
@@ -2089,9 +2092,22 @@ public class BattleManager : MonoBehaviour
     /// 回合推进由外层 RunEnemyTurnCoroutine 统一负责（本协程不再调 StartPlayerTurn）。</summary>
     private IEnumerator ExecuteEnemySkillCoroutine(EnemyInstance inst, CardEntry skill)
     {
-        // 显示出牌卡面（共用面板：同一时刻只有一个敌人在行动）
-        if (enemySkillCard != null)
+        // 用玩家同款卡面（BattleCard 预制体 + CardRequest）展示敌人出牌，尽量贴近玩家视角。
+        GameObject shownCard = ShowEnemyPlayedCard(skill);
+        bool showFallbackPanel = shownCard == null && enemySkillCard != null;
+
+        if (shownCard != null)
         {
+            _enemyPlayedCard = shownCard;
+            yield return StartCoroutine(FadeCanvasGroup(shownCard, 0f, 1f, enemySkillCardFadeTime));
+            yield return new WaitForSeconds(enemySkillCardDuration);
+            yield return StartCoroutine(FadeCanvasGroup(shownCard, 1f, 0f, enemySkillCardFadeTime));
+            if (_enemyPlayedCard == shownCard) _enemyPlayedCard = null;
+            Destroy(shownCard);
+        }
+        else if (showFallbackPanel)
+        {
+            // 回退：无可用卡面预制体时沿用旧简单面板（图 + 名字 + 描述）
             enemySkillCard.SetActive(true);
             if (enemySkillCardImage != null)
             {
@@ -2118,13 +2134,73 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            // 无卡面板时，用该敌人的意图文本显示卡名并等待
+            // 无卡面时，用意图文本显示卡名并等待
             inst.View?.SetIntent($"【{skill.cardName}】{skill.GetDescription(false)}");
             yield return new WaitForSeconds(2f);
         }
 
         // 执行卡牌效果（对玩家结算）
         ExecuteEnemySkill(inst, skill);
+    }
+
+    /// <summary>
+    /// 用玩家同款卡面预制体 + 卡牌编辑器 CardEntry 生成一张“敌人出牌展示卡”，
+    /// 挂在敌人技能卡面板同父节点下并居中。返回该卡 GameObject；若无可用预制体返回 null。
+    /// </summary>
+    private GameObject ShowEnemyPlayedCard(CardEntry skill)
+    {
+        if (skill == null) return null;
+
+        var prefab = skill.cardType switch
+        {
+            LightMiniGame.CardEditor.CardType.Attack => attackCardPrefab,
+            LightMiniGame.CardEditor.CardType.Skill => skillCardPrefab,
+            LightMiniGame.CardEditor.CardType.Ability => abilityCardPrefab,
+            _ => attackCardPrefab
+        };
+        if (prefab == null) return null;
+
+        var parent = enemySkillCard != null ? enemySkillCard.transform.parent : transform;
+        var go = Instantiate(prefab, parent);
+        var rt = go.transform as RectTransform;
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.localScale = Vector3.one * 1.6f;   // 放大展示
+
+        var display = go.GetComponent<CardDisplay>();
+        if (display != null)
+            display.ApplyCardEntry(skill, false);
+        else
+        {
+            Destroy(go);
+            return null;
+        }
+
+        // 敌人出的牌置为不可出/禁用交互，仅作展示
+        display.SetPlayable(true);
+        var drag = go.GetComponent<CardDragHandler>();
+        if (drag != null) drag.enabled = false;
+        var hover = go.GetComponent<CardHoverEffect>();
+        if (hover != null) hover.enabled = false;
+
+        return go;
+    }
+
+    /// <summary>通用淡入/淡出（对带 CanvasGroup 的 GameObject；缺则补一个）。</summary>
+    private IEnumerator FadeCanvasGroup(GameObject go, float from, float to, float duration)
+    {
+        if (go == null) yield break;
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null) cg = go.AddComponent<CanvasGroup>();
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime / Mathf.Max(0.0001f, duration);
+            cg.alpha = Mathf.Lerp(from, to, t);
+            yield return null;
+        }
+        cg.alpha = to;
     }
 
     /// <summary>
@@ -2210,6 +2286,11 @@ public class BattleManager : MonoBehaviour
         // 重置本回合计数器
         ResetTurnCounters();
 
+        // 随机抽牌：玩家回合开始时清空所有敌人本回合已抽卡牌，
+        // 触发意图预览(GetCurrentSkill)即时随机抽一张并缓存，直至敌人回合实抽使用同一张。
+        foreach (var e in _enemies)
+            if (e != null) e.ResetDrawnSkill();
+
         // (TriggerSystem handles turn start)
         // (TriggerSystem handles via OnTurnStart)
         _triggerSystem?.OnTurnStart(); // 统一触发器系统回合开始
@@ -2280,6 +2361,7 @@ public class BattleManager : MonoBehaviour
         if (_enemyTurnRoutine != null) { StopCoroutine(_enemyTurnRoutine); _enemyTurnRoutine = null; }
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }
         if (enemySkillCard != null) enemySkillCard.SetActive(false);   // 兜底：敌人行动被打断时隐藏技能卡
+        if (_enemyPlayedCard != null) { Destroy(_enemyPlayedCard); _enemyPlayedCard = null; } // 兜底：清理敌人出牌展示卡
         if (victoryPanel != null) victoryPanel.SetActive(victory);
         if (defeatPanel != null) defeatPanel.SetActive(!victory);
         if (endTurnButton != null) endTurnButton.interactable = false;
