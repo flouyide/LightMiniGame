@@ -29,6 +29,9 @@ public class EnemyInstance
     /// <summary>是否已死亡（HP≤0 且无阶段2，或阶段2被打死）</summary>
     public bool IsDead;
 
+    /// <summary>融合回填：意图伤害覆盖值（-1 表示未覆盖，按当前卡牌效果节点计算）</summary>
+    public int IntentDamageOverride = -1;
+
     /// <summary>对应视图，由 BattleManager 生成后注入</summary>
     public EnemyView View;
 
@@ -37,9 +40,9 @@ public class EnemyInstance
     public bool HasPhase2 => Config != null && Config.phase2MaxHP > 0;
 
     /// <summary>
-    /// 按 阶段 + 轮转计数 取当前回合应执行的技能（可能为 null，由调用方兜底）。
+    /// 按 阶段 + 轮转计数 取当前回合应打出的卡牌（可能为 null，由调用方兜底）。
     /// </summary>
-    public EnemySkill GetCurrentSkill()
+    public CardEntry GetCurrentSkill()
     {
         if (Config == null) return null;
 
@@ -50,7 +53,7 @@ public class EnemyInstance
             return Config.phase1Skills[TurnInCycle % Config.phase1Skills.Count];
         }
 
-        // 阶段2：常规技能按轮转执行
+        // 阶段2：常规牌按轮转执行
         if (Config.phase2Skills != null && Config.phase2Skills.Count > 0)
             return Config.phase2Skills[TurnInCycle % Config.phase2Skills.Count];
 

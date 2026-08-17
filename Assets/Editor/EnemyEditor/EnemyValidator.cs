@@ -50,14 +50,14 @@ public static class EnemyValidator
         if (c.phase2MaxHP > 0 && c.phase2Portrait == null) r.issues.Add("配置了阶段2但阶段2立绘未设置");
 
         if (c.phase1Skills == null || c.phase1Skills.Count == 0)
-            r.issues.Add("阶段1技能列表为空（至少配一个技能）");
+            r.issues.Add("阶段1牌库为空（至少配一张卡牌）");
         else
         {
             for (int i = 0; i < c.phase1Skills.Count; i++)
             {
                 var s = c.phase1Skills[i];
-                if (s == null) { r.issues.Add($"阶段1技能 [{i}] 为 null"); continue; }
-                if (string.IsNullOrEmpty(s.skillName)) r.issues.Add($"阶段1技能 [{i}] 名称为空");
+                if (s == null) { r.issues.Add($"阶段1卡牌 [{i}] 为 null"); continue; }
+                if (string.IsNullOrEmpty(s.cardName)) r.issues.Add($"阶段1卡牌 [{i}] 名称为空");
             }
         }
 
@@ -66,8 +66,8 @@ public static class EnemyValidator
             for (int i = 0; i < c.phase2Skills.Count; i++)
             {
                 var s = c.phase2Skills[i];
-                if (s == null) { r.issues.Add($"阶段2技能 [{i}] 为 null"); continue; }
-                if (string.IsNullOrEmpty(s.skillName)) r.issues.Add($"阶段2技能 [{i}] 名称为空");
+                if (s == null) { r.issues.Add($"阶段2卡牌 [{i}] 为 null"); continue; }
+                if (string.IsNullOrEmpty(s.cardName)) r.issues.Add($"阶段2卡牌 [{i}] 名称为空");
             }
         }
 

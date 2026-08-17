@@ -14,39 +14,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_6f99c5ed
   cardName: "\u5341\u5B57\u5DE1\u793C"
-  baseDescription: "\u9020\u62103\u70B9\u4F24\u5BB3\uFF0C\u7406\u667A+2\uFF0C\u83B7\u5F973\u70B9\u683C\u6321\u3002"
-  upgradeDescription: "\u9020\u62106\u70B9\u4F24\u5BB3\uFF0C\u7406\u667A+2\uFF0C\u83B7\u5F973\u70B9\u683C\u6321\u3002"
+  normalDescription: "\u9020\u62103\u70B9\u4F24\u5BB3\uFF0C\u7406\u667A+2\uFF0C\u83B7\u5F973\u70B9\u683C\u6321\u3002"
+  lowSanityDescription: "\u9020\u62106\u70B9\u4F24\u5BB3\uFF0C\u7406\u667A+2\uFF0C\u83B7\u5F973\u70B9\u683C\u6321\u3002"
   cardArt: {fileID: 0}
   darkCardArt: {fileID: 0}
   grade: 0
   cardType: 0
   existence: 0
-  baseCost: 1
-  upgradeCost: 1
+  lowSanityExistence: 0
+  normalCost: 1
+  lowSanityCost: 1
   price: 10
   keyword: 0
-  upgradable: 1
-  baseEffects: []
-  upgradeEffects: []
-  baseAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
-  upgradeAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
+  hasLowSanityForm: 1
+  normalEffectNodes: []
+  lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: 
+  references:
+    version: 2
+    RefIds: []

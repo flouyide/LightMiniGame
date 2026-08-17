@@ -420,24 +420,44 @@ public class BattleManager : MonoBehaviour
         e.View?.Refresh();
     }
 
-    /// <summary>回填：设定指定槽位敌人当前意图卡牌伤害值（防负）。</summary>
+    /// <summary>回填：设定指定槽位敌人当前意图卡牌伤害覆盖值（防负）。写入 EnemyInstance 的覆盖字段，不改动共享卡牌资源。</summary>
     public void FusionSetEnemyIntentDamage(int slot, int value)
     {
         var e = GetEnemy(slot);
         if (e == null || e.IsDead) return;
-        var skill = e.GetCurrentSkill();
-        if (skill == null) return;
-        skill.damage = Mathf.Max(0, value);
+        e.IntentDamageOverride = Mathf.Max(0, value);
         e.View?.Refresh();
     }
 
-    /// <summary>读取指定槽位敌人当前意图卡牌伤害值（无技能返回 0）。</summary>
+    /// <summary>读取指定槽位敌人当前意图卡牌伤害值（覆盖值优先；否则按当前卡牌效果节点累加 DealDamage 常量值；无卡牌返回 0）。</summary>
     public int FusionEnemyIntentDamage(int slot)
     {
         var e = GetEnemy(slot);
         if (e == null || e.IsDead) return 0;
+        if (e.IntentDamageOverride >= 0) return e.IntentDamageOverride;
         var skill = e.GetCurrentSkill();
-        return skill != null ? skill.damage : 0;
+        return skill != null ? ComputeCardIntentDamage(skill, e) : 0;
+    }
+
+    /// <summary>按卡牌当前形态（依据玩家理智）累加所有 DealDamage 效果节点的常量伤害值，作为意图伤害预览。</summary>
+    private int ComputeCardIntentDamage(CardEntry card, EnemyInstance inst)
+    {
+        if (card == null) return 0;
+        bool lowSanity = card.ShouldUseLowSanityForm(_playerSanity);
+        var nodes = card.GetEffectNodes(lowSanity);
+        int total = 0;
+        foreach (var n in nodes)
+        {
+            if (n == null || !n.enabled) continue;
+            if (n.operation == EffectOperation.DealDamage &&
+                n.value != null && n.value.nodeType == ValueNodeType.IntegerConstant)
+            {
+                total += n.value.intValue;
+            }
+        }
+        // 叠加敌人力量（同旧逻辑：敌人伤害 += strength）
+        if (inst != null && inst.Config != null) total += inst.Config.strength;
+        return total;
     }
 
     /// <summary>当前玩家货币（只读代理到 ChapterManager；战斗中其它系统不消费则无冲突）。</summary>
@@ -1911,7 +1931,7 @@ public class BattleManager : MonoBehaviour
             var skill = inst.GetCurrentSkill();
             if (skill != null)
             {
-                inst.View?.SetIntent($"【{skill.skillName}】");
+                inst.View?.SetIntent($"【{skill.cardName}】");
                 yield return StartCoroutine(ExecuteEnemySkillCoroutine(inst, skill));
             }
             else
@@ -1978,27 +1998,27 @@ public class BattleManager : MonoBehaviour
 
     /// <summary>敌人技能执行协程：显示卡面 → 等待 → 执行效果 → 隐藏卡面。
     /// 回合推进由外层 RunEnemyTurnCoroutine 统一负责（本协程不再调 StartPlayerTurn）。</summary>
-    private IEnumerator ExecuteEnemySkillCoroutine(EnemyInstance inst, EnemySkill skill)
+    private IEnumerator ExecuteEnemySkillCoroutine(EnemyInstance inst, CardEntry skill)
     {
-        // 显示技能卡面（共用面板：同一时刻只有一个敌人在行动）
+        // 显示出牌卡面（共用面板：同一时刻只有一个敌人在行动）
         if (enemySkillCard != null)
         {
             enemySkillCard.SetActive(true);
             if (enemySkillCardImage != null)
             {
-                enemySkillCardImage.sprite = skill.skillCardArt;
-                enemySkillCardImage.color = skill.skillCardArt != null
+                enemySkillCardImage.sprite = skill.cardArt;
+                enemySkillCardImage.color = skill.cardArt != null
                     ? new Color(1, 1, 1, 1f)
                     : new Color(0.05f, 0.03f, 0.1f, 0.95f);
             }
             if (enemySkillNameText != null)
             {
-                enemySkillNameText.text = skill.skillName;
+                enemySkillNameText.text = skill.cardName;
                 enemySkillNameText.color = new Color(1f, 0.95f, 0.7f, 1f);
             }
             if (enemySkillDescText != null)
             {
-                enemySkillDescText.text = skill.description;
+                enemySkillDescText.text = skill.GetDescription(false);
                 enemySkillDescText.color = new Color(0.9f, 0.85f, 0.95f, 1f);
             }
 
@@ -2009,48 +2029,27 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            // 无技能卡面板时，用该敌人的意图文本显示技能名并等待
-            inst.View?.SetIntent($"【{skill.skillName}】{skill.description}");
+            // 无卡面板时，用该敌人的意图文本显示卡名并等待
+            inst.View?.SetIntent($"【{skill.cardName}】{skill.GetDescription(false)}");
             yield return new WaitForSeconds(2f);
         }
 
-        // 执行技能效果（对玩家结算）
+        // 执行卡牌效果（对玩家结算）
         ExecuteEnemySkill(inst, skill);
     }
 
-    /// <summary>执行指定敌人技能的实际效果（对玩家结算；锁定/命中判定读写该敌人自身的 LockedCharIdx）</summary>
-    private void ExecuteEnemySkill(EnemyInstance inst, EnemySkill skill)
+    /// <summary>
+    /// 执行指定敌人打出的卡牌效果（对玩家结算）。
+    /// TODO（以后实现）：按 CardEntry 的 normalEffectNodes / lowSanityEffectNodes 调用 EffectExecutor
+    /// 对玩家结算（伤害/护甲/理智等），并保留锁定角色等逻辑。当前为占位，敌人暂不出牌效果。
+    /// </summary>
+    private void ExecuteEnemySkill(EnemyInstance inst, CardEntry skill)
     {
         if (inst == null || skill == null) return;
 
-        // 锁定角色（光束扫描）
-        if (skill.lockCharacter)
-            inst.LockedCharIdx = _activeCharIdx;
-
-        // 命中判定（光束命中：只有锁定角色未切换才生效）
-        bool hitsResolved = true;
-        if (skill.hitsLockedCharacter && inst.LockedCharIdx >= 0)
-        {
-            hitsResolved = (inst.LockedCharIdx == _activeCharIdx);
-            inst.LockedCharIdx = -1; // 消耗锁定
-        }
-
-        if (hitsResolved)
-        {
-            if (skill.damage > 0)
-                DealDamageToPlayer(skill.damage, inst);
-            if (skill.sanityReduction != 0)
-                ModifySanity(skill.sanityReduction);
-            if (skill.strengthReduction != 0)
-                _playerStrength = Mathf.Max(0, _playerStrength + skill.strengthReduction);
-            // 获得护甲：基础值 + 敌人 dexterity（同杀戮尖塔敏捷加格挡）
-            if (skill.gainBlock > 0)
-            {
-                int block = skill.gainBlock + (inst.Config != null ? inst.Config.dexterity : 0);
-                inst.AddArmor(block);
-                Debug.Log($"[BattleManager] {inst.Name} 获得 {block} 护甲（基础 {skill.gainBlock} + 敏捷 {inst.Config?.dexterity ?? 0}）");
-            }
-        }
+        // TODO: 敌人出牌逻辑 —— 后续按 CardEntry 效果节点结算（伤害/护甲/理智/锁定等）。
+        //       当前仅记录出牌，实际效果待接入 EffectExecutor。
+        Debug.Log($"[BattleManager] {inst.Name} 出牌：{skill.cardName}（效果结算待实现）");
 
         inst.View?.Refresh();
     }
@@ -2217,8 +2216,8 @@ public class BattleManager : MonoBehaviour
         if (inst == null || inst.IsDead) return "";
         if (inst.Config == null) return "…";
         var skill = inst.GetCurrentSkill();
-        if (skill == null) return "…";   // 无技能配置：空过本回合
-        return skill.skillName;
+        if (skill == null) return "…";   // 无卡牌配置：空过本回合
+        return skill.cardName;
     }
 
     private void UpdateUI()

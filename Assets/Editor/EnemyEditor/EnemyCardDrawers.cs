@@ -38,7 +38,7 @@ public static class EnemyCardDrawers
 
             // 中部：HP / 技能数
             GUILayout.Label($"HP {cfg.maxHP}/{cfg.maxHP} (阶段2: {cfg.phase2MaxHP})", EditorStyles.miniLabel);
-            GUILayout.Label($"技能 阶段1:{cfg.phase1Skills?.Count ?? 0}  阶段2:{cfg.phase2Skills?.Count ?? 0}", EditorStyles.miniLabel);
+            GUILayout.Label($"卡牌 阶段1:{cfg.phase1Skills?.Count ?? 0}  阶段2:{cfg.phase2Skills?.Count ?? 0}", EditorStyles.miniLabel);
 
             GUILayout.FlexibleSpace();
 

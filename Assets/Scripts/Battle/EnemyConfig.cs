@@ -1,35 +1,11 @@
 using System;
 using System.Collections.Generic;
+using LightMiniGame.CardEditor;
 using UnityEngine;
 
 /// <summary>
-/// 敌人技能数据
-/// </summary>
-[Serializable]
-public class EnemySkill
-{
-    [Tooltip("技能名称")]
-    public string skillName;
-    [Tooltip("技能描述")]
-    [TextArea(1, 3)] public string description;
-    [Tooltip("技能卡面图（美术替换接口）")]
-    public Sprite skillCardArt;
-    [Tooltip("造成的伤害")]
-    public int damage;
-    [Tooltip("获得护甲（类似杀戮尖塔格挡；受敌人 dexterity 加成）")]
-    public int gainBlock;
-    [Tooltip("降低玩家理智值")]
-    public int sanityReduction;
-    [Tooltip("降低玩家力量值")]
-    public int strengthReduction;
-    [Tooltip("是否锁定当前角色（光束扫描）")]
-    public bool lockCharacter;
-    [Tooltip("是否仅命中被锁定的角色（光束命中：只有锁定角色未切换才生效）")]
-    public bool hitsLockedCharacter;
-}
-
-/// <summary>
-/// 敌人配置 —— ScriptableObject，不同战斗只需更换此配置
+/// 敌人配置 —— ScriptableObject，不同战斗只需更换此配置。
+/// 敌人的行动（高理智/低理智）即出牌：phase1Skills/phase2Skills 直接引用 CardEntry 卡牌。
 /// </summary>
 [CreateAssetMenu(menuName = "CardGame/Enemy Config", fileName = "NewEnemy")]
 public class EnemyConfig : ScriptableObject
@@ -55,11 +31,13 @@ public class EnemyConfig : ScriptableObject
     public Sprite phase1Portrait;
     public Sprite phase2Portrait;
 
-    [Header("高理智卡组")]
-    public List<EnemySkill> phase1Skills;
+    [Header("高理智牌库（出牌）")]
+    [Tooltip("高理智形态下敌人按轮转顺序打出的卡牌（引用 CardEntry）")]
+    public List<CardEntry> phase1Skills;
 
-    [Header("低理智卡组")]
-    public List<EnemySkill> phase2Skills;
+    [Header("低理智牌库（出牌）")]
+    [Tooltip("低理智形态下敌人按轮转顺序打出的卡牌（引用 CardEntry）")]
+    public List<CardEntry> phase2Skills;
 
     // ===== 5.3 文档扩展字段（保留所有原字段，旧 .asset 自动取默认值兼容） =====
 
@@ -79,10 +57,10 @@ public class EnemyConfig : ScriptableObject
     [Tooltip("敌人受击倍率（百分比，100=1.0倍=正常）")]
     public int damageTakenMultiplier = 100;
 
-    [Header("出招牌库（高理智=phase1 / 低理智=phase2）")]
-    [Tooltip("高理智出招数（从 phase1Skills 中抽/轮转的数量；0=全部轮转）")]
+    [Header("出牌库（高理智=phase1 / 低理智=phase2）")]
+    [Tooltip("高理智出牌数（从 phase1Skills 中抽/轮转的数量；0=全部轮转）")]
     public int highSanityCardCount = 0;
-    [Tooltip("低理智出招数（从 phase2Skills 中抽/轮转的数量；0=全部轮转）")]
+    [Tooltip("低理智出牌数（从 phase2Skills 中抽/轮转的数量；0=全部轮转）")]
     public int lowSanityCardCount = 0;
 
     [Header("能力")]
