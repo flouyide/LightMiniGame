@@ -1673,7 +1673,7 @@ public class BattleManager : MonoBehaviour
     private void UpdateLowSanityVolume()
     {
         if (lowSanityVolume != null)
-            lowSanityVolume.enabled = _playerSanity < _sanityThreshold;
+            lowSanityVolume.enabled = _playerSanity <= _sanityThreshold;
     }
 
     /// <summary>理智转阶段钩子（理智降至阈值 4 时触发，每场战斗仅一次）</summary>

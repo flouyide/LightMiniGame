@@ -188,7 +188,7 @@ public class ChapterManager : MonoBehaviour
     private void UpdateLowSanityVolume()
     {
         if (lowSanityVolume != null)
-            lowSanityVolume.enabled = PlayerSanity < PlayerSanityThreshold;
+            lowSanityVolume.enabled = PlayerSanity <= PlayerSanityThreshold;
     }
 
     // 持久基础属性已改为 ChapterManager 运行时副本（PlayerStrength 等），
