@@ -28,8 +28,8 @@ namespace LightMiniGame.Shop
         [Tooltip("购买价格（仿 CardData.value 的商店价值字段）")]
         public int value = 100;
 
-        [Header("品级（预留：后续按品级抽取遗物）")]
-        public CardGrade grade = CardGrade.Common;
+        [Header("品级（商店按品级概率刷新）")]
+        public CardGrade grade = CardGrade.Bronze;
 
         [Header("排序")]
         [Tooltip("在总遗物库中的排序权重，越大越靠前（可选）")]

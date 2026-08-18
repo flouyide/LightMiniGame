@@ -23,7 +23,7 @@ public class CardDisplay : MonoBehaviour
 
     [Header("通用属性")]
     [Tooltip("商店价值")] public int value = 10;
-    [Tooltip("品级")] public CardGrade grade = CardGrade.Common;
+    [Tooltip("品级")] public CardGrade grade = CardGrade.Bronze;
     [Tooltip("需要消耗的行动点")] public int actionPointCost = 1;
     [Tooltip("消耗类型")] public ConsumeType consumeType = ConsumeType.None;
     [Tooltip("词条（不同词条具有不同效果）")] public KeywordType keywords = KeywordType.None;
@@ -82,11 +82,9 @@ public class CardDisplay : MonoBehaviour
     [SerializeField] private Color buffColor = new Color(0.22f, 0.68f, 0.35f, 1f);
 
     [Header("品级颜色（边框）")]
-    [SerializeField] private Color commonColor = new Color(0.55f, 0.55f, 0.55f, 1f);
-    [SerializeField] private Color fineColor = new Color(0.30f, 0.75f, 0.30f, 1f);
-    [SerializeField] private Color rareColor = new Color(0.35f, 0.55f, 1.00f, 1f);
-    [SerializeField] private Color epicColor = new Color(0.70f, 0.30f, 0.90f, 1f);
-    [SerializeField] private Color legendaryColor = new Color(1.00f, 0.70f, 0.10f, 1f);
+    [SerializeField] private Color bronzeColor = new Color(0.72f, 0.48f, 0.34f, 1f);   // 铜
+    [SerializeField] private Color silverColor = new Color(0.78f, 0.80f, 0.84f, 1f);   // 银
+    [SerializeField] private Color goldColor   = new Color(1.00f, 0.78f, 0.25f, 1f);   // 金
 
     [Header("不可打出状态")]
     [SerializeField] private Color unplayableColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
@@ -392,10 +390,10 @@ public class CardDisplay : MonoBehaviour
         // 映射品级
         grade = entry.grade switch
         {
-            LightMiniGame.CardEditor.CardGrade.Bronze => CardGrade.Common,
-            LightMiniGame.CardEditor.CardGrade.Silver => CardGrade.Fine,
-            LightMiniGame.CardEditor.CardGrade.Gold => CardGrade.Rare,
-            _ => CardGrade.Common
+            LightMiniGame.CardEditor.CardGrade.Bronze => CardGrade.Bronze,
+            LightMiniGame.CardEditor.CardGrade.Silver => CardGrade.Silver,
+            LightMiniGame.CardEditor.CardGrade.Gold => CardGrade.Gold,
+            _ => CardGrade.Bronze
         };
 
         // 映射卡牌类型（与编辑器统一）
@@ -628,11 +626,9 @@ public class CardDisplay : MonoBehaviour
 
     private Color GetCardGradeColor() => grade switch
     {
-        CardGrade.Common => commonColor,
-        CardGrade.Fine => fineColor,
-        CardGrade.Rare => rareColor,
-        CardGrade.Epic => epicColor,
-        CardGrade.Legendary => legendaryColor,
+        CardGrade.Bronze => bronzeColor,
+        CardGrade.Silver => silverColor,
+        CardGrade.Gold => goldColor,
         _ => Color.white
     };
 

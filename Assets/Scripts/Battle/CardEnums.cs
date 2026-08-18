@@ -11,15 +11,13 @@ public enum CardType
 }
 
 /// <summary>
-/// 卡牌品级
+/// 卡牌品级：金 / 银 / 铜
 /// </summary>
 public enum CardGrade
 {
-    Common,     // 普通
-    Fine,       // 优秀
-    Rare,       // 精良
-    Epic,       // 史诗
-    Legendary   // 传说
+    Bronze,     // 铜
+    Silver,     // 银
+    Gold        // 金
 }
 
 /// <summary>

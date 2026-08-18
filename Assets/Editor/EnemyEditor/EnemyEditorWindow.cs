@@ -350,12 +350,12 @@ public class EnemyEditorWindow : EditorWindow
             }
             if (GUILayout.Button("+ 卡牌", GUILayout.Width(70)))
             {
-                entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Common }, cardDrawCount = 3, cardPickCount = 1 });
+                entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Bronze }, cardDrawCount = 3, cardPickCount = 1 });
                 MarkDirty();
             }
             if (GUILayout.Button("+ 遗物", GUILayout.Width(70)))
             {
-                entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Common } });
+                entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Bronze } });
                 MarkDirty();
             }
         }

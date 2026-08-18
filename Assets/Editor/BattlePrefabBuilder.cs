@@ -43,7 +43,7 @@ public static class BattlePrefabBuilder
         // 设置卡牌类型（不可更改，由模板决定）
         cardDisplay.cardType = cardType;
         cardDisplay.cardName = typeName + "模板";
-        cardDisplay.grade = CardGrade.Common;
+        cardDisplay.grade = CardGrade.Bronze;
         cardDisplay.actionPointCost = 1;
 
         // 按类型设默认值
