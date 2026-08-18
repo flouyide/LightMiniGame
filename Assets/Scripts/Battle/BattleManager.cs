@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Serialization;
+using UnityEngine.Rendering;
 using TMPro;
 using LightMiniGame.Card;
 using LightMiniGame.CardEditor;
@@ -33,6 +34,10 @@ public class BattleManager : MonoBehaviour
     [Header("运行时属性来源（持久基础属性运行时副本）")]
     [Tooltip("ChapterManager 持有持久基础属性（力量/敏捷/吸血/暴击率/暴伤）的运行时副本，单局内跨战斗保留。战斗开始时从此读取。留空则回退到 PlayerConfig（仅初始值，不含事件累积）")]
     [SerializeField] private ChapterManager chapterManager;
+
+    [Header("低理智特效")]
+    [Tooltip("理智低于 PlayerConfig.sanityThreshold 时启用的 Volume（如信号干扰后处理），否则禁用。留空则无特效")]
+    [SerializeField] private Volume lowSanityVolume;
 
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
@@ -1059,6 +1064,9 @@ public class BattleManager : MonoBehaviour
             Debug.LogWarning("[BattleManager] 未配置 ChapterManager / PlayerConfig，持久属性为 0");
         }
 
+        // 初始理智就绪后刷新低理智特效开关（进战斗时理智已低于阈值也要开）
+        UpdateLowSanityVolume();
+
         // 同步基础值到 base 字段
         _playerBaseStrength = _playerStrength;
         _playerBaseDexterity = _playerDexterity;
@@ -1632,6 +1640,9 @@ public class BattleManager : MonoBehaviour
         int prev = _playerSanity;
         _playerSanity = Mathf.Clamp(_playerSanity + delta, 0, _playerMaxSanity);
 
+        // 理智变化后刷新低理智特效开关
+        UpdateLowSanityVolume();
+
         // 降至阈值 → 触发黑暗阶段
         if (!_sanityPhaseTriggered && prev > SanityPhaseThreshold && _playerSanity <= SanityPhaseThreshold)
         {
@@ -1652,6 +1663,16 @@ public class BattleManager : MonoBehaviour
 
         UpdateUI();
         ApplyBackground();   // 理智变化实时切换背景
+    }
+
+    /// <summary>
+    /// 理智低于阈值（_playerSanity &lt; _sanityThreshold，与敌人阶段切换同口径）时启用
+    /// lowSanityVolume（如信号干扰后处理），否则禁用。在战斗属性初始化与每次理智变化后调用。
+    /// </summary>
+    private void UpdateLowSanityVolume()
+    {
+        if (lowSanityVolume != null)
+            lowSanityVolume.enabled = _playerSanity < _sanityThreshold;
     }
 
     /// <summary>理智转阶段钩子（理智降至阈值 4 时触发，每场战斗仅一次）</summary>

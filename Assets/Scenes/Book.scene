@@ -162,7 +162,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3357280920212368793, guid: 8b33405e3455a604888bc039388316bf, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0007324219
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3974687804581034922, guid: 8b33405e3455a604888bc039388316bf, type: 3}
       propertyPath: m_RaycastTarget
@@ -226,6 +226,56 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8907617652238491779, guid: 8b33405e3455a604888bc039388316bf, type: 3}
   m_PrefabInstance: {fileID: 92300618}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &156470873
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 156470875}
+  - component: {fileID: 156470874}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: PostProcessVolume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &156470874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156470873}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: e5e76092439af0d469beccf749fcdb9f, type: 2}
+--- !u!4 &156470875
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156470873}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &200609481
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -240,6 +290,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2170103031073895975, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2452891548599643351, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+      propertyPath: m_Camera
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 2452891548599643351, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+      propertyPath: m_RenderMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2740399109263970310, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
@@ -719,7 +777,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_FXAAQualityMode: 0
   m_FXAAContrastThreshold: 0.125
@@ -1147,7 +1205,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1697130484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1523,6 +1581,7 @@ MonoBehaviour:
   playerConfig: {fileID: 11400000, guid: 9c1bb1a8fc6d166448f6d77beb295aba, type: 2}
   masterRelicLibrary: {fileID: 11400000, guid: 7ccc0877a23096244b53c2e81a68a324, type: 2}
   masterCardLibrary: {fileID: 0}
+  lowSanityVolume: {fileID: 156470874}
   debugStartChapterIndex: 0
   battleCanvas: {fileID: 1997213926}
   bookCanvas: {fileID: 7321734543486093402}
@@ -1690,6 +1749,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1743362556053749712, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2279978137885216227, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
+      propertyPath: m_Camera
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 2279978137885216227, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
+      propertyPath: m_RenderMode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2736421210797496942, guid: e46743a57953ddb4cb1a8b7221d35b27, type: 3}
@@ -2017,6 +2084,7 @@ MonoBehaviour:
   character1Cards: []
   character2Cards: []
   chapterManager: {fileID: 0}
+  lowSanityVolume: {fileID: 156470874}
   attackCardPrefab: {fileID: 5473407269505765583, guid: 81d0e6b49544d49058648e04bf9c1527, type: 3}
   skillCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
   abilityCardPrefab: {fileID: 7474974900366243079, guid: 554d0b2b98f0e436c861a89e6893f1a5, type: 3}
@@ -2073,6 +2141,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3bf770687e63847fca079956a7956d2c, type: 2}
   - {fileID: 11400000, guid: e81ec51de1eb242a6a763a4096bd03c3, type: 2}
   - {fileID: 11400000, guid: 94e7904ad44754c87b838b21980cecd7, type: 2}
+  persistFusion: 0
+  includeHPInFusion: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -2085,3 +2155,4 @@ SceneRoots:
   - {fileID: 1600256905}
   - {fileID: 1697130485}
   - {fileID: 4663723853376647076}
+  - {fileID: 156470875}

@@ -1,5 +1,21 @@
 %YAML 1.1
 %TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &-5966455399823192594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04fa9b4d79055cc4382c3dfbea1d5f36, type: 3}
+  m_Name: InterferencesFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  renderPassEvent: 550
+  applyToSceneView: 1
+  effectShader: {fileID: 4800000, guid: 8692e1a1a49b061478769ae92f2ed6b1, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18,8 +34,9 @@ MonoBehaviour:
     debugVisibilityShader: {fileID: 4800000, guid: 3619753c663387743934d88a20720796, type: 3}
     debugMaterialIDShader: {fileID: 4800000, guid: 4cad10f498f948a4db366954d3d91f01, type: 3}
     blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
-  m_RendererFeatures: []
-  m_RendererFeatureMap: 
+  m_RendererFeatures:
+  - {fileID: -5966455399823192594}
+  m_RendererFeatureMap: eecd53ed6ce432ad
   m_UseNativeRenderPass: 0
   m_LayerMask:
     serializedVersion: 2

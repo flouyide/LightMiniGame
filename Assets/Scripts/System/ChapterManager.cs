@@ -5,6 +5,7 @@ using LightMiniGame.Card;
 using LightMiniGame.Shop;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// 章节状态管理与刷新算法
@@ -17,6 +18,10 @@ public class ChapterManager : MonoBehaviour
     [SerializeField] private MasterRelicLibrary masterRelicLibrary;  // 总遗物库（GrantRelic 随机抽遗物用）
     [Tooltip("总牌库：掉落卡牌时按品级从中随机抽取。留空则战斗掉落卡牌时跳过")]
     [SerializeField] private MasterCardLibrary masterCardLibrary;  // 总牌库（掉落卡牌用）
+
+    [Header("低理智特效")]
+    [Tooltip("理智低于 PlayerConfig.sanityThreshold 时启用的 Volume（如信号干扰后处理），否则禁用。留空则无特效")]
+    [SerializeField] private Volume lowSanityVolume;
 
     [Header("调试")]
     [Tooltip("跳过前N章，直接从第N+1章开始（0=从第一章开始）")]
@@ -172,6 +177,18 @@ public class ChapterManager : MonoBehaviour
             PlayerDamageTakenMultiplier = 100;
             Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
         }
+
+        UpdateLowSanityVolume();
+    }
+
+    /// <summary>
+    /// 理智低于阈值（PlayerSanity &lt; PlayerSanityThreshold，与敌人阶段切换同口径）时启用
+    /// lowSanityVolume（如信号干扰后处理），否则禁用。在理智初始化与每次变化后调用。
+    /// </summary>
+    private void UpdateLowSanityVolume()
+    {
+        if (lowSanityVolume != null)
+            lowSanityVolume.enabled = PlayerSanity < PlayerSanityThreshold;
     }
 
     // 持久基础属性已改为 ChapterManager 运行时副本（PlayerStrength 等），
@@ -611,6 +628,7 @@ public class ChapterManager : MonoBehaviour
             case PlayerBaseAttribute.Sanity:
                 // 理智有上限：以 PlayerMaxSanity（开局取自 PlayerConfig.maxSanity）封顶，避免通过事件效果获得理智时溢出
                 PlayerSanity = Mathf.Clamp(PlayerSanity + delta, 0, PlayerMaxSanity);
+                UpdateLowSanityVolume();   // 理智变化后刷新低理智特效开关
                 break;
 
             default:
