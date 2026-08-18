@@ -35,8 +35,6 @@ public class EnemyInstance
     public int Phase = 1;
     /// <summary>技能轮转计数（保留字段：阶段切换时依据；选牌已改为随机抽，不再直接用轮转下标）</summary>
     public int TurnInCycle;
-    /// <summary>本回合已随机抽取的技能卡（意图预览与实抽一致）；每个敌人回合开始时重新抽取。</summary>
-    public CardEntry DrawnSkill;
     /// <summary>锁定的角色索引（-1 = 未锁定；光束扫描类技能用）</summary>
     public int LockedCharIdx = -1;
     /// <summary>是否已死亡（HP≤0 且无阶段2，或阶段2被打死）</summary>
@@ -63,26 +61,60 @@ public class EnemyInstance
     }
 
     /// <summary>
-    /// 本回合应打出的卡牌：返回已抽取缓存的 DrawnSkill（若尚未抽取则立即随机抽一张并缓存）。
-    /// 每回合开始时调用 ResetDrawnSkill() 清空，使意图预览(GetCurrentSkill)与实抽一致。
+    /// 本回合应打出的卡牌（列表，按当前形态出牌数抽取缓存）。
+    /// 每回合开始时调用 ResetDrawnSkill() 清空，使意图预览与实抽一致。
     /// </summary>
+    public List<CardEntry> GetCurrentSkills()
+    {
+        if (_drawnSkills != null) return _drawnSkills;
+        _drawnSkills = RollRandomSkills(CardsThisTurn);
+        return _drawnSkills;
+    }
+
+    /// <summary>本回合主卡（返回已抽取列表的首张；用于单卡意图/伤害预览）。</summary>
     public CardEntry GetCurrentSkill()
     {
-        if (DrawnSkill != null) return DrawnSkill;
-        DrawnSkill = RollRandomSkill();
-        return DrawnSkill;
+        var list = GetCurrentSkills();
+        return list != null && list.Count > 0 ? list[0] : null;
     }
 
-    /// <summary>从当前阶段牌库随机抽一张卡牌并缓存为该敌人的本回合技能（不重置轮转计数）。</summary>
-    public CardEntry RollRandomSkill()
+    /// <summary>本回合出牌数：阶段1用高理智出招数，阶段2用低理智出招数；配置≤0 时默认 1 张。</summary>
+    public int CardsThisTurn
+    {
+        get
+        {
+            if (Config == null) return 1;
+            int c = Phase == 1 ? Config.highSanityCardCount : Config.lowSanityCardCount;
+            return c > 0 ? c : 1;
+        }
+    }
+
+    /// <summary>从当前阶段牌库随机抽取 count 张（不重复）并缓存为本回合技能。</summary>
+    public List<CardEntry> RollRandomSkills(int count)
     {
         var pool = CurrentSkillPool;
-        if (pool == null || pool.Count == 0) return null;
-        return pool[Random.Range(0, pool.Count)];
+        var result = new List<CardEntry>();
+        if (pool == null || pool.Count == 0) return result;
+        if (count <= 0) count = 1;
+
+        // 从牌库随机抽（不重复，直到抽够或牌库抽空）
+        var remaining = new List<CardEntry>(pool);
+        while (result.Count < count && remaining.Count > 0)
+        {
+            int idx = Random.Range(0, remaining.Count);
+            result.Add(remaining[idx]);
+            remaining.RemoveAt(idx);
+        }
+        return result;
     }
 
+    private List<CardEntry> _drawnSkills;
+
     /// <summary>清空本回合已抽卡牌（玩家回合开始时调用，使下个敌人回合重新随机）。</summary>
-    public void ResetDrawnSkill() => DrawnSkill = null;
+    public void ResetDrawnSkill()
+    {
+        _drawnSkills = null;
+    }
 
     /// <summary>
     /// 检查并执行阶段切换。返回是否发生了切换（供 BattleManager 刷视图/记日志）。

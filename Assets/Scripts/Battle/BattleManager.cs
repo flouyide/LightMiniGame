@@ -459,14 +459,18 @@ public class BattleManager : MonoBehaviour
         e.View?.Refresh();
     }
 
-    /// <summary>读取指定槽位敌人当前意图卡牌伤害值（覆盖值优先；否则按当前卡牌效果节点累加 DealDamage 常量值；无卡牌返回 0）。</summary>
+    /// <summary>读取指定槽位敌人本回合意图伤害值（覆盖值优先；否则累加本回合所有出牌的效果节点常量伤害；无卡牌返回 0）。</summary>
     public int FusionEnemyIntentDamage(int slot)
     {
         var e = GetEnemy(slot);
         if (e == null || e.IsDead) return 0;
         if (e.IntentDamageOverride >= 0) return e.IntentDamageOverride;
-        var skill = e.GetCurrentSkill();
-        return skill != null ? ComputeCardIntentDamage(skill, e) : 0;
+        var skills = e.GetCurrentSkills();
+        int total = 0;
+        if (skills != null)
+            foreach (var s in skills)
+                if (s != null) total += ComputeCardIntentDamage(s, e);
+        return total;
     }
 
     /// <summary>按卡牌当前形态（依据玩家理智）累加所有 DealDamage 效果节点的常量伤害值，作为意图伤害预览。</summary>
@@ -2020,11 +2024,16 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
-            var skill = inst.GetCurrentSkill();
-            if (skill != null)
+            var skills = inst.GetCurrentSkills();
+            if (skills != null && skills.Count > 0)
             {
-                inst.View?.SetIntent($"【{skill.cardName}】");
-                yield return StartCoroutine(ExecuteEnemySkillCoroutine(inst, skill));
+                foreach (var skill in skills)
+                {
+                    if (_battleEnded || inst == null || inst.IsDead) break;
+                    if (skill == null) continue;
+                    inst.View?.SetIntent($"【{skill.cardName}】");
+                    yield return StartCoroutine(ExecuteEnemySkillCoroutine(inst, skill));
+                }
             }
             else
             {
@@ -2393,14 +2402,18 @@ public class BattleManager : MonoBehaviour
             handLayout.UpdateHand(_hand, IsCardPlayable);
     }
 
-    /// <summary>取指定敌人的意图文本（预览其下个技能；无技能配置时预览固定伤害）</summary>
+    /// <summary>取指定敌人的意图文本（预览本回合将出的所有技能卡名；无技能配置时空过）。</summary>
     private string GetEnemyIntentText(EnemyInstance inst)
     {
         if (inst == null || inst.IsDead) return "";
         if (inst.Config == null) return "…";
-        var skill = inst.GetCurrentSkill();
-        if (skill == null) return "…";   // 无卡牌配置：空过本回合
-        return skill.cardName;
+        var skills = inst.GetCurrentSkills();
+        if (skills == null || skills.Count == 0) return "…";   // 无卡牌配置：空过本回合
+        if (skills.Count == 1) return skills[0] != null ? skills[0].cardName : "…";
+        var sb = new System.Text.StringBuilder();
+        foreach (var s in skills)
+            sb.Append(s != null ? s.cardName : "?").Append(' ');
+        return sb.ToString().TrimEnd();
     }
 
     private void UpdateUI()
