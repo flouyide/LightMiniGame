@@ -23,7 +23,7 @@ namespace LightMiniGame.Card
         public string EffectiveDescription => Pick(overrideData.hasDescriptionOverride, overrideData.description,     template != null ? template.description : "");
         public int    EffectiveCost         => Pick(overrideData.hasCostOverride,        overrideData.actionPointCost, template != null ? template.actionPointCost : 1);
         public int    EffectiveValue        => Pick(overrideData.hasValueOverride,       overrideData.value,          template != null ? template.value : 0);
-        public CardGrade EffectiveGrade      => Pick(overrideData.hasGradeOverride,       overrideData.grade,          template != null ? template.grade : CardGrade.Common);
+        public CardGrade EffectiveGrade      => Pick(overrideData.hasGradeOverride,       overrideData.grade,          template != null ? template.grade : CardGrade.Bronze);
         public ConsumeType EffectiveConsume  => Pick(overrideData.hasConsumeTypeOverride, overrideData.consumeType,    template != null ? template.consumeType : ConsumeType.None);
         public KeywordType EffectiveKeywords => Pick(overrideData.hasKeywordsOverride,    overrideData.keywords,       template != null ? template.keywords : KeywordType.None);
         public int    EffectiveAttackCount  => Pick(overrideData.hasAttackCountOverride, overrideData.attackCount,    template != null ? template.attackCount : 1);

@@ -26,7 +26,7 @@ public class LootEntry
 
     // === 卡牌 ===
     [Tooltip("卡牌可选品级（从这些品级的角色可获取牌库里按品级概率抽取）")]
-    public List<CardGrade> cardRarities = new List<CardGrade> { CardGrade.Common };
+    public List<CardGrade> cardRarities = new List<CardGrade> { CardGrade.Bronze };
     [Tooltip("抽取数量（展示给玩家的卡牌数，如「3选1」则填 3）")]
     public int cardDrawCount = 3;
     [Tooltip("玩家可选数量（通常为 1）")]
@@ -34,7 +34,7 @@ public class LootEntry
 
     // === 遗物 ===
     [Tooltip("遗物可选品级（从这些品级的角色可获取遗物库里按品级概率抽 1 个）")]
-    public List<CardGrade> relicRarities = new List<CardGrade> { CardGrade.Common };
+    public List<CardGrade> relicRarities = new List<CardGrade> { CardGrade.Bronze };
 }
 
 /// <summary>
@@ -72,21 +72,21 @@ public class LootTable
         {
             case Difficulty.Weak:
                 t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Currency, currencyAmount = 5 });
-                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Common }, cardDrawCount = 3, cardPickCount = 1 });
+                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Bronze }, cardDrawCount = 3, cardPickCount = 1 });
                 break;
             case Difficulty.Strong:
                 t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Currency, currencyAmount = 10 });
-                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Common, CardGrade.Fine }, cardDrawCount = 3, cardPickCount = 1 });
+                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Bronze, CardGrade.Silver }, cardDrawCount = 3, cardPickCount = 1 });
                 break;
             case Difficulty.Elite:
                 t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Currency, currencyAmount = 15 });
-                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Common, CardGrade.Fine } });
-                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Rare, CardGrade.Epic }, cardDrawCount = 3, cardPickCount = 1 });
+                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Bronze, CardGrade.Silver } });
+                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Gold }, cardDrawCount = 3, cardPickCount = 1 });
                 break;
             case Difficulty.Boss:
                 t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Currency, currencyAmount = 25 });
-                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Fine, CardGrade.Rare, CardGrade.Epic } });
-                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Epic, CardGrade.Legendary }, cardDrawCount = 3, cardPickCount = 1 });
+                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Silver, CardGrade.Gold } });
+                t.entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Gold }, cardDrawCount = 3, cardPickCount = 1 });
                 break;
         }
         return t;

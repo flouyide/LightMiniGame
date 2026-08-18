@@ -60,10 +60,10 @@ public static class CardEntryAdapter
         // 品级映射
         cd.grade = entry.grade switch
         {
-            LightMiniGame.CardEditor.CardGrade.Bronze => CardGrade.Common,
-            LightMiniGame.CardEditor.CardGrade.Silver => CardGrade.Fine,
-            LightMiniGame.CardEditor.CardGrade.Gold => CardGrade.Rare,
-            _ => CardGrade.Common
+            LightMiniGame.CardEditor.CardGrade.Bronze => CardGrade.Bronze,
+            LightMiniGame.CardEditor.CardGrade.Silver => CardGrade.Silver,
+            LightMiniGame.CardEditor.CardGrade.Gold => CardGrade.Gold,
+            _ => CardGrade.Bronze
         };
 
         // 卡牌类型映射（与编辑器统一）

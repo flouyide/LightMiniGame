@@ -227,7 +227,7 @@ MonoBehaviour:
     displayName: "\u968F\u673A\u4E8B\u4EF6\u6D4B\u8BD52"
     description: "\u563B\u563B"
     icon: {fileID: 21300000, guid: e30a5551eac02794d8191053506809c1, type: 3}
-    eventType: 3
+    eventType: 1
     isRepeatable: 0
     isFinalNode: 0
     mutuallyExclusiveIds: []

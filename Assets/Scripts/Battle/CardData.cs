@@ -34,7 +34,7 @@ public class CardData : ScriptableObject
     [Tooltip("商店价值")]
     public int value = 10;
     [Tooltip("品级")]
-    public CardGrade grade = CardGrade.Common;
+    public CardGrade grade = CardGrade.Bronze;
     [Tooltip("需要消耗的行动点")]
     public int actionPointCost = 1;
     [Tooltip("消耗类型")]
@@ -210,11 +210,9 @@ public class CardData : ScriptableObject
     /// </summary>
     public static string GetGradeName(CardGrade grade) => grade switch
     {
-        CardGrade.Common => "普通",
-        CardGrade.Fine => "优秀",
-        CardGrade.Rare => "精良",
-        CardGrade.Epic => "史诗",
-        CardGrade.Legendary => "传说",
+        CardGrade.Bronze => "铜",
+        CardGrade.Silver => "银",
+        CardGrade.Gold => "金",
         _ => "未知"
     };
 

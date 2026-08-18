@@ -67,6 +67,22 @@ namespace LightMiniGame.Shop
         [Tooltip("总遗物库：游戏内所有遗物")]
         public MasterRelicLibrary masterRelicLibrary;
 
+        [Header("品级刷新概率（卡牌与遗物共用，按金/银/铜权重比例归一化）")]
+        [Tooltip("铜品级的刷新概率（权重）")]
+        public float bronzeGradeProbability = 60f;
+        [Tooltip("银品级的刷新概率（权重）")]
+        public float silverGradeProbability = 30f;
+        [Tooltip("金品级的刷新概率（权重）")]
+        public float goldGradeProbability = 10f;
+
+        /// <summary>获取品级刷新权重（金/银/铜）。供卡牌抽取策略与遗物抽取共用。</summary>
+        public float GetGradeWeight(CardGrade grade) => grade switch
+        {
+            CardGrade.Gold => goldGradeProbability,
+            CardGrade.Silver => silverGradeProbability,
+            _ => bronzeGradeProbability,
+        };
+
         private readonly List<ShopCardEntry> _cardStock = new List<ShopCardEntry>();
         private readonly List<ShopRelicEntry> _relicStock = new List<ShopRelicEntry>();
         private int _usedRemovalsThisShop;   // 本店已用删牌次数（开新店重置，per-shop 语义）
@@ -137,6 +153,9 @@ namespace LightMiniGame.Shop
             _characters = characters ?? new List<CharacterData>();
             _usedRemovalsThisShop = 0;   // 仅重置本店计数；_globalRemovals 保留，费用继续上涨
             GlobalCardLibrary.EnsureInstance();
+
+            // 按品级概率刷新：用本组件的金/银/铜概率字段构建加权抽取策略（每次开张重读，Inspector 改动即时生效）
+            CardDrawStrategy = new GradeWeightedCardDraw(GetGradeWeight);
 
             DrawCards();
             DrawRelics();
@@ -302,11 +321,13 @@ namespace LightMiniGame.Shop
             var candidates = new List<RelicData>();
             foreach (var r in pool)
                 if (r != null && !exclude.Contains(r)) candidates.Add(r);
-            Shuffle(candidates);
-            for (int i = 0; i < candidates.Count && result.Count < count; i++)
+            // 品级加权抽取：每件先按金/银/铜概率掷品级，再在组内均匀取
+            while (result.Count < count && candidates.Count > 0)
             {
-                exclude.Add(candidates[i]);
-                result.Add((candidates[i], ch));
+                var r = GradeWeightedPick.Pick(candidates, c => c.grade, GetGradeWeight);
+                candidates.Remove(r);
+                exclude.Add(r);
+                result.Add((r, ch));
             }
             return result;
         }
@@ -317,31 +338,23 @@ namespace LightMiniGame.Shop
             var result = new List<(RelicData, CharacterData)>();
             if (count <= 0 || master == null || master.pools == null) return result;
 
+            // 汇总全部角色池的候选（跨池按品级加权抽取，归属为候选项自带的角色）
+            var merged = new List<(RelicData relic, CharacterData owner)>();
             foreach (var pool in master.pools)
             {
                 if (pool == null || pool.character == null) continue;
-                var candidates = new List<RelicData>();
                 foreach (var r in pool.relics)
-                    if (r != null && !exclude.Contains(r)) candidates.Add(r);
-                Shuffle(candidates);
-                foreach (var r in candidates)
-                {
-                    if (result.Count >= count) break;
-                    exclude.Add(r);
-                    result.Add((r, pool.character));
-                }
-                if (result.Count >= count) break;
+                    if (r != null && !exclude.Contains(r)) merged.Add((r, pool.character));
+            }
+
+            while (result.Count < count && merged.Count > 0)
+            {
+                var pick = GradeWeightedPick.Pick(merged, m => m.relic.grade, GetGradeWeight);
+                merged.Remove(pick);
+                exclude.Add(pick.relic);
+                result.Add(pick);
             }
             return result;
-        }
-
-        private static void Shuffle<T>(List<T> list)
-        {
-            for (int i = list.Count - 1; i > 0; i--)
-            {
-                int j = UnityEngine.Random.Range(0, i + 1);
-                (list[i], list[j]) = (list[j], list[i]);
-            }
         }
 
         // ===== 购买卡牌 =====

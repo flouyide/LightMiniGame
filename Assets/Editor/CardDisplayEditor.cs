@@ -94,11 +94,9 @@ public class CardDisplayEditor : Editor
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("品级颜色", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("commonColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("fineColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("rareColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("epicColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("legendaryColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("bronzeColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("silverColor"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("goldColor"));
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("黑暗卡面", EditorStyles.boldLabel);
