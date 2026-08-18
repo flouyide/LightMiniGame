@@ -15,12 +15,14 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private RectTransform _rect;
     private bool _dragging = false;
 
-    // 拖拽期间将卡牌临时提升到根画布顶层，避免在移动到屏幕上方敌人区域时被其它 UI 遮挡而“消失”。
-    // 记录原父节点，拖拽结束后恢复，交回手牌布局做弹回/平滑归位。
-    private Transform _originalParent;
+    // 拖拽时卡牌留在原父级（手牌布局）内，仅把其所在手牌层临时提升到画布顶层，
+    // 避免移动到屏幕上方敌人区域时被其它 UI 遮挡而“消失”。不再把卡牌 reparent 到根画布，
+    // 以免父级切换导致坐标被重新解释（Overlay 画布下该假设脆弱，分辨率变化时会让卡牌偏移/消失）。
+    private RectTransform _parentRect;
     private Vector3 _originalLocalPos;
     private Vector3 _originalLocalScale;
     private Quaternion _originalLocalRot;
+    private int _originalHandSiblingIndex = -1;   // HandArea 在画布中的兄弟顺序（拖拽结束恢复）
 
     /// <summary>是否正在拖拽中（供其它组件判断，如抑制点击）</summary>
     public bool IsDragging => _dragging;
@@ -33,37 +35,46 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _onCardDrop = onCardDrop;
         _onCardDragOver = onCardDragOver;
         _rect = GetComponent<RectTransform>();
+        _parentRect = _rect != null ? _rect.parent as RectTransform : null;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (_layout == null) return;
+        if (_layout == null || _rect == null) return;
         _dragging = true;
 
-        // 记录原父节点与本地变换，供结束后恢复
-        _originalParent = transform.parent;
-        _originalLocalPos = transform.localPosition;
-        _originalLocalScale = transform.localScale;
-        _originalLocalRot = transform.localRotation;
+        _originalLocalPos = _rect.localPosition;
+        _originalLocalScale = _rect.localScale;
+        _originalLocalRot = _rect.localRotation;
+        if (_layout != null)
+            _originalHandSiblingIndex = _layout.transform.GetSiblingIndex();
 
-        // 临时提升到根画布顶层：Overlay 画布下世界坐标==屏幕坐标，跟随指针不受父级布局/遮挡影响
-        Canvas rootCanvas = GetComponentInParent<Canvas>()?.rootCanvas;
-        if (rootCanvas != null)
-        {
-            transform.SetParent(rootCanvas.transform, false);
-            transform.SetAsLastSibling();
-        }
+        // 把整张手牌层置顶（最后兄弟 = 最后绘制），保证被拖卡牌在拖拽期间不被其它 UI 遮挡。
+        // 卡牌本身由 SetDraggedIndex 在其手牌层内置顶。
+        if (_layout != null)
+            _layout.transform.SetAsLastSibling();
 
         _layout.SetDraggedIndex(_handIndex);
         _layout.SetHoveredIndex(_handIndex);
-        if (_rect != null) _rect.localScale = Vector3.one * 1.1f;
+        _rect.localScale = Vector3.one * 1.1f;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (!_dragging || _rect == null) return;
-        // 屏幕坐标：BattleCanvas 为 Overlay 时即屏幕位置
-        _rect.position = eventData.position;
+
+        // 把屏幕坐标换算为手牌层（父级）本地坐标再赋值，兼容 Overlay / Camera / 任意分辨率缩放，
+        // 避免直接给 .position 传屏幕像素而当画布缩放因子非 1 时出现的偏移/位移。
+        if (_parentRect != null)
+        {
+            Vector2 localPoint;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _parentRect, eventData.position, eventData.pressEventCamera, out localPoint))
+            {
+                _rect.localPosition = localPoint;
+            }
+        }
+
         _rect.localRotation = Quaternion.identity;
         // 逐帧通知拖拽位置与卡牌索引，供 BattleManager 判断类型并实时高亮悬停的敌人
         _onCardDragOver?.Invoke(_handIndex, eventData.position);
@@ -74,20 +85,20 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (!_dragging) return;
         _dragging = false;
 
-        // 恢复父节点，交由布局 lerp 回初始位置（若未被打出）
-        if (_originalParent != null)
-            transform.SetParent(_originalParent, true);
+        // 恢复手牌层在容器中的层级，卡牌仍留在手牌布局内，由布局 lerp 回初始位置（若未被打出）
+        if (_layout != null && _originalHandSiblingIndex >= 0)
+            _layout.transform.SetSiblingIndex(_originalHandSiblingIndex);
 
-        // 恢复本地变换基准（相对手牌父节点重新解释），使布局能平滑归位
         if (_rect != null)
         {
+            // 恢复本地变换基准，使布局能平滑归位
+            _rect.localPosition = _originalLocalPos;
             _rect.localScale = _originalLocalScale;
             _rect.localRotation = _originalLocalRot;
         }
 
         _layout.SetDraggedIndex(-1);
         _layout.SetHoveredIndex(-1);
-        if (_rect != null) _rect.localScale = Vector3.one;
 
         _onCardDrop?.Invoke(_handIndex, eventData.position);
     }
