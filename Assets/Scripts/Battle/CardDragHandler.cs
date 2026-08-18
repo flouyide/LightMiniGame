@@ -15,6 +15,13 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private RectTransform _rect;
     private bool _dragging = false;
 
+    // 拖拽期间将卡牌临时提升到根画布顶层，避免在移动到屏幕上方敌人区域时被其它 UI 遮挡而“消失”。
+    // 记录原父节点，拖拽结束后恢复，交回手牌布局做弹回/平滑归位。
+    private Transform _originalParent;
+    private Vector3 _originalLocalPos;
+    private Vector3 _originalLocalScale;
+    private Quaternion _originalLocalRot;
+
     /// <summary>是否正在拖拽中（供其它组件判断，如抑制点击）</summary>
     public bool IsDragging => _dragging;
 
@@ -32,6 +39,21 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (_layout == null) return;
         _dragging = true;
+
+        // 记录原父节点与本地变换，供结束后恢复
+        _originalParent = transform.parent;
+        _originalLocalPos = transform.localPosition;
+        _originalLocalScale = transform.localScale;
+        _originalLocalRot = transform.localRotation;
+
+        // 临时提升到根画布顶层：Overlay 画布下世界坐标==屏幕坐标，跟随指针不受父级布局/遮挡影响
+        Canvas rootCanvas = GetComponentInParent<Canvas>()?.rootCanvas;
+        if (rootCanvas != null)
+        {
+            transform.SetParent(rootCanvas.transform, false);
+            transform.SetAsLastSibling();
+        }
+
         _layout.SetDraggedIndex(_handIndex);
         _layout.SetHoveredIndex(_handIndex);
         if (_rect != null) _rect.localScale = Vector3.one * 1.1f;
@@ -52,7 +74,17 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (!_dragging) return;
         _dragging = false;
 
-        // 释放：结束拖拽、清除悬浮，交由布局 lerp 回初始位置（若未被打出）
+        // 恢复父节点，交由布局 lerp 回初始位置（若未被打出）
+        if (_originalParent != null)
+            transform.SetParent(_originalParent, true);
+
+        // 恢复本地变换基准（相对手牌父节点重新解释），使布局能平滑归位
+        if (_rect != null)
+        {
+            _rect.localScale = _originalLocalScale;
+            _rect.localRotation = _originalLocalRot;
+        }
+
         _layout.SetDraggedIndex(-1);
         _layout.SetHoveredIndex(-1);
         if (_rect != null) _rect.localScale = Vector3.one;

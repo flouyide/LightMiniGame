@@ -1,11 +1,13 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using LightMiniGame.CardEditor;
 
 /// <summary>
 /// 单个敌人的战斗视图（MonoBehaviour，挂在 EnemyView.prefab 上）：
-/// 立绘 / 名字 / HP条 / 护甲 / 意图 / 凝视值 / 伤害飘字。
+/// 立绘 / 名字 / HP条 / 护甲 / 意图 / 凝视值 / 伤害飘字 / 出牌库横向预览。
 /// 由 BattleManager 按 EnemySpawnInfo 实例化到 EnemyContainer 下，并与 EnemyInstance 绑定（Bind）。
 /// 每个敌人一个实例，各自维护自己的 UI，互不干扰。
 /// </summary>
@@ -25,9 +27,28 @@ public class EnemyView : MonoBehaviour
     [Tooltip("飘字模板（含 TextMeshProUGUI 的 GameObject，可为 prefab 内隐藏的模板子物体，运行时克隆）")]
     [SerializeField] private GameObject damagePopupPrefab;
 
+    [Header("出牌牌库意图预览")]
+    [Tooltip("牌库卡面最大横向总宽（避免过宽/跨敌人重叠；超出则整体缩小）")]
+    [SerializeField] private float deckMaxWidth = 340f;
+    [Tooltip("牌库展示容器的纵向偏移（立绘下方，负数=下方）")]
+    [SerializeField] private float deckYOffset = -152f;
+    [Tooltip("牌库卡牌基础缩放（配合牌数缩放，越大越清晰）")]
+    [SerializeField] private float deckBaseScale = 0.8f;
+    [Tooltip("牌库卡牌之间间距（越小越紧凑）")]
+    [SerializeField] private float deckGap = 8f;
+
     private EnemyInstance _inst;
     private Coroutine _popupRoutine;
     private bool _highlighted = false;
+
+    // 玩家同款卡面预制体（由 BattleManager 注入），用于渲染敌人出牌库小卡
+    private GameObject _attackCardPrefab;
+    private GameObject _skillCardPrefab;
+    private GameObject _abilityCardPrefab;
+
+    // 出牌牌库预览容器（首次展示时创建）
+    private RectTransform _deckRoot;
+    private readonly List<GameObject> _deckCards = new List<GameObject>();
 
     /// <summary>绑定运行时实例并全量刷新显示</summary>
     public void Bind(EnemyInstance inst)
@@ -78,6 +99,116 @@ public class EnemyView : MonoBehaviour
         if (intentText != null) intentText.text = text ?? "";
     }
 
+    /// <summary>注入玩家同款卡面预制体（出牌牌库预览用），由 BattleManager 生成敌人时调用。</summary>
+    public void SetCardPrefabs(GameObject attack, GameObject skill, GameObject ability)
+    {
+        _attackCardPrefab = attack;
+        _skillCardPrefab = skill;
+        _abilityCardPrefab = ability;
+    }
+
+    /// <summary>隐藏/清空出牌牌库预览。</summary>
+    public void ClearIntentDeck()
+    {
+        foreach (var c in _deckCards)
+            if (c != null) Destroy(c);
+        _deckCards.Clear();
+        if (_deckRoot != null) _deckRoot.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 在敌人立绘下方横向展示当前阶段整个出牌牌库（small casino 小卡）。
+    /// 自动按牌数缩放/限宽，避免多张重叠拥挤；多敌人各自在各自立绘下方，互不重叠。
+    /// </summary>
+    public void ShowIntentDeck(List<CardEntry> deck)
+    {
+        // 清空上一批
+        foreach (var c in _deckCards)
+            if (c != null) Destroy(c);
+        _deckCards.Clear();
+
+        if (deck == null || deck.Count == 0)
+        {
+            if (_deckRoot != null) _deckRoot.gameObject.SetActive(false);
+            return;
+        }
+
+        if (_deckRoot == null)
+        {
+            var go = new GameObject("IntentDeck", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+            _deckRoot = go.GetComponent<RectTransform>();
+        }
+        _deckRoot.gameObject.SetActive(true);
+
+        // 定位：立绘下方居中
+        _deckRoot.anchorMin = _deckRoot.anchorMax = new Vector2(0.5f, 0.5f);
+        _deckRoot.pivot = new Vector2(0.5f, 0.5f);
+        _deckRoot.anchoredPosition = new Vector2(0f, deckYOffset);
+
+        // 逐个实例化卡面
+        List<(GameObject go, float w)> cards = new List<(GameObject, float)>();
+        for (int i = 0; i < deck.Count; i++)
+        {
+            var entry = deck[i];
+            if (entry == null) continue;
+            var prefab = entry.cardType switch
+            {
+                LightMiniGame.CardEditor.CardType.Attack => _attackCardPrefab,
+                LightMiniGame.CardEditor.CardType.Skill => _skillCardPrefab,
+                LightMiniGame.CardEditor.CardType.Ability => _abilityCardPrefab,
+                _ => _attackCardPrefab
+            };
+            if (prefab == null) continue;
+
+            var cardGo = Instantiate(prefab, _deckRoot);
+            var display = cardGo.GetComponent<CardDisplay>();
+            if (display != null) display.ApplyCardEntry(entry, false);
+
+            // 禁用交互仅展示
+            var drag = cardGo.GetComponent<CardDragHandler>();
+            if (drag != null) drag.enabled = false;
+            var hover = cardGo.GetComponent<CardHoverEffect>();
+            if (hover != null) hover.enabled = false;
+
+            var cardRect = cardGo.GetComponent<RectTransform>();
+            float w = cardRect != null ? cardRect.rect.width : 148f;
+            cards.Add((cardGo, w));
+            _deckCards.Add(cardGo);
+        }
+
+        if (cards.Count == 0)
+        {
+            _deckRoot.gameObject.SetActive(false);
+            return;
+        }
+
+        // 横向布局：总宽超 deckMaxWidth 则整体再缩小，保持不重叠
+        float gap = deckGap;
+        float totalW = 0f;
+        foreach (var c in cards) totalW += c.w;
+        totalW += gap * (cards.Count - 1);
+
+        float scale = deckBaseScale;
+        if (totalW * scale > deckMaxWidth)
+            scale = deckMaxWidth / totalW;
+
+        // 逐卡定位：以缩放后的实际尺寸排布。注意 localScale 会同时缩放位置偏移，
+        // 因此相邻卡的中心距 = (缩放后卡宽 + 缩放后间距) = scale * (w + gap)。
+        float scaledW = cards[0].w * scale;
+        float curX = -((totalW / 2f) * scale) + scaledW / 2f;   // 首卡中心（居中对齐）
+        for (int i = 0; i < cards.Count; i++)
+        {
+            var c = cards[i];
+            var ct = c.go.transform as RectTransform;
+            ct.anchorMin = ct.anchorMax = new Vector2(0.5f, 0.5f);
+            ct.pivot = new Vector2(0.5f, 0.5f);
+            ct.anchoredPosition = new Vector2(curX, 0f);
+            ct.localScale = Vector3.one * scale;
+            curX += (c.w + gap) * scale;   // 注意乘以 scale：位置随缩放同步，保证视觉紧凑无空隙
+        }
+    }
+
     /// <summary>飘字显示伤害数字（从 BattleManager.ShowEnemyDamage 迁入，锚点改为本视图的 damageAnchor）</summary>
     public void ShowDamage(int amount, bool isCrit = false)
     {
@@ -113,6 +244,7 @@ public class EnemyView : MonoBehaviour
             StopCoroutine(_popupRoutine);
             _popupRoutine = null;
         }
+        ClearIntentDeck();
         gameObject.SetActive(false);
     }
 

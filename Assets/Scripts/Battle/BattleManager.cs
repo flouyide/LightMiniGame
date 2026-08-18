@@ -969,6 +969,7 @@ public class BattleManager : MonoBehaviour
                 var rect = view.GetComponent<RectTransform>();
                 if (rect != null) rect.anchoredPosition = info.anchoredPosition;
                 inst.View = view;
+                view.SetCardPrefabs(attackCardPrefab, skillCardPrefab, abilityCardPrefab);
                 view.Bind(inst);
             }
             else
@@ -2042,6 +2043,7 @@ public class BattleManager : MonoBehaviour
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
+                inst.View?.ShowIntentDeck(inst.CurrentSkillPool);   // 阶段切换 → 牌库变化，刷新预览
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
@@ -2443,12 +2445,15 @@ public class BattleManager : MonoBehaviour
         if (actionPointText != null) actionPointText.text = _actionPoints.ToString();
         if (armorText != null) armorText.text = _playerArmor > 0 ? $"护甲: {_playerArmor}" : "";
 
-        // 玩家回合：刷新每个存活敌人的意图预览（阶段切换后技能名可能变化，故每次 UpdateUI 都刷）
+        // 玩家回合：刷新每个存活敌人的意图预览 + 出牌牌库横向预览（阶段切换后牌库可能变化，每次 UpdateUI 都刷）
         if (_isPlayerTurn && !_battleEnded)
         {
             foreach (var e in _enemies)
-                if (e != null && !e.IsDead)
-                    e.View?.SetIntent(GetEnemyIntentText(e));
+            {
+                if (e == null || e.IsDead) continue;
+                e.View?.SetIntent(GetEnemyIntentText(e));
+                e.View?.ShowIntentDeck(e.CurrentSkillPool);
+            }
         }
 
         if (strengthText != null) strengthText.text = _playerStrength > 0 ? $"力量: {_playerStrength}" : "";
