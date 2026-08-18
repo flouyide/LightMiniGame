@@ -182,10 +182,17 @@ public class CardDisplay : MonoBehaviour
     }
 
     /// <summary>
+    /// 全局标记：融合面板激活时避免 UpdateDisplay 清掉原位高亮（由 FusionController 置位/复位）。
+    /// </summary>
+    public static bool FusionHighlightActive;
+
+    /// <summary>
     /// 刷新卡牌UI
     /// </summary>
     public void UpdateDisplay()
     {
+        // 非融合状态不显示数字高亮（数据变更时清掉；融合面板会按需重新 Set）
+        if (!FusionHighlightActive) ClearNumberHighlights();
         // 基础文本
         if (nameText) nameText.text = cardName;
         // 费用：融合覆盖优先于原始费用
@@ -513,6 +520,131 @@ public class CardDisplay : MonoBehaviour
         }
         return anySuccess;
     }
+
+    // ========================================================================
+    // 原位数字高亮
+    // ========================================================================
+
+    private readonly List<Image> _numberHighlights = new();   // 复用矩形 Image
+
+    /// <summary>
+    /// 设置需要高亮的卡牌数字（融合时调用）。每个数字对应描述文本中该数值的字符矩形，
+    /// 在文本底下（descText 的前兄弟节点）生成半透明高亮片，数字透在其上，位于原位。
+    /// </summary>
+    /// <param name="isSelected">可选回调：给定 values 内的索引 i，返回该数字槽位是否已被选中（高亮加深）。</param>
+    public void SetNumberHighlights(List<int> values, bool clearExisting = true, System.Func<int, bool> isSelected = null)
+    {
+        if (clearExisting) ClearNumberHighlights();
+        if (values == null || values.Count == 0 || descText == null) return;
+
+        if (!TryGetNumberRects(values, out var centers, out var sizes)) return;
+
+        RectTransform descParent = descText.transform.parent as RectTransform;
+        if (descParent == null) return;
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (sizes[i] == Vector2.zero) continue;
+            var img = GetOrCreateNumberHighlight(i);
+            var rt = img.GetComponent<RectTransform>();
+            // 数字中心世界坐标 → 该文本父节点本地坐标（与高亮片同级）
+            Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, centers[i]);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(descParent, screen, null, out Vector2 local))
+                continue;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = local;
+            float scale = descParent.lossyScale.x != 0 ? descParent.lossyScale.x : 1f;
+            rt.sizeDelta = new Vector2(sizes[i].x / scale, sizes[i].y / scale);
+            bool sel = isSelected != null && isSelected(i);
+            bool fused = _fusion != null && _fusion.HasAny;
+            //  高亮：选中→红色实底；已融合→更实；否则淡金色衬底
+            img.color = sel
+                ? new Color(0.9f, 0.2f, 0.2f, 0.85f)
+                : fused
+                    ? new Color(0.95f, 0.72f, 0.30f, 0.85f)
+                    : new Color(0.95f, 0.85f, 0.35f, 0.30f);
+            img.raycastTarget = false;
+            img.gameObject.SetActive(true);
+        }
+    }
+
+    private Image GetOrCreateNumberHighlight(int index)
+    {
+        if (index < _numberHighlights.Count)
+            return _numberHighlights[index];
+
+        var go = new GameObject($"NumberHighlight_{index}");
+        if (descText != null)
+            go.transform.SetParent(descText.transform.parent, false);   // 与描述文本同父
+        else
+            go.transform.SetParent(transform, false);
+        var rt = go.AddComponent<RectTransform>();
+        var img = go.AddComponent<Image>();
+        img.color = new Color(0.95f, 0.85f, 0.35f, 0.25f);
+        img.raycastTarget = false;
+        //  关键：插到 descText 前面，让它在文字底下渲染
+        if (descText != null)
+            go.transform.SetSiblingIndex(descText.transform.GetSiblingIndex());
+        _numberHighlights.Add(img);
+        return img;
+    }
+
+    private void ClearNumberHighlights()
+    {
+        foreach (var img in _numberHighlights)
+            if (img != null && img.gameObject != null)
+                Destroy(img.gameObject);
+        _numberHighlights.Clear();
+    }
+
+    /// <summary>清除本卡所有原位数字高亮（融合退出时调用）。</summary>
+    public void ClearHighlights()
+    {
+        ClearNumberHighlights();
+        ClearCostHighlight();
+    }
+
+    // --- 费用原位高亮 ---
+
+    private Image _costHighlight;
+
+    /// <summary>在费用文字（costText）底下生成原位高亮片（不遮字）。融合时调用。</summary>
+    public void SetCostHighlight(bool selected)
+    {
+        if (costText == null) return;
+        if (_costHighlight == null)
+        {
+            var go = new GameObject("CostHighlight");
+            go.transform.SetParent(costText.transform.parent, false);
+            _costHighlight = go.AddComponent<Image>();
+            _costHighlight.raycastTarget = false;
+            go.transform.SetSiblingIndex(costText.transform.GetSiblingIndex());
+        }
+
+        var rt = _costHighlight.GetComponent<RectTransform>();
+        var costRT = costText.GetComponent<RectTransform>();
+        // 直接复用费用文本的矩形（锚点/枢轴/位置一致，仅略放大）
+        rt.anchorMin = costRT.anchorMin;
+        rt.anchorMax = costRT.anchorMax;
+        rt.pivot = costRT.pivot;
+        rt.anchoredPosition = costRT.anchoredPosition;
+        rt.sizeDelta = costRT.rect.size + new Vector2(10f, 6f);
+        _costHighlight.color = selected
+            ? new Color(0.9f, 0.2f, 0.2f, 0.85f)
+            : new Color(0.95f, 0.85f, 0.35f, 0.30f);
+        _costHighlight.gameObject.SetActive(true);
+    }
+
+    private void ClearCostHighlight()
+    {
+        if (_costHighlight != null && _costHighlight.gameObject != null)
+            Destroy(_costHighlight.gameObject);
+        _costHighlight = null;
+    }
+
+    /// <summary>返回费用文本的 RectTransform（供融合点击层定位）。</summary>
+    public RectTransform GetCostRectTransform() => costText != null ? costText.rectTransform : null;
 
     // ========================================================================
     // 数字字符定位（单数值，保留给旧调用）

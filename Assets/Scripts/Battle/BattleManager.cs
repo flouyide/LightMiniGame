@@ -561,6 +561,30 @@ public class BattleManager : MonoBehaviour
         return enemyContainer.GetChild(slot) as RectTransform;
     }
 
+    /// <summary>指定槽位敌人的视图组件（供融合精确锚定护甲/意图文本；死亡/越界返回 null）。</summary>
+    public EnemyView GetEnemyView(int slot)
+    {
+        var rt = GetEnemyAnchor(slot);
+        if (rt == null) return null;
+        var e = GetEnemy(slot);
+        return e != null && !e.IsDead ? e.View : null;
+    }
+
+    /// <summary>指定槽位敌人的护甲文本 RectTransform（供融合原位高亮；死亡返回 null）。</summary>
+    public RectTransform GetEnemyArmorAnchor(int slot)
+        => GetEnemyView(slot)?.ArmorTextRect;
+
+    /// <summary>指定槽位敌人的意图文本 RectTransform（供融合原位高亮；死亡返回 null）。</summary>
+    public RectTransform GetEnemyIntentAnchor(int slot)
+        => GetEnemyView(slot)?.IntentTextRect;
+
+    /// <summary>指定槽位敌人意图牌库中各小卡的 CardDisplay（供融合高亮意图数值；死亡返回空列表）。</summary>
+    public List<CardDisplay> GetEnemyIntentDeckDisplays(int slot)
+    {
+        var v = GetEnemyView(slot);
+        return v != null ? v.IntentDeckDisplays : new List<CardDisplay>();
+    }
+
     /// <summary>指定手牌索引的卡面视图锚点（用于原位徽章定位；越界返回 null）。</summary>
     public RectTransform GetHandCardAnchor(int index)
         => handLayout != null ? handLayout.GetCardViewTransform(index) : null;

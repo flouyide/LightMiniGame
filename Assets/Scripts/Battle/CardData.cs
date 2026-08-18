@@ -182,14 +182,60 @@ public class CardData : ScriptableObject
         return fallback;
     }
 
-    /// <summary>若 ValueNode 是“整数常量”，返回其值；否则 false。</summary>
+    /// <summary>若 ValueNode 是“整数常量或纯常量算术表达式”（如 Add/Subtract/Multiply），
+    /// 计算其静态值并返回 true；遇动态节点（读属性/读资源等）当作基础值 0 参与计算，
+    /// 使结果与卡面描述中显示的静态数值一致（如“造成6点伤害”= 6 + 力量 → 基础 6）。</summary>
     private static bool TryStaticValue(ValueNode node, out int value)
     {
         value = 0;
         if (node == null) return false;
-        if (node.nodeType == ValueNodeType.IntegerConstant) { value = node.intValue; return true; }
-        return false;
+        switch (node.nodeType)
+        {
+            case ValueNodeType.IntegerConstant: value = node.intValue; return true;
+            case ValueNodeType.FloatConstant: value = Mathf.RoundToInt(node.floatValue); return true;
+            case ValueNodeType.Add:
+            {
+                int a, b;
+                if (!TryStaticValue(Operand(node, 0), out a) || !TryStaticValue(Operand(node, 1), out b)) return false;
+                value = a + b; return true;
+            }
+            case ValueNodeType.Subtract:
+            {
+                int a, b;
+                if (!TryStaticValue(Operand(node, 0), out a) || !TryStaticValue(Operand(node, 1), out b)) return false;
+                value = a - b; return true;
+            }
+            case ValueNodeType.Multiply:
+            {
+                int a, b;
+                if (!TryStaticValue(Operand(node, 0), out a) || !TryStaticValue(Operand(node, 1), out b)) return false;
+                value = a * b; return true;
+            }
+            case ValueNodeType.Divide:
+            {
+                int a, b;
+                if (!TryStaticValue(Operand(node, 0), out a) || !TryStaticValue(Operand(node, 1), out b) || b == 0) return false;
+                value = a / b; return true;
+            }
+            case ValueNodeType.Negate:
+            {
+                int a;
+                if (!TryStaticValue(Operand(node, 0), out a)) return false;
+                value = -a; return true;
+            }
+            case ValueNodeType.Absolute:
+            {
+                int a;
+                if (!TryStaticValue(Operand(node, 0), out a)) return false;
+                value = Mathf.Abs(a); return true;
+            }
+            default: return true;   // 动态节点（读属性/读资源等）：作为基础值 0 参与运算，与卡面描述一致
+        }
     }
+
+    /// <summary>取 ValueNode 的指定操作数子节点（越界返回 null）。</summary>
+    private static ValueNode Operand(ValueNode node, int index)
+        => (node != null && node.operands != null && index < node.operands.Count) ? node.operands[index] : null;
 
     /// <summary>是否攻击牌（供融合提供方与执行用）。</summary>
     public bool IsAttackCard()

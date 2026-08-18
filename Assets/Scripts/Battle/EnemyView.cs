@@ -59,6 +59,28 @@ public class EnemyView : MonoBehaviour
         SetIntent("");
     }
 
+    /// <summary>敌人护甲文本的 RectTransform（融合原位高亮锚点用）。</summary>
+    public RectTransform ArmorTextRect => armorText != null ? armorText.rectTransform : null;
+
+    /// <summary>敌人意图文本的 RectTransform（融合原位高亮锚点用）。</summary>
+    public RectTransform IntentTextRect => intentText != null ? intentText.rectTransform : null;
+
+    /// <summary>意图牌库中每张小卡的 CardDisplay 列表（供融合高亮意图数值用）。</summary>
+    public List<CardDisplay> IntentDeckDisplays
+    {
+        get
+        {
+            var list = new List<CardDisplay>();
+            foreach (var go in _deckCards)
+            {
+                if (go == null) continue;
+                var d = go.GetComponent<CardDisplay>();
+                if (d != null) list.Add(d);
+            }
+            return list;
+        }
+    }
+
     /// <summary>
     /// 标记/取消该敌人为当前受击对象（拖拽卡牌悬停其上时高亮）。
     /// 通过临时染色立绘实现，取消高亮时恢复原色。
