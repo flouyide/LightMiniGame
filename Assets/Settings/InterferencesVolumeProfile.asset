@@ -29,25 +29,34 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0.5
-  offset:
+    m_Value: 0.067
+  cycleInterval:
     m_OverrideState: 1
-    m_Value: 0.01
-  distortion:
+    m_Value: 5
+  burstDistortion:
     m_OverrideState: 1
-    m_Value: 0.104
-  distortionSpeed:
+    m_Value: 1.46
+  burstSpeed:
     m_OverrideState: 1
-    m_Value: 4.7
-  distortionDensity:
+    m_Value: 27.4
+  burstFrequency:
     m_OverrideState: 1
-    m_Value: 6.35
-  distortionAmplitude:
+    m_Value: 3.25
+  burstOffset:
     m_OverrideState: 1
-    m_Value: 0.12
-  distortionFrequency:
+    m_Value: 0.1
+  idleDistortion:
     m_OverrideState: 1
-    m_Value: 0.54
+    m_Value: 0
+  idleSpeed:
+    m_OverrideState: 1
+    m_Value: 8
+  idleFrequency:
+    m_OverrideState: 1
+    m_Value: 2
+  idleOffset:
+    m_OverrideState: 1
+    m_Value: 0
   scanlines:
     m_OverrideState: 1
     m_Value: 0

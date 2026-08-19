@@ -136,10 +136,12 @@ namespace LightMiniGame.EditorTools
             // 给一组"一眼能看出效果"的默认值，避免用户以为没生效
             component.intensity.overrideState = true;
             component.intensity.value = 1.0f;
-            component.distortion.overrideState = true;
-            component.distortion.value = 0.5f;
-            component.offset.overrideState = true;
-            component.offset.value = 2.0f;
+            component.cycleInterval.overrideState = true;
+            component.cycleInterval.value = 8.0f;
+            component.burstDistortion.overrideState = true;
+            component.burstDistortion.value = 1.0f;
+            component.burstOffset.overrideState = true;
+            component.burstOffset.value = 4.0f;
 
             volume.sharedProfile = profile;
 
@@ -216,10 +218,12 @@ namespace LightMiniGame.EditorTools
             var component = AddOverrideToProfile<InterferencesVolume>(profile);
             component.intensity.overrideState = true;
             component.intensity.value = 1.0f;
-            component.distortion.overrideState = true;
-            component.distortion.value = 0.5f;
-            component.offset.overrideState = true;
-            component.offset.value = 2.0f;
+            component.cycleInterval.overrideState = true;
+            component.cycleInterval.value = 8.0f;
+            component.burstDistortion.overrideState = true;
+            component.burstDistortion.value = 1.0f;
+            component.burstOffset.overrideState = true;
+            component.burstOffset.value = 4.0f;
 
             EditorUtility.SetDirty(component);
             EditorUtility.SetDirty(profile);

@@ -110,12 +110,17 @@ namespace LightMiniGame.PostProcessing
 
             // Shader 属性 ID（避免每帧字符串哈希）
             private static readonly int IdIntensity            = Shader.PropertyToID("_Intensity");
-            private static readonly int IdOffset               = Shader.PropertyToID("_Offset");
-            private static readonly int IdDistortion           = Shader.PropertyToID("_Distortion");
-            private static readonly int IdDistortionSpeed      = Shader.PropertyToID("_DistortionSpeed");
-            private static readonly int IdDistortionDensity    = Shader.PropertyToID("_DistortionDensity");
-            private static readonly int IdDistortionAmplitude  = Shader.PropertyToID("_DistortionAmplitude");
-            private static readonly int IdDistortionFrequency  = Shader.PropertyToID("_DistortionFrequency");
+
+            // 循环扭曲
+            private static readonly int IdCycleInterval       = Shader.PropertyToID("_CycleInterval");
+            private static readonly int IdBurstDistortion     = Shader.PropertyToID("_BurstDistortion");
+            private static readonly int IdBurstSpeed          = Shader.PropertyToID("_BurstSpeed");
+            private static readonly int IdBurstFrequency      = Shader.PropertyToID("_BurstFrequency");
+            private static readonly int IdBurstOffset         = Shader.PropertyToID("_BurstOffset");
+            private static readonly int IdIdleDistortion      = Shader.PropertyToID("_IdleDistortion");
+            private static readonly int IdIdleSpeed           = Shader.PropertyToID("_IdleSpeed");
+            private static readonly int IdIdleFrequency       = Shader.PropertyToID("_IdleFrequency");
+            private static readonly int IdIdleOffset          = Shader.PropertyToID("_IdleOffset");
             private static readonly int IdScanlines            = Shader.PropertyToID("_Scanlines");
             private static readonly int IdScanlinesDensity     = Shader.PropertyToID("_ScanlinesDensity");
             private static readonly int IdScanlinesOpacity     = Shader.PropertyToID("_ScanlinesOpacity");
@@ -179,13 +184,17 @@ namespace LightMiniGame.PostProcessing
             private void UpdateMaterial()
             {
                 _material.SetFloat(IdIntensity,           _volume.intensity.value);
-                _material.SetFloat(IdOffset,              _volume.offset.value);
 
-                _material.SetFloat(IdDistortion,          _volume.distortion.value);
-                _material.SetFloat(IdDistortionSpeed,     _volume.distortionSpeed.value);
-                _material.SetFloat(IdDistortionDensity,   _volume.distortionDensity.value);
-                _material.SetFloat(IdDistortionAmplitude, _volume.distortionAmplitude.value);
-                _material.SetFloat(IdDistortionFrequency, _volume.distortionFrequency.value);
+                // 循环扭曲：明显扭曲（脉冲期）与小扭曲（常态）两套参数
+                _material.SetFloat(IdCycleInterval,       _volume.cycleInterval.value);
+                _material.SetFloat(IdBurstDistortion,     _volume.burstDistortion.value);
+                _material.SetFloat(IdBurstSpeed,          _volume.burstSpeed.value);
+                _material.SetFloat(IdBurstFrequency,      _volume.burstFrequency.value);
+                _material.SetFloat(IdBurstOffset,         _volume.burstOffset.value);
+                _material.SetFloat(IdIdleDistortion,      _volume.idleDistortion.value);
+                _material.SetFloat(IdIdleSpeed,           _volume.idleSpeed.value);
+                _material.SetFloat(IdIdleFrequency,       _volume.idleFrequency.value);
+                _material.SetFloat(IdIdleOffset,          _volume.idleOffset.value);
 
                 _material.SetFloat(IdScanlines,           _volume.scanlines.value);
                 _material.SetFloat(IdScanlinesDensity,    _volume.scanlinesDensity.value);

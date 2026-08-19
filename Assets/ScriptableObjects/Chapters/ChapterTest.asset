@@ -161,7 +161,7 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
-  - eventId: finalBattle
+  - eventId: BattleTest
     displayName: "\u6218\u6597\u6D4B\u8BD5"
     description: Debug only
     icon: {fileID: 0}
