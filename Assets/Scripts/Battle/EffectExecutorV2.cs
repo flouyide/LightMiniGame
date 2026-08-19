@@ -563,6 +563,10 @@ public class EffectExecutorV2
         var attr = node.attributeType;
         var op = node.resourceOp;
 
+        // 融合覆盖：增益值被融合修改时替换基础值（与伤害/格挡/抽牌/回费一致）
+        if (_ctx.TryGetFusionBuff(out int fusionBuff))
+            amount = fusionBuff;
+
         // 敌人作为发起者且目标为「自己（效果发起者）」时 → 敌人自buff，走带能力检测的敌人增益
         if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
         {

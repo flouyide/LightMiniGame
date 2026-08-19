@@ -205,12 +205,38 @@ public class BattleManager : MonoBehaviour
 
     // === 融合（Fusion）机制 ===
     private bool _fusionUsedThisTurn;   // 本回合是否已进行过融合操作（每回合限一次）
-    /// <summary>进阶1开关：融合修改是否永久保留（跨战斗）。默认 false，由后续事件触发打开。</summary>
-    public bool persistFusion;
-    /// <summary>进阶2开关：是否开放血量/血量上限进入可融合数值（低理智下不可选）。默认 false，由后续事件触发打开。</summary>
-    public bool includeHPInFusion;
+
+    [Header("融合（Fusion）进阶开关")]
+    [Tooltip("进阶1：融合修改是否永久保留（跨战斗）。默认 false，可由事件/脚本开启。")]
+    [SerializeField] private bool persistFusion;
+    [Tooltip("进阶2：是否开放血量/血量上限进入可融合数值（低理智下锁定不可选）。默认 false，可由事件/脚本开启。")]
+    [SerializeField] private bool includeHPInFusion;
+
+    /// <summary>进阶1是否开启（可在 Inspector 或代码调控）。</summary>
+    public bool PersistFusion
+    {
+        get => persistFusion;
+        set => persistFusion = value;
+    }
+
+    /// <summary>进阶2是否开启（可在 Inspector 或代码调控）。</summary>
+    public bool IncludeHPInFusion
+    {
+        get => includeHPInFusion;
+        set => includeHPInFusion = value;
+    }
+
     private FusionController _fusionController;
     private CardData _currentFusionCard;   // 当前正在执行效果的手牌（供 effect 读取 fusion 覆盖）
+
+    /// <summary>开启进阶效果1：融合修改跨战斗持久化。</summary>
+    public void EnableFusionPersistence() => persistFusion = true;
+
+    /// <summary>开启进阶效果2：血量/血量上限进入可融合数值（低理智下锁定）。</summary>
+    public void EnableFusionHP() => includeHPInFusion = true;
+
+    /// <summary>低理智判定（供融合锁定血量类；与敌人阶段切换同口径，阈值 _sanityThreshold）。</summary>
+    public bool IsLowSanityForFusion => _playerSanity <= _sanityThreshold;
 
     // === 敌人状态（1-N 个；槽位索引稳定，死亡不压缩）===
     private readonly List<EnemyInstance> _enemies = new();
@@ -403,6 +429,15 @@ public class BattleManager : MonoBehaviour
         _playerHP = Mathf.Min(_playerHP, playerMaxHP);
     }
 
+    /// <summary>
+    /// 原子设定玩家血量：同时定上限与当前值（融合同时选中 hp+maxhp 时用，避免相互钳制）。
+    /// </summary>
+    public void SetPlayerHPAndMax(int hp, int maxHp)
+    {
+        playerMaxHP = Mathf.Max(1, maxHp);
+        _playerHP = Mathf.Clamp(hp, 0, playerMaxHP);
+    }
+
     /// <summary>指定槽位敌人是否存活（供融合提供方用）。</summary>
     public bool FusionIsEnemyAlive(int slot) => GetEnemy(slot) is { IsDead: false };
 
@@ -443,6 +478,16 @@ public class BattleManager : MonoBehaviour
         if (e == null || e.IsDead) return;
         e.MaxHP = Mathf.Max(1, value);
         e.HP = Mathf.Min(e.HP, e.MaxHP);
+        e.View?.Refresh();
+    }
+
+    /// <summary>回填：原子设定指定槽位敌人血量（同时定 HP 与 MaxHP，避免相互钳制；融合同时选 hp+maxhp 用）。</summary>
+    public void FusionSetEnemyHPAndMax(int slot, int hp, int maxHp)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return;
+        e.MaxHP = Mathf.Max(1, maxHp);
+        e.HP = Mathf.Clamp(hp, 0, e.MaxHP);
         e.View?.Refresh();
     }
 
@@ -551,6 +596,67 @@ public class BattleManager : MonoBehaviour
     /// <summary>玩家 HP 文本锚点。</summary>
     public RectTransform HPAnchor => hpText != null ? hpText.rectTransform : null;
 
+    /// <summary>
+    /// 定位玩家 HP 文本（格式 "当前/上限"）中指定部分数字的世界矩形。
+    /// isMax=false 定位当前值（斜杠前），isMax=true 定位上限值（斜杠后）。
+    /// 返回 false 表示解析失败（无可视数字）。
+    /// </summary>
+    public bool TryGetPlayerHPNumberRect(bool isMax, out Vector2 center, out Vector2 size)
+    {
+        center = Vector2.zero;
+        size = Vector2.zero;
+        if (hpText == null) return false;
+        return TryGetTmpNumberRect(hpText, isMax ? 1 : 0, out center, out size);
+    }
+
+    /// <summary>在 TMP 文本中定位第 tokenIndex 个数字 token 的世界中心/尺寸（0=第一个数字）。</summary>
+    private static bool TryGetTmpNumberRect(TMPro.TextMeshProUGUI text, int tokenIndex, out Vector2 center, out Vector2 size)
+    {
+        center = Vector2.zero;
+        size = Vector2.zero;
+        if (text == null || tokenIndex < 0) return false;
+        text.ForceMeshUpdate(true);
+        var info = text.textInfo;
+        if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
+
+        string s = text.text;
+        // 找第 tokenIndex 个数字 token
+        int tokenSeen = 0;
+        int startChar = -1, endChar = -1;
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (!char.IsDigit(s[i])) continue;
+            int start = i;
+            int end = i;
+            while (end + 1 < s.Length && char.IsDigit(s[end + 1])) end++;
+            if (tokenSeen == tokenIndex) { startChar = start; endChar = end; break; }
+            tokenSeen++;
+            i = end;
+        }
+        if (startChar < 0) return false;
+
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+        bool found = false;
+        for (int ci = 0; ci < info.characterCount; ci++)
+        {
+            var ch = info.characterInfo[ci];
+            if (ch.index < startChar || ch.index > endChar) continue;
+            if (!ch.isVisible) continue;
+            Vector3 tl = text.transform.TransformPoint(ch.topLeft);
+            Vector3 tr = text.transform.TransformPoint(ch.topRight);
+            Vector3 bl = text.transform.TransformPoint(ch.bottomLeft);
+            Vector3 br = text.transform.TransformPoint(ch.bottomRight);
+            min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+            max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+            found = true;
+        }
+        if (!found) return false;
+        center = (Vector2)((min + max) * 0.5f);
+        size = new Vector2(max.x - min.x, max.y - min.y);
+        return true;
+    }
+
     /// <summary>玩家理智文本锚点（若存在）。</summary>
     public RectTransform SanityAnchor => sanityText != null ? sanityText.rectTransform : null;
 
@@ -578,6 +684,19 @@ public class BattleManager : MonoBehaviour
     public RectTransform GetEnemyIntentAnchor(int slot)
         => GetEnemyView(slot)?.IntentTextRect;
 
+    /// <summary>指定槽位敌人的血量文本 RectTransform（供融合原位高亮；死亡返回 null）。</summary>
+    public RectTransform GetEnemyHPAnchor(int slot)
+        => GetEnemyView(slot)?.HPTextRect;
+
+    /// <summary>定位指定槽位敌人 HP 文本中当前值/上限值的数字世界矩形（isMax=true 取上限）。</summary>
+    public bool TryGetEnemyHPNumberRect(int slot, bool isMax, out Vector2 center, out Vector2 size)
+    {
+        center = Vector2.zero;
+        size = Vector2.zero;
+        var v = GetEnemyView(slot);
+        return v != null && v.TryGetEnemyHPNumberRect(isMax, out center, out size);
+    }
+
     /// <summary>指定槽位敌人意图牌库中各小卡的 CardDisplay（供融合高亮意图数值；死亡返回空列表）。</summary>
     public List<CardDisplay> GetEnemyIntentDeckDisplays(int slot)
     {
@@ -592,6 +711,14 @@ public class BattleManager : MonoBehaviour
     /// <summary>指定手牌索引的 CardDisplay（越界返回 null），用于数字字符精确定位。</summary>
     public CardDisplay GetHandCardDisplay(int index)
         => handLayout != null ? handLayout.GetCardDisplay(index) : null;
+
+    /// <summary>立即把手牌摆到目标布局（跳过手势动画），供融合读取精确坐标。返回是否成功。</summary>
+    public bool SnapHandToTarget()
+    {
+        if (handLayout == null) return false;
+        handLayout.SnapToTarget();
+        return true;
+    }
 
     /// <summary>手动触发一次理智扣除（融合进入时用，作为代价而非条件，允许负值 clamp≥0）。</summary>
     public void DeductSanityAsCost(int amount)

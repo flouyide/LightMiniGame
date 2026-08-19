@@ -108,7 +108,11 @@ public class CardDisplay : MonoBehaviour
     private bool _darkMode = false;
     private FusionCardDelta _fusion;  // 融合覆盖层（从 CardData.fusion 读入，显示时优先覆盖）
 
+    /// <summary>实时融合覆盖层：优先读 CardData.fusion（融合可能新建覆盖层使旧引用失效），否则用缓存。</summary>
+    private FusionCardDelta LiveFusion => _data != null && _data.fusion != null ? _data.fusion : _fusion;
+
     private CardData _data;  // 源 CardData（融合精确数字定位用）
+    private LightMiniGame.CardEditor.CardEntry _entry;   // 源 CardEntry（融合感知描述用）
     private Sprite _darkCardArt;  // 从 CardData 读入的黑暗卡面
 
     // 缓存正常模式颜色/精灵，退出黑暗模式时恢复
@@ -197,12 +201,12 @@ public class CardDisplay : MonoBehaviour
         if (nameText) nameText.text = cardName;
         // 费用：融合覆盖优先于原始费用
         if (costText)
-            costText.text = (_fusion != null && _fusion.overrideCost)
-                ? _fusion.cost.ToString()
+            costText.text = (LiveFusion != null && LiveFusion.overrideCost)
+                ? LiveFusion.cost.ToString()
                 : actionPointCost.ToString();
         if (typeText) typeText.text = CardData.GetCardTypeName(cardType);
         if (gradeText) gradeText.text = CardData.GetGradeName(grade);
-        if (descText) descText.text = GetDisplayDescription();
+        if (descText) descText.text = GetFusionAwareDescription();
 
         // 词条文本
         if (keywordText)
@@ -388,6 +392,7 @@ public class CardDisplay : MonoBehaviour
     public void ApplyCardEntry(CardEntry entry, bool upgraded = false)
     {
         if (entry == null) return;
+        _entry = entry;
 
         cardName = entry.cardName;
         description = entry.GetDescription(upgraded);
@@ -443,7 +448,7 @@ public class CardDisplay : MonoBehaviour
         sizes = new List<Vector2>();
         if (values == null || values.Count == 0 || descText == null) return false;
 
-        descText.ForceMeshUpdate(true);
+        EnsureDescMesh();
         var info = descText.textInfo;
         if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
 
@@ -557,7 +562,7 @@ public class CardDisplay : MonoBehaviour
             float scale = descParent.lossyScale.x != 0 ? descParent.lossyScale.x : 1f;
             rt.sizeDelta = new Vector2(sizes[i].x / scale, sizes[i].y / scale);
             bool sel = isSelected != null && isSelected(i);
-            bool fused = _fusion != null && _fusion.HasAny;
+            bool fused = LiveFusion != null && LiveFusion.HasAny;
             //  高亮：选中→红色实底；已融合→更实；否则淡金色衬底
             img.color = sel
                 ? new Color(0.9f, 0.2f, 0.2f, 0.85f)
@@ -646,6 +651,88 @@ public class CardDisplay : MonoBehaviour
     /// <summary>返回费用文本的 RectTransform（供融合点击层定位）。</summary>
     public RectTransform GetCostRectTransform() => costText != null ? costText.rectTransform : null;
 
+    /// <summary>
+    /// 确保 descText 的 TMP 网格已针对当前文本重建（低理智切形态后文本变了但网格可能未刷新，
+    /// 直接 ForceMeshUpdate 拿不到字符；先设脏 + 强制 Canvas 更新）。
+    /// </summary>
+    private void EnsureDescMesh()
+    {
+        if (descText == null) return;
+        descText.SetAllDirty();
+        UnityEngine.Canvas.ForceUpdateCanvases();
+        // forceTextReparsing=true：强制 TMP 重新解析文本并重建字符布局（低理智切形态后文本已变）
+        descText.ForceMeshUpdate(true, true);
+    }
+
+    /// <summary>
+    /// 枚举该卡描述文本中的每个“整数 token”（值 + 世界中心/尺寸）。
+    /// 供“意图牌库”等非手牌卡面在融合时按 token 逐个精确高亮。
+    /// </summary>
+    public List<(int value, Vector2 center, Vector2 size)> EnumerateNumberTokens()
+    {
+        var result = new List<(int, Vector2, Vector2)>();
+        if (descText == null) return result;
+
+        EnsureDescMesh();
+        var info = descText.textInfo;
+        if (info == null || info.characterInfo == null || info.characterCount == 0)
+        {
+            // mesh 未就绪（低理智切形态同帧）：回退纯文本解析，仅返回数值（矩形为零，供数值读取）
+            string t = descText.text;
+            for (int i = 0; i < t.Length; i++)
+            {
+                if (!char.IsDigit(t[i])) continue;
+                int s = i;
+                if (i > 0 && t[i - 1] == '-') s = i - 1;
+                int e = i;
+                while (e + 1 < t.Length && char.IsDigit(t[e + 1])) e++;
+                if (int.TryParse(t.Substring(s, e - s + 1), out int tv))
+                    result.Add((tv, Vector2.zero, Vector2.zero));
+                i = e;
+            }
+            return result;
+        }
+
+        string text = descText.text;
+        int n = text.Length;
+        for (int idx = 0; idx < n; idx++)
+        {
+            if (!char.IsDigit(text[idx])) continue;
+            int start = idx;
+            if (idx > 0 && text[idx - 1] == '-') start = idx - 1;
+            int end = idx;
+            while (end + 1 < n && char.IsDigit(text[end + 1])) end++;
+            if (!int.TryParse(text.Substring(start, end - start + 1), out int val))
+            {
+                idx = end;
+                continue;
+            }
+
+            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+            Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+            for (int ci = 0; ci < info.characterCount; ci++)
+            {
+                var ch = info.characterInfo[ci];
+                if (ch.index < start || ch.index > end) continue;
+                if (!ch.isVisible) continue;
+                Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
+                Vector3 tr = descText.transform.TransformPoint(ch.topRight);
+                Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
+                Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
+                min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+                max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+            }
+            if (max.x <= min.x || max.y <= min.y)
+            {
+                idx = end;
+                continue;
+            }
+            result.Add((val, (Vector2)((min + max) * 0.5f), new Vector2(max.x - min.x, max.y - min.y)));
+            idx = end;
+        }
+        return result;
+    }
+
     // ========================================================================
     // 数字字符定位（单数值，保留给旧调用）
     // ========================================================================
@@ -660,7 +747,7 @@ public class CardDisplay : MonoBehaviour
         worldSize = Vector2.zero;
         if (descText == null || string.IsNullOrEmpty(targetNumber)) return false;
 
-        descText.ForceMeshUpdate(true);
+        EnsureDescMesh();
         var info = descText.textInfo;
         if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
 
@@ -699,6 +786,178 @@ public class CardDisplay : MonoBehaviour
     // 描述生成（复用CardData的静态方法）
     // ========================================================================
 
+    /// <summary>
+    /// 融合感知描述：若存在融合覆盖，按效果节点顺序把文案中对应数字替换为融合后的值。
+    /// 无融合覆盖或无法解析时回退原文案。
+    /// </summary>
+    public string GetFusionAwareDescription()
+    {
+        if (LiveFusion == null || !LiveFusion.HasAny || _entry == null)
+            return GetDisplayDescription();
+
+        var desc = description;
+        if (string.IsNullOrWhiteSpace(desc)) desc = GetAutoDescription();
+        if (string.IsNullOrEmpty(desc)) return desc;
+
+        bool low = _data != null && _data.isLowSanityForm;
+        var nodes = _entry.GetEffectNodes(low);
+        if (nodes == null || nodes.Count == 0) return desc;
+
+        var replacements = new List<(int start, int len, string newVal)>();
+        int searchFrom = 0;
+        foreach (var node in nodes)
+        {
+            if (node == null || !node.enabled) continue;
+            int oldVal;
+            bool fuseSet = false;
+            int newVal = 0;
+            switch (node.operation)
+            {
+                case LightMiniGame.CardEditor.EffectOperation.DealDamage:
+                    if (LiveFusion.overrideAttack) { fuseSet = true; newVal = LiveFusion.attackValue; }
+                    break;
+                case LightMiniGame.CardEditor.EffectOperation.GainBlock:
+                    if (LiveFusion.overrideArmor) { fuseSet = true; newVal = LiveFusion.armorValue; }
+                    break;
+                case LightMiniGame.CardEditor.EffectOperation.ModifyAttribute:
+                    if (LiveFusion.overrideBuff) { fuseSet = true; newVal = LiveFusion.buffValue; }
+                    break;
+                case LightMiniGame.CardEditor.EffectOperation.DrawCards:
+                    if (LiveFusion.overrideDraw) { fuseSet = true; newVal = LiveFusion.drawCount; }
+                    break;
+                case LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints:
+                    if (LiveFusion.overrideRestore) { fuseSet = true; newVal = LiveFusion.restoreAP; }
+                    break;
+            }
+            if (!fuseSet) continue;
+
+            // 取节点原静态值（用于在文案中定位对应数字）
+            if (!TryGetStaticValue(node, out oldVal)) continue;
+
+            // 从上次位置向后找值为 oldVal 的数字 token
+            int pos = FindNumberToken(desc, oldVal, searchFrom);
+            if (pos < 0) continue;   // 找不到匹配位置，跳过该替换
+            int start = pos;
+            int len = 0;
+            if (start > 0 && desc[start - 1] == '-') { start--; len++; }   // 吸收负号（一般不会，防御）
+            while (start + len < desc.Length && char.IsDigit(desc[start + len])) len++;
+            replacements.Add((start, len, newVal.ToString()));
+            searchFrom = start + len;
+        }
+        // 从后往前替换，避免索引错乱
+        for (int i = replacements.Count - 1; i >= 0; i--)
+        {
+            var (start, len, nv) = replacements[i];
+            desc = desc.Substring(0, start) + nv + desc.Substring(start + len);
+        }
+        return desc;
+    }
+
+    /// <summary>找 desc 中从 startIndex 开始的第一个等于数值 val 的数字 token，返回其起始下标；无则 -1。</summary>
+    private static int FindNumberToken(string desc, int val, int startIndex)
+    {
+        if (string.IsNullOrEmpty(desc)) return -1;
+        int i = Mathf.Max(0, startIndex);
+        while (i < desc.Length)
+        {
+            if (char.IsDigit(desc[i]))
+            {
+                int s = i;
+                int e = i;
+                while (e + 1 < desc.Length && char.IsDigit(desc[e + 1])) e++;
+                int neg = 0;
+                if (s > 0 && desc[s - 1] == '-') neg = -1;
+                int tokenVal;
+                if (int.TryParse(desc.Substring(s, e - s + 1), out tokenVal) && tokenVal + (neg == -1 ? 0 : 0) == val)
+                    return s;
+                i = e + 1;
+            }
+            else i++;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// 取卡面当前显示的、对应指定效果字段的数值（与显示文本一致，含低理智形态）。
+    /// 遍历 CardEntry 可融合效果节点顺序，与 EnumerateNumberTokens 的 token 序列按序对齐。
+    /// 找不到返回 fallback。
+    /// </summary>
+    public int GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation op, int fallback)
+    {
+        bool low = _data != null && _data.isLowSanityForm;
+        var nodes = _entry != null ? _entry.GetEffectNodes(low) : null;
+        if (nodes == null || nodes.Count == 0) return fallback;
+
+        // 可融合字段节点顺序（DealDamage/GainBlock/ModifyAttribute/DrawCards/RestoreAP）
+        var fieldOps = new List<LightMiniGame.CardEditor.EffectOperation>();
+        foreach (var n in nodes)
+        {
+            if (n == null || !n.enabled) continue;
+            switch (n.operation)
+            {
+                case LightMiniGame.CardEditor.EffectOperation.DealDamage:
+                case LightMiniGame.CardEditor.EffectOperation.GainBlock:
+                case LightMiniGame.CardEditor.EffectOperation.ModifyAttribute:
+                case LightMiniGame.CardEditor.EffectOperation.DrawCards:
+                case LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints:
+                    fieldOps.Add(n.operation);
+                    break;
+            }
+        }
+        if (fieldOps.Count == 0) return fallback;
+
+        var tokens = EnumerateNumberTokens();
+        if (tokens.Count == 0) return fallback;
+
+        // 按序：第 k 个可融合字段 ↔ 第 k 个数字 token
+        int idx = -1;
+        for (int k = 0; k < fieldOps.Count; k++)
+            if (fieldOps[k] == op) { idx = k; break; }
+        if (idx < 0 || idx >= tokens.Count) return fallback;
+        return tokens[idx].value;
+    }
+
+    private static bool TryGetStaticValue(ValueNode v, out int value)
+    {
+        value = 0;
+        if (v == null) return false;
+        switch (v.nodeType)
+        {
+            case ValueNodeType.IntegerConstant: value = v.intValue; return true;
+            case ValueNodeType.FloatConstant: value = Mathf.RoundToInt(v.floatValue); return true;
+            case ValueNodeType.Add:
+            {
+                int a, b;
+                if (!TryGetStaticValue(Operand(v, 0), out a) || !TryGetStaticValue(Operand(v, 1), out b)) return false;
+                value = a + b; return true;
+            }
+            case ValueNodeType.Subtract:
+            {
+                int a, b;
+                if (!TryGetStaticValue(Operand(v, 0), out a) || !TryGetStaticValue(Operand(v, 1), out b)) return false;
+                value = a - b; return true;
+            }
+            case ValueNodeType.Multiply:
+            {
+                int a, b;
+                if (!TryGetStaticValue(Operand(v, 0), out a) || !TryGetStaticValue(Operand(v, 1), out b)) return false;
+                value = a * b; return true;
+            }
+            default: return true;   // 动态节点（读属性等）：按基础 0 参与，与卡面静态展示一致
+        }
+    }
+
+    private static ValueNode Operand(ValueNode node, int index)
+        => (node != null && node.operands != null && index < node.operands.Count) ? node.operands[index] : null;
+
+    /// <summary>取 EffectNode 展示出的静态数字（用于文案定位）。</summary>
+    private static bool TryGetStaticValue(EffectNode node, out int value)
+    {
+        value = 0;
+        if (node == null || node.value == null) return false;
+        return TryGetStaticValue(node.value, out value);
+    }
+
     public string GetDisplayDescription()
     {
         return string.IsNullOrWhiteSpace(description) ? GetAutoDescription() : description;
@@ -710,7 +969,7 @@ public class CardDisplay : MonoBehaviour
         switch (cardType)
         {
             case CardType.Attack:
-                int effAtk = (_fusion != null && _fusion.overrideAttack) ? _fusion.attackValue : attackValue;
+                int effAtk = (LiveFusion != null && LiveFusion.overrideAttack) ? LiveFusion.attackValue : attackValue;
                 string dmg = attackValueType == ValueType.Fixed
                     ? effAtk.ToString()
                     : $"({effAtk}+{CardData.GetAttributeName(attackAttribute)})";
@@ -718,7 +977,7 @@ public class CardDisplay : MonoBehaviour
                 if (ignoreArmor) sb.Append("\n无视护甲");
                 break;
             case CardType.Skill:
-                int effArm = (_fusion != null && _fusion.overrideArmor) ? _fusion.armorValue : armorValue;
+                int effArm = (LiveFusion != null && LiveFusion.overrideArmor) ? LiveFusion.armorValue : armorValue;
                 string armor = armorValueType == ValueType.Fixed
                     ? effArm.ToString()
                     : $"({effArm}+{CardData.GetAttributeName(armorAttribute)})";

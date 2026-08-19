@@ -1640,6 +1640,9 @@ MonoBehaviour:
   shopConfig: {fileID: 11400000, guid: 40ba28bfc7b5f7444907718ecc8ab739, type: 2}
   masterCardLibrary: {fileID: 11400000, guid: c1dd6fa44003228498e6bd0291c9012d, type: 2}
   masterRelicLibrary: {fileID: 11400000, guid: 7ccc0877a23096244b53c2e81a68a324, type: 2}
+  bronzeGradeProbability: 60
+  silverGradeProbability: 30
+  goldGradeProbability: 10
 --- !u!1 &2034148810 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3576374134633119429, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
@@ -2141,8 +2144,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3bf770687e63847fca079956a7956d2c, type: 2}
   - {fileID: 11400000, guid: e81ec51de1eb242a6a763a4096bd03c3, type: 2}
   - {fileID: 11400000, guid: 94e7904ad44754c87b838b21980cecd7, type: 2}
-  persistFusion: 0
-  includeHPInFusion: 0
+  persistFusion: 1
+  includeHPInFusion: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

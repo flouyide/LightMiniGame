@@ -106,6 +106,14 @@ public class BattleCardContext : ICardRuntimeContext
         if (f != null && f.overrideRestore) { value = f.restoreAP; return true; }
         value = 0; return false;
     }
+
+    /// <summary>若当前手牌融合覆盖了增益值则返回 true。</summary>
+    public bool TryGetFusionBuff(out int value)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        if (f != null && f.overrideBuff) { value = f.buffValue; return true; }
+        value = 0; return false;
+    }
     public void AddBuff(BuffAttributeType type, int stacks, int duration = 0) => _battle.AddPlayerBuff(type, stacks, duration);
 
     // === 事件记录 ===

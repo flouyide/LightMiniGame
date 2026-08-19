@@ -62,6 +62,60 @@ public class EnemyView : MonoBehaviour
     /// <summary>敌人护甲文本的 RectTransform（融合原位高亮锚点用）。</summary>
     public RectTransform ArmorTextRect => armorText != null ? armorText.rectTransform : null;
 
+    /// <summary>敌人血量文本的 RectTransform（融合原位高亮锚点用，显示如 "65/65"）。</summary>
+    public RectTransform HPTextRect => hpText != null ? hpText.rectTransform : null;
+
+    /// <summary>
+    /// 定位敌人 HP 文本（格式 "当前/上限"）中指定部分数字的世界矩形。
+    /// isMax=false 定位当前值（斜杠前），isMax=true 定位上限值（斜杠后）。
+    /// </summary>
+    public bool TryGetEnemyHPNumberRect(bool isMax, out Vector2 center, out Vector2 size)
+    {
+        center = Vector2.zero;
+        size = Vector2.zero;
+        if (hpText == null) return false;
+
+        hpText.ForceMeshUpdate(true);
+        var info = hpText.textInfo;
+        if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
+
+        string s = hpText.text;
+        int tokenSeen = 0;
+        int startChar = -1, endChar = -1;
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (!char.IsDigit(s[i])) continue;
+            int start = i;
+            int end = i;
+            while (end + 1 < s.Length && char.IsDigit(s[end + 1])) end++;
+            if (tokenSeen == (isMax ? 1 : 0)) { startChar = start; endChar = end; break; }
+            tokenSeen++;
+            i = end;
+        }
+        if (startChar < 0) return false;
+
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+        bool found = false;
+        for (int ci = 0; ci < info.characterCount; ci++)
+        {
+            var ch = info.characterInfo[ci];
+            if (ch.index < startChar || ch.index > endChar) continue;
+            if (!ch.isVisible) continue;
+            Vector3 tl = hpText.transform.TransformPoint(ch.topLeft);
+            Vector3 tr = hpText.transform.TransformPoint(ch.topRight);
+            Vector3 bl = hpText.transform.TransformPoint(ch.bottomLeft);
+            Vector3 br = hpText.transform.TransformPoint(ch.bottomRight);
+            min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+            max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+            found = true;
+        }
+        if (!found) return false;
+        center = (Vector2)((min + max) * 0.5f);
+        size = new Vector2(max.x - min.x, max.y - min.y);
+        return true;
+    }
+
     /// <summary>敌人意图文本的 RectTransform（融合原位高亮锚点用）。</summary>
     public RectTransform IntentTextRect => intentText != null ? intentText.rectTransform : null;
 
