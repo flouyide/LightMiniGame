@@ -196,16 +196,35 @@ public class FusionController : MonoBehaviour
                     v => _battle.FusionSetEnemyMaxHP(enemySlot, v)));
             }
 
-            // 意图牌库：敌人下方列出的小卡，其中的数值也参与融合高亮（把敌人意图伤害覆盖为融合值）
+            // 意图牌库：敌人下方列出的小卡，其中的数值（含费用）也参与融合高亮（把敌人意图伤害覆盖为融合值）
             int deckCard = 0;
             foreach (var deckView in _battle.GetEnemyIntentDeckDisplays(i))
             {
                 if (deckView == null) continue;
+                int slot = enemySlot;
+                int cardN = deckCard;
+
+                // —— 卡牌费用：在卡面费用气泡处高亮（可选中，融合后作为该意图卡的费用/伤害显示）——
+                var costRT = deckView.GetCostRectTransform();
+                if (costRT != null)
+                {
+                    int costVal = deckView.GetDisplayCost();
+                    list.Add(new FusableValue(
+                        $"enemy:{i}:ideck:{cardN}:cost",
+                        $"敌人{i + 1}意图牌{cardN + 1}费用",
+                        costVal, false,
+                        v => _battle.FusionSetEnemyIntentDamage(slot, v))
+                    {
+                        cardView = deckView,
+                        hasExactRect = true,
+                        exactCenter = costRT.position,
+                        exactSize = costRT.rect.size,
+                    });
+                }
+
                 int tokenN = 0;
                 foreach (var tok in deckView.EnumerateNumberTokens())
                 {
-                    int slot = enemySlot;
-                    int cardN = deckCard;
                     int tIdx = tokenN;
                     list.Add(new FusableValue(
                         $"enemy:{i}:ideck:{cardN}:t{tIdx}",

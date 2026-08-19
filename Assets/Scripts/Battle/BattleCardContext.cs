@@ -67,6 +67,10 @@ public class BattleCardContext : ICardRuntimeContext
     public bool ApplyEnemyAttributeBuff(int slotIndex, LightMiniGame.CardEditor.PlayerAttributeType attr, int delta) => _battle.ApplyEnemyAttributeBuff(slotIndex, attr, delta);
     public void DealDamageToPlayer(int amount, int sourceEnemySlot) => _battle.DealDamageToPlayer(amount, sourceEnemySlot);
 
+    /// <summary>若指定敌人被融合覆盖了意图伤害则返回 true 并输出覆盖值（供效果执行器实际结算用）。</summary>
+    public bool TryGetEnemyIntentOverride(int slot, out int value)
+        => _battle.TryGetEnemyIntentOverride(slot, out value);
+
     // === 自定义数据存取 ===
     public int GetCustomData(string key) => _battle.GetCustomData(key);
     public void SetCustomData(string key, int value) => _battle.SetCustomData(key, value);

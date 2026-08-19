@@ -33,6 +33,8 @@ public class EnemyInstance
 
     /// <summary>当前阶段（1=高理智形态，2=低理智形态）</summary>
     public int Phase = 1;
+    /// <summary>低理智牌库是否启用（由 BattleManager 依据玩家理智实时置位；true 时直接用 phase2Skills）</summary>
+    public bool UseLowSanityPool;
     /// <summary>技能轮转计数（保留字段：阶段切换时依据；选牌已改为随机抽，不再直接用轮转下标）</summary>
     public int TurnInCycle;
     /// <summary>锁定的角色索引（-1 = 未锁定；光束扫描类技能用）</summary>
@@ -50,12 +52,13 @@ public class EnemyInstance
     /// <summary>是否有阶段2</summary>
     public bool HasPhase2 => Config != null && Config.phase2MaxHP > 0;
 
-    /// <summary>当前阶段对应的技能牌库（阶段1=phase1Skills，阶段2=phase2Skills）。</summary>
+    /// <summary>当前应使用的技能牌库：低理智时用 phase2Skills（一进低理智即切换），否则按阶段。</summary>
     public List<CardEntry> CurrentSkillPool
     {
         get
         {
             if (Config == null) return null;
+            if (UseLowSanityPool) return Config.phase2Skills;
             return Phase == 1 ? Config.phase1Skills : Config.phase2Skills;
         }
     }
@@ -78,13 +81,13 @@ public class EnemyInstance
         return list != null && list.Count > 0 ? list[0] : null;
     }
 
-    /// <summary>本回合出牌数：阶段1用高理智出招数，阶段2用低理智出招数；配置≤0 时默认 1 张。</summary>
+    /// <summary>本回合出牌数：低理智用低理智出招数，否则高理智出招数；配置≤0 时默认 1 张。</summary>
     public int CardsThisTurn
     {
         get
         {
             if (Config == null) return 1;
-            int c = Phase == 1 ? Config.highSanityCardCount : Config.lowSanityCardCount;
+            int c = UseLowSanityPool ? Config.lowSanityCardCount : (Phase == 1 ? Config.highSanityCardCount : Config.lowSanityCardCount);
             return c > 0 ? c : 1;
         }
     }

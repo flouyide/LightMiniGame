@@ -509,6 +509,19 @@ public class BattleManager : MonoBehaviour
         e.View?.Refresh();
     }
 
+    /// <summary>读取指定槽位敌人意图伤害覆盖值（供效果执行器把融合数值应用到实际出招；无覆盖返回 false）。</summary>
+    public bool TryGetEnemyIntentOverride(int slot, out int value)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead || e.IntentDamageOverride < 0)
+        {
+            value = 0;
+            return false;
+        }
+        value = e.IntentDamageOverride;
+        return true;
+    }
+
     /// <summary>读取指定槽位敌人本回合意图伤害值（覆盖值优先；否则累加本回合所有出牌的效果节点常量伤害；无卡牌返回 0）。</summary>
     public int FusionEnemyIntentDamage(int slot)
     {
@@ -1802,10 +1815,20 @@ public class BattleManager : MonoBehaviour
             OnSanityPhaseTransition();
         }
 
-        // 理智变化时检查每个存活敌人的阶段切换（各敌人独立判定，互不影响）
+        // 理智变化时检查每个存活敌人的阶段切换（各敌人独立判定，互不影响）+ 同步低理智牌库标记
         foreach (var e in _enemies)
         {
             if (e == null || e.IsDead) continue;
+            // 一进入/退出低理智即切换出牌牌库（即便不触发阶段切换）
+            bool low = _playerSanity <= _sanityThreshold;
+            if (e.UseLowSanityPool != low)
+            {
+                e.UseLowSanityPool = low;
+                e.ResetDrawnSkill();   // 牌库变化 → 清空已抽，重新随机
+                e.View?.ShowIntentDeck(e.CurrentSkillPool, low);
+                e.View?.Refresh();
+                Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）低理智牌库 {(low ? "启用(phase2)" : "关闭(phase1)")}");
+            }
             if (e.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 e.View?.Refresh();
@@ -2194,7 +2217,7 @@ public class BattleManager : MonoBehaviour
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
-                inst.View?.ShowIntentDeck(inst.CurrentSkillPool);   // 阶段切换 → 牌库变化，刷新预览
+                inst.View?.ShowIntentDeck(inst.CurrentSkillPool, _playerSanity <= _sanityThreshold);   // 阶段切换 → 牌库变化，刷新预览
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
@@ -2603,7 +2626,7 @@ public class BattleManager : MonoBehaviour
             {
                 if (e == null || e.IsDead) continue;
                 e.View?.SetIntent(GetEnemyIntentText(e));
-                e.View?.ShowIntentDeck(e.CurrentSkillPool);
+                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold);
             }
         }
 

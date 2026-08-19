@@ -192,11 +192,12 @@ public class EnemyView : MonoBehaviour
         if (_deckRoot != null) _deckRoot.gameObject.SetActive(false);
     }
 
-    /// <summary>
+/// <summary>
     /// 在敌人立绘下方横向展示当前阶段整个出牌牌库（small casino 小卡）。
     /// 自动按牌数缩放/限宽，避免多张重叠拥挤；多敌人各自在各自立绘下方，互不重叠。
+    /// lowSanity=true 时卡面用低理智（升级）形态显示（费用/描述随 lowSanity 变）。
     /// </summary>
-    public void ShowIntentDeck(List<CardEntry> deck)
+    public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false)
     {
         // 清空上一批
         foreach (var c in _deckCards)
@@ -239,7 +240,7 @@ public class EnemyView : MonoBehaviour
 
             var cardGo = Instantiate(prefab, _deckRoot);
             var display = cardGo.GetComponent<CardDisplay>();
-            if (display != null) display.ApplyCardEntry(entry, false);
+            if (display != null) display.ApplyCardEntry(entry, lowSanity);
 
             // 禁用交互仅展示
             var drag = cardGo.GetComponent<CardDragHandler>();
