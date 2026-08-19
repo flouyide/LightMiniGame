@@ -441,6 +441,9 @@ public class EffectExecutorV2
         // 融合覆盖：手牌攻击值被融合修改时，完全替换基础伤害（力量加成仍按后续叠加）
         if (_ctx.TryGetFusionAttack(out int fusionAtk))
             baseDamage = fusionAtk;
+        // 融合覆盖：敌人意图伤害被融合修改时，直接替换该敌人本次伤害（融合后的意图值生效）
+        if (IsEnemyInitiator && _ctx.TryGetEnemyIntentOverride(_initiatorEnemySlot, out int fusionIntent))
+            baseDamage = fusionIntent;
         // 力量加成：玩家出牌用玩家力量；敌人出牌时力量已由 DealDamageToPlayer（敌人生成语义）叠加，避免重复
         if (node.scalingMode == ScalingMode.AddStrength && !IsEnemyInitiator)
             baseDamage += OwnerStrength;
@@ -562,6 +565,10 @@ public class EffectExecutorV2
         int amount = EvaluateValue(node.value);
         var attr = node.attributeType;
         var op = node.resourceOp;
+
+        // 融合覆盖：增益值被融合修改时替换基础值（与伤害/格挡/抽牌/回费一致）
+        if (_ctx.TryGetFusionBuff(out int fusionBuff))
+            amount = fusionBuff;
 
         // 敌人作为发起者且目标为「自己（效果发起者）」时 → 敌人自buff，走带能力检测的敌人增益
         if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)

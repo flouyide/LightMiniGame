@@ -23,6 +23,7 @@ public class FusionController : MonoBehaviour
     private bool _initialized;
     private List<FusableValue> _candidates = new();
     private readonly List<FusableValue> _selected = new();
+    private List<int> _lastPreviewSplit = new();   // 最近一次预览的随机拆分（确认时使用，所见即所得）
 
     // === 运行时构建的 UI ===
     private GameObject _entryButtonGO;
@@ -137,6 +138,18 @@ public class FusionController : MonoBehaviour
         _selected.Clear();
         BuildPanel();
         UpdateEntryInteractable();
+        // 高亮定位依赖 TMP 文本网格（低理智切形态后需一帧重建），延迟一帧构建避免错位/fallback 大块
+        StartCoroutine(BuildHighlightsNextFrame());
+    }
+
+    private System.Collections.IEnumerator BuildHighlightsNextFrame()
+    {
+        yield return null;   // 等一帧：TMP mesh 重建（低理智切形态后文本已变）
+        // 手牌强制摆到目标布局，避免读 lerp 动画中途坐标造成高亮错位
+        _battle.SnapHandToTarget();
+        yield return null;   // 再等一帧应用 layout 约束
+        BuildHighlights();
+        RefreshHighlights();
     }
 
     /// <summary>枚举当前要高亮的融合数值。
@@ -148,19 +161,86 @@ public class FusionController : MonoBehaviour
         // —— 玩家数值 ——
         list.Add(new FusableValue("player:energy", "能量", _battle.ActionPoints, false,
             v => _battle.SetActionPoints(v)));
-        list.Add(new FusableValue("player:armor", "当前护甲", _battle.PlayerArmor, false,
-            v => _battle.SetPlayerArmor(v)));
+        // 护甲为 0 时不生成高亮（UI 中无护甲数字显示，避免在原位出现多余的“0”块）
+        if (_battle.PlayerArmor > 0)
+            list.Add(new FusableValue("player:armor", "当前护甲", _battle.PlayerArmor, false,
+                v => _battle.SetPlayerArmor(v)));
         list.Add(new FusableValue("player:gold", "货币", _battle.PlayerGold, false,
             v => _battle.SetPlayerGold(v)));
 
-        // —— 敌人：护甲 + 出招意图的卡牌数值 ——
+        // —— 进阶2：玩家血量 / 血量上限（血量项始终可融合可显示；低理智也正常参与计算）——
+        if (_battle.IncludeHPInFusion)
+        {
+            list.Add(new FusableValue("player:hp", "玩家血量", _battle.PlayerHP, false,
+                v => _battle.SetPlayerHP(v)));
+            list.Add(new FusableValue("player:maxhp", "玩家血量上限", _battle.PlayerMaxHP, false,
+                v => _battle.SetPlayerMaxHP(v)));
+        }
+
+        // —— 敌人：护甲 + 意图牌库内卡面数值 ——
+        // 注意：敌人“意图”文本本身（含字样）不做高亮，意图数值由下方牌库小卡的 token 覆盖。
         for (int i = 0; i < _battle.EnemySlotCount; i++)
         {
             if (!_battle.FusionIsEnemyAlive(i)) continue;
-            list.Add(new FusableValue($"enemy:{i}:armor", $"敌人{i + 1}护甲", _battle.FusionEnemyArmor(i), false,
-                v => _battle.FusionSetEnemyArmor(i, v)));
-            list.Add(new FusableValue($"enemy:{i}:intent", $"敌人{i + 1}意图", _battle.FusionEnemyIntentDamage(i), false,
-                v => _battle.FusionSetEnemyIntentDamage(i, v)));
+            int enemySlot = i;   // 闭包安全：旧编译器下 for 循环变量在 lambda 中共享，必须复制
+            if (_battle.FusionEnemyArmor(i) > 0)
+                list.Add(new FusableValue($"enemy:{i}:armor", $"敌人{i + 1}护甲", _battle.FusionEnemyArmor(i), false,
+                    v => _battle.FusionSetEnemyArmor(enemySlot, v)));
+
+            // —— 进阶2：敌人血量 / 血量上限（始终可融合）——
+            if (_battle.IncludeHPInFusion)
+            {
+                list.Add(new FusableValue($"enemy:{i}:hp", $"敌人{i + 1}当前血量", _battle.FusionEnemyHP(i), false,
+                    v => _battle.FusionSetEnemyHP(enemySlot, v)));
+                list.Add(new FusableValue($"enemy:{i}:maxhp", $"敌人{i + 1}血量上限", _battle.FusionEnemyMaxHP(i), false,
+                    v => _battle.FusionSetEnemyMaxHP(enemySlot, v)));
+            }
+
+            // 意图牌库：敌人下方列出的小卡，其中的数值（含费用）也参与融合高亮（把敌人意图伤害覆盖为融合值）
+            int deckCard = 0;
+            foreach (var deckView in _battle.GetEnemyIntentDeckDisplays(i))
+            {
+                if (deckView == null) continue;
+                int slot = enemySlot;
+                int cardN = deckCard;
+
+                // —— 卡牌费用：在卡面费用气泡处高亮（可选中，融合后作为该意图卡的费用/伤害显示）——
+                var costRT = deckView.GetCostRectTransform();
+                if (costRT != null)
+                {
+                    int costVal = deckView.GetDisplayCost();
+                    list.Add(new FusableValue(
+                        $"enemy:{i}:ideck:{cardN}:cost",
+                        $"敌人{i + 1}意图牌{cardN + 1}费用",
+                        costVal, false,
+                        v => _battle.FusionSetEnemyIntentDamage(slot, v))
+                    {
+                        cardView = deckView,
+                        hasExactRect = true,
+                        exactCenter = costRT.position,
+                        exactSize = costRT.rect.size,
+                    });
+                }
+
+                int tokenN = 0;
+                foreach (var tok in deckView.EnumerateNumberTokens())
+                {
+                    int tIdx = tokenN;
+                    list.Add(new FusableValue(
+                        $"enemy:{i}:ideck:{cardN}:t{tIdx}",
+                        $"敌人{i + 1}意图牌{cardN + 1}·{tok.value}",
+                        tok.value, false,
+                        v => _battle.FusionSetEnemyIntentDamage(slot, v))
+                    {
+                        cardView = deckView,
+                        hasExactRect = true,
+                        exactCenter = tok.center,
+                        exactSize = tok.size,
+                    });
+                    tokenN++;
+                }
+                deckCard++;
+            }
         }
 
         // —— 手牌：费用 + 数值（攻击/护甲/增益/抽牌/回费） ——
@@ -169,34 +249,40 @@ public class FusionController : MonoBehaviour
         {
             var card = _battle.GetHandCardData(i);
             if (card == null) continue;
+            int handIdx = i;   // 闭包安全：UniT 旧编译器下 for 循环变量在 lambda 中共享，必须复制
             var hview = _battle.GetHandCardDisplay(i);   // 用于卡面内数字的精确定位
             list.Add(new FusableValue($"hand:{i}:cost", $"手牌{i + 1}费用", card.GetEffectiveCost(), false,
-                v => _battle.SetHandCardCost(i, v))
+                v => _battle.SetHandCardCost(handIdx, v))
             { cardView = hview });
 
             if (_battle.HandCardHasAttack(card) || card.attackValue > 0)
-                list.Add(new FusableValue($"hand:{i}:atk", $"手牌{i + 1}攻击", card.EffectiveAttack, false,
-                    v => _battle.SetHandCardAttack(i, v))
+                list.Add(new FusableValue($"hand:{i}:atk", $"手牌{i + 1}攻击",
+                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.DealDamage, card.EffectiveAttack) : card.EffectiveAttack, false,
+                    v => _battle.SetHandCardAttack(handIdx, v))
                 { cardView = hview });
 
             if (_battle.HandCardHasArmor(card) || card.armorValue > 0)
-                list.Add(new FusableValue($"hand:{i}:armor", $"手牌{i + 1}护甲", card.EffectiveArmor, false,
-                    v => _battle.SetHandCardArmor(i, v))
+                list.Add(new FusableValue($"hand:{i}:armor", $"手牌{i + 1}护甲",
+                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.GainBlock, card.EffectiveArmor) : card.EffectiveArmor, false,
+                    v => _battle.SetHandCardArmor(handIdx, v))
                 { cardView = hview });
 
             if (card.EffectiveBuffValue > 0)
-                list.Add(new FusableValue($"hand:{i}:buff", $"手牌{i + 1}增益", card.EffectiveBuffValue, false,
-                    v => _battle.SetHandCardBuff(i, v))
+                list.Add(new FusableValue($"hand:{i}:buff", $"手牌{i + 1}增益",
+                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.ModifyAttribute, card.EffectiveBuffValue) : card.EffectiveBuffValue, false,
+                    v => _battle.SetHandCardBuff(handIdx, v))
                 { cardView = hview });
 
             if (card.EffectiveDraw > 0)
-                list.Add(new FusableValue($"hand:{i}:draw", $"手牌{i + 1}抽牌", card.EffectiveDraw, false,
-                    v => _battle.SetHandCardDraw(i, v))
+                list.Add(new FusableValue($"hand:{i}:draw", $"手牌{i + 1}抽牌",
+                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.DrawCards, card.EffectiveDraw) : card.EffectiveDraw, false,
+                    v => _battle.SetHandCardDraw(handIdx, v))
                 { cardView = hview });
 
             if (card.EffectiveRestoreAP > 0)
-                list.Add(new FusableValue($"hand:{i}:restore", $"手牌{i + 1}回费", card.EffectiveRestoreAP, false,
-                    v => _battle.SetHandCardRestore(i, v))
+                list.Add(new FusableValue($"hand:{i}:restore", $"手牌{i + 1}回费",
+                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints, card.EffectiveRestoreAP) : card.EffectiveRestoreAP, false,
+                    v => _battle.SetHandCardRestore(handIdx, v))
                 { cardView = hview });
         }
 
@@ -236,16 +322,19 @@ public class FusionController : MonoBehaviour
             new Vector2(0.5f, 1f), new Vector2(0, -30), new Vector2(700, 54),
             "点选要融合的数值（至少 2 项）", 24, new Color(0.95f, 0.9f, 0.5f, 1f));
 
-        // 原位高亮（作为蒙层的子物体，渲染在蒙层之上）
-        BuildHighlights();
+        // 原位高亮（作为蒙层的子物体，渲染在蒙层之上；由 EnterFusion 延迟一帧构建，保证 TMP mesh 就绪）
+        // BuildHighlights();   // 已移到 BuildHighlightsNextFrame
 
-        // 右下：确认 + 退出
+        // 右下：确认 + 重掷 + 退出
         CreateButton(_panelRoot.transform, "ConfirmButton", new Vector2(1f, 0f), new Vector2(1f, 0f),
             new Vector2(1f, 0f), new Vector2(-90, 80), new Vector2(200, 56),
             "确认融合", 20, () => ConfirmFusion(), new Color(0.55f, 0.28f, 0.75f, 0.95f));
+        CreateButton(_panelRoot.transform, "RerollButton", new Vector2(1f, 0f), new Vector2(1f, 0f),
+            new Vector2(1f, 0f), new Vector2(-90, 12), new Vector2(160, 44),
+            "重新随机", 16, () => UpdateStatus(), new Color(0.45f, 0.4f, 0.55f, 0.9f));
         CreateButton(_panelRoot.transform, "CancelButton", new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(1f, 0f), new Vector2(-90, 12), new Vector2(200, 48),
-            "退出", 18, ExitFusion, new Color(0.4f, 0.4f, 0.4f, 0.9f));
+            new Vector2(1f, 0f), new Vector2(-90, -44), new Vector2(160, 40),
+            "退出", 16, ExitFusion, new Color(0.4f, 0.4f, 0.4f, 0.9f));
 
         UpdateStatus();
     }
@@ -255,6 +344,9 @@ public class FusionController : MonoBehaviour
     {
         var panelRT = _panelRoot.transform as RectTransform;
         if (panelRT == null) return;
+        // 用面板所属 Canvas 的真实 worldCamera（World Space / ScreenSpaceCamera 时必须有相机，Overlay 为 null）
+        var rootCanvas = _panelRoot.GetComponentInParent<Canvas>()?.rootCanvas;
+        Camera cam = rootCanvas != null ? rootCanvas.worldCamera : null;
 
         for (int i = 0; i < _candidates.Count; i++)
         {
@@ -263,22 +355,44 @@ public class FusionController : MonoBehaviour
             var go = new GameObject($"FusionHL_{i}");
             go.transform.SetParent(_panelRoot.transform, false);
             var rt = go.AddComponent<RectTransform>();
-            Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, center);
+            Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, center);
             Vector2 local;
-            bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(panelRT, screen, null, out local);
+            // 屏幕→面板局部（Overlay 用 null，World 用相机，取决于 Canvas renderMode）
+            bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(panelRT, screen, rootCanvas != null && rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cam, out local);
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = ok ? local : new Vector2(120, 140);
-            // 半透明高亮片：贴合数字微放大，不遮字、可点
-            rt.sizeDelta = new Vector2(Mathf.Max(28f, size.x + 8f), Mathf.Max(22f, size.y + 4f));
+            // 半透明深紫高亮片：贴合数字（限最大尺寸，避免整槽/整卡被盖），不遮字、可点
+            float w = Mathf.Clamp(size.x + 10f, 30f, 72f);
+            float h = Mathf.Clamp(size.y + 6f, 24f, 48f);
+            rt.sizeDelta = new Vector2(w, h);
 
             var img = go.AddComponent<Image>();
             img.raycastTarget = true;
             var btn = go.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.interactable = !fv.lockedBySanity;
-            btn.onClick.AddListener(() => OnHighlightClick(i));
+            int capturedIndex = i;   // 闭包绑定当前迭代索引（避免循环变量捕获错误）
+            btn.onClick.AddListener(() => OnHighlightClick(capturedIndex));
             ApplyHighlightColor(img, fv);
+
+            // 高亮片内显示当前数值（白色加粗带阴影，数字明显；血量上限加"上"前缀区分）
+            var numGo = new GameObject("Num");
+            numGo.transform.SetParent(go.transform, false);
+            var numRT = numGo.AddComponent<RectTransform>();
+            numRT.anchorMin = numRT.anchorMax = new Vector2(0.5f, 0.5f);
+            numRT.sizeDelta = new Vector2(w - 4f, h - 4f);
+            var num = numGo.AddComponent<TextMeshProUGUI>();
+            num.text = fv.lockedBySanity ? "" : fv.current.ToString();
+            num.fontSize = 20;
+            num.fontStyle = TMPro.FontStyles.Bold;
+            num.alignment = TextAlignmentOptions.Center;
+            num.color = Color.white;
+            num.outlineWidth = 0.2f;
+            num.outlineColor = new Color(0f, 0f, 0f, 0.85f);
+            num.enableWordWrapping = false;
+            num.raycastTarget = false;
+
             _highlights.Add(go);
         }
     }
@@ -287,6 +401,10 @@ public class FusionController : MonoBehaviour
     /// 手牌描述数字→卡面字符精确位置；费用/能量/护甲/敌人→对应 UI 文本 rect；货币固定左下。</summary>
     private (Vector2 center, Vector2 size) ResolveCandidateLayout(FusableValue fv)
     {
+        // —— 预计算精确位置（意图牌库 token 等）—— 最高优先级 ——
+        if (fv.hasExactRect)
+            return (fv.exactCenter, fv.exactSize);
+
         // —— 手牌描述内数字（不含费用）：TryGetNumberRects 精确定位 ——
         if (fv.cardView != null && !fv.id.EndsWith(":cost"))
         {
@@ -304,34 +422,48 @@ public class FusionController : MonoBehaviour
             var costRT = fv.cardView.GetCostRectTransform();
             if (costRT != null) return (costRT.position, costRT.rect.size);
         }
-        // —— 敌人护甲/意图：敌人视图对应文本 rect ——
-        if (fv.id.StartsWith("enemy:"))
+        // —— 敌人护甲：敌人视图对应文本 rect ——
+        if (fv.id.StartsWith("enemy:") && fv.id.EndsWith(":armor"))
         {
             int slot = ParseEnemySlot(fv.id);
             if (slot >= 0)
             {
-                if (fv.id.EndsWith(":armor"))
-                {
-                    var r = _battle.GetEnemyArmorAnchor(slot);
-                    if (r != null) return (r.position, r.rect.size);
-                }
-                else if (fv.id.EndsWith(":intent"))
-                {
-                    var r = _battle.GetEnemyIntentAnchor(slot);
-                    if (r != null) return (r.position, r.rect.size);
-                }
+                var r = _battle.GetEnemyArmorAnchor(slot);
+                if (r != null) return (r.position + new Vector3(0f, -r.rect.height * 0.5f, 0f), new Vector2(28f, 30f));
             }
         }
-        // —— 玩家能量/护甲：对应文本 rect ——
+        // —— 玩家能量/护甲：对应文本 rect（但只取其中心、用小方块，避免整槽长条被高亮）——
         if (fv.id == "player:energy")
         {
             var r = _battle.ActionPointAnchor;
-            if (r != null) return (r.position, r.rect.size);
+            if (r != null) return (r.position, new Vector2(40f, 30f));
         }
         if (fv.id == "player:armor")
         {
             var r = _battle.ArmorAnchor;
-            if (r != null) return (r.position, r.rect.size);
+            if (r != null) return (r.position, new Vector2(40f, 30f));
+        }
+        // —— 进阶2：玩家血量 / 血量上限（精确对齐到 HP 文本中数字字符）——
+        if (fv.id == "player:hp" || fv.id == "player:maxhp")
+        {
+            bool isMax = fv.id == "player:maxhp";
+            if (_battle.TryGetPlayerHPNumberRect(isMax, out var hc, out var hs))
+                return (hc, hs);
+            var r = _battle.HPAnchor;
+            if (r != null) return (r.position, new Vector2(48f, 30f));
+        }
+        // —— 进阶2：敌人血量 / 血量上限（敌人 HP 文本内数字精确定位）——
+        if (fv.id.StartsWith("enemy:") && (fv.id.EndsWith(":hp") || fv.id.EndsWith(":maxhp")))
+        {
+            int slot = ParseEnemySlot(fv.id);
+            if (slot >= 0)
+            {
+                bool isMax = fv.id.EndsWith(":maxhp");
+                if (_battle.TryGetEnemyHPNumberRect(slot, isMax, out var hc, out var hs))
+                    return (hc, hs);
+                var r = _battle.GetEnemyHPAnchor(slot);
+                if (r != null) return (r.position, new Vector2(48f, 30f));
+            }
         }
         // —— 兜底（货币等无锚点）：固定左下角 ——
         var rootRT = _panelRoot.transform as RectTransform;
@@ -352,9 +484,9 @@ public class FusionController : MonoBehaviour
         if (fv.lockedBySanity)
             img.color = new Color(0.35f, 0.35f, 0.35f, 0.45f);
         else if (_selected.Contains(fv))
-            img.color = new Color(0.9f, 0.2f, 0.2f, 0.8f);      // 红=已选
+            img.color = new Color(0.9f, 0.2f, 0.2f, 0.85f);      // 红=已选
         else
-            img.color = new Color(0.95f, 0.85f, 0.32f, 0.35f);  // 淡金=未选（原位衬底，不遮字）
+            img.color = new Color(0.62f, 0.35f, 0.85f, 0.55f);  // 紫=未选（原位衬底，不遮字）
     }
 
     private void OnHighlightClick(int index)
@@ -381,8 +513,18 @@ public class FusionController : MonoBehaviour
 
     private void UpdateStatus()
     {
-        if (_statusText != null)
+        if (_statusText == null) return;
+        if (_selected.Count < 2)
+        {
             _statusText.text = $"已选 {_selected.Count} 项（至少 2 项）  总和: {SumSelected()}";
+            return;
+        }
+        // 每次刷新状态都重新随机拆分，预览“这次确认将如何分配”
+        int total = SumSelected();
+        int parts = _selected.Count;
+        int minEach = total >= parts ? 1 : 0;
+        _lastPreviewSplit = FusionSplitAlgorithm.Split(total, parts, minEach: minEach);
+        _statusText.text = $"已选 {_selected.Count} 项  总和: {total}\n随机分配: [{string.Join(" , ", _lastPreviewSplit)}]  （点“重新随机”再掷）";
     }
 
     private int SumSelected()
@@ -407,11 +549,73 @@ public class FusionController : MonoBehaviour
 
         int total = SumSelected();
         int parts = _selected.Count;
-        int minEach = total >= parts ? 1 : 0;
-        var split = FusionSplitAlgorithm.Split(total, parts, minEach: minEach);
+        // 使用预览过的拆分（所见即所得）；无预览或数量不符则现拆
+        var split = (_lastPreviewSplit != null && _lastPreviewSplit.Count == parts)
+            ? _lastPreviewSplit
+            : FusionSplitAlgorithm.Split(total, parts, minEach: total >= parts ? 1 : 0);
+
+        // 血量对（current+max）同时被选需原子回填，避免 SetHP/SetMaxHP 相互钳制
+        // —— 玩家：player:hp + player:maxhp ——
+        bool hpPairDone = false;
+        FusableValue hp = null, maxHp = null;
+        int hpVal = 0, maxVal = 0;
+        foreach (var fv in _selected)
+        {
+            if (fv.id == "player:hp") { hp = fv; hpVal = split[_selected.IndexOf(fv)]; }
+            else if (fv.id == "player:maxhp") { maxHp = fv; maxVal = split[_selected.IndexOf(fv)]; }
+        }
+        if (hp != null && maxHp != null)
+        {
+            // 小的给当前血量、大的给上限（保证 当前 ≤ 上限，数值守恒）
+            int cur = Mathf.Min(hpVal, maxVal);
+            int mx = Mathf.Max(hpVal, maxVal);
+            _battle.SetPlayerHPAndMax(cur, mx);
+            hpPairDone = true;
+            Debug.Log($"[Fusion] 玩家血量融合 {total} → hp={cur} max={mx}");
+        }
 
         for (int i = 0; i < _selected.Count; i++)
-            _selected[i].apply?.Invoke(split[i]);
+        {
+            var fv = _selected[i];
+            // 独立的玩家血量/上限：若成对原子处理过则跳过；否则单值回填
+            if (hpPairDone && (fv.id == "player:hp" || fv.id == "player:maxhp")) continue;
+            if (fv.id == "player:hp" || fv.id == "player:maxhp")
+            {
+                fv.apply?.Invoke(split[i]);
+                continue;
+            }
+            if (fv.id.StartsWith("enemy:") && (fv.id.EndsWith(":hp") || fv.id.EndsWith(":maxhp"))) continue;   // 敌人血量对稍后原子处理
+            fv.apply?.Invoke(split[i]);
+        }
+
+        // —— 敌人血量对（enemy:i:hp + enemy:i:maxhp）原子回填；单选时单值回填 ——
+        for (int i = 0; i < _battle.EnemySlotCount; i++)
+        {
+            FusableValue ehp = null, emax = null;
+            int ehpVal = 0, emaxVal = 0;
+            foreach (var fv in _selected)
+            {
+                if (fv.id == $"enemy:{i}:hp") { ehp = fv; ehpVal = split[_selected.IndexOf(fv)]; }
+                else if (fv.id == $"enemy:{i}:maxhp") { emax = fv; emaxVal = split[_selected.IndexOf(fv)]; }
+            }
+            if (ehp != null && emax != null)
+            {
+                int cur = Mathf.Min(ehpVal, emaxVal);
+                int mx = Mathf.Max(ehpVal, emaxVal);
+                _battle.FusionSetEnemyHPAndMax(i, cur, mx);
+                Debug.Log($"[Fusion] 敌人{i + 1}血量 {cur + mx}→{cur}/{mx}");
+            }
+            else if (ehp != null)
+            {
+                ehp.apply?.Invoke(ehpVal);
+                Debug.Log($"[Fusion] 敌人{i + 1}当前血量 → {ehpVal}");
+            }
+            else if (emax != null)
+            {
+                emax.apply?.Invoke(emaxVal);
+                Debug.Log($"[Fusion] 敌人{i + 1}血量上限 → {emaxVal}");
+            }
+        }
 
         Debug.Log($"[Fusion] 融合 {total} → [{string.Join(",", split)}]");
         _battle.MarkFusionUsed();
@@ -426,6 +630,7 @@ public class FusionController : MonoBehaviour
         _highlights.Clear();
         _selected.Clear();
         _candidates.Clear();
+        _lastPreviewSplit.Clear();
         UpdateEntryInteractable();
     }
 

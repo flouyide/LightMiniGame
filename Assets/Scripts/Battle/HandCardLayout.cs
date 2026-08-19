@@ -245,6 +245,22 @@ public class HandCardLayout : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 立即把手牌摆到目标布局位置（跳过 lerp 动画）。
+    /// 融合高亮读取卡面坐标时需要卡牌处于最终位置，否则会读到动画中途坐标造成错位。
+    /// </summary>
+    public void SnapToTarget()
+    {
+        for (int i = 0; i < _cardObjects.Count; i++)
+        {
+            if (_cardObjects[i] == null || i >= _targetPositions.Count) continue;
+            var trans = _cardObjects[i].transform;
+            trans.localPosition = _targetPositions[i];
+            if (i < _targetRotations.Count) trans.localRotation = _targetRotations[i];
+            if (i < _targetScales.Count) trans.localScale = _targetScales[i];
+        }
+    }
+
     private void Update()
     {
         if (_cardObjects.Count == 0) return;

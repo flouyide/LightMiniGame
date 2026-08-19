@@ -158,20 +158,20 @@ public class CardData : ScriptableObject
         }
     }
 
-    private static int normalAttackValue(int fallback, CardEntry e)
+    private int normalAttackValue(int fallback, CardEntry e)
         => ResolveFromEffects(e, EffectOperation.DealDamage, fallback);
 
-    private static int normalArmorValue(int fallback, CardEntry e)
+    private int normalArmorValue(int fallback, CardEntry e)
         => ResolveFromEffects(e, EffectOperation.GainBlock, fallback);
 
     /// <summary>
     /// 从 CardEntry 效果列表里找到首个指定操作的效果节点，若其数值是常量节点则返回该值，
-    /// 否则回退到 fallback。这保证融合展示/回填与描述中显示的数值一致（如“造成6点伤害”→6）。
+    /// 否则回退到 fallback。按当前理智形态（isLowSanityForm）读取，保证与卡面显示数字一致。
     /// </summary>
-    private static int ResolveFromEffects(CardEntry e, EffectOperation op, int fallback)
+    private int ResolveFromEffects(CardEntry e, EffectOperation op, int fallback)
     {
         if (e == null) return fallback;
-        var nodes = e.GetEffectNodes(false);   // 普通形态
+        var nodes = e.GetEffectNodes(isLowSanityForm);   // 与当前形态一致（低理智读低理智效果）
         if (nodes == null || nodes.Count == 0) return fallback;
         foreach (var n in nodes)
         {

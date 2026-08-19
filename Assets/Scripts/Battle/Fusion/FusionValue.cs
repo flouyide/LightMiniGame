@@ -31,6 +31,11 @@ public class FusableValue
     /// <summary>可选的源 CardDisplay（用于卡面描述内数字的精确定位）。</summary>
     public CardDisplay cardView;
 
+    /// <summary>预计算的精确数字位置（世界坐标，中心+尺寸）。优先级高于 cardView.TryGetNumberRects，供意图牌库 token 用。</summary>
+    public bool hasExactRect;
+    public Vector2 exactCenter;
+    public Vector2 exactSize;
+
     /// <summary>回填回调：把拆分得到的某个数值写回该槽位。</summary>
     public Action<int> apply;
 
