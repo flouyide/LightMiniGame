@@ -632,6 +632,131 @@ public class CardDisplay : MonoBehaviour
         RestorePlainDesc();
     }
 
+    /// <summary>
+    /// 卡内数字融合高亮：描述里可融合的每个数字，文字着色（紫/红）+ 透明命中层（随卡缩放可点击）。
+    /// 全部基于“纯文本”解析与着色（避免富文本标签破坏字符索引导致选 A 显 B）。
+    /// </summary>
+    public void SetCardNumberHighlights(List<int> values,
+        System.Func<int, bool> isSelected = null, System.Action<int> onClicked = null, bool clearExisting = true)
+    {
+        if (clearExisting) ClearNumberHighlights();
+        if (values == null || values.Count == 0 || descText == null) return;
+
+        // 1) 纯文本：从原文恢复（去富文本），作为解析与显示的基准
+        RestorePlainDesc();
+        string plain = _plainDescText != null ? _plainDescText : GetDisplayDescription();
+        if (string.IsNullOrEmpty(plain)) return;
+        _plainDescText = plain;
+
+        // 2) 解析纯文本 tokens（值+字符区间+世界矩形）
+        var toks = ParseNumberTokens(plain);
+        var tokWorld = new List<(int value, Vector2 center, Vector2 size, int start, int end)>();
+        foreach (var t in toks)
+        {
+            var (ok, center, size) = TryGetSubstringWorldRect(plain, t.start, t.end);
+            if (ok) tokWorld.Add((t.value, center, size, t.start, t.end));
+        }
+
+        // 3) 为每个候选分配“值匹配且未占用”的 token
+        var used = new bool[tokWorld.Count];
+        var marks = new List<(int tokIdx, bool red)>();   // 着色标记（按候选顺序）
+        RectTransform descParent = descText.transform.parent as RectTransform;
+        for (int i = 0; i < values.Count; i++)
+        {
+            int pick = -1;
+            for (int t = 0; t < tokWorld.Count; t++)
+            {
+                if (used[t] || tokWorld[t].value != values[i]) continue;
+                pick = t; break;
+            }
+            if (pick < 0) continue;
+            used[pick] = true;
+            bool red = isSelected != null && isSelected(i);
+            marks.Add((pick, red));
+
+            // 4) 透明命中层
+            if (descParent != null && onClicked != null)
+            {
+                var img = GetOrCreateNumberHighlight(i);
+                var rt = img.GetComponent<RectTransform>();
+                Vector2 sc = RectTransformUtility.WorldToScreenPoint(null, tokWorld[pick].center);
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(descParent, sc, null, out Vector2 loc))
+                {
+                    rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = loc;
+                    float scl = descParent.lossyScale.x != 0 ? descParent.lossyScale.x : 1f;
+                    rt.sizeDelta = new Vector2(tokWorld[pick].size.x / scl, tokWorld[pick].size.y / scl);
+                    img.color = new Color(1f, 1f, 1f, 0f);
+                    img.raycastTarget = true;
+                    img.gameObject.SetActive(true);
+                    var ob = img.GetComponent<Button>();
+                    if (ob == null)
+                    {
+                        var btn = img.gameObject.AddComponent<Button>();
+                        btn.transition = Selectable.Transition.None;
+                    }
+                    img.GetComponent<Button>().onClick.RemoveAllListeners();
+                    int captured = i;
+                    img.GetComponent<Button>().onClick.AddListener(() => onClicked(captured));
+                }
+            }
+        }
+
+        // 5) 重建 descText：标记 token 包 <color>（红/紫高饱和）
+        if (marks.Count > 0)
+        {
+            var colorOf = new Color[plain.Length];
+            var sb = new System.Text.StringBuilder();
+            int cursor = 0;
+            var markSet = new Dictionary<int, string>();
+            foreach (var m in marks)
+            {
+                int st = tokWorld[m.tokenIdx].start, en = tokWorld[m.tokenIdx].end;
+                markSet[st] = m.red ? "<color=#FF3B5C>" : "<color=#C049FF>";
+                markSet[en] = "</color>";
+            }
+            for (int c = 0; c < plain.Length; c++)
+            {
+                if (markSet.TryGetValue(c, out var tag))
+                {
+                    sb.Append(tag);
+                    if (c == 0) { sb.Append(plain[c]); continue; }
+                }
+                sb.Append(plain[c]);
+            }
+            descText.text = sb.ToString();
+        }
+    }
+
+    /// <summary>对明文 desc 中 [start,end] 闭区间字符求世界矩形（基于 TMP mesh）。</summary>
+    private (bool ok, Vector2 center, Vector2 size) TryGetSubstringWorldRect(string text, int start, int end)
+    {
+        if (descText == null) return (false, Vector2.zero, Vector2.zero);
+        EnsureDescMesh();
+        descText.ForceMeshUpdate(true, true);
+        var info = descText.textInfo;
+        if (info == null || info.characterInfo == null) return (false, Vector2.zero, Vector2.zero);
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+        bool found = false;
+        for (int ci = 0; ci < info.characterCount; ci++)
+        {
+            var ch = info.characterInfo[ci];
+            if (ch.index < start || ch.index > end) continue;
+            if (!ch.isVisible) continue;
+            Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
+            Vector3 tr = descText.transform.TransformPoint(ch.topRight);
+            Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
+            Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
+            min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+            max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+            found = true;
+        }
+        if (!found) return (false, Vector2.zero, Vector2.zero);
+        return (true, (Vector2)((min + max) * 0.5f), new Vector2(max.x - min.x, max.y - min.y));
+    }
+
     // --- 费用原位高亮 ---
 
     private Image _costHighlight;
