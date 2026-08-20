@@ -185,6 +185,19 @@ public class BattleManager : MonoBehaviour
     public event Action OnPlayerTurnEnded;
     public event Action OnCharacterSwitched;
 
+    /// <summary>
+    /// 敌人受伤前修正事件（伤害倍率结算后、护甲结算前调用）。
+    /// 参数：(敌人实例, 当前伤害)，返回修正后的伤害。
+    /// 供敌人能力效果（EnemyConfig.abilities）使用，如"每回合首次被命中+25%额外伤害"。
+    /// </summary>
+    public event Func<EnemyInstance, int, int> OnEnemyDamageModify;
+
+    /// <summary>
+    /// 敌人死亡事件（HandleEnemyFatalDamage 标记 IsDead 后广播）。
+    /// 供敌人能力效果（EnemyConfig.abilities）使用，如"该敌人死亡时玩家理智-1"。
+    /// </summary>
+    public event Action<EnemyInstance> OnEnemyDied;
+
     // === CardEntry 效果系统支持 ===
     private EffectExecutorV2 _effectExecutorV2;
     private TriggerSystem _triggerSystem;
@@ -322,6 +335,44 @@ public class BattleManager : MonoBehaviour
     private EnemyInstance GetEnemy(int slotIndex)
         => (slotIndex >= 0 && slotIndex < _enemies.Count) ? _enemies[slotIndex] : null;
 
+    /// <summary>
+    /// 按敌人名（EnemyConfig.enemyName）在场上的存活敌人中查找实例。
+    /// excludeSlot：需要排除的槽位（-1 = 不排除）；取首个匹配且非排除的存活敌人。
+    /// 供敌人能力效果（如伤害共担）定位目标，找不到返回 null。
+    /// </summary>
+    public EnemyInstance FindAliveEnemyByName(string enemyName, int excludeSlot = -1)
+    {
+        if (string.IsNullOrEmpty(enemyName)) return null;
+        for (int i = 0; i < _enemies.Count; i++)
+        {
+            if (i == excludeSlot) continue;
+            var e = _enemies[i];
+            if (e == null || e.IsDead) continue;
+            if (e.Config != null && e.Config.enemyName == enemyName)
+                return e;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 按 EnemyConfig 资产引用在场上的存活敌人中查找实例。
+    /// excludeSlot：需要排除的槽位（-1 = 不排除）；取首个 Config 等于指定 Config 的存活敌人。
+    /// 敌人能力效果（DamageTransferEffect）按资产引用精确定位目标，比按 enemyName 字符串匹配更可靠。
+    /// </summary>
+    public EnemyInstance FindAliveEnemyByConfig(EnemyConfig config, int excludeSlot = -1)
+    {
+        if (config == null) return null;
+        for (int i = 0; i < _enemies.Count; i++)
+        {
+            if (i == excludeSlot) continue;
+            var e = _enemies[i];
+            if (e == null || e.IsDead) continue;
+            if (e.Config == config)
+                return e;
+        }
+        return null;
+    }
+
     /// <summary>局外（ChapterManager）在进入战斗前指定的出战敌人列表（含位置与行动顺序值）。
     /// 为空则回退到 Inspector 的默认 defaultEnemies。</summary>
     public List<EnemySpawnInfo> StartEnemies { get; set; }
@@ -394,6 +445,9 @@ public class BattleManager : MonoBehaviour
         inst.IsDead = true;
         Debug.Log($"[BattleManager] {inst.Name}（槽位{inst.SlotIndex}）被击败");
         inst.View?.Hide();
+
+        // 敌人能力：死亡事件（如"该敌人死亡时玩家理智-1"）
+        OnEnemyDied?.Invoke(inst);
     }
 
     public void HealPlayer(int amount) => _playerHP = Mathf.Min(playerMaxHP, _playerHP + amount);
@@ -1296,6 +1350,9 @@ public class BattleManager : MonoBehaviour
         // 遗物效果：战斗开始钩子（枪械师热度系统在此重置/启动）
         RelicEffectManager.Instance?.NotifyBattleStart(this);
 
+        // 敌人能力效果：扫描所有敌人的 abilities，按 RelicData 去重反射实例化并启动
+        InitEnemyAbilityEffects();
+
         DrawCards(drawPerTurn);
 
         UpdateCharacterSwitchUI();
@@ -1704,6 +1761,16 @@ public class BattleManager : MonoBehaviour
         damage = Mathf.RoundToInt(damage * mult);
         int armorBreakScaled = Mathf.RoundToInt(Mathf.Max(0, armorBreak) * mult);
 
+        // 敌人能力：受伤前修正（倍率之后、护甲之前；如"每回合首次被命中+25%"）
+        if (OnEnemyDamageModify != null)
+        {
+            foreach (Func<EnemyInstance, int, int> modify in OnEnemyDamageModify.GetInvocationList())
+            {
+                try { damage = modify(inst, damage); }
+                catch (Exception ex) { Debug.LogError($"[BattleManager] OnEnemyDamageModify 监听者抛出异常: {ex}"); }
+            }
+        }
+
         return inst.TakeDamage(damage, ignoreArmor, armorBreakScaled);
     }
 
@@ -1715,6 +1782,124 @@ public class BattleManager : MonoBehaviour
         e.AddArmor(amount);
         e.View?.Refresh();
         UpdateUI();
+    }
+
+    // ========================================================================
+    // 敌人能力效果（EnemyConfig.abilities → RelicData.effectScriptName 反射实例化）
+    // 与玩家遗物（RelicEffectManager）平行的战斗内生命周期：StartBattle 启动 / EndBattle 清理。
+    // ========================================================================
+
+    /// <summary>已实例化的敌人能力效果（按 RelicData 去重；效果内部自行管理多个宿主敌人）。</summary>
+    private readonly List<EnemyAbilityEffectEntry> _enemyAbilityEffects = new List<EnemyAbilityEffectEntry>();
+
+    private class EnemyAbilityEffectEntry
+    {
+        public LightMiniGame.Shop.RelicData relic;
+        public IRelicEffect effect;
+    }
+
+    /// <summary>扫描所有敌人的能力表，按 RelicData 去重实例化效果并调用 OnBattleStart。</summary>
+    private void InitEnemyAbilityEffects()
+    {
+        ShutdownEnemyAbilityEffects(victory: false);   // 清理上一场残留
+
+        var seen = new HashSet<LightMiniGame.Shop.RelicData>();
+        foreach (var e in _enemies)
+        {
+            var abilities = e?.Config?.abilities;
+            if (abilities == null) continue;
+
+            foreach (var ab in abilities)
+            {
+                var relic = ab?.relic;
+                if (relic == null || !seen.Add(relic)) continue;
+
+                var effect = InstantiateEnemyAbilityEffect(relic);
+                if (effect == null) continue;
+                _enemyAbilityEffects.Add(new EnemyAbilityEffectEntry { relic = relic, effect = effect });
+            }
+        }
+
+        if (_enemyAbilityEffects.Count == 0) return;
+
+        var chapter = GetChapterManager();
+        foreach (var entry in _enemyAbilityEffects)
+        {
+            try
+            {
+                entry.effect.OnBattleStart(new RelicEffectContext
+                {
+                    owner = null,   // 敌人能力无角色归属
+                    relic = entry.relic,
+                    battle = this,
+                    chapter = chapter,
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[BattleManager] 敌人能力 '{entry.relic.name}' 的 OnBattleStart 抛出异常: {ex}");
+            }
+        }
+        Debug.Log($"[BattleManager] 敌人能力效果已启动：{_enemyAbilityEffects.Count} 个");
+    }
+
+    /// <summary>战斗结束：对所有敌人能力效果调用 OnBattleEnd 并清空列表。</summary>
+    private void ShutdownEnemyAbilityEffects(bool victory)
+    {
+        if (_enemyAbilityEffects.Count == 0) return;
+
+        var chapter = GetChapterManager();
+        foreach (var entry in _enemyAbilityEffects)
+        {
+            try
+            {
+                entry.effect.OnBattleEnd(new RelicEffectContext
+                {
+                    owner = null,
+                    relic = entry.relic,
+                    battle = this,
+                    chapter = chapter,
+                }, victory);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[BattleManager] 敌人能力 '{entry.relic.name}' 的 OnBattleEnd 抛出异常: {ex}");
+            }
+        }
+        _enemyAbilityEffects.Clear();
+    }
+
+    /// <summary>按 RelicData.effectScriptName 反射实例化敌人能力效果（与 RelicEffectManager 同一套规则）。</summary>
+    private static IRelicEffect InstantiateEnemyAbilityEffect(LightMiniGame.Shop.RelicData relic)
+    {
+        if (string.IsNullOrEmpty(relic.effectScriptName))
+        {
+            Debug.LogWarning($"[BattleManager] 敌人能力 '{relic.relicName}' 未配置效果脚本（effectScriptName 为空），仅作展示");
+            return null;
+        }
+
+        var type = Type.GetType(relic.effectScriptName);
+        if (type == null)
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                type = asm.GetType(relic.effectScriptName);
+                if (type != null) break;
+            }
+        }
+
+        if (type == null || !typeof(IRelicEffect).IsAssignableFrom(type))
+        {
+            Debug.LogError($"[BattleManager] 敌人能力 '{relic.relicName}' 的效果类 '{relic.effectScriptName}' 不存在或未实现 IRelicEffect");
+            return null;
+        }
+
+        try { return Activator.CreateInstance(type) as IRelicEffect; }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[BattleManager] 敌人能力 '{relic.relicName}' 的效果类实例化失败（需要无参构造）: {ex}");
+            return null;
+        }
     }
 
     /// <summary>
@@ -2554,6 +2739,9 @@ public class BattleManager : MonoBehaviour
 
         // 遗物效果：战斗结束钩子（枪械师热度系统在此清理）
         RelicEffectManager.Instance?.NotifyBattleEnd(this, victory);
+
+        // 敌人能力效果：战斗结束钩子并清理
+        ShutdownEnemyAbilityEffects(victory);
 
         if (_enemyTurnRoutine != null) { StopCoroutine(_enemyTurnRoutine); _enemyTurnRoutine = null; }
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }
