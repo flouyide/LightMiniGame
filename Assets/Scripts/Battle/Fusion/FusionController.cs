@@ -34,6 +34,12 @@ public class FusionController : MonoBehaviour
 
     private bool PanelActive => _panelRoot != null;
 
+    /// <summary>融合面板是否激活（供 BattleManager 融合期间拦截出牌等）。</summary>
+    public bool IsPanelActive => PanelActive;
+
+    /// <summary>融合是否激活（静态，供 HandCardLayout 等禁用手牌 hover 放大避免块与点击错位）。</summary>
+    public static bool IsFusionActive;
+
     private void OnDestroy()
     {
         if (_entryButtonGO != null) Destroy(_entryButtonGO);
@@ -134,6 +140,7 @@ public class FusionController : MonoBehaviour
         // 立即扣 4 理智（代价而非条件，不足也可进，clamp≥0）
         _battle.DeductSanityAsCost(SanityCost);
 
+        IsFusionActive = true;
         _candidates = CollectCandidates();
         _selected.Clear();
         BuildPanel();
@@ -309,13 +316,10 @@ public class FusionController : MonoBehaviour
         rootRT.offsetMin = Vector2.zero;
         rootRT.offsetMax = Vector2.zero;
 
-        // 暗色蒙层
+        // 暗色蒙层（不拦截指针：让敌人意图卡可 hover 放大；融合期间的出牌等交互由 BattleManager 依据 IsPanelActive 拦截）
         var maskImg = _panelRoot.AddComponent<Image>();
         maskImg.color = new Color(0f, 0f, 0f, 0.6f);
-        var blocker = _panelRoot.AddComponent<Button>();
-        blocker.transition = Selectable.Transition.None;
-        blocker.image = maskImg;
-        blocker.image.raycastTarget = true;
+        maskImg.raycastTarget = false;
 
         // 顶部状态
         _statusText = CreateText(_panelRoot.transform, "StatusText", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
@@ -339,30 +343,33 @@ public class FusionController : MonoBehaviour
         UpdateStatus();
     }
 
-    /// <summary>为每个候选在原位生成一个半透明高亮片（蒙层之上，不遮字，可点击）。</summary>
+    /// <summary>为每个候选生成高亮：卡牌类（手牌/敌人意图卡）→ 卡内数字着色+透明命中层（随卡缩放、可点）；
+    /// 非卡数值（能量/血量/货币等）→ 蒙层上原位高亮块。</summary>
     private void BuildHighlights()
     {
+        // —— 卡牌类候选（手牌 + 敌人意图卡）：卡内数字变紫/红 + 透明命中层 ——
+        BuildCardHighlights();
+
+        // —— 非卡数值（能量/护甲/货币/血量/敌人通用）：蒙层上高亮块 ——
         var panelRT = _panelRoot.transform as RectTransform;
         if (panelRT == null) return;
-        // 用面板所属 Canvas 的真实 worldCamera（World Space / ScreenSpaceCamera 时必须有相机，Overlay 为 null）
         var rootCanvas = _panelRoot.GetComponentInParent<Canvas>()?.rootCanvas;
         Camera cam = rootCanvas != null ? rootCanvas.worldCamera : null;
 
         for (int i = 0; i < _candidates.Count; i++)
         {
             var fv = _candidates[i];
+            if (fv.cardView != null) continue;   // 卡内已处理（含费用）
             var (center, size) = ResolveCandidateLayout(fv);
             var go = new GameObject($"FusionHL_{i}");
             go.transform.SetParent(_panelRoot.transform, false);
             var rt = go.AddComponent<RectTransform>();
             Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, center);
             Vector2 local;
-            // 屏幕→面板局部（Overlay 用 null，World 用相机，取决于 Canvas renderMode）
             bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(panelRT, screen, rootCanvas != null && rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cam, out local);
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = ok ? local : new Vector2(120, 140);
-            // 半透明深紫高亮片：贴合数字（限最大尺寸，避免整槽/整卡被盖），不遮字、可点
             float w = Mathf.Clamp(size.x + 10f, 30f, 72f);
             float h = Mathf.Clamp(size.y + 6f, 24f, 48f);
             rt.sizeDelta = new Vector2(w, h);
@@ -372,11 +379,10 @@ public class FusionController : MonoBehaviour
             var btn = go.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.interactable = !fv.lockedBySanity;
-            int capturedIndex = i;   // 闭包绑定当前迭代索引（避免循环变量捕获错误）
+            int capturedIndex = i;   // 闭包绑定当前迭代索引
             btn.onClick.AddListener(() => OnHighlightClick(capturedIndex));
             ApplyHighlightColor(img, fv);
 
-            // 高亮片内显示当前数值（白色加粗带阴影，数字明显；血量上限加"上"前缀区分）
             var numGo = new GameObject("Num");
             numGo.transform.SetParent(go.transform, false);
             var numRT = numGo.AddComponent<RectTransform>();
@@ -394,6 +400,68 @@ public class FusionController : MonoBehaviour
             num.raycastTarget = false;
 
             _highlights.Add(go);
+        }
+    }
+
+    /// <summary>敌人意图卡候选判断（id 含 enemy: 且 :ideck:）。</summary>
+    /// <summary>
+    /// 卡牌类（手牌+敌卡）：描述数字变紫/红（卡内着色）+ 透明命中层（随卡缩放可点）；费用同理。
+    /// </summary>
+    private void BuildCardHighlights()
+    {
+        // 按卡分组：卡 → 候选索引序列（描述数字；费用候选后面单独）
+        var byCard = new Dictionary<CardDisplay, List<int>>();
+        for (int i = 0; i < _candidates.Count; i++)
+        {
+            var fv = _candidates[i];
+            if (fv.cardView == null) continue;
+            if (fv.id.EndsWith(":cost")) continue;   // 费用候选走 SetCostHighlight
+            if (!byCard.TryGetValue(fv.cardView, out var list))
+            {
+                list = new List<int>();
+                byCard[fv.cardView] = list;
+            }
+            list.Add(i);
+        }
+        foreach (var kv in byCard)
+        {
+            var cardView = kv.Key;
+            var candIdxList = kv.Value;
+            // 该卡全部数字 token（值+精确位置），按候选顺序为每个候选分配一个“值匹配且未占用”的 token
+            var allTokens = cardView.EnumerateNumberTokens();
+            var used = new bool[allTokens.Count];
+            var tokens = new List<(int value, Vector2 center, Vector2 size)>();
+            var tokenToCand = new List<int>();   // tokens[i] 对应的候选全局索引
+            foreach (int candIdx in candIdxList)
+            {
+                int want = _candidates[candIdx].current;
+                int pick = -1;
+                for (int t = 0; t < allTokens.Count; t++)
+                {
+                    if (used[t] || allTokens[t].value != want) continue;
+                    pick = t; break;
+                }
+                if (pick < 0) continue;   // 描述里没有匹配数字，跳过该候选
+                used[pick] = true;
+                tokens.Add(allTokens[pick]);
+                tokenToCand.Add(candIdx);
+            }
+            if (tokens.Count == 0) continue;
+            cardView.SetTokenHighlights(tokens,
+                idx => tokenToCand[idx] >= 0 && _selected.Contains(_candidates[tokenToCand[idx]]),
+                idx => { if (idx >= 0 && idx < tokenToCand.Count) OnHighlightClick(tokenToCand[idx]); },
+                true);
+        }
+        // 费用候选：卡内费用高亮 + 点击切换选中
+        for (int i = 0; i < _candidates.Count; i++)
+        {
+            var fv = _candidates[i];
+            if (fv.cardView == null) continue;
+            if (fv.id.EndsWith(":cost"))
+            {
+                int captured = i;
+                fv.cardView.SetCostHighlight(_selected.Contains(fv), () => OnHighlightClick(captured));
+            }
         }
     }
 
@@ -509,6 +577,8 @@ public class FusionController : MonoBehaviour
             Image img = _highlights[i]?.GetComponent<Image>();
             if (img != null) ApplyHighlightColor(img, _candidates[i]);
         }
+        // 卡牌类卡内高亮（数字着色+透明层）随选中态刷新
+        BuildCardHighlights();
     }
 
     private void UpdateStatus()
@@ -625,6 +695,10 @@ public class FusionController : MonoBehaviour
 
     private void ExitFusion()
     {
+        IsFusionActive = false;
+        // 清除所有手牌/意图卡内的数字/费用高亮
+        foreach (var c in _candidates)
+            if (c.cardView != null) c.cardView.ClearHighlights();
         if (_panelRoot != null) Destroy(_panelRoot);
         _panelRoot = null;
         _highlights.Clear();

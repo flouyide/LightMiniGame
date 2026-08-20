@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using LightMiniGame.CardEditor;
 
 /// <summary>
@@ -157,7 +158,12 @@ public class EnemyView : MonoBehaviour
 
         if (nameText != null) nameText.text = _inst.Name;
         if (hpText != null) hpText.text = $"{_inst.HP}/{_inst.MaxHP}";
-        if (hpBar != null) hpBar.value = _inst.MaxHP > 0 ? Mathf.Clamp01((float)_inst.HP / _inst.MaxHP) : 0f;
+        // 血条 slider：分值式（max=当前血量上限，value=当前血量），血量/上限变化都直接反映
+        if (hpBar != null)
+        {
+            hpBar.maxValue = Mathf.Max(1, _inst.MaxHP);
+            hpBar.value = Mathf.Clamp(_inst.HP, 0, hpBar.maxValue);
+        }
         if (armorText != null) armorText.text = _inst.Armor > 0 ? $"护甲: {_inst.Armor}" : "";
 
         if (portraitImage != null && cfg != null)
@@ -169,10 +175,12 @@ public class EnemyView : MonoBehaviour
         }
     }
 
-    /// <summary>设置意图文本（玩家回合预览下个技能名；敌人回合由 BattleManager 控制）</summary>
+    /// <summary>设置意图文本（已弃用：敌人意图条不再显示，改由出牌牌库预览代替）。</summary>
     public void SetIntent(string text)
     {
-        if (intentText != null) intentText.text = text ?? "";
+        // 意图文字条已移除：保留方法签名以兼容调用方，但不再显示
+        if (intentText != null && intentText.gameObject.activeSelf)
+            intentText.text = "";
     }
 
     /// <summary>注入玩家同款卡面预制体（出牌牌库预览用），由 BattleManager 生成敌人时调用。</summary>
@@ -242,11 +250,12 @@ public class EnemyView : MonoBehaviour
             var display = cardGo.GetComponent<CardDisplay>();
             if (display != null) display.ApplyCardEntry(entry, lowSanity);
 
-            // 禁用交互仅展示
+            // 禁用交互仅展示（保留悬停放大查看：鼠标移入放大到屏幕中央查看细节）
             var drag = cardGo.GetComponent<CardDragHandler>();
             if (drag != null) drag.enabled = false;
             var hover = cardGo.GetComponent<CardHoverEffect>();
             if (hover != null) hover.enabled = false;
+            cardGo.AddComponent<IntentCardHover>();
 
             var cardRect = cardGo.GetComponent<RectTransform>();
             float w = cardRect != null ? cardRect.rect.width : 148f;
@@ -350,5 +359,35 @@ public class EnemyView : MonoBehaviour
 
         if (text != null) Destroy(text.gameObject);
         _popupRoutine = null;
+    }
+
+    /// <summary>
+    /// 敌人意图牌库小卡的悬停放大查看：
+    /// 鼠标移入时放大并置顶（保持原位，鼠标不脱离卡面 → 不触发 Exit 频闪），移出后恢复。
+    /// </summary>
+    private class IntentCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private Vector3 _origScale;
+        private int _origSibling;
+        private const float EnlargeScale = 2.6f;
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            var rt = transform as RectTransform;
+            if (rt == null) return;
+            _origSibling = transform.GetSiblingIndex();
+            _origScale = transform.localScale;
+
+            transform.SetAsLastSibling();   // 同级内置顶
+            transform.localScale = _origScale * EnlargeScale;   // 原位放大，鼠标仍在卡上
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            var rt = transform as RectTransform;
+            if (rt == null) return;
+            transform.SetSiblingIndex(_origSibling);
+            transform.localScale = _origScale;
+        }
     }
 }

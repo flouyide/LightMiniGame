@@ -1,7 +1,19 @@
 {
   "dependencies": {
+    "cn.tuanjie.ai.generators": {
+      "version": "file:../.codely-cli/extensions/TJGenerators/Packages/cn.tuanjie.ai.generators",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "cn.tuanjie.codely.bridge": "1.0.69",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.video": "1.0.0",
+        "com.unity.editorcoroutines": "1.0.1"
+      }
+    },
     "cn.tuanjie.codely.bridge": {
-      "version": "1.0.73",
+      "version": "1.0.75",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -133,6 +145,13 @@
       },
       "url": "https://packages.tuanjie.cn"
     },
+    "com.unity.editorcoroutines": {
+      "version": "1.0.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.tuanjie.cn"
+    },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
       "depth": 1,
@@ -162,6 +181,13 @@
       "dependencies": {
         "com.unity.ext.nunit": "1.0.6"
       },
+      "url": "https://packages.tuanjie.cn"
+    },
+    "com.unity.ide.vscode": {
+      "version": "1.2.5",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.tuanjie.cn"
     },
     "com.unity.mathematics": {

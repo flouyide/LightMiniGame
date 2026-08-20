@@ -119,3 +119,8 @@ InitTestScene*.unity*
 
 # 开发调试截图（临时产物，不入库）
 /[Ss]creenshots/
+.vscode/settings.json
+Assets/ScriptableObjects/Cards/tes.asset
+Assets/ScriptableObjects/Cards/test.asset
+Packages/manifest.json
+Packages/packages-lock.json

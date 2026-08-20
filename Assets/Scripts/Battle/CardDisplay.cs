@@ -531,13 +531,12 @@ public class CardDisplay : MonoBehaviour
     // ========================================================================
 
     private readonly List<Image> _numberHighlights = new();   // 复用矩形 Image
+    private string _plainDescText;   // 融合着色前的原始描述文本（恢复用）
 
-    /// <summary>
-    /// 设置需要高亮的卡牌数字（融合时调用）。每个数字对应描述文本中该数值的字符矩形，
-    /// 在文本底下（descText 的前兄弟节点）生成半透明高亮片，数字透在其上，位于原位。
-    /// </summary>
     /// <param name="isSelected">可选回调：给定 values 内的索引 i，返回该数字槽位是否已被选中（高亮加深）。</param>
-    public void SetNumberHighlights(List<int> values, bool clearExisting = true, System.Func<int, bool> isSelected = null)
+    /// <param name="onNumberClicked">可选回调：点击该数字槽位时触发（融合切换选中）；不传则不响应点击。</param>
+    public void SetNumberHighlights(List<int> values, bool clearExisting = true,
+        System.Func<int, bool> isSelected = null, System.Action<int> onNumberClicked = null)
     {
         if (clearExisting) ClearNumberHighlights();
         if (values == null || values.Count == 0 || descText == null) return;
@@ -563,14 +562,31 @@ public class CardDisplay : MonoBehaviour
             rt.sizeDelta = new Vector2(sizes[i].x / scale, sizes[i].y / scale);
             bool sel = isSelected != null && isSelected(i);
             bool fused = LiveFusion != null && LiveFusion.HasAny;
-            //  高亮：选中→红色实底；已融合→更实；否则淡金色衬底
+            //  高亮：选中→红色实底；否则紫色衬底（与融合面板高亮一致）
             img.color = sel
                 ? new Color(0.9f, 0.2f, 0.2f, 0.85f)
                 : fused
-                    ? new Color(0.95f, 0.72f, 0.30f, 0.85f)
-                    : new Color(0.95f, 0.85f, 0.35f, 0.30f);
-            img.raycastTarget = false;
+                    ? new Color(0.62f, 0.35f, 0.85f, 0.7f)
+                    : new Color(0.62f, 0.35f, 0.85f, 0.45f);
+            img.raycastTarget = onNumberClicked != null;
             img.gameObject.SetActive(true);
+
+            // 点击切换选中（仅融合时传回调）
+            var oldBtn = img.GetComponent<Button>();
+            if (onNumberClicked != null)
+            {
+                if (oldBtn == null)
+                {
+                    var btn = img.gameObject.AddComponent<Button>();
+                    btn.transition = Selectable.Transition.None;
+                    int captured = i;
+                    btn.onClick.AddListener(() => onNumberClicked(captured));
+                }
+            }
+            else if (oldBtn != null)
+            {
+                Object.Destroy(oldBtn);
+            }
         }
     }
 
@@ -581,7 +597,7 @@ public class CardDisplay : MonoBehaviour
 
         var go = new GameObject($"NumberHighlight_{index}");
         if (descText != null)
-            go.transform.SetParent(descText.transform.parent, false);   // 与描述文本同父
+            go.transform.SetParent(descText.transform.parent, false);   // 与描述文本同父（随卡缩放）
         else
             go.transform.SetParent(transform, false);
         var rt = go.AddComponent<RectTransform>();
@@ -591,6 +607,10 @@ public class CardDisplay : MonoBehaviour
         //  关键：插到 descText 前面，让它在文字底下渲染
         if (descText != null)
             go.transform.SetSiblingIndex(descText.transform.GetSiblingIndex());
+        //  浮于融合蒙层之上（卡内为普通层，蒙层在 Canvas 更高层；用 sortingOrder 保证可见）
+        var cv = go.AddComponent<Canvas>();
+        cv.overrideSorting = true;
+        cv.sortingOrder = 600;
         _numberHighlights.Add(img);
         return img;
     }
@@ -601,6 +621,7 @@ public class CardDisplay : MonoBehaviour
             if (img != null && img.gameObject != null)
                 Destroy(img.gameObject);
         _numberHighlights.Clear();
+        RestorePlainDesc();   // 恢复原始描述文本（去掉着色富文本）
     }
 
     /// <summary>清除本卡所有原位数字高亮（融合退出时调用）。</summary>
@@ -608,14 +629,16 @@ public class CardDisplay : MonoBehaviour
     {
         ClearNumberHighlights();
         ClearCostHighlight();
+        RestorePlainDesc();
     }
 
     // --- 费用原位高亮 ---
 
     private Image _costHighlight;
 
-    /// <summary>在费用文字（costText）底下生成原位高亮片（不遮字）。融合时调用。</summary>
-    public void SetCostHighlight(bool selected)
+    /// <summary>在费用文字（costText）底下生成原位高亮片（不遮字）。融合时调用。
+    /// onClick 提供时可点击切换选中（融合中费用候选）。</summary>
+    public void SetCostHighlight(bool selected, System.Action onClick = null)
     {
         if (costText == null) return;
         if (_costHighlight == null)
@@ -625,6 +648,10 @@ public class CardDisplay : MonoBehaviour
             _costHighlight = go.AddComponent<Image>();
             _costHighlight.raycastTarget = false;
             go.transform.SetSiblingIndex(costText.transform.GetSiblingIndex());
+            // 浮于融合蒙层之上
+            var cv = go.AddComponent<Canvas>();
+            cv.overrideSorting = true;
+            cv.sortingOrder = 600;
         }
 
         var rt = _costHighlight.GetComponent<RectTransform>();
@@ -635,10 +662,31 @@ public class CardDisplay : MonoBehaviour
         rt.pivot = costRT.pivot;
         rt.anchoredPosition = costRT.anchoredPosition;
         rt.sizeDelta = costRT.rect.size + new Vector2(10f, 6f);
-        _costHighlight.color = selected
-            ? new Color(0.9f, 0.2f, 0.2f, 0.85f)
-            : new Color(0.95f, 0.85f, 0.35f, 0.30f);
+        // 透明命中层：视觉交给 costText 数字着色
+        _costHighlight.color = new Color(1f, 1f, 1f, 0f);
+        _costHighlight.raycastTarget = onClick != null;
+        // costText 数字配色：未选紫/选中红
+        int costVal = GetDisplayCost();
+        costText.text = selected
+            ? $"<color=#E33>{costVal}</color>"
+            : $"<color=#9B5FE0>{costVal}</color>";
         _costHighlight.gameObject.SetActive(true);
+
+        // 点击切换选中（融合中费用候选）
+        var oldCostBtn = _costHighlight.GetComponent<Button>();
+        if (onClick != null)
+        {
+            if (oldCostBtn == null)
+            {
+                var btn = _costHighlight.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                btn.onClick.AddListener(() => onClick());
+            }
+        }
+        else if (oldCostBtn != null)
+        {
+            Destroy(oldCostBtn);
+        }
     }
 
     private void ClearCostHighlight()
@@ -646,6 +694,9 @@ public class CardDisplay : MonoBehaviour
         if (_costHighlight != null && _costHighlight.gameObject != null)
             Destroy(_costHighlight.gameObject);
         _costHighlight = null;
+        // 恢复费用文字（去富文本着色）
+        if (costText != null && costText.text.Contains("<color="))
+            costText.text = GetDisplayCost().ToString();
     }
 
     /// <summary>返回费用文本的 RectTransform（供融合点击层定位）。</summary>
@@ -657,6 +708,127 @@ public class CardDisplay : MonoBehaviour
         var f = LiveFusion;
         if (f != null && f.overrideCost) return f.cost;
         return actionPointCost;
+    }
+
+    /// <summary>
+    /// 逐 token 生成卡内高亮（每个候选一个精确位置），并各自绑定选中态/点击回调。
+    /// 视觉：描述里的对应数字变紫（未选）/红（选中）；透明命中层随卡缩放可点击。
+    /// </summary>
+    public void SetTokenHighlights(List<(int value, Vector2 center, Vector2 size)> tokens,
+        System.Func<int, bool> isSelected = null, System.Action<int> onClicked = null, bool clearExisting = true)
+    {
+        if (clearExisting) ClearNumberHighlights();
+        if (tokens == null || tokens.Count == 0 || descText == null) return;
+
+        // 1) 缓存当前描述（原始无富文本），供着色重建
+        if (_plainDescText == null) _plainDescText = descText.text;
+        string baseText = _plainDescText;
+
+        // 2) 解析 baseText 所有整数 token（按文档顺序），第 i 个候选对应“值匹配且未占用”的 token 下标
+        var allTok = ParseNumberTokens(baseText);
+        var used = new bool[allTok.Count];
+        // tokenIndex → (red)
+        var colorByToken = new Dictionary<int, bool>();
+
+        RectTransform descParent = descText.transform.parent as RectTransform;
+        if (descParent == null) return;
+
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            if (tokens[i].size == Vector2.zero) continue;
+            int pick = -1;
+            for (int t = 0; t < allTok.Count; t++)
+            {
+                if (used[t] || allTok[t].value != tokens[i].value) continue;
+                pick = t; break;
+            }
+            if (pick < 0) continue;
+            used[pick] = true;
+            bool red = isSelected != null && isSelected(i);
+            colorByToken[pick] = red;
+
+            // 2) 透明命中层（随卡缩放可点击）
+            var img = GetOrCreateNumberHighlight(i);
+            var rt = img.GetComponent<RectTransform>();
+            Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, tokens[i].center);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(descParent, screen, null, out Vector2 local))
+                continue;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = local;
+            float scale = descParent.lossyScale.x != 0 ? descParent.lossyScale.x : 1f;
+            rt.sizeDelta = new Vector2(tokens[i].size.x / scale, tokens[i].size.y / scale);
+            img.color = new Color(1f, 1f, 1f, 0f);   // 透明：视觉由数字文字着色承担
+            img.raycastTarget = onClicked != null;
+            img.gameObject.SetActive(true);
+
+            var oldBtn = img.GetComponent<Button>();
+            if (onClicked != null)
+            {
+                if (oldBtn == null)
+                {
+                    var btn = img.gameObject.AddComponent<Button>();
+                    btn.transition = Selectable.Transition.None;
+                    int captured = i;
+                    btn.onClick.AddListener(() => onClicked(captured));
+                }
+            }
+            else if (oldBtn != null)
+            {
+                Object.Destroy(oldBtn);
+            }
+        }
+
+        // 3) 重建 descText：对标记 token 包 <color> 富文本（红/紫），其余保持原文
+        if (colorByToken.Count > 0)
+        {
+            var sb = new System.Text.StringBuilder();
+            int cursor = 0;
+            for (int t = 0; t < allTok.Count; t++)
+            {
+                sb.Append(baseText, cursor, allTok[t].start - cursor);
+                if (colorByToken.TryGetValue(t, out bool red))
+                {
+                    string val = baseText.Substring(allTok[t].start, allTok[t].end - allTok[t].start + 1);
+                    sb.Append(red ? "<color=#E33> " : "<color=#9B5FE0> ");
+                    sb.Append(val + "</color>");
+                }
+                else
+                {
+                    sb.Append(baseText, allTok[t].start, allTok[t].end - allTok[t].start + 1);
+                }
+                cursor = allTok[t].end + 1;
+            }
+            if (cursor < baseText.Length) sb.Append(baseText, cursor, baseText.Length - cursor);
+            descText.text = sb.ToString();
+        }
+    }
+
+    /// <summary>解析纯文本中的数字 token（含负号），按顺序返回（start/end 为闭区间字符下标）。</summary>
+    private static List<(int value, int start, int end)> ParseNumberTokens(string text)
+    {
+        var list = new List<(int, int, int)>();
+        if (string.IsNullOrEmpty(text)) return list;
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (!char.IsDigit(text[i])) continue;
+            int s = i;
+            if (i > 0 && text[i - 1] == '-') s = i - 1;
+            int e = i;
+            while (e + 1 < text.Length && char.IsDigit(text[e + 1])) e++;
+            if (int.TryParse(text.Substring(s, e - s + 1), out int v))
+                list.Add((v, s, e));
+            i = e;
+        }
+        return list;
+    }
+
+    /// <summary>清除数字着色，恢复原始描述文本。</summary>
+    private void RestorePlainDesc()
+    {
+        if (_plainDescText != null && descText != null && descText.text != _plainDescText)
+            descText.text = _plainDescText;
+        _plainDescText = null;
     }
 
     /// <summary>

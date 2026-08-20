@@ -22,89 +22,12 @@ MonoBehaviour:
   grade: 1
   cardType: 0
   existence: 0
+  lowSanityExistence: 0
   normalCost: 2
   lowSanityCost: 2
   price: 10
   keyword: 0
   hasLowSanityForm: 1
-  normalEffects:
-  - enabled: 1
-    effectName: "\u72D9\u51FB\u4F24\u5BB3"
-    effectType: 0
-    source: 0
-    target: 1
-    value:
-      formulaType: 0
-      baseValue: 16
-      attributeRef: 0
-      coefficient: 1
-      counterRef: 0
-    times: 1
-    conditions:
-    - conditionType: 7
-      attributeRef: 0
-      comparison: 3
-      compareValue: 15
-      eventName: 
-      statusType: 0
-      customConditionScript: {fileID: 11400000, guid: 5b729929bac35443f9959511a2539644, type: 2}
-    conditionLogic: 0
-    timing: 0
-    duration: 0
-    durationValue: 1
-    alwaysCrit: 0
-    ignoreArmor: 0
-    applyArmorBreak: 0
-    armorBreakAmount: 0
-    buffTarget: 0
-    modAttribute: 0
-    modifyMethod: 0
-    statusType: 0
-    statusStacks: 1
-    stackable: 1
-    handCostTarget: 0
-    costChange: 0
-    customEffectScript: {fileID: 0}
-    customParams: 
-  lowSanityEffects:
-  - enabled: 1
-    effectName: "\u72D9\u51FB\u4F24\u5BB3"
-    effectType: 0
-    source: 0
-    target: 1
-    value:
-      formulaType: 0
-      baseValue: 22
-      attributeRef: 0
-      coefficient: 1
-      counterRef: 0
-    times: 1
-    conditions:
-    - conditionType: 7
-      attributeRef: 0
-      comparison: 3
-      compareValue: 15
-      eventName: 
-      statusType: 0
-      customConditionScript: {fileID: 11400000, guid: 5b729929bac35443f9959511a2539644, type: 2}
-    conditionLogic: 0
-    timing: 0
-    duration: 0
-    durationValue: 1
-    alwaysCrit: 0
-    ignoreArmor: 0
-    applyArmorBreak: 0
-    armorBreakAmount: 0
-    buffTarget: 0
-    modAttribute: 0
-    modifyMethod: 0
-    statusType: 0
-    statusStacks: 1
-    stackable: 1
-    handCostTarget: 0
-    costChange: 0
-    customEffectScript: {fileID: 0}
-    customParams: 
   normalEffectNodes:
   - enabled: 1
     displayName: "\u72D9\u51FB\u4F24\u5BB3"
@@ -291,26 +214,6 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
-  normalAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
-  lowSanityAbility:
-    abilityName: 
-    abilityDescription: 
-    trigger: 0
-    triggerConditions: []
-    triggerConditionLogic: 0
-    maxTriggers: 0
-    maxTriggersPerTurn: 0
-    triggeredEffects: []
-    customAbilityScript: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: "\u70ED\u5EA6(Heat)\u4E3A\u81EA\u5B9A\u4E49\u5C5E\u6027\uFF0C\u9700\u6218\u6597\u7CFB\u7EDF\u5B9E\u73B0\u3002\u6761\u4EF6\u53EF\u901A\u8FC7\u81EA\u5B9A\u4E49\u6761\u4EF6\u811A\u672C\u5B9E\u73B0\u3002"
   references:
