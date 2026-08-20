@@ -14,8 +14,7 @@ public class EnemyConfigEditor : Editor
     {
         // —— 基础信息 ——
         { "enemyName",       "敌人名称" },
-        { "maxHP",           "高理智最大生命值" },
-        { "phase2MaxHP",     "低理智最大生命值" },
+        { "maxHP",           "最大生命值" },
         { "armor",           "初始护甲" },
         { "phase1Portrait",  "高理智立绘" },
         { "phase2Portrait",  "低理智立绘" },

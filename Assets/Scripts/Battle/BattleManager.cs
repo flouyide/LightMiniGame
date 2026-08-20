@@ -386,23 +386,14 @@ public class BattleManager : MonoBehaviour
         CheckBattleEnd();
     }
 
-    /// <summary>敌人 HP≤0 的处理：阶段1且有阶段2 → 转阶段（HP重置，不死亡）；否则标记死亡并隐藏视图</summary>
+    /// <summary>敌人 HP≤0 的处理：直接标记死亡并隐藏视图（阶段切换不重置生命值，血条唯一，无"打穿转阶段"）</summary>
     private void HandleEnemyFatalDamage(EnemyInstance inst)
     {
         if (inst == null || inst.IsDead) return;
 
-        if (inst.Phase == 1 && inst.HasPhase2)
-        {
-            inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold);   // HP≤0 触发转阶段（内部重置 HP/MaxHP/护甲/轮转）
-            inst.View?.Refresh();
-            Debug.Log($"[BattleManager] {inst.Name}（槽位{inst.SlotIndex}）HP打穿，进入阶段2！HP重置为 {inst.HP}/{inst.MaxHP}");
-        }
-        else
-        {
-            inst.IsDead = true;
-            Debug.Log($"[BattleManager] {inst.Name}（槽位{inst.SlotIndex}）被击败");
-            inst.View?.Hide();
-        }
+        inst.IsDead = true;
+        Debug.Log($"[BattleManager] {inst.Name}（槽位{inst.SlotIndex}）被击败");
+        inst.View?.Hide();
     }
 
     public void HealPlayer(int amount) => _playerHP = Mathf.Min(playerMaxHP, _playerHP + amount);
@@ -1832,7 +1823,7 @@ public class BattleManager : MonoBehaviour
             if (e.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 e.View?.Refresh();
-                Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）理智触发阶段切换 → 阶段{e.Phase}，HP重置为 {e.HP}/{e.MaxHP}");
+                Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）理智触发阶段切换 → 阶段{e.Phase}，HP保持 {e.HP}/{e.MaxHP}");
             }
         }
 
@@ -2213,7 +2204,7 @@ public class BattleManager : MonoBehaviour
             var inst = GetEnemy(slot);
             if (inst == null || inst.IsDead) continue;   // 死亡跳过
 
-            // 行动前阶段判定（HP≤0 或理智阈值 → 阶段2；理智恢复 → 阶段1）
+            // 行动前阶段判定（理智阈值 → 阶段2；理智恢复 → 阶段1；生命值不变）
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();

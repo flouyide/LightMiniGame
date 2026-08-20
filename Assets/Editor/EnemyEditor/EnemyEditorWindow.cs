@@ -289,7 +289,6 @@ public class EnemyEditorWindow : EditorWindow
     {
         EditorGUI.indentLevel++;
         SerialProp("maxHP");
-        SerialProp("phase2MaxHP");
         SerialProp("armor");
         SerialProp("strength");
         SerialProp("agility");

@@ -39,7 +39,7 @@ public class EnemyInstance
     public int TurnInCycle;
     /// <summary>锁定的角色索引（-1 = 未锁定；光束扫描类技能用）</summary>
     public int LockedCharIdx = -1;
-    /// <summary>是否已死亡（HP≤0 且无阶段2，或阶段2被打死）</summary>
+    /// <summary>是否已死亡（HP≤0；阶段切换不重置生命值，血条唯一）</summary>
     public bool IsDead;
 
     /// <summary>融合回填：意图伤害覆盖值（-1 表示未覆盖，按当前卡牌效果节点计算）</summary>
@@ -49,8 +49,8 @@ public class EnemyInstance
     public EnemyView View;
 
     public string Name => Config != null ? Config.enemyName : "敌人";
-    /// <summary>是否有阶段2</summary>
-    public bool HasPhase2 => Config != null && Config.phase2MaxHP > 0;
+    /// <summary>是否有阶段2（低理智形态）：配置了低理智牌库即视为有阶段2</summary>
+    public bool HasPhase2 => Config != null && Config.phase2Skills != null && Config.phase2Skills.Count > 0;
 
     /// <summary>当前应使用的技能牌库：低理智时用 phase2Skills（一进低理智即切换），否则按阶段。</summary>
     public List<CardEntry> CurrentSkillPool
@@ -120,10 +120,12 @@ public class EnemyInstance
     }
 
     /// <summary>
-    /// 检查并执行阶段切换。返回是否发生了切换（供 BattleManager 刷视图/记日志）。
-    /// 阶段1 → 阶段2：HP≤0（打穿）或玩家理智 < 全局 sanityThreshold；切换时清空护甲。
-    /// 阶段2 → 阶段1：玩家理智恢复到阈值以上（需配置 phase2MaxHP）。
-    /// 两个方向都会重置技能轮转计数。HP 打穿但无阶段2时不做任何事（死亡由 BattleManager 判定）。
+    /// 检查并执行阶段切换（仅由玩家理智驱动）。返回是否发生了切换（供 BattleManager 刷视图/记日志）。
+    /// 阶段1 → 阶段2：玩家理智 < 全局 sanityThreshold；切换时清空护甲。
+    /// 阶段2 → 阶段1：玩家理智恢复到阈值以上。
+    /// 生命值不变：敌人只有一条血（maxHP），HP/MaxHP 不随阶段切换重置。
+    /// HP≤0 不再触发转阶段（由 BattleManager 直接判定死亡）。
+    /// 两个方向都会重置技能轮转计数。
     /// </summary>
     public bool CheckPhaseSwitch(int playerSanity, int sanityThreshold)
     {
@@ -131,25 +133,21 @@ public class EnemyInstance
 
         bool sanityLow = playerSanity < sanityThreshold;
 
-        // 阶段1→2：阶段1血量打完 或 理智低于阈值
-        if (Phase == 1 && (HP <= 0 || sanityLow))
+        // 阶段1→2：理智低于阈值
+        if (Phase == 1 && sanityLow)
         {
             Phase = 2;
             TurnInCycle = 0;
-            MaxHP = Config.phase2MaxHP > 0 ? Config.phase2MaxHP : MaxHP;
-            HP = MaxHP;
-            Armor = 0;
-            ResetDrawnSkill();   // 切换阶段 → 牌库变化，清空以重新随机
+            Armor = 0;          // 形态切换清空护甲；HP/MaxHP 保持不变
+            ResetDrawnSkill();  // 切换阶段 → 牌库变化，清空以重新随机
             return true;
         }
-        // 阶段2→1：理智恢复且配置了阶段2
-        if (Phase == 2 && !sanityLow && Config.phase2MaxHP > 0)
+        // 阶段2→1：理智恢复
+        if (Phase == 2 && !sanityLow)
         {
             Phase = 1;
             TurnInCycle = 0;
-            MaxHP = Config.maxHP;
-            HP = MaxHP;
-            ResetDrawnSkill();   // 切换阶段 → 牌库变化，清空以重新随机
+            ResetDrawnSkill();  // 切换阶段 → 牌库变化，清空以重新随机；HP/MaxHP 保持不变
             return true;
         }
         return false;

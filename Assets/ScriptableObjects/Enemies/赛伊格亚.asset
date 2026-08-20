@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u8D5B\u4F0A\u683C\u4E9A"
   maxHP: 10
-  phase2MaxHP: 10
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: 86fa72ac28d1a4148a99ca0a83bb47b9, type: 3}
   phase2Portrait: {fileID: 21300000, guid: 9d19ed2f15d3c9b4ab10902cd282e919, type: 3}

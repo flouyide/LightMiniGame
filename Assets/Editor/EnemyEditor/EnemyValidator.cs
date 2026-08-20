@@ -47,7 +47,8 @@ public static class EnemyValidator
         if (string.IsNullOrWhiteSpace(c.enemyName))   r.issues.Add("敌人名（enemyName）为空");
         if (c.maxHP <= 0)                            r.issues.Add("最大生命值 maxHP ≤ 0");
         if (c.phase1Portrait == null)                r.issues.Add("阶段1立绘未设置");
-        if (c.phase2MaxHP > 0 && c.phase2Portrait == null) r.issues.Add("配置了阶段2但阶段2立绘未设置");
+        if (c.phase2Skills != null && c.phase2Skills.Count > 0 && c.phase2Portrait == null)
+            r.issues.Add("配置了低理智牌库但低理智立绘未设置");
 
         if (c.phase1Skills == null || c.phase1Skills.Count == 0)
             r.issues.Add("阶段1牌库为空（至少配一张卡牌）");

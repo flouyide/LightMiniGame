@@ -22,10 +22,8 @@ public class EnemyConfig : ScriptableObject
     [Header("基础信息")]
     [Tooltip("敌人名称")]
     public string enemyName = "敌人";
-    [Tooltip("最大生命值（阶段1）")]
+    [Tooltip("最大生命值（唯一血条，不随阶段切换变化）")]
     public int maxHP = 40;
-    [Tooltip("阶段2最大生命值（0=不切阶段）")]
-    public int phase2MaxHP = 60;
     [Tooltip("初始护甲")]
     public int armor = 0;
     public Sprite phase1Portrait;
