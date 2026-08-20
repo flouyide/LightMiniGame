@@ -51,6 +51,21 @@ public class EnemyView : MonoBehaviour
     private RectTransform _deckRoot;
     private readonly List<GameObject> _deckCards = new List<GameObject>();
 
+    // 重建意图牌库前先清除旧卡的 hover 置顶/放大，避免“鼠标尚未移入新卡却因旧事件/重建即触发放大”
+    private void ClearHoverState()
+    {
+        for (int i = 0; i < _deckCards.Count; i++)
+        {
+            if (_deckCards[i] == null) continue;
+            var rt = _deckCards[i].transform as RectTransform;
+            if (rt != null)
+            {
+                rt.localScale = Vector3.one;                      // 复位缩放
+                rt.SetAsLastSibling();                          // 如有置顶则复位（回到原位）
+            }
+        }
+    }
+
     /// <summary>绑定运行时实例并全量刷新显示</summary>
     public void Bind(EnemyInstance inst)
     {
@@ -136,6 +151,28 @@ public class EnemyView : MonoBehaviour
         }
     }
 
+    private Color _origHpColor;
+    private Color _origArmorColor;
+    private TMPro.FontStyles _origHpStyle;
+    private TMPro.FontStyles _origArmorStyle;
+    private static readonly Color FusionPurple = new Color(0.78f, 0.3f, 1f, 1f);   // 高饱和紫
+
+    /// <summary>融合时把敌人血量/护甲数字整体变高饱和紫并加粗；on=false 恢复。
+    /// tintHP=false（低理智锁血量）时不染血量。</summary>
+    public void SetFusionNumberTint(bool on, bool tintHP = true)
+    {
+        if (on)
+        {
+            if (hpText != null) { _origHpColor = hpText.color; _origHpStyle = hpText.fontStyle; if (tintHP) { hpText.color = FusionPurple; hpText.fontStyle = TMPro.FontStyles.Bold; } }
+            if (armorText != null) { _origArmorColor = armorText.color; _origArmorStyle = armorText.fontStyle; armorText.color = FusionPurple; armorText.fontStyle = TMPro.FontStyles.Bold; }
+        }
+        else
+        {
+            if (hpText != null) { hpText.color = _origHpColor; hpText.fontStyle = _origHpStyle; }
+            if (armorText != null) { armorText.color = _origArmorColor; armorText.fontStyle = _origArmorStyle; }
+        }
+    }
+
     /// <summary>
     /// 标记/取消该敌人为当前受击对象（拖拽卡牌悬停其上时高亮）。
     /// 通过临时染色立绘实现，取消高亮时恢复原色。
@@ -207,6 +244,9 @@ public class EnemyView : MonoBehaviour
     /// </summary>
     public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false)
     {
+        // 重建前清除旧卡的 hover 置顶/放大（避免“鼠标尚未移入新卡却因旧状态/重建即触发放大”）
+        ClearHoverState();
+
         // 清空上一批
         foreach (var c in _deckCards)
             if (c != null) Destroy(c);
@@ -365,14 +405,24 @@ public class EnemyView : MonoBehaviour
     /// 敌人意图牌库小卡的悬停放大查看：
     /// 鼠标移入时放大并置顶（保持原位，鼠标不脱离卡面 → 不触发 Exit 频闪），移出后恢复。
     /// </summary>
-    private class IntentCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    private class IntentCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         private Vector3 _origScale;
         private int _origSibling;
         private const float EnlargeScale = 2.6f;
+        private int _createdFrame = -1;   // 创建帧：重建生出的卡若恰在鼠标下，会立刻收到 OnPointerEnter
+
+        private void Awake()
+        {
+            _createdFrame = Time.frameCount;
+        }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            // 重建/出生当帧+下帧内自动忽略进入事件：卡刚被实例化到鼠标位置时不属于真实的“移入”，
+            // 避免“鼠标没移上卡就放大”。之后（≥2 帧）的移入才正常放大。
+            if (Time.frameCount - _createdFrame < 2) return;
+
             var rt = transform as RectTransform;
             if (rt == null) return;
             _origSibling = transform.GetSiblingIndex();
@@ -388,6 +438,13 @@ public class EnemyView : MonoBehaviour
             if (rt == null) return;
             transform.SetSiblingIndex(_origSibling);
             transform.localScale = _origScale;
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            // 融合面板激活时：卡面每个可融合数字都有独立命中层（可精准点击），
+            // 整卡点击不再作为选择单位，避免“点哪都是同一值”。
+            if (FusionController.IsFusionActive) return;
         }
     }
 }

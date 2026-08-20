@@ -602,15 +602,11 @@ public class CardDisplay : MonoBehaviour
             go.transform.SetParent(transform, false);
         var rt = go.AddComponent<RectTransform>();
         var img = go.AddComponent<Image>();
-        img.color = new Color(0.95f, 0.85f, 0.35f, 0.25f);
+        img.color = new Color(1f, 1f, 1f, 0f);   // 透明：视觉由 descText 富文本数字着色承担
         img.raycastTarget = false;
-        //  关键：插到 descText 前面，让它在文字底下渲染
+        //  关键：插到 descText 前面，让它在文字底下渲染（亦是数字上方的透明命中层）
         if (descText != null)
             go.transform.SetSiblingIndex(descText.transform.GetSiblingIndex());
-        //  浮于融合蒙层之上（卡内为普通层，蒙层在 Canvas 更高层；用 sortingOrder 保证可见）
-        var cv = go.AddComponent<Canvas>();
-        cv.overrideSorting = true;
-        cv.sortingOrder = 600;
         _numberHighlights.Add(img);
         return img;
     }
@@ -624,7 +620,7 @@ public class CardDisplay : MonoBehaviour
         RestorePlainDesc();   // 恢复原始描述文本（去掉着色富文本）
     }
 
-    /// <summary>清除本卡所有原位数字高亮（融合退出时调用）。</summary>
+/// <summary>清除本卡所有原位数字高亮（融合退出时调用）。</summary>
     public void ClearHighlights()
     {
         ClearNumberHighlights();
@@ -632,12 +628,16 @@ public class CardDisplay : MonoBehaviour
         RestorePlainDesc();
     }
 
+    /// <summary>是否有卡内数字命中层（供 FusionController 判断 mesh 是否就绪）。</summary>
+    public bool HasNumberHighlights() => _numberHighlights.Count > 0;
+
     /// <summary>
     /// 卡内数字融合高亮：描述里可融合的每个数字，文字着色（紫/红）+ 透明命中层（随卡缩放可点击）。
     /// 全部基于“纯文本”解析与着色（避免富文本标签破坏字符索引导致选 A 显 B）。
     /// </summary>
     public void SetCardNumberHighlights(List<int> values,
-        System.Func<int, bool> isSelected = null, System.Action<int> onClicked = null, bool clearExisting = true)
+        System.Func<int, bool> isSelected = null, System.Action<int> onClicked = null, bool clearExisting = true,
+        bool clickable = true)
     {
         if (clearExisting) ClearNumberHighlights();
         if (values == null || values.Count == 0 || descText == null) return;
@@ -649,18 +649,26 @@ public class CardDisplay : MonoBehaviour
         _plainDescText = plain;
 
         // 2) 解析纯文本 tokens（值+字符区间+世界矩形）
-        var toks = ParseNumberTokens(plain);
+        // 用 EnumerateNumberTokens（内部有完整 mesh 准备策略，已被敌卡验证可用）获取值+世界位置
         var tokWorld = new List<(int value, Vector2 center, Vector2 size, int start, int end)>();
-        foreach (var t in toks)
         {
-            var (ok, center, size) = TryGetSubstringWorldRect(plain, t.start, t.end);
-            if (ok) tokWorld.Add((t.value, center, size, t.start, t.end));
+            var toks = ParseNumberTokens(plain);
+            var tokens = EnumerateNumberTokens();
+            // 按 token 顺序对齐
+            for (int t = 0; t < toks.Count && t < tokens.Count; t++)
+            {
+                if (tokens[t].size == Vector2.zero) continue;
+                tokWorld.Add((toks[t].value, tokens[t].center, tokens[t].size, toks[t].start, toks[t].end));
+            }
         }
 
-        // 3) 为每个候选分配“值匹配且未占用”的 token
+        // 3) 为每个候选分配“值匹配且未占用”的 token；
+        //    若无法分配（mesh 未就绪/token 缺失）→ fallback：给该候选一个独立兜底位置，保证点击区一一对应（选中计算正确）
         var used = new bool[tokWorld.Count];
-        var marks = new List<(int tokIdx, bool red)>();   // 着色标记（按候选顺序）
+        var marks = new List<(int tokIdx, bool red)>();   // 只有 tokIdx>=0 才在富文本着色
         RectTransform descParent = descText.transform.parent as RectTransform;
+        var hitPositions = new List<(Vector2 center, Vector2 size)>();
+        int fallbackCount = 0;
         for (int i = 0; i < values.Count; i++)
         {
             int pick = -1;
@@ -669,62 +677,85 @@ public class CardDisplay : MonoBehaviour
                 if (used[t] || tokWorld[t].value != values[i]) continue;
                 pick = t; break;
             }
-            if (pick < 0) continue;
-            used[pick] = true;
             bool red = isSelected != null && isSelected(i);
-            marks.Add((pick, red));
-
-            // 4) 透明命中层
-            if (descParent != null && onClicked != null)
+            if (pick >= 0)
             {
-                var img = GetOrCreateNumberHighlight(i);
-                var rt = img.GetComponent<RectTransform>();
-                Vector2 sc = RectTransformUtility.WorldToScreenPoint(null, tokWorld[pick].center);
-                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(descParent, sc, null, out Vector2 loc))
-                {
-                    rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-                    rt.pivot = new Vector2(0.5f, 0.5f);
-                    rt.anchoredPosition = loc;
-                    float scl = descParent.lossyScale.x != 0 ? descParent.lossyScale.x : 1f;
-                    rt.sizeDelta = new Vector2(tokWorld[pick].size.x / scl, tokWorld[pick].size.y / scl);
-                    img.color = new Color(1f, 1f, 1f, 0f);
-                    img.raycastTarget = true;
-                    img.gameObject.SetActive(true);
-                    var ob = img.GetComponent<Button>();
-                    if (ob == null)
-                    {
-                        var btn = img.gameObject.AddComponent<Button>();
-                        btn.transition = Selectable.Transition.None;
-                    }
-                    img.GetComponent<Button>().onClick.RemoveAllListeners();
-                    int captured = i;
-                    img.GetComponent<Button>().onClick.AddListener(() => onClicked(captured));
-                }
+                used[pick] = true;
+                marks.Add((pick, red));
+                hitPositions.Add((tokWorld[pick].center, tokWorld[pick].size));
+            }
+            else
+            {
+                // fallback：descText 世界原点下方按序号错开（命中层统一 InverseTransformPoint 转回本地）
+                marks.Add((-1, red));
+                var root = descText.GetComponent<RectTransform>();
+                Vector3 basePos = root != null
+                    ? root.position + new Vector3(0f, -40f - fallbackCount * 42f, 0f)
+                    : Vector3.zero;
+                hitPositions.Add((basePos, new Vector2(44f, 30f)));
+                fallbackCount++;
             }
         }
 
-        // 5) 重建 descText：标记 token 包 <color>（红/紫高饱和）
+        // 4) 透明命中层（clickable=false 时仅着色，不建命中层 → 不拦截卡 hover/点击）
+        if (descParent != null && onClicked != null && clickable)
+        {
+            // 命中层定位用 descText 本地坐标（世界→卡内 descText 局部），不依赖屏幕/相机/布局，
+            // 天然随卡缩放与移动，避免“所有卡命中层塌陷到同处”的错位。
+            var placedPositions = new List<Vector2>();   // 已放置的局部位置，防止重叠
+            for (int i = 0; i < values.Count; i++)
+            {
+                var img = GetOrCreateNumberHighlight(i);
+                var rt = img.GetComponent<RectTransform>();
+                Vector3 local3 = descText.transform.InverseTransformPoint(hitPositions[i].center);
+                Vector2 loc = new Vector2(local3.x, local3.y);
+                // 多数字可能落到同一处（mesh 未就绪/fallback）——向下错开，保证每候选可点且不重叠
+                Vector2 final = loc;
+                int guard = 0;
+                while (guard < 20 && placedPositions.Exists(p => Vector2.Distance(p, final) < 26f))
+                {
+                    final += new Vector2(30f, 30f);
+                    guard++;
+                }
+                placedPositions.Add(final);
+
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = final;
+                float scl = descParent.lossyScale.x != 0 ? descParent.lossyScale.x : 1f;
+                rt.sizeDelta = new Vector2((hitPositions[i].size.x + 16f) / scl, (hitPositions[i].size.y + 10f) / scl);
+                img.color = new Color(1f, 1f, 1f, 0f);
+                img.raycastTarget = true;
+                img.gameObject.SetActive(true);
+                var ob = img.GetComponent<Button>();
+                if (ob == null)
+                {
+                    var btn = img.gameObject.AddComponent<Button>();
+                    btn.transition = Selectable.Transition.None;
+                }
+                img.GetComponent<Button>().onClick.RemoveAllListeners();
+                int captured = i;
+                img.GetComponent<Button>().onClick.AddListener(() => onClicked(captured));
+            }
+        }
+
+        // 5) 重建 descText：对标记 token 包 <color>（红/紫高饱和），其余保持原文；tokIdx<0 的 fallback 不着色
         if (marks.Count > 0)
         {
-            var colorOf = new Color[plain.Length];
             var sb = new System.Text.StringBuilder();
             int cursor = 0;
-            var markSet = new Dictionary<int, string>();
             foreach (var m in marks)
             {
-                int st = tokWorld[m.tokenIdx].start, en = tokWorld[m.tokenIdx].end;
-                markSet[st] = m.red ? "<color=#FF3B5C>" : "<color=#C049FF>";
-                markSet[en] = "</color>";
+                if (m.tokIdx < 0) continue;   // fallback：无对应 token，不着色
+                int st = tokWorld[m.tokIdx].start, en = tokWorld[m.tokIdx].end;
+                if (st < cursor) continue;
+                sb.Append(plain, cursor, st - cursor);
+                sb.Append(m.red ? "<b><color=#FF3B5C>" : "<b><color=#C049FF>");
+                sb.Append(plain, st, en - st + 1);
+                sb.Append("</color></b>");
+                cursor = en + 1;
             }
-            for (int c = 0; c < plain.Length; c++)
-            {
-                if (markSet.TryGetValue(c, out var tag))
-                {
-                    sb.Append(tag);
-                    if (c == 0) { sb.Append(plain[c]); continue; }
-                }
-                sb.Append(plain[c]);
-            }
+            if (cursor < plain.Length) sb.Append(plain, cursor, plain.Length - cursor);
             descText.text = sb.ToString();
         }
     }
@@ -733,10 +764,20 @@ public class CardDisplay : MonoBehaviour
     private (bool ok, Vector2 center, Vector2 size) TryGetSubstringWorldRect(string text, int start, int end)
     {
         if (descText == null) return (false, Vector2.zero, Vector2.zero);
+        // 确保 descText 当前文本与要解析的 text 一致（可能已被着色或 mesh 未布局）
+        if (descText.text != text) descText.SetText(text);
         EnsureDescMesh();
         descText.ForceMeshUpdate(true, true);
         var info = descText.textInfo;
-        if (info == null || info.characterInfo == null) return (false, Vector2.zero, Vector2.zero);
+        if (info == null || info.characterInfo == null || info.characterCount == 0)
+        {
+            UnityEngine.Canvas.ForceUpdateCanvases();
+            descText.SetText(text);
+            descText.ForceMeshUpdate(true, true);
+            info = descText.textInfo;
+            if (info == null || info.characterInfo == null || info.characterCount == 0)
+                return (false, Vector2.zero, Vector2.zero);
+        }
         Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
         Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
         bool found = false;
@@ -781,20 +822,21 @@ public class CardDisplay : MonoBehaviour
 
         var rt = _costHighlight.GetComponent<RectTransform>();
         var costRT = costText.GetComponent<RectTransform>();
-        // 直接复用费用文本的矩形（锚点/枢轴/位置一致，仅略放大）
+        // 直接复用费用文本的矩形（锚点/枢轴/位置一致，略微放大便于点击）
         rt.anchorMin = costRT.anchorMin;
         rt.anchorMax = costRT.anchorMax;
         rt.pivot = costRT.pivot;
         rt.anchoredPosition = costRT.anchoredPosition;
-        rt.sizeDelta = costRT.rect.size + new Vector2(10f, 6f);
+        rt.sizeDelta = costRT.rect.size + new Vector2(18f, 14f);
+        rt.SetAsLastSibling();   // 同级置顶：确保费用命中层在护甲/攻击命中层之上，点击优先选中费用
         // 透明命中层：视觉交给 costText 数字着色
         _costHighlight.color = new Color(1f, 1f, 1f, 0f);
         _costHighlight.raycastTarget = onClick != null;
         // costText 数字配色：未选紫/选中红
         int costVal = GetDisplayCost();
         costText.text = selected
-            ? $"<color=#E33>{costVal}</color>"
-            : $"<color=#9B5FE0>{costVal}</color>";
+            ? $"<b><color=#FF3B5C>{costVal}</color></b>"
+            : $"<b><color=#C049FF>{costVal}</color></b>";
         _costHighlight.gameObject.SetActive(true);
 
         // 点击切换选中（融合中费用候选）
