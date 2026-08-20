@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 
 /// <summary>
 /// 融合（Fusion）核心控制器 —— 由 BattleManager.BeginBattle() 自动创建并挂载。
@@ -377,6 +378,25 @@ public class FusionController : MonoBehaviour
             btn.onClick.AddListener(() => OnHighlightClick(capturedIndex));
 
             // 高亮数字：加粗、高饱和紫色（#C049FF）；未选中紫、选中红
+            // —— 播放 Selected.anim 盖住数字（同高亮方块大小）——
+            var animGo = new GameObject("SelectedFX");
+            animGo.transform.SetParent(go.transform, false);
+
+            var animRT = animGo.AddComponent<RectTransform>();
+            animRT.anchorMin = animRT.anchorMax = new Vector2(0.5f, 0.5f);
+            animRT.pivot = new Vector2(0.5f, 0.5f);
+            animRT.anchoredPosition = Vector2.zero;
+            animRT.sizeDelta = rt.sizeDelta;   // 与高亮方块完全同尺寸（盖住数字）
+
+            var animImg = animGo.AddComponent<Image>();
+            animImg.color = Color.white;
+            animImg.raycastTarget = false;   // 不挡高亮点按
+            animImg.sprite = null;             // 由 SpriteSequencePlayer 逐帧驱动
+
+            var seq = animGo.AddComponent<SpriteSequencePlayer>();
+            seq.Init(LoadSelectedFrames(), 0.2f);   // 帧间隔与 Selected.anim 一致（0.2s/帧）
+            animGo.SetActive(false);   // 默认隐藏：选中时才显示并播放
+
             var numGo = new GameObject("Num");
             numGo.transform.SetParent(go.transform, false);
             var numRT = numGo.AddComponent<RectTransform>();
@@ -500,6 +520,7 @@ public class FusionController : MonoBehaviour
 
         RefreshHighlights();
         UpdateStatus();
+        SyncSelectedFX();   // 选中动画显隐与 _selected 同步
     }
 
     private void RefreshHighlights()
@@ -517,6 +538,37 @@ public class FusionController : MonoBehaviour
                 num.color = _selected.Contains(_candidates[i])
                     ? new Color(1f, 0.23f, 0.36f, 1f)
                     : new Color(0.75f, 0.29f, 1f, 1f);
+            // 选中动画显隐：与 _selected 同步
+            var fx = go.transform.Find("SelectedFX");
+            if (fx != null)
+            {
+                bool sel = _selected.Contains(_candidates[i]);
+                fx.gameObject.SetActive(sel);
+                if (sel)
+                {
+                    var seq = fx.GetComponent<SpriteSequencePlayer>();
+                    if (seq != null) seq.ResetPlay();
+                }
+            }
+        }
+    }
+
+    /// <summary>选中动画显隐：与 _selected 同步（供点击回调后调用）</summary>
+    private void SyncSelectedFX()
+    {
+        for (int i = 0; i < _highlights.Count && i < _candidates.Count; i++)
+        {
+            var go = _highlights[i];
+            if (go == null) continue;
+            var fx = go.transform.Find("SelectedFX");
+            if (fx == null) continue;
+            bool sel = _selected.Contains(_candidates[i]);
+            fx.gameObject.SetActive(sel);
+            if (sel)
+            {
+                var seq = fx.GetComponent<SpriteSequencePlayer>();
+                if (seq != null) seq.ResetPlay();
+            }
         }
     }
 
@@ -541,6 +593,37 @@ public class FusionController : MonoBehaviour
         int s = 0;
         foreach (var v in _selected) s += v.current;
         return s;
+    }
+
+    /// <summary>
+    /// 读取 Selected.anim 的对象引用曲线（Sprite 帧序列），用于选中高亮动画。
+    /// Selected.anim 绑定 SpriteRenderer.m_Sprite（非 UI Image），Animation 组件无法驱动 UI，
+    /// 故直接取帧 Sprite 交给 SpriteSequencePlayer 按相同间隔（0.2s）循环切换 Image.sprite。
+    /// </summary>
+    private static Sprite[] _selectedFrames;
+
+    private static Sprite[] LoadSelectedFrames()
+    {
+        if (_selectedFrames != null && _selectedFrames.Length > 0) return _selectedFrames;
+        var frames = new List<Sprite>();
+        var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Art/Animation/Selected.anim");
+        if (clip != null)
+        {
+            var bindings = UnityEditor.AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            foreach (var b in bindings)
+            {
+                if (b.type != typeof(SpriteRenderer)) continue;
+                var curve = UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip, b);
+                if (curve == null) continue;
+                foreach (var kf in curve)
+                {
+                    var sp = kf.value as Sprite;
+                    if (sp != null && !frames.Contains(sp)) frames.Add(sp);
+                }
+            }
+        }
+        _selectedFrames = frames.ToArray();
+        return _selectedFrames;
     }
 
     // ========================================================================
