@@ -369,14 +369,14 @@ public class FusionController : MonoBehaviour
 
             var img = go.AddComponent<Image>();
             img.raycastTarget = true;
+            img.color = new Color(1f, 1f, 1f, 0f);   // 透明（透明度 0）：方块不可见，仅作点击命中层
             var btn = go.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.interactable = !fv.lockedBySanity;
             int capturedIndex = i;   // 闭包绑定当前迭代索引（避免循环变量捕获错误）
             btn.onClick.AddListener(() => OnHighlightClick(capturedIndex));
-            ApplyHighlightColor(img, fv);
 
-            // 高亮片内显示当前数值（白色加粗带阴影，数字明显；血量上限加"上"前缀区分）
+            // 高亮数字：加粗、高饱和紫色（#C049FF）；未选中紫、选中红
             var numGo = new GameObject("Num");
             numGo.transform.SetParent(go.transform, false);
             var numRT = numGo.AddComponent<RectTransform>();
@@ -384,10 +384,10 @@ public class FusionController : MonoBehaviour
             numRT.sizeDelta = new Vector2(w - 4f, h - 4f);
             var num = numGo.AddComponent<TextMeshProUGUI>();
             num.text = fv.lockedBySanity ? "" : fv.current.ToString();
-            num.fontSize = 20;
+            num.fontSize = 22;
             num.fontStyle = TMPro.FontStyles.Bold;
             num.alignment = TextAlignmentOptions.Center;
-            num.color = Color.white;
+            num.color = _selected.Contains(fv) ? new Color(1f, 0.23f, 0.36f, 1f) : new Color(0.75f, 0.29f, 1f, 1f);   // 选中红 / 未选高饱和紫
             num.outlineWidth = 0.2f;
             num.outlineColor = new Color(0f, 0f, 0f, 0.85f);
             num.enableWordWrapping = false;
@@ -506,8 +506,17 @@ public class FusionController : MonoBehaviour
     {
         for (int i = 0; i < _highlights.Count && i < _candidates.Count; i++)
         {
-            Image img = _highlights[i]?.GetComponent<Image>();
-            if (img != null) ApplyHighlightColor(img, _candidates[i]);
+            var go = _highlights[i];
+            if (go == null) continue;
+            // 方块保持完全透明（透明度 0），只作为点击命中层
+            Image img = go.GetComponent<Image>();
+            if (img != null) img.color = new Color(1f, 1f, 1f, 0f);
+            // 数字文字：加粗高饱和紫（未选）/ 红（已选）
+            var num = go.transform.Find("Num")?.GetComponent<TextMeshProUGUI>();
+            if (num != null)
+                num.color = _selected.Contains(_candidates[i])
+                    ? new Color(1f, 0.23f, 0.36f, 1f)
+                    : new Color(0.75f, 0.29f, 1f, 1f);
         }
     }
 

@@ -1,6 +1,5 @@
 using LightMiniGame.Card;   // CharacterData
 using LightMiniGame.Shop;    // RelicData
-using UnityEngine;
 
 namespace LightMiniGame.Relic
 {
@@ -24,7 +23,7 @@ namespace LightMiniGame.Relic
     }
 
     /// <summary>
-    /// 遗物效果基类：提供空默认实现与参数读取工具，子类只重写需要的方法，减少样板代码。
+    /// 遗物效果基类：提供空默认实现，子类只重写需要的方法，减少样板代码。
     /// </summary>
     public abstract class RelicEffectBase : IRelicEffect
     {
@@ -32,42 +31,5 @@ namespace LightMiniGame.Relic
         public virtual void OnLost(RelicEffectContext ctx) { }
         public virtual void OnBattleStart(RelicEffectContext ctx) { }
         public virtual void OnBattleEnd(RelicEffectContext ctx, bool victory) { }
-
-        /// <summary>
-        /// 读取 RelicData.effectParams 指定下标的参数（Inspector 可配置）；
-        /// 未配置 / 越界 / 资产为空时返回默认值，保证旧资产兼容。
-        /// 参数含义由各效果类自定义（见类注释）。
-        /// </summary>
-        protected static float GetEffectParam(RelicData relic, int index, float fallback)
-        {
-            var ps = relic?.effectParams;
-            if (ps != null && index < ps.Count)
-                return ps[index];
-            return fallback;
-        }
-
-        /// <summary>
-        /// 读取 RelicData.effectStringParams 指定下标的字符串参数（Inspector 可配置）；
-        /// 未配置 / 越界 / 资产为空时返回默认值。
-        /// </summary>
-        protected static string GetEffectStringParam(RelicData relic, int index, string fallback = "")
-        {
-            var ps = relic?.effectStringParams;
-            if (ps != null && index < ps.Count)
-                return ps[index];
-            return fallback;
-        }
-
-        /// <summary>
-        /// 读取 RelicData.effectObjectParams 指定下标的 UnityEngine.Object 参数（Inspector 可拖入资产引用）；
-        /// 未配置 / 越界 / 资产为空 / 类型不匹配时返回默认值。
-        /// </summary>
-        protected static T GetEffectObjectParam<T>(RelicData relic, int index, T fallback = default) where T : UnityEngine.Object
-        {
-            var ps = relic?.effectObjectParams;
-            if (ps != null && index < ps.Count)
-                return ps[index] as T;
-            return fallback;
-        }
     }
 }

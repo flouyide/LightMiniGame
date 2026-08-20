@@ -78,7 +78,7 @@ public static class EnemyValidator
             {
                 var a = c.abilities[i];
                 if (a == null) { r.issues.Add($"能力 [{i}] 为 null"); continue; }
-                if (a.relic == null) r.issues.Add($"能力 [{i}] 未指定遗物");
+                if (a.relic == null) r.issues.Add($"能力 [{i}]（{a.displayName}）未指定遗物");
             }
         }
 
