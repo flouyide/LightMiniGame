@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 战利品面板显示控制器（挂在 LootPanel.prefab 根节点上）。
@@ -37,6 +39,19 @@ public class LootPanelUI : MonoBehaviour
 
     [Tooltip("权柄奖励按钮 B（b 角色）：LootTable 含 Relic 条目时显示")]
     [SerializeField] private GameObject relicB;
+
+    [Header("继续按钮")]
+    [Tooltip("继续按钮：点击后触发 OnContinueClicked（BattleManager 订阅以回到局外）")]
+    [SerializeField] private Button continueButton;
+
+    /// <summary>继续按钮点击事件（BattleManager 订阅后走 OnQuitClicked 流程回到局外）。</summary>
+    public event Action OnContinueClicked;
+
+    private void Awake()
+    {
+        if (continueButton != null)
+            continueButton.onClick.AddListener(() => OnContinueClicked?.Invoke());
+    }
 
     /// <summary>
     /// 按单个 LootTable 刷新按钮显示。
