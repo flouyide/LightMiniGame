@@ -274,6 +274,15 @@ public class BattleManager : MonoBehaviour
     /// <summary>战斗结束（点击 QuitButton）后通知 ChapterManager 切回局外。</summary>
     public event Action OnBattleEnded;
 
+    /// <summary>
+    /// 战斗胜负已定（EndBattle）时立即广播，参数 victory=true 表示胜利。
+    /// 与 OnBattleEnded（玩家点退出按钮后才触发）区分：本事件用于胜利瞬间的掉落面板等结算 UI。
+    /// </summary>
+    public event Action<bool> OnBattleFinished;
+
+    /// <summary>最近一场战斗的胜负结果（EndBattle 时更新；战斗中无意义）。</summary>
+    public bool LastBattleVictory { get; private set; }
+
     // ========================================================================
     // 公共属性（供 BattleCardContext / EffectExecutor 使用）
     // ========================================================================
@@ -2745,6 +2754,10 @@ public class BattleManager : MonoBehaviour
         if (switchCharacterButton != null) switchCharacterButton.interactable = false;
         if (phaseHintText != null) phaseHintText.text = "";
         Debug.Log(victory ? "[BattleManager] 战斗胜利！" : "[BattleManager] 战斗失败！");
+
+        // 胜负已定：广播给掉落面板等结算 UI（ChapterManager 订阅，胜利时弹 LootPanel）
+        LastBattleVictory = victory;
+        OnBattleFinished?.Invoke(victory);
     }
 
     // ========================================================================

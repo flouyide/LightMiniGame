@@ -37,6 +37,12 @@ public class PageEventDataDrawer : PropertyDrawer
         "backgroundSanityThreshold",
     };
 
+    // 仅 Battle 类型才显示的字段（掉落物表：只有战斗事件可配置）
+    private static readonly string[] BattleOnlyFields =
+    {
+        "lootTable",
+    };
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
@@ -56,6 +62,8 @@ public class PageEventDataDrawer : PropertyDrawer
         {
             bool isEvent = eventTypeProp != null
                 && eventTypeProp.enumValueIndex == (int)PageEventType.Event;
+            bool isBattle = eventTypeProp != null
+                && eventTypeProp.enumValueIndex == (int)PageEventType.Battle;
 
             EditorGUI.indentLevel++;
 
@@ -84,6 +92,17 @@ public class PageEventDataDrawer : PropertyDrawer
                 y = DrawProperty(position, y, prop);
             }
 
+            // —— 仅 Battle 类型显示的字段（掉落物表等）——
+            if (isBattle)
+            {
+                foreach (var name in BattleOnlyFields)
+                {
+                    var prop = property.FindPropertyRelative(name);
+                    if (prop == null) continue;
+                    y = DrawProperty(position, y, prop);
+                }
+            }
+
             EditorGUI.indentLevel--;
         }
 
@@ -107,6 +126,8 @@ public class PageEventDataDrawer : PropertyDrawer
         var eventTypeProp = property.FindPropertyRelative("eventType");
         bool isEvent = (eventTypeProp != null
             && eventTypeProp.enumValueIndex == (int)PageEventType.Event);
+        bool isBattle = (eventTypeProp != null
+            && eventTypeProp.enumValueIndex == (int)PageEventType.Battle);
 
         float height = HeaderHeight + Spacing;
 
@@ -128,6 +149,16 @@ public class PageEventDataDrawer : PropertyDrawer
             var prop = property.FindPropertyRelative(name);
             if (prop == null) continue;
             height += EditorGUI.GetPropertyHeight(prop, true) + Spacing;
+        }
+
+        if (isBattle)
+        {
+            foreach (var name in BattleOnlyFields)
+            {
+                var prop = property.FindPropertyRelative(name);
+                if (prop == null) continue;
+                height += EditorGUI.GetPropertyHeight(prop, true) + Spacing;
+            }
         }
 
         return height;

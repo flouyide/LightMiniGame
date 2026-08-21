@@ -130,6 +130,9 @@ public class PageEventData
     [Tooltip("该 Battle 事件要出战的敌人列表（含位置与行动顺序值，1-N 个）。留空则使用 BattleManager 上的默认敌人。")]
     public List<EnemySpawnInfo> enemies = new();    // Battle：出战敌人列表（策划在 Inspector 配置）
 
+    [Tooltip("该 Battle 事件的掉落物表（战斗胜利后按此结算奖励）。留空则无掉落。")]
+    public LootTable lootTable = new();             // Battle：掉落物表（从 EnemyConfig 迁移而来）
+
     [Header("战斗背景（Battle 类型用）")]
     [Tooltip("正常理智时的战斗背景图，应用到 BattleManager.Background 下的 Image。留空则沿用 Background 上既有 Sprite。")]
     public Sprite normalBattleBackground;           // 正常理智背景

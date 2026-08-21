@@ -33,7 +33,6 @@ public class EnemyConfigEditor : Editor
         { "highSanityCardCount",    "高理智出招数" },
         { "lowSanityCardCount",     "低理智出招数" },
         { "abilities",              "能力列表" },
-        { "lootTable",               "掉落物表" },
     };
 
     public override void OnInspectorGUI()

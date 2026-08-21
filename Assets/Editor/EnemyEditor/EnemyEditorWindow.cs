@@ -25,7 +25,7 @@ public class EnemyEditorWindow : EditorWindow
 
     // === 详情面板（SerializedObject + 折叠状态） ===
     private SerializedObject _selectedSO;
-    private bool _foldBasic = true, _foldStats = true, _foldSkillDecks = true, _foldAbilities = true, _foldLoot = true;
+    private bool _foldBasic = true, _foldStats = true, _foldSkillDecks = true, _foldAbilities = true;
 
     [MenuItem("Tools/敌人编辑器/Enemy Editor")]
     public static void Open()
@@ -259,9 +259,7 @@ public class EnemyEditorWindow : EditorWindow
             _foldAbilities = EditorGUILayout.Foldout(_foldAbilities, "能力（精英/boss 敌人遗物）", true, EditorStyles.foldoutHeader);
             if (_foldAbilities) DrawAbilitiesFoldout();
 
-            // === 5. 掉落物 ===
-            _foldLoot = EditorGUILayout.Foldout(_foldLoot, "掉落物", true, EditorStyles.foldoutHeader);
-            if (_foldLoot) DrawLootFoldout();
+            // 掉落物已迁移至 PageEventData（Battle 事件掉落配置），不再在敌人编辑器配置
 
             EditorGUILayout.EndScrollView();
 
@@ -314,166 +312,6 @@ public class EnemyEditorWindow : EditorWindow
         EditorGUI.indentLevel++;
         SerialProp("abilities");
         EditorGUI.indentLevel--;
-    }
-
-    private void DrawLootFoldout()
-    {
-        EditorGUI.indentLevel++;
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            EditorGUILayout.LabelField($"当前难度：{_selected.difficulty}", EditorStyles.miniLabel);
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("应用难度预设", GUILayout.Width(110)))
-            {
-                _selected.lootTable = LootTable.GetPreset(_selected.difficulty);
-                _selectedSO.Update();
-                EditorUtility.SetDirty(_selected);
-                GUIUtility.ExitGUI();
-            }
-        }
-        EditorGUILayout.Space(2);
-
-        // 自定义掉落物列表 UI（按 kind 显示不同字段）
-        var entries = _selected.lootTable.entries;
-        if (entries == null) entries = _selected.lootTable.entries = new List<LootEntry>();
-
-        // 列表操作栏
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            EditorGUILayout.LabelField($"掉落条目（{entries.Count}）", EditorStyles.boldLabel);
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("+ 货币", GUILayout.Width(70)))
-            {
-                entries.Add(new LootEntry { kind = LootEntry.LootKind.Currency, currencyAmount = 10 });
-                MarkDirty();
-            }
-            if (GUILayout.Button("+ 卡牌", GUILayout.Width(70)))
-            {
-                entries.Add(new LootEntry { kind = LootEntry.LootKind.Card, cardRarities = new List<CardGrade> { CardGrade.Bronze }, cardDrawCount = 3, cardPickCount = 1 });
-                MarkDirty();
-            }
-            if (GUILayout.Button("+ 遗物", GUILayout.Width(70)))
-            {
-                entries.Add(new LootEntry { kind = LootEntry.LootKind.Relic, relicRarities = new List<CardGrade> { CardGrade.Bronze } });
-                MarkDirty();
-            }
-        }
-
-        EditorGUILayout.Space(2);
-
-        // 绘制每条 entry
-        int toRemove = -1;
-        for (int i = 0; i < entries.Count; i++)
-        {
-            DrawLootEntryItem(entries[i], i, ref toRemove);
-        }
-        if (toRemove >= 0)
-        {
-            entries.RemoveAt(toRemove);
-            MarkDirty();
-        }
-
-        EditorGUI.indentLevel--;
-    }
-
-    private void DrawLootEntryItem(LootEntry entry, int index, ref int toRemove)
-    {
-        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-        {
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                // 类型标签 + 序号
-                var kindLabel = entry.kind switch
-                {
-                    LootEntry.LootKind.Currency => "货币",
-                    LootEntry.LootKind.Card   => "卡牌",
-                    LootEntry.LootKind.Relic   => "遗物",
-                    _ => "?"
-                };
-                var labelColor = entry.kind switch
-                {
-                    LootEntry.LootKind.Currency => new Color(0.6f, 0.4f, 1f),  // 紫色
-                    LootEntry.LootKind.Card   => new Color(0.4f, 0.9f, 0.4f),  // 绿色
-                    LootEntry.LootKind.Relic   => new Color(1f, 0.5f, 0.5f),    // 红色
-                    _ => Color.gray
-                };
-                var prev = GUI.color;
-                GUI.color = labelColor;
-                EditorGUILayout.LabelField($"[{kindLabel}] #{index + 1}", EditorStyles.boldLabel, GUILayout.Width(100));
-                GUI.color = prev;
-
-                GUILayout.FlexibleSpace();
-
-                // 上移 / 下移 / 删除
-                using (new EditorGUI.DisabledScope(index <= 0))
-                {
-                    if (GUILayout.Button("↑", GUILayout.Width(24))) { entriesSwap(entry, index, index - 1); }
-                }
-                using (new EditorGUI.DisabledScope(index >= _selected.lootTable.entries.Count - 1))
-                {
-                    if (GUILayout.Button("↓", GUILayout.Width(24))) { entriesSwap(entry, index, index + 1); }
-                }
-                if (GUILayout.Button("×", GUILayout.Width(24), GUILayout.Height(18))) { toRemove = index; }
-            }
-
-            EditorGUI.indentLevel++;
-
-            switch (entry.kind)
-            {
-                case LootEntry.LootKind.Currency:
-                    entry.currencyAmount = EditorGUILayout.IntField(new GUIContent("货币数量", "战斗结束后获得的固定货币数"), entry.currencyAmount);
-                    break;
-
-                case LootEntry.LootKind.Card:
-                    EditorGUILayout.LabelField(new GUIContent("卡牌品级", "从这些品级的角色可获取牌库里抽取"), EditorStyles.boldLabel);
-                    DrawCardGradeList(entry.cardRarities);
-                    entry.cardDrawCount = EditorGUILayout.IntField(new GUIContent("抽取数量(n)", "展示给玩家的卡牌数，如「3选1」填 3"), entry.cardDrawCount);
-                    entry.cardPickCount = EditorGUILayout.IntField(new GUIContent("可选数量", "玩家最终可选几张（通常为 1）"), entry.cardPickCount);
-                    break;
-
-                case LootEntry.LootKind.Relic:
-                    EditorGUILayout.LabelField(new GUIContent("遗物品级", "从这些品级的角色可获取遗物库里抽 1 个"), EditorStyles.boldLabel);
-                    DrawCardGradeList(entry.relicRarities);
-                    break;
-            }
-
-            EditorGUI.indentLevel--;
-        }
-    }
-
-    /// <summary>绘制 CardGrade 列表（带 Add/Remove 按钮）</summary>
-    private void DrawCardGradeList(List<CardGrade> list)
-    {
-        if (list == null) return;
-        // 品级快捷全选按钮行
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            foreach (CardGrade g in Enum.GetValues(typeof(CardGrade)))
-            {
-                bool has = list.Contains(g);
-                bool toggled = GUILayout.Toggle(has, g.ToString(), EditorStyles.miniButton, GUILayout.Width(70));
-                if (toggled && !has) list.Add(g);
-                else if (!toggled && has) list.Remove(g);
-            }
-        }
-        // 当前已选列表
-        if (list.Count > 0)
-        {
-            EditorGUILayout.LabelField($"已选：{string.Join(", ", list)}", EditorStyles.miniLabel);
-        }
-        else
-        {
-            EditorGUILayout.HelpBox("未选择任何品级", MessageType.Warning);
-        }
-    }
-
-    private void entriesSwap(LootEntry entry, int i, int j)
-    {
-        var entries = _selected.lootTable.entries;
-        var tmp = entries[i];
-        entries[i] = entries[j];
-        entries[j] = tmp;
-        MarkDirty();
     }
 
     private void MarkDirty()

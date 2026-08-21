@@ -22,6 +22,7 @@ MonoBehaviour:
   effectScriptName: LightMiniGame.RelicEffects.DamageTransferEffect
   effectParams:
   - 0.5
-  effectStringParams:
-  - "\u8D5B\u4F0A\u683C\u4E9A"
+  effectStringParams: []
+  effectObjectParams:
+  - {fileID: 11400000, guid: 4915724f8f93bcf4196e039310b1941b, type: 2}
   effectScript: {fileID: 11500000, guid: d2e7a3cf9c53ff247987e3a58f50753e, type: 3}

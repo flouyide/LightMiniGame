@@ -11,13 +11,12 @@ using UnityEngine;
 public class EnemyConfig : ScriptableObject
 {
     /// <summary>
-    /// 旧 .asset 反序列化时，新字段（lootTable/abilities）可能为 null；OnEnable 兜底初始化。
+    /// 旧 .asset 反序列化时，新字段（abilities）可能为 null；OnEnable 兜底初始化。
     /// 新建资产因字段默认值也会经过这里，保证运行时非空。
     /// </summary>
     private void OnEnable()
     {
         if (abilities == null) abilities = new List<EnemyAbilityEntry>();
-        if (lootTable == null) lootTable = new LootTable();
     }
     [Header("基础信息")]
     [Tooltip("敌人名称")]
@@ -40,7 +39,7 @@ public class EnemyConfig : ScriptableObject
     // ===== 5.3 文档扩展字段（保留所有原字段，旧 .asset 自动取默认值兼容） =====
 
     [Header("难度")]
-    [Tooltip("难度类型（影响掉落物：弱怪/强怪/精英/boss）")]
+    [Tooltip("难度类型（弱怪/强怪/精英/boss）")]
     public Difficulty difficulty = Difficulty.Weak;
 
     [Header("属性")]
@@ -64,8 +63,4 @@ public class EnemyConfig : ScriptableObject
     [Header("能力")]
     [Tooltip("敌人自带的能力")]
     public List<EnemyAbilityEntry> abilities;
-
-    [Header("掉落物")]
-    [Tooltip("按难度枚举配置的掉落物表。使用 LootTable.GetPreset(difficulty) 一键填充")]
-    public LootTable lootTable = new LootTable();
 }

@@ -59,7 +59,9 @@ MonoBehaviour:
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5
-        enterBattleEnemies: []
+        enterBattleEnemies:
+        - config: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
+          anchoredPosition: {x: 0, y: 0}
     - optionText: "\u83B7\u5F97\u5361\u724C\uFF0C\u6DFB\u52A0\u8BCD\u6761"
       effects:
       - type: 11
@@ -83,6 +85,8 @@ MonoBehaviour:
         discountRatio: 0.5
         enterBattleEnemies: []
     enemies: []
+    lootTable:
+      entries: []
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4
@@ -147,6 +151,8 @@ MonoBehaviour:
       anchoredPosition: {x: 200, y: 0}
     - config: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
       anchoredPosition: {x: -200, y: 0}
+    lootTable:
+      entries: []
     normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
     backgroundSanityThreshold: 5
@@ -209,6 +215,22 @@ MonoBehaviour:
     enemies:
     - config: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
       anchoredPosition: {x: -200, y: 0}
+    - config: {fileID: 11400000, guid: 4915724f8f93bcf4196e039310b1941b, type: 2}
+      anchoredPosition: {x: 200, y: 0}
+    lootTable:
+      entries:
+      - kind: 0
+        currencyAmount: 0
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 0
+        currencyAmount: 0
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
     normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
     backgroundSanityThreshold: 5
@@ -291,6 +313,8 @@ MonoBehaviour:
         discountRatio: 0.5
         enterBattleEnemies: []
     enemies: []
+    lootTable:
+      entries: []
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4

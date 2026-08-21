@@ -268,11 +268,9 @@ MonoBehaviour:
   attackColor: {r: 0.75, g: 0.22, b: 0.22, a: 1}
   armorColor: {r: 0.22, g: 0.45, b: 0.78, a: 1}
   buffColor: {r: 0.22, g: 0.68, b: 0.35, a: 1}
-  commonColor: {r: 0.55, g: 0.55, b: 0.55, a: 1}
-  fineColor: {r: 0.3, g: 0.75, b: 0.3, a: 1}
-  rareColor: {r: 0.35, g: 0.55, b: 1, a: 1}
-  epicColor: {r: 0.7, g: 0.3, b: 0.9, a: 1}
-  legendaryColor: {r: 1, g: 0.7, b: 0.1, a: 1}
+  bronzeColor: {r: 0.72, g: 0.48, b: 0.34, a: 1}
+  silverColor: {r: 0.78, g: 0.8, b: 0.84, a: 1}
+  goldColor: {r: 1, g: 0.78, b: 0.25, a: 1}
   unplayableColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.6}
   darkFrameSprite: {fileID: 0}
   darkBackgroundSprite: {fileID: 0}
@@ -643,7 +641,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: e0cf6fac4e7d6d9488f4da3635aaa8eb, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 08a30ff68e0b2e343b196c0af1d1f402, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -796,7 +794,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 7b788b46a7c4fa842a55691912d0640e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1b727318885d8774e9b0041111bbfa33, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1226,7 +1224,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: d9b95318a7d7ee1469d899f32e00c73a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: bb256b50cc3c77b4b8c36715da70fd43, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

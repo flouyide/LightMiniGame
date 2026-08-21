@@ -82,23 +82,7 @@ public static class EnemyValidator
             }
         }
 
-        if (c.lootTable != null && c.lootTable.entries != null)
-        {
-            int rel = 0, card = 0, cur = 0;
-            foreach (var e in c.lootTable.entries)
-            {
-                if (e == null) continue;
-                switch (e.kind)
-                {
-                    case LootEntry.LootKind.Currency: cur++; break;
-                    case LootEntry.LootKind.Card:     card++; break;
-                    case LootEntry.LootKind.Relic:    rel++; break;
-                }
-            }
-            // 精英/boss 必须有遗物
-            if ((c.difficulty == Difficulty.Elite || c.difficulty == Difficulty.Boss) && rel == 0)
-                r.issues.Add($"精英/Boss 难度应至少配置 1 条遗物掉落");
-        }
+        // 掉落物校验已随 lootTable 迁移至 PageEventData 移除
 
         return r;
     }

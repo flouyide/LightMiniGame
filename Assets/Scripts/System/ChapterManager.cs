@@ -34,8 +34,12 @@ public class ChapterManager : MonoBehaviour
     [SerializeField] private GameObject bookCanvas;
     [Tooltip("战斗管理器（BattleManager）。进入战斗时驱动其 BeginBattle()。留空则运行时自动查找。")]
     [SerializeField] private BattleManager battleManager;
+    [Tooltip("战利品面板预制体（LootPanel.prefab）。战斗胜利且事件配置了 lootTable 时实例化并按掉落类型显示奖励按钮。留空则跳过掉落显示。")]
+    [SerializeField] private LootPanelUI lootPanelPrefab;
     private bool _inBattle;
     private System.Action _battleResume;   // 由“选项效果 EnterBattle”发起战斗时的效果序列续体；非空则战后先续体再推进章节
+    private PageEventData _currentBattleData;   // 本次战斗的 PageEventData（含 lootTable，胜利时读取）
+    private LootPanelUI _lootPanelInstance;     // 掉落面板运行时实例（懒创建，退出战斗时隐藏）
 
     // --- 当前激活/未激活角色（局外角色切换，进入战斗时传给 BattleManager）---
     private CharacterData _activeCharacter;
@@ -852,6 +856,10 @@ public class ChapterManager : MonoBehaviour
             bm.StartBackgroundSanityThreshold = data != null ? data.backgroundSanityThreshold : 4;
             bm.OnBattleEnded -= OnBattleEnded;
             bm.OnBattleEnded += OnBattleEnded;
+            // 胜负已定时读取事件 lootTable 显示掉落面板（失败则忽略）
+            bm.OnBattleFinished -= HandleBattleFinished;
+            bm.OnBattleFinished += HandleBattleFinished;
+            _currentBattleData = data;
             bm.BeginBattle();        // 读取局外属性 + 启动战斗
             return true;
         }
@@ -869,10 +877,42 @@ public class ChapterManager : MonoBehaviour
         ReturnFromBattle();
     }
 
+    /// <summary>
+    /// BattleManager.OnBattleFinished 回调：战斗胜负已定。
+    /// 胜利且本次战斗事件配置了掉落表（PageEventData.lootTable）时，
+    /// 实例化掉落面板并按掉落物类型显示对应奖励按钮（Coin/CardA/CardB/RelicA/RelicB）。
+    /// 失败、无掉落表或未配置面板预制体时跳过。
+    /// </summary>
+    private void HandleBattleFinished(bool victory)
+    {
+        var table = _currentBattleData?.lootTable;
+        if (!victory || table == null) return;
+        if (lootPanelPrefab == null)
+        {
+            Debug.LogWarning("[ChapterManager] 战斗胜利但未配置 lootPanelPrefab，跳过掉落面板显示");
+            return;
+        }
+
+        // 懒创建面板实例（挂在战斗画布下，随画布显隐；prefab 根带 Canvas 独立渲染层）
+        if (_lootPanelInstance == null)
+        {
+            var parent = battleCanvas != null ? battleCanvas.transform : transform;
+            _lootPanelInstance = Instantiate(lootPanelPrefab, parent);
+            _lootPanelInstance.gameObject.SetActive(false);
+        }
+
+        _lootPanelInstance.gameObject.SetActive(true);
+        _lootPanelInstance.ShowForLootTable(table);
+    }
+
     private void ReturnFromBattle()
     {
         if (!_inBattle) return;
         _inBattle = false;
+
+        // 隐藏掉落面板（实例保留复用；奖励发放/领取消费逻辑后续在按钮侧实现）
+        if (_lootPanelInstance != null)
+            _lootPanelInstance.gameObject.SetActive(false);
 
         if (battleCanvas != null) battleCanvas.SetActive(false);
         if (bookCanvas != null) bookCanvas.SetActive(true);
