@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using LightMiniGame.CardEditor;
 
 /// <summary>
@@ -239,6 +240,9 @@ public class EnemyView : MonoBehaviour
             var hover = cardGo.GetComponent<CardHoverEffect>();
             if (hover != null) hover.enabled = false;
 
+            // 悬停放大预览（仅展示交互：鼠标移入放大到原尺寸清晰查看，移出恢复）
+            cardGo.AddComponent<IntentCardHover>();
+
             var cardRect = cardGo.GetComponent<RectTransform>();
             float w = cardRect != null ? cardRect.rect.width : 148f;
             cards.Add((cardGo, w));
@@ -341,5 +345,36 @@ public class EnemyView : MonoBehaviour
 
         if (text != null) Destroy(text.gameObject);
         _popupRoutine = null;
+    }
+
+    /// <summary>
+    /// 敌人意图牌库小卡的悬停放大查看：
+    /// 鼠标移入时放大并置顶（保持原位，鼠标不脱离卡面 → 不触发 Exit 频闪），移出后恢复。
+    /// 放大倍数基于当前缩放（deckBaseScale），确保预览时足够清晰。
+    /// </summary>
+    private class IntentCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private Vector3 _origScale;
+        private int _origSibling;
+        private const float EnlargeScale = 2.6f;
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            var rt = transform as RectTransform;
+            if (rt == null) return;
+            _origSibling = transform.GetSiblingIndex();
+            _origScale = transform.localScale;
+
+            transform.SetAsLastSibling();   // 同级内置顶
+            transform.localScale = _origScale * EnlargeScale;   // 原位放大，鼠标仍在卡上
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            var rt = transform as RectTransform;
+            if (rt == null) return;
+            transform.SetSiblingIndex(_origSibling);
+            transform.localScale = _origScale;
+        }
     }
 }

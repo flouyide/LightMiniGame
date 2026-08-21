@@ -117,7 +117,8 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private GameObject settingsPanelPrefab;
 
     [Header("UI引用 - 结果")]
-    [SerializeField] private GameObject victoryPanel;
+    [Tooltip("战利品结算面板（挂在 BattleCanvas 下的 LootPanel）。战斗胜利时启用并按掉落表显示奖励按钮，点击其继续按钮回到局外（替代原 VictoryPanel）")]
+    [SerializeField] private LootPanelUI lootPanel;
     [SerializeField] private GameObject defeatPanel;
     [SerializeField] private Button quitButton;
 
@@ -385,6 +386,12 @@ public class BattleManager : MonoBehaviour
     /// <summary>局外（ChapterManager）在进入战斗前指定的出战敌人列表（含位置与行动顺序值）。
     /// 为空则回退到 Inspector 的默认 defaultEnemies。</summary>
     public List<EnemySpawnInfo> StartEnemies { get; set; }
+
+    /// <summary>
+    /// 局外（ChapterManager）在进入战斗前传入的掉落表（PageEventData.lootTable）。
+    /// 战斗胜利时据此显示 LootPanel 的奖励按钮；空则按钮全隐藏（面板与继续按钮仍显示）。
+    /// </summary>
+    public LootTable StartLootTable { get; set; }
 
     /// <summary>战斗背景配置（由 Battle 事件的 PageEventData 注入）。
     /// StartNormalBattleBackground / StartLowSanityBattleBackground 分别为正常与低理智背景图，
@@ -1101,6 +1108,9 @@ public class BattleManager : MonoBehaviour
             settingsButton.onClick.AddListener(OnSettingsClicked);
         if (quitButton != null)
             quitButton.onClick.AddListener(OnQuitClicked);
+        // 战利品面板的继续按钮与 QuitButton 等价：回写局外属性并结束战斗（回到局外）
+        if (lootPanel != null)
+            lootPanel.OnContinueClicked += OnQuitClicked;
     }
 
     /// <summary>
@@ -1310,7 +1320,7 @@ public class BattleManager : MonoBehaviour
         _isPlayerTurn = true;
 
         // 重新进入战斗时复位上一场结束状态（胜利/失败面板、按钮可用性）
-        if (victoryPanel != null) victoryPanel.SetActive(false);
+        if (lootPanel != null) lootPanel.gameObject.SetActive(false);
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (endTurnButton != null) endTurnButton.interactable = true;
         if (switchCharacterButton != null) switchCharacterButton.interactable = true;
@@ -2007,7 +2017,7 @@ public class BattleManager : MonoBehaviour
             {
                 e.UseLowSanityPool = low;
                 e.ResetDrawnSkill();   // 牌库变化 → 清空已抽，重新随机
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, low);
+                e.View?.ShowIntentDeck(e.GetCurrentSkills(), low);
                 e.View?.Refresh();
                 Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）低理智牌库 {(low ? "启用(phase2)" : "关闭(phase1)")}");
             }
@@ -2398,7 +2408,7 @@ public class BattleManager : MonoBehaviour
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
-                inst.View?.ShowIntentDeck(inst.CurrentSkillPool, _playerSanity <= _sanityThreshold);   // 阶段切换 → 牌库变化，刷新预览
+                inst.View?.ShowIntentDeck(inst.GetCurrentSkills(), _playerSanity <= _sanityThreshold);   // 阶段切换 → 重抽并按配置出招数刷新预览
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
@@ -2748,7 +2758,13 @@ public class BattleManager : MonoBehaviour
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }
         if (enemySkillCard != null) enemySkillCard.SetActive(false);   // 兜底：敌人行动被打断时隐藏技能卡
         if (_enemyPlayedCard != null) { Destroy(_enemyPlayedCard); _enemyPlayedCard = null; } // 兜底：清理敌人出牌展示卡
-        if (victoryPanel != null) victoryPanel.SetActive(victory);
+        // 胜利：启用战利品结算面板（替代原 VictoryPanel），按掉落表显示奖励按钮；
+        // 点击面板上的继续按钮 → OnQuitClicked → 回到局外。失败仍用 defeatPanel。
+        if (lootPanel != null)
+        {
+            lootPanel.gameObject.SetActive(true);
+            lootPanel.ShowForLootTable(StartLootTable);
+        }
         if (defeatPanel != null) defeatPanel.SetActive(!victory);
         if (endTurnButton != null) endTurnButton.interactable = false;
         if (switchCharacterButton != null) switchCharacterButton.interactable = false;
@@ -2809,7 +2825,7 @@ public class BattleManager : MonoBehaviour
             foreach (var e in _enemies)
             {
                 if (e == null || e.IsDead) continue;
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold);
+                e.View?.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold);   // 显示本回合实际会打的牌（按配置出招数抽取）
             }
         }
 
