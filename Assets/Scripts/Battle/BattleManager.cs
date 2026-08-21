@@ -738,10 +738,6 @@ public class BattleManager : MonoBehaviour
     public RectTransform GetEnemyArmorAnchor(int slot)
         => GetEnemyView(slot)?.ArmorTextRect;
 
-    /// <summary>指定槽位敌人的意图文本 RectTransform（供融合原位高亮；死亡返回 null）。</summary>
-    public RectTransform GetEnemyIntentAnchor(int slot)
-        => GetEnemyView(slot)?.IntentTextRect;
-
     /// <summary>指定槽位敌人的血量文本 RectTransform（供融合原位高亮；死亡返回 null）。</summary>
     public RectTransform GetEnemyHPAnchor(int slot)
         => GetEnemyView(slot)?.HPTextRect;
@@ -2380,7 +2376,6 @@ public class BattleManager : MonoBehaviour
         {
             if (e == null || e.IsDead) continue;
             e.ResetArmorOnTurnStart();
-            e.View?.SetIntent(GetEnemyIntentText(e));
         }
         UpdateUI();
 
@@ -2405,20 +2400,17 @@ public class BattleManager : MonoBehaviour
                 {
                     if (_battleEnded || inst == null || inst.IsDead) break;
                     if (skill == null) continue;
-                    inst.View?.SetIntent($"【{skill.cardName}】");
                     yield return StartCoroutine(ExecuteEnemySkillCoroutine(inst, skill));
                 }
             }
             else
             {
                 // 无技能配置：空过敌人回合（不造成伤害）
-                inst.View?.SetIntent("…");
                 Debug.Log($"[BattleManager] {inst.Name} 无可用技能，空过本回合");
             }
 
             inst.TurnInCycle++;   // 技能轮转计数（每次行动 +1）
             // 行动完毕：意图回写为下个技能的预览（轮转计数已推进，预览的是下回合动作）
-            inst.View?.SetIntent(GetEnemyIntentText(inst));
 
             UpdateUI();
             if (_playerHP <= 0)
@@ -2518,7 +2510,6 @@ public class BattleManager : MonoBehaviour
         else
         {
             // 无卡面时，用意图文本显示卡名并等待
-            inst.View?.SetIntent($"【{skill.cardName}】{skill.GetDescription(false)}");
             yield return new WaitForSeconds(2f);
         }
 
@@ -2805,7 +2796,6 @@ public class BattleManager : MonoBehaviour
             foreach (var e in _enemies)
             {
                 if (e == null || e.IsDead) continue;
-                e.View?.SetIntent(GetEnemyIntentText(e));
                 e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold);
             }
         }

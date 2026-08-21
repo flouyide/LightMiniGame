@@ -32,6 +32,15 @@ public class FusionController : MonoBehaviour
     private TextMeshProUGUI _statusText;
     private readonly List<GameObject> _highlights = new();   // 原位高亮片（与候选一一对应）
 
+    // === Selected 选中动画（覆盖在被选中的数字上，5 倍于高亮块）===
+    private static Sprite[] _selectFrames;                    // Selected.anim 的 4 帧
+    private readonly List<GameObject> _selectAnims = new();  // 当前播放中的动画层（应只有1个）
+    private const string SelectFrameA = "Assets/Art/Animation/未命名作品-1.png";
+    private const string SelectFrameB = "Assets/Art/Animation/未命名作品-2.png";
+    private const string SelectFrameC = "Assets/Art/Animation/未命名作品-3.png";
+    private const string SelectFrameD = "Assets/Art/Animation/未命名作品-4.png";
+    private const float SelectFrameInterval = 0.2f;
+
     private bool PanelActive => _panelRoot != null;
 
     private void OnDestroy()
@@ -387,7 +396,7 @@ public class FusionController : MonoBehaviour
             num.fontSize = 20;
             num.fontStyle = TMPro.FontStyles.Bold;
             num.alignment = TextAlignmentOptions.Center;
-            num.color = Color.white;
+            num.color = FusionPurpleBright;   // 高饱和紫
             num.outlineWidth = 0.2f;
             num.outlineColor = new Color(0f, 0f, 0f, 0.85f);
             num.enableWordWrapping = false;
@@ -481,13 +490,13 @@ public class FusionController : MonoBehaviour
     private void ApplyHighlightColor(Image img, FusableValue fv)
     {
         if (img == null) return;
-        if (fv.lockedBySanity)
-            img.color = new Color(0.35f, 0.35f, 0.35f, 0.45f);
-        else if (_selected.Contains(fv))
-            img.color = new Color(0.9f, 0.2f, 0.2f, 0.85f);      // 红=已选
-        else
-            img.color = new Color(0.62f, 0.35f, 0.85f, 0.55f);  // 紫=未选（原位衬底，不遮字）
+        // 高亮方块透明度恒为 0：方块不可见，只作点击命中层；视觉由数字加粗紫承担
+        img.color = new Color(1f, 1f, 1f, 0f);
     }
+
+    // === 高饱和紫（供数字着色） ===
+    private static readonly Color FusionPurpleBright = new Color(0.75f, 0.29f, 1f, 1f);   // #BF4AFF 高饱和紫
+    private static readonly Color FusionSelectedRed  = new Color(1f, 0.23f, 0.36f, 1f);   // #FF3B5C 选中红
 
     private void OnHighlightClick(int index)
     {
@@ -504,11 +513,84 @@ public class FusionController : MonoBehaviour
 
     private void RefreshHighlights()
     {
+        // 1) 清除上一轮的选中动画层
+        ClearSelectAnims();
+
         for (int i = 0; i < _highlights.Count && i < _candidates.Count; i++)
         {
-            Image img = _highlights[i]?.GetComponent<Image>();
+            var go = _highlights[i];
+            if (go == null) continue;
+            // 方块保持全透明（透明度 0）
+            Image img = go.GetComponent<Image>();
             if (img != null) ApplyHighlightColor(img, _candidates[i]);
+            // 数字文字：加粗高饱和紫（未选）/ 红（已选）
+            var num = go.transform.Find("Num")?.GetComponent<TextMeshProUGUI>();
+            if (num != null)
+                num.color = _selected.Contains(_candidates[i])
+                    ? FusionSelectedRed
+                    : FusionPurpleBright;
+            // 2) 被选中的数字上播放 Selected 动画（5 倍覆盖）
+            if (_selected.Contains(_candidates[i]))
+            {
+                var rt = go.GetComponent<RectTransform>();
+                var anim = PlaySelectAnimAt(rt);
+                if (anim != null) _selectAnims.Add(anim);
+            }
         }
+    }
+
+    private void ClearSelectAnims()
+    {
+        foreach (var a in _selectAnims)
+            if (a != null) Destroy(a);
+        _selectAnims.Clear();
+    }
+
+    private static Sprite[] EnsureSelectFrames()
+    {
+        if (_selectFrames != null && _selectFrames.Length == 4) return _selectFrames;
+#if UNITY_EDITOR
+        var paths = new string[] { SelectFrameA, SelectFrameB, SelectFrameC, SelectFrameD };
+        _selectFrames = new Sprite[4];
+        for (int i = 0; i < paths.Length; i++)
+            _selectFrames[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(paths[i]);
+#else
+        _selectFrames = null;
+#endif
+        return _selectFrames;
+    }
+
+    /// <summary>在指定高亮块上播放 Selected 动画覆盖层（5 倍大，居中于块），返回 GameObject。</summary>
+    private GameObject PlaySelectAnimAt(RectTransform blockRT)
+    {
+        if (blockRT == null || _panelRoot == null) return null;
+        var frames = EnsureSelectFrames();
+        if (frames == null || frames.Length == 0) return null;
+
+        var go = new GameObject("SelectAnim");
+        go.transform.SetParent(_panelRoot.transform, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = blockRT.anchoredPosition + new Vector2(-blockRT.sizeDelta.x * 0.5f, 0f);   // 居中于数字，略左移贴合数字
+        rt.sizeDelta = blockRT.sizeDelta * 5f;            // 5 倍于高亮块
+        var img = go.AddComponent<Image>();
+        img.sprite = frames[0];
+        img.raycastTarget = false;                        // 不拦截点击
+        StartCoroutine(AnimateSelectOverlay(img, frames));
+        return go;
+    }
+
+    private System.Collections.IEnumerator AnimateSelectOverlay(Image img, Sprite[] frames)
+    {
+        int idx = 0;
+        while (img != null && img.gameObject != null && PanelActive)
+        {
+            img.sprite = frames[idx];
+            idx = (idx + 1) % frames.Length;
+            yield return new WaitForSeconds(SelectFrameInterval);
+        }
+        if (img != null && img.gameObject != null) Destroy(img.gameObject);
     }
 
     private void UpdateStatus()
@@ -625,6 +707,7 @@ public class FusionController : MonoBehaviour
 
     private void ExitFusion()
     {
+        ClearSelectAnims();   // 清除选中动画层
         if (_panelRoot != null) Destroy(_panelRoot);
         _panelRoot = null;
         _highlights.Clear();

@@ -19,7 +19,6 @@ public class EnemyView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private Slider hpBar;
     [SerializeField] private TextMeshProUGUI armorText;
-    [SerializeField] private TextMeshProUGUI intentText;
 
     [Header("伤害飘字")]
     [Tooltip("飘字出生点（空 RectTransform）")]
@@ -56,7 +55,6 @@ public class EnemyView : MonoBehaviour
         _inst = inst;
         gameObject.SetActive(true);
         Refresh();
-        SetIntent("");
     }
 
     /// <summary>敌人护甲文本的 RectTransform（融合原位高亮锚点用）。</summary>
@@ -116,9 +114,6 @@ public class EnemyView : MonoBehaviour
         return true;
     }
 
-    /// <summary>敌人意图文本的 RectTransform（融合原位高亮锚点用）。</summary>
-    public RectTransform IntentTextRect => intentText != null ? intentText.rectTransform : null;
-
     /// <summary>意图牌库中每张小卡的 CardDisplay 列表（供融合高亮意图数值用）。</summary>
     public List<CardDisplay> IntentDeckDisplays
     {
@@ -134,6 +129,7 @@ public class EnemyView : MonoBehaviour
             return list;
         }
     }
+
 
     /// <summary>
     /// 标记/取消该敌人为当前受击对象（拖拽卡牌悬停其上时高亮）。
@@ -169,11 +165,6 @@ public class EnemyView : MonoBehaviour
         }
     }
 
-    /// <summary>设置意图文本（玩家回合预览下个技能名；敌人回合由 BattleManager 控制）</summary>
-    public void SetIntent(string text)
-    {
-        if (intentText != null) intentText.text = text ?? "";
-    }
 
     /// <summary>注入玩家同款卡面预制体（出牌牌库预览用），由 BattleManager 生成敌人时调用。</summary>
     public void SetCardPrefabs(GameObject attack, GameObject skill, GameObject ability)
