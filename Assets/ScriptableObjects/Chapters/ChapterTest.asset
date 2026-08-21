@@ -329,6 +329,6 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
-  NormalBG: {fileID: 21300000, guid: eb9bf70904d5843cd84979835c7a608f, type: 3}
-  AbnormalBG: {fileID: 21300000, guid: fde7adbb1a7284555a15a7632e0010ba, type: 3}
+  NormalBG: {fileID: 21300000, guid: c3b2ce9a8a00ec34a846920a08408b72, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: c3b2ce9a8a00ec34a846920a08408b72, type: 3}
   sanityThreshold: 5
