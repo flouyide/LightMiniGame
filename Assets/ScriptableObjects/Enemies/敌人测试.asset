@@ -30,16 +30,8 @@ MonoBehaviour:
   dexterity: 0
   damageDealtMultiplier: 100
   damageTakenMultiplier: 100
-  highSanityCardCount: 0
-  lowSanityCardCount: 0
+  highSanityCardCount: 1
+  lowSanityCardCount: 1
   abilities:
   - relic: {fileID: 11400000, guid: 0f817696309136c4384a8f9a358734dd, type: 2}
   - relic: {fileID: 11400000, guid: ec56406cb813c2e438424f1bc3f5592f, type: 2}
-  lootTable:
-    entries:
-    - kind: 2
-      currencyAmount: 10
-      cardRarities: 00000000
-      cardDrawCount: 3
-      cardPickCount: 1
-      relicRarities: 00000000
