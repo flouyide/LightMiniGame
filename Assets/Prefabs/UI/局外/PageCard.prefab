@@ -386,8 +386,8 @@ MonoBehaviour:
   showDeleteOnShop: 1
   showDeleteOnRest: 1
   showDeleteOnEvent: 1
-  pageImage: {fileID: 0}
-  pageLogoImage: {fileID: 0}
+  pageImage: {fileID: 5458061111138510016}
+  pageLogoImage: {fileID: 2903034271309020228}
   restPage: {fileID: 21300000, guid: 393eba028e870d341a9bb7d9662dee96, type: 3}
   restPageLogo: {fileID: 21300000, guid: f424cddaa7c3d9b4292098ff70f36097, type: 3}
   fatePage: {fileID: 21300000, guid: b1cebf9e21deeef42a1cb015324644db, type: 3}
