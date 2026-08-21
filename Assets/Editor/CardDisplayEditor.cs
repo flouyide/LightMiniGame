@@ -64,6 +64,7 @@ public class CardDisplayEditor : Editor
         var frameImageProp = serializedObject.FindProperty("frameImage");
         var bgImageProp = serializedObject.FindProperty("backgroundImage");
         var artImageProp = serializedObject.FindProperty("artImage");
+        var descBoxImageProp = serializedObject.FindProperty("descBoxImage");
         var typeBadgeProp = serializedObject.FindProperty("typeBadgeImage");
         var costBadgeProp = serializedObject.FindProperty("costBadgeImage");
 
@@ -76,6 +77,7 @@ public class CardDisplayEditor : Editor
         EditorGUILayout.PropertyField(frameImageProp);
         EditorGUILayout.PropertyField(bgImageProp);
         EditorGUILayout.PropertyField(artImageProp);
+        EditorGUILayout.PropertyField(descBoxImageProp);
         EditorGUILayout.PropertyField(typeBadgeProp);
         EditorGUILayout.PropertyField(costBadgeProp);
 

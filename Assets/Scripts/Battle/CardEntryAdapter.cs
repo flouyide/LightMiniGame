@@ -51,7 +51,10 @@ public static class CardEntryAdapter
         // 基本信息
         cd.cardName = entry.cardName;
         cd.description = entry.GetDescription(false);
+        // 三层卡面美术（底层卡面 / 中层描述框 / 顶层类型框）
         cd.cardArt = entry.cardArt;
+        cd.descBoxSprite = entry.descBoxSprite;
+        cd.typeBoxSprite = entry.typeBoxSprite;
         cd.value = entry.price;   // 商店售价（金币）
 
         // 费用
@@ -83,9 +86,6 @@ public static class CardEntryAdapter
             cd.keywords |= KeywordType.Calamity;
         if (entry.keyword == CardKeyword.Fate)
             cd.keywords |= KeywordType.Fate;
-
-        // 黑暗卡面
-        cd.darkCardArt = entry.darkCardArt;
 
         // 消耗类型映射
         cd.consumeType = entry.existence switch

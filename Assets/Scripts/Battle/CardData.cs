@@ -27,8 +27,10 @@ public class CardData : ScriptableObject
     [TextArea(2, 4)] public string description;
     public CardType cardType;
     public Sprite cardArt;
-    [Tooltip("黑暗卡面（理智转阶段时替换为此图），留空则仅变色")]
-    public Sprite darkCardArt;
+    [Tooltip("中层：描述框（卡名与描述所在框体美术）")]
+    public Sprite descBoxSprite;
+    [Tooltip("顶层：类型框（卡牌类型标签框体美术）")]
+    public Sprite typeBoxSprite;
 
     [Header("通用属性")]
     [Tooltip("商店价值")]

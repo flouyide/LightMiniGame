@@ -41,6 +41,9 @@ namespace LightMiniGame.CardEditor.Editor
         // === 效果折叠 ===
         private Dictionary<string, bool> _effectFoldouts = new Dictionary<string, bool>();
 
+        // === 描述框位置折叠 ===
+        private bool _showDescBoxLayout = true;
+
         // === 菜单 ===
         [MenuItem("Tools/卡牌编辑器/Card Editor")]
         public static void Open()
@@ -53,6 +56,11 @@ namespace LightMiniGame.CardEditor.Editor
         {
             LoadDatabase();
             RefreshFilter();
+        }
+
+        private void OnDisable()
+        {
+            CardPreviewRenderer.Cleanup();
         }
 
         private void LoadDatabase()
@@ -115,6 +123,12 @@ namespace LightMiniGame.CardEditor.Editor
                 DeleteCard(_selectedCard);
 
             GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button("导出预制体", EditorStyles.toolbarButton, GUILayout.Width(90)))
+                ExportCardPrefab(_selectedCard);
+
+            if (GUILayout.Button("批量导出", EditorStyles.toolbarButton, GUILayout.Width(80)))
+                ExportAllCardPrefabs();
 
             if (GUILayout.Button("批量验证", EditorStyles.toolbarButton, GUILayout.Width(80)))
                 ValidateAllCards();
@@ -246,8 +260,33 @@ namespace LightMiniGame.CardEditor.Editor
             {
                 RenameCardAsset(card, card.cardName);
             }
-            card.cardArt = (Sprite)EditorGUILayout.ObjectField("卡面原画", card.cardArt, typeof(Sprite), false);
-            card.darkCardArt = (Sprite)EditorGUILayout.ObjectField("黑暗卡面", card.darkCardArt, typeof(Sprite), false);
+            card.cardArt = (Sprite)EditorGUILayout.ObjectField("卡面（底层）", card.cardArt, typeof(Sprite), false);
+            card.descBoxSprite = (Sprite)EditorGUILayout.ObjectField("描述框（中层）", card.descBoxSprite, typeof(Sprite), false);
+            card.typeBoxSprite = (Sprite)EditorGUILayout.ObjectField("类型框（顶层）", card.typeBoxSprite, typeof(Sprite), false);
+
+            EditorGUILayout.Space();
+            _showDescBoxLayout = EditorGUILayout.Foldout(_showDescBoxLayout, "▼ 描述框位置（可视化配置）");
+            if (_showDescBoxLayout)
+            {
+                EditorGUILayout.HelpBox("调整描述框在卡面上的位置/大小，右侧为实时预览。导出预制体与运行时均会应用。", MessageType.Info);
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.BeginVertical(GUILayout.Width(210));
+                EditorGUILayout.LabelField("参数", EditorStyles.boldLabel);
+                card.descBoxOffsetY = EditorGUILayout.FloatField("底边距 Y", card.descBoxOffsetY);
+                card.descBoxOffsetX = EditorGUILayout.FloatField("水平偏移 X", card.descBoxOffsetX);
+                card.descBoxHeight = EditorGUILayout.FloatField("高度", card.descBoxHeight);
+                card.descBoxInset = EditorGUILayout.FloatField("左右内缩", card.descBoxInset);
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField($"框: y={card.descBoxOffsetY} h={card.descBoxHeight} x={card.descBoxOffsetX}", EditorStyles.miniLabel);
+                EditorGUILayout.EndVertical();
+
+                EditorGUILayout.BeginVertical();
+                DrawDescBoxVisualPreview(card);
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.EndHorizontal();
+            }
+
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
             card.cardType = (CardType)EditorGUILayout.Popup("卡牌类型", (int)card.cardType, new[] { "攻击", "技能", "能力" });
             card.existence = (CardExistence)EditorGUILayout.Popup("存在形式(普通)", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
@@ -283,6 +322,52 @@ namespace LightMiniGame.CardEditor.Editor
             card.customCardScript = (CustomCardScript)EditorGUILayout.ObjectField("脚本", card.customCardScript, typeof(CustomCardScript), false);
             if (card.customCardScript != null)
                 EditorGUILayout.LabelField($"已绑定: {card.customCardScript.GetDisplayName()}", EditorStyles.miniLabel);
+        }
+
+        // ========================================================================
+        // 描述框位置可视化预览（在卡牌 180×252 参考面上绘出描述框实时位置）
+        // ========================================================================
+        private void DrawDescBoxVisualPreview(CardEntry card)
+        {
+            const float cardW = 180f, cardH = 252f;
+            float scale = 1.0f;   // 直接 1:1 显示 180×252
+            var rect = GUILayoutUtility.GetRect(cardW, cardH, GUILayout.Width(cardW + 8), GUILayout.Height(cardH + 8));
+            rect.x += 4; rect.y += 4; rect.width = cardW; rect.height = cardH;
+
+            var bgColor = new Color(0.16f, 0.16f, 0.20f, 1f);
+            EditorGUI.DrawRect(rect, bgColor);
+
+            // 卡面（底层）占位：上部 45%
+            var art = new Rect(rect.x + 6, rect.y + 6, rect.width - 12, rect.height * 0.40f);
+            EditorGUI.DrawRect(art, new Color(0.32f, 0.42f, 0.55f, 1f));
+
+            // 费用气泡占位（左上角）
+            var cost = new Rect(rect.x + 10, rect.y + 10, 26, 26);
+            EditorGUI.DrawRect(cost, new Color(0.9f, 0.75f, 0.30f, 1f));
+
+            // 类型框（顶层）占位：右下
+            var type = new Rect(rect.x + rect.width - 56, rect.y + rect.height - 30, 46, 22);
+            EditorGUI.DrawRect(type, new Color(0.85f, 0.85f, 0.85f, 1f));
+
+            // 描述框（中层）——核心：按配置参数绘制
+            float boxW = rect.width - card.descBoxInset * 2f - 12f;
+            float boxH = card.descBoxHeight * (rect.height / cardH);   // 高度按比例
+            float boxY = rect.y + rect.height - card.descBoxOffsetY * (rect.height / cardH) - boxH;
+            float boxX = rect.x + 6 + card.descBoxInset + (rect.width - 12f - boxW) * 0.5f + card.descBoxOffsetX * (rect.width / cardW) * 0.5f;
+            var box = new Rect(boxX, boxY, boxW, boxH);
+            EditorGUI.DrawRect(box, new Color(0.55f, 0.38f, 0.18f, 0.65f));
+
+            // 描述文字占位（框内两行）
+            var hint = new Rect(box.x + 6, box.y + 6, box.width - 12, box.height - 12);
+            GUI.color = new Color(1f, 1f, 1f, 0.55f);
+            GUI.Label(hint, "描述文字占位", EditorStyles.miniLabel);
+            GUI.color = Color.white;
+
+            // 边框
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), new Color(1, 1, 1, 0.25f));
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y + rect.height - 1, rect.width, 1f), new Color(1, 1, 1, 0.25f));
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), new Color(1, 1, 1, 0.25f));
+            EditorGUI.DrawRect(new Rect(rect.x + rect.width - 1, rect.y, 1f, rect.height), new Color(1, 1, 1, 0.25f));
         }
 
         // ========================================================================
@@ -389,6 +474,23 @@ namespace LightMiniGame.CardEditor.Editor
         {
             EditorGUILayout.BeginVertical("box");
             var card = _selectedCard;
+
+            // —— 真实卡面渲染预览（复用模板 + 三层美术 + 描述框位置，与战斗/导出一致） ——
+            EditorGUILayout.LabelField("实时卡面效果（美术 + 布局）", EditorStyles.boldLabel);
+            var lowSanity = _viewingLowSanity && card.hasLowSanityForm;
+            var previewTex = CardPreviewRenderer.Render(card, lowSanity);
+            if (previewTex != null)
+            {
+                float aspect = previewTex.width / (float)previewTex.height;   // ≈ 180/252
+                float pw = 200f;   // 预览显示宽度
+                float ph = pw / aspect;
+                GUILayout.Label(new GUIContent(previewTex), GUILayout.Width(pw), GUILayout.Height(ph));
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("无法渲染卡面（模板缺失）", MessageType.Warning);
+            }
+            EditorGUILayout.Space();
 
             // 卡牌标题
             EditorGUILayout.LabelField($"【{CardEntry.GetGradeName(card.grade)}】{card.cardName}", EditorStyles.boldLabel);
@@ -515,7 +617,8 @@ namespace LightMiniGame.CardEditor.Editor
             card.normalDescription = source.normalDescription;
             card.lowSanityDescription = source.lowSanityDescription;
             card.cardArt = source.cardArt;
-            card.darkCardArt = source.darkCardArt;
+            card.descBoxSprite = source.descBoxSprite;
+            card.typeBoxSprite = source.typeBoxSprite;
             card.grade = source.grade;
             card.cardType = source.cardType;
             card.existence = source.existence;
@@ -560,6 +663,166 @@ namespace LightMiniGame.CardEditor.Editor
 
             if (_selectedCard == card) _selectedCard = null;
             RefreshFilter();
+        }
+
+        // ========================================================================
+        // 导出卡牌预制体
+        // ========================================================================
+
+        /// <summary>按卡牌类型选择导出模板：项目统一使用卡牌.prefab 作为卡面模板（与游戏内一致）。</summary>
+        private static string GetTypeTemplatePath(CardType type) => "Assets/Prefabs/Battle/Cards/卡牌.prefab";
+
+        /// <summary>
+        /// 把一张 CardEntry 导出为独立卡牌预制体（含三层美术 + 效果功能）。
+        /// 以对应类型的模板预制体为基础，写入卡名/描述/费用/品级/词条/三层卡面，
+        /// 并保留 CardEntry 引用（实例化后自动刷新显示，效果走 EffectExecutor）。
+        /// </summary>
+        private void ExportCardPrefab(CardEntry card)
+        {
+            if (card == null || string.IsNullOrEmpty(card.cardName))
+            {
+                EditorUtility.DisplayDialog("导出预制体", "请先选择一张卡牌并填写卡牌名称。", "确定");
+                return;
+            }
+
+            var templatePath = GetTypeTemplatePath(card.cardType);
+            var template = AssetDatabase.LoadAssetAtPath<GameObject>(templatePath);
+            if (template == null)
+            {
+                EditorUtility.DisplayDialog("导出预制体", $"未找到类型模板预制体：{templatePath}", "确定");
+                return;
+            }
+
+            var dir = "Assets/Prefabs/Cards";
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            var destPath = AssetDatabase.GenerateUniqueAssetPath($"{dir}/{card.cardName}.prefab");
+
+            var root = PrefabUtility.LoadPrefabContents(templatePath);
+            try
+            {
+                var display = root.GetComponentInChildren<CardDisplay>(true);
+                if (display == null)
+                {
+                    EditorUtility.DisplayDialog("导出预制体", "模板预制体缺少 CardDisplay 组件。", "确定");
+                    return;
+                }
+
+                // 关联 CardEntry（功能来源）：实例化后 Awake 自动刷新
+                display.cardEntry = card;
+
+                // 填充显示数据（与 CardEntryAdapter 一致）
+                display.cardName = card.cardName;
+                display.description = card.GetDescription(false);
+                display.cardArt = card.cardArt;
+                display.cardType = card.cardType switch
+                {
+                    CardType.Attack => global::CardType.Attack,
+                    CardType.Skill => global::CardType.Skill,
+                    CardType.Ability => global::CardType.Ability,
+                    _ => global::CardType.Attack
+                };
+                display.grade = card.grade switch
+                {
+                    CardGrade.Bronze => global::CardGrade.Bronze,
+                    CardGrade.Silver => global::CardGrade.Silver,
+                    CardGrade.Gold => global::CardGrade.Gold,
+                    _ => global::CardGrade.Bronze
+                };
+                display.value = card.price;
+                display.actionPointCost = card.normalCost;
+                display.consumeType = card.existence switch
+                {
+                    CardExistence.Normal => ConsumeType.None,
+                    CardExistence.BattleRemove => ConsumeType.ThisBattle,
+                    CardExistence.PermanentRemove => ConsumeType.ThisRun,
+                    _ => ConsumeType.None
+                };
+                display.keywords = KeywordType.None;
+                if (card.keyword == CardKeyword.Echo) display.keywords |= KeywordType.Echo;
+                if (card.keyword == CardKeyword.Calamity) display.keywords |= KeywordType.Calamity;
+                if (card.keyword == CardKeyword.Fate) display.keywords |= KeywordType.Fate;
+
+                // 三层卡面：底层卡画 / 中层描述框 / 顶层类型框（通过 CardDisplay 刷新写精灵）
+                display.ApplyCardEntry(card, false);
+
+                PrefabUtility.SaveAsPrefabAsset(root, destPath);
+                AssetDatabase.SaveAssets();
+
+                EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<GameObject>(destPath));
+                UnityEngine.Debug.Log($"[卡牌编辑器] 已导出卡牌预制体：{destPath}");
+                if (!EditorUtility.DisplayDialog("导出预制体", $"已导出：{destPath}\n可直接拖入场景使用（含美术与效果）。", "确定"))
+                    return;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private void ExportAllCardPrefabs()
+        {
+            if (_database == null || _database.cards == null || _database.cards.Count == 0) return;
+
+            int ok = 0, skip = 0;
+            foreach (var card in _database.cards)
+            {
+                if (card == null || string.IsNullOrEmpty(card.cardName)) { skip++; continue; }
+                var templatePath = GetTypeTemplatePath(card.cardType);
+                if (!System.IO.File.Exists(templatePath)) { skip++; continue; }
+
+                var dir = "Assets/Prefabs/Cards";
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                var destPath = AssetDatabase.GenerateUniqueAssetPath($"{dir}/{card.cardName}.prefab");
+
+                var root = PrefabUtility.LoadPrefabContents(templatePath);
+                try
+                {
+                    var display = root.GetComponentInChildren<CardDisplay>(true);
+                    if (display == null) { skip++; continue; }
+
+                    display.cardEntry = card;
+                    display.cardName = card.cardName;
+                    display.description = card.GetDescription(false);
+                    display.cardType = card.cardType switch
+                    {
+                        CardType.Attack => global::CardType.Attack,
+                        CardType.Skill => global::CardType.Skill,
+                        CardType.Ability => global::CardType.Ability,
+                        _ => global::CardType.Attack
+                    };
+                    display.grade = card.grade switch
+                    {
+                        CardGrade.Bronze => global::CardGrade.Bronze,
+                        CardGrade.Silver => global::CardGrade.Silver,
+                        CardGrade.Gold => global::CardGrade.Gold,
+                        _ => global::CardGrade.Bronze
+                    };
+                    display.value = card.price;
+                    display.actionPointCost = card.normalCost;
+                    display.consumeType = card.existence switch
+                    {
+                        CardExistence.Normal => ConsumeType.None,
+                        CardExistence.BattleRemove => ConsumeType.ThisBattle,
+                        CardExistence.PermanentRemove => ConsumeType.ThisRun,
+                        _ => ConsumeType.None
+                    };
+                    display.keywords = KeywordType.None;
+                    if (card.keyword == CardKeyword.Echo) display.keywords |= KeywordType.Echo;
+                    if (card.keyword == CardKeyword.Calamity) display.keywords |= KeywordType.Calamity;
+                    if (card.keyword == CardKeyword.Fate) display.keywords |= KeywordType.Fate;
+
+                    display.ApplyCardEntry(card);
+                    PrefabUtility.SaveAsPrefabAsset(root, destPath);
+                    ok++;
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[卡牌编辑器] 批量导出完成：成功 {ok} / 跳过 {skip}");
+            EditorUtility.DisplayDialog("批量导出", $"导出完成：成功 {ok} 张，跳过 {skip} 张。\n输出目录：Assets/Prefabs/Cards", "确定");
         }
 
         // ========================================================================

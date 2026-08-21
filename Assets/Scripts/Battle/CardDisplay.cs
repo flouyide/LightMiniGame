@@ -21,6 +21,10 @@ public class CardDisplay : MonoBehaviour
     public CardType cardType = CardType.Attack;
     public Sprite cardArt;
 
+    [Header("导出预制体")]
+    [Tooltip("关联的卡牌编辑器数据（导出预制体后保留）；实例化时若未手动填充数据则自动从它刷新显示与功能")]
+    public LightMiniGame.CardEditor.CardEntry cardEntry;
+
     [Header("通用属性")]
     [Tooltip("商店价值")] public int value = 10;
     [Tooltip("品级")] public CardGrade grade = CardGrade.Bronze;
@@ -63,6 +67,9 @@ public class CardDisplay : MonoBehaviour
     [SerializeField] private Image frameImage;
     [SerializeField] private Image backgroundImage;
     [SerializeField] private Image artImage;
+
+    [Tooltip("中层：描述框（卡名与描述所在框体 Image，卡面下层之上）")]
+    [SerializeField] private Image descBoxImage;
     [SerializeField] private Image typeBadgeImage;
     [SerializeField] private Image costBadgeImage;
 
@@ -113,7 +120,8 @@ public class CardDisplay : MonoBehaviour
 
     private CardData _data;  // 源 CardData（融合精确数字定位用）
     private LightMiniGame.CardEditor.CardEntry _entry;   // 源 CardEntry（融合感知描述用）
-    private Sprite _darkCardArt;  // 从 CardData 读入的黑暗卡面
+    private Sprite _descBoxSprite;  // 从 CardData/CardEntry 读入的中层描述框
+    private Sprite _typeBoxSprite;  // 从 CardData/CardEntry 读入的顶层类型框
 
     // 缓存正常模式颜色/精灵，退出黑暗模式时恢复
     private Sprite _origFrameSprite;
@@ -124,6 +132,47 @@ public class CardDisplay : MonoBehaviour
     // ========================================================================
     // 公共方法
     // ========================================================================
+
+    private void Awake()
+    {
+        // 导出预制体自带 CardEntry：实例化后若未被战斗/牌库填充数据，则自动刷新为该卡
+        if (cardEntry != null && _entry == null)
+            ApplyCardEntry(cardEntry, false);
+    }
+
+    /// <summary>
+    /// 生成这张卡的运行时 CardData（若挂有 CardEntry 就用它，否则用本组件字段）。
+    /// 供导出预制体在场景中直接接入战斗/牌库使用：拿到 CardData 即可入战斗牌堆。
+    /// </summary>
+    public CardData ToCardData()
+    {
+        if (cardEntry != null)
+            return CardEntryAdapter.ConvertSingle(cardEntry);
+
+        var cd = ScriptableObject.CreateInstance<CardData>();
+        cd.cardName = cardName;
+        cd.description = description;
+        cd.cardType = cardType;
+        cd.cardArt = cardArt;
+        cd.value = value;
+        cd.grade = grade;
+        cd.actionPointCost = actionPointCost;
+        cd.consumeType = consumeType;
+        cd.keywords = keywords;
+        cd.attackCount = attackCount;
+        cd.attackValueType = attackValueType;
+        cd.attackValue = attackValue;
+        cd.attackAttribute = attackAttribute;
+        cd.ignoreArmor = ignoreArmor;
+        cd.armorValueType = armorValueType;
+        cd.armorValue = armorValue;
+        cd.armorAttribute = armorAttribute;
+        cd.buffDuration = buffDuration;
+        cd.buffDurationTurns = buffDurationTurns;
+        cd.buffStacks = buffStacks;
+        cd.buffEffects = buffEffects != null ? new List<BuffEffect>(buffEffects) : new List<BuffEffect>();
+        return cd;
+    }
 
     /// <summary>
     /// 设置是否可打出（行动点不足时灰显）
@@ -229,8 +278,29 @@ public class CardDisplay : MonoBehaviour
         if (backgroundImage && _origBgSprite != null) backgroundImage.sprite = _origBgSprite;
 
         Color typeColor = GetCardTypeColor();
-        if (typeBadgeImage) typeBadgeImage.color = typeColor;
         if (costBadgeImage) costBadgeImage.color = _playable ? typeColor : new Color(0.5f, 0.5f, 0.5f, 1f);
+
+        // 中层描述框（卡名+描述所在框体，卡面之上、类型框之下）
+        if (descBoxImage)
+        {
+            if (_descBoxSprite != null)
+            {
+                descBoxImage.sprite = _descBoxSprite;
+                descBoxImage.color = Color.white;
+                descBoxImage.gameObject.SetActive(true);
+            }
+            else
+            {
+                descBoxImage.gameObject.SetActive(false);
+            }
+        }
+
+        // 顶层类型框（配置了类型框美术时替换为美术；未配置则保留模板自带样式，不做任何改动）
+        if (typeBadgeImage && _typeBoxSprite != null)
+        {
+            typeBadgeImage.sprite = _typeBoxSprite;
+            typeBadgeImage.color = Color.white;
+        }
 
         // 背景颜色（按类型微调）
         if (backgroundImage)
@@ -304,15 +374,10 @@ public class CardDisplay : MonoBehaviour
         if (typeBadgeImage) typeBadgeImage.color = darkFrameColor;
         if (costBadgeImage) costBadgeImage.color = _playable ? darkFrameColor : new Color(0.3f, 0.15f, 0.35f, 1f);
 
-        // 卡牌插图：优先使用黑暗卡面，无则叠加紫色滤镜
+        // 卡牌插图：无黑暗卡面，叠加紫色滤镜
         if (artImage)
         {
-            if (_darkCardArt != null)
-            {
-                artImage.sprite = _darkCardArt;
-                artImage.color = Color.white;
-            }
-            else if (cardArt != null)
+            if (cardArt != null)
             {
                 artImage.sprite = cardArt;
                 artImage.color = new Color(0.5f, 0.4f, 0.6f, 1f);  // 紫色滤镜
@@ -363,7 +428,8 @@ public class CardDisplay : MonoBehaviour
         description = data.description;
         cardType = data.cardType;
         cardArt = data.cardArt;
-        _darkCardArt = data.darkCardArt;
+        _descBoxSprite = data.descBoxSprite;
+        _typeBoxSprite = data.typeBoxSprite;
         value = data.value;
         grade = data.grade;
         actionPointCost = data.actionPointCost;
@@ -417,8 +483,12 @@ public class CardDisplay : MonoBehaviour
             _ => CardType.Attack
         };
 
-        // 黑暗卡面
-        _darkCardArt = entry.darkCardArt;
+        // 三层卡面美术（底层卡面放 cardArt；中层描述框 / 顶层类型框）
+        _descBoxSprite = entry.descBoxSprite;
+        _typeBoxSprite = entry.typeBoxSprite;
+
+        // 描述框位置（卡牌编辑器配置，导出预制体/运行时统一应用）
+        ApplyDescBoxLayoutPosition(entry);
 
         // 词条映射（3词条：回响/灾厄/命运）
         keywords = KeywordType.None;
@@ -430,6 +500,40 @@ public class CardDisplay : MonoBehaviour
             keywords |= KeywordType.Fate;
 
         UpdateDisplay();
+    }
+
+    /// <summary>
+    /// 应用卡牌编辑器配置的描述框位置到 DescBox 背景框（若配置了 descBoxImage）。
+    /// 语义：descBoxOffsetX/Y 非 0 时才移动；descBoxHeight 非 0 时才改高度；
+    /// descBoxInset 非 0 时才改左右内缩。全为 0/默认时保持模板原有布局（不覆盖）。
+    /// 描述文字跟随框：水平居中、垂直位于框内偏上。
+    /// </summary>
+    private void ApplyDescBoxLayoutPosition(LightMiniGame.CardEditor.CardEntry entry)
+    {
+        if (entry == null || descBoxImage == null) return;
+        var rt = descBoxImage.rectTransform;
+
+        if (entry.descBoxOffsetX != 0f || entry.descBoxOffsetY != 0f)
+            rt.anchoredPosition = new Vector2(entry.descBoxOffsetX, entry.descBoxOffsetY);
+        if (entry.descBoxHeight > 0f)
+        {
+            var sd = rt.sizeDelta;
+            rt.sizeDelta = new Vector2(sd.x, entry.descBoxHeight);
+        }
+        if (entry.descBoxInset != 0f)
+        {
+            var sd = rt.sizeDelta;
+            rt.sizeDelta = new Vector2(-entry.descBoxInset * 2f, sd.y);
+        }
+
+        // 描述文字跟随框：保持模板锚点，仅在用户设置了偏移/内缩时对齐框内
+        if (descText != null && (entry.descBoxOffsetX != 0f || entry.descBoxOffsetY != 0f || entry.descBoxInset != 0f))
+        {
+            var trt = descText.rectTransform;
+            float textH = trt.sizeDelta.y;
+            var boxPos = rt.anchoredPosition;
+            trt.anchoredPosition = new Vector2(boxPos.x, boxPos.y + rt.sizeDelta.y * 0.5f - textH * 0.5f);
+        }
     }
 
     // ========================================================================

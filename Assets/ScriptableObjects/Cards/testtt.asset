@@ -10,14 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: test
+  m_Name: testtt
   m_EditorClassIdentifier: 
   cardId: card_a7903eb5
-  cardName: test
+  cardName: testtt
   normalDescription: 
   lowSanityDescription: 
-  cardArt: {fileID: 0}
-  darkCardArt: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: d151b68b3c0ed39469673ae0ccb15379, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: 3b4c83669b7d9d3439fb75f21c8b736b, type: 3}
+  typeBoxSprite: {fileID: 21300000, guid: 41533b5667d38bf4dba6ce99d16266f3, type: 3}
+  descBoxOffsetX: 0
+  descBoxOffsetY: 0
+  descBoxHeight: 0
+  descBoxInset: 0
   grade: 0
   cardType: 0
   existence: 0

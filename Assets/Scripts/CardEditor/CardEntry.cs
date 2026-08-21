@@ -30,11 +30,27 @@ namespace LightMiniGame.CardEditor
         [FormerlySerializedAs("upgradeDescription")]
         public string lowSanityDescription = "";
 
-        [Tooltip("卡面原画（普通形态）")]
+        [Tooltip("底层：卡面原画（卡牌最底层的卡面美术）")]
         public Sprite cardArt;
 
-        [Tooltip("黑暗卡面（低理智形态时替换为这张图）")]
-        public Sprite darkCardArt;
+        [Tooltip("中层：描述框（卡名与描述所在框体美术）")]
+        public Sprite descBoxSprite;
+
+        [Tooltip("顶层：类型框（卡牌类型标签框体美术，如「攻击」）")]
+        public Sprite typeBoxSprite;
+
+        [Header("描述框位置（导出预制体时应用）")]
+        [Tooltip("描述框中心水平偏移（像素，相对卡牌中心；0=用模板布局）")]
+        public float descBoxOffsetX = -1f;
+
+        [Tooltip("描述框底部距卡牌底部距离（像素，向上为正；0=用模板布局）")]
+        public float descBoxOffsetY = 90f;
+
+        [Tooltip("描述框高度（像素；0=用模板高度）")]
+        public float descBoxHeight = 95f;
+
+        [Tooltip("描述框左右内缩（像素，负值=外扩；0=用模板内缩）")]
+        public float descBoxInset = 10f;
 
         [Tooltip("品级")]
         public CardGrade grade = CardGrade.Bronze;

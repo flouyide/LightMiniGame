@@ -19,7 +19,12 @@ MonoBehaviour:
   lowSanityDescription: "\u4E0B\u4E00\u4E2A\u767B\u573A\u89D2\u8272\u4E0B\u6B21\u653B\u51FB
     +12 \u4F24\u5BB3\u3002"
   cardArt: {fileID: 0}
-  darkCardArt: {fileID: 0}
+  descBoxSprite: {fileID: 0}
+  typeBoxSprite: {fileID: 0}
+  descBoxOffsetX: 0
+  descBoxOffsetY: 0
+  descBoxHeight: 0
+  descBoxInset: 0
   grade: 0
   cardType: 1
   existence: 0

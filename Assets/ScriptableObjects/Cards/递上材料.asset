@@ -17,7 +17,12 @@ MonoBehaviour:
   normalDescription: "\u9020\u62105\u70B9\u4F24\u5BB3\uFF0C\u4E0B\u6B21\u5207\u6362\u89D2\u8272\u65F6\u83B7\u5F972\u70B9\u529B\u91CF\u3002"
   lowSanityDescription: "\u9020\u62109\u70B9\u4F24\u5BB3\uFF0C\u4E0B\u6B21\u5207\u6362\u89D2\u8272\u65F6\u83B7\u5F972\u70B9\u529B\u91CF\u3002"
   cardArt: {fileID: 0}
-  darkCardArt: {fileID: 0}
+  descBoxSprite: {fileID: 0}
+  typeBoxSprite: {fileID: 0}
+  descBoxOffsetX: 0
+  descBoxOffsetY: 0
+  descBoxHeight: 0
+  descBoxInset: 0
   grade: 0
   cardType: 0
   existence: 0
