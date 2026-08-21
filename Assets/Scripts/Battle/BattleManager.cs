@@ -2007,7 +2007,7 @@ public class BattleManager : MonoBehaviour
             {
                 e.UseLowSanityPool = low;
                 e.ResetDrawnSkill();   // 牌库变化 → 清空已抽，重新随机
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, low);
+                e.View?.ShowIntentDeck(e.GetCurrentSkills(), low);
                 e.View?.Refresh();
                 Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）低理智牌库 {(low ? "启用(phase2)" : "关闭(phase1)")}");
             }
@@ -2398,7 +2398,7 @@ public class BattleManager : MonoBehaviour
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
-                inst.View?.ShowIntentDeck(inst.CurrentSkillPool, _playerSanity <= _sanityThreshold);   // 阶段切换 → 牌库变化，刷新预览
+                inst.View?.ShowIntentDeck(inst.GetCurrentSkills(), _playerSanity <= _sanityThreshold);   // 阶段切换 → 重抽并按配置出招数刷新预览
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
@@ -2809,7 +2809,7 @@ public class BattleManager : MonoBehaviour
             foreach (var e in _enemies)
             {
                 if (e == null || e.IsDead) continue;
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold);
+                e.View?.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold);   // 显示本回合实际会打的牌（按配置出招数抽取）
             }
         }
 
