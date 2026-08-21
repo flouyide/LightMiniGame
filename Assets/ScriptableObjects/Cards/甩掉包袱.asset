@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: "\u6DF1\u547C\u5438"
+  m_Name: "\u7529\u6389\u5305\u88B1"
   m_EditorClassIdentifier: 
-  cardId: card_aad274ce
-  cardName: "\u6DF1\u547C\u5438"
-  normalDescription: "\u7406\u667A +1\uFF0C\u83B7\u5F97 5 \u683C\u6321\u3002"
-  lowSanityDescription: "\u7406\u667A +1\uFF0C\u83B7\u5F97 9 \u683C\u6321\u3002"
+  cardId: card_990be87e
+  cardName: "\u7529\u6389\u5305\u88B1"
+  normalDescription: "\u79FB\u9664\u5F53\u524D\u6240\u6709\u8D1F\u9762\u6548\u679C\uFF0C\u4E0B\u6B21\u5207\u6362\u89D2\u8272\u65F6\u83B7\u5F97\u654F\u6377+1\u3002"
+  lowSanityDescription: "\u79FB\u9664\u5F53\u524D\u6240\u6709\u8D1F\u9762\u6548\u679C\uFF0C\u4E0B\u6B21\u5207\u6362\u89D2\u8272\u65F6\u83B7\u5F97\u654F\u6377+2\u3002"
   cardArt: {fileID: 0}
   darkCardArt: {fileID: 0}
-  grade: 0
+  grade: 1
   cardType: 1
   existence: 0
   lowSanityExistence: 0
-  normalCost: 1
-  lowSanityCost: 1
+  normalCost: 2
+  lowSanityCost: 2
   price: 10
   keyword: 0
   hasLowSanityForm: 1
