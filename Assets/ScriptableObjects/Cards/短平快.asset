@@ -16,8 +16,8 @@ MonoBehaviour:
   cardName: "\u77ED\u5E73\u5FEB"
   normalDescription: "\u9020\u62106\u70B9\u4F24\u5BB3"
   lowSanityDescription: "\u9020\u62109\u70B9\u4F24\u5BB3"
-  cardArt: {fileID: 0}
-  descBoxSprite: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: df6dfede79cc60c47bac5ecb7bee410d, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: abc73d5be74f6bd46bfd24240c55e3bc, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
   descBoxOffsetY: 0
@@ -179,7 +179,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 17
-        intValue: 0
+        intValue: 6
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -368,7 +368,9 @@ MonoBehaviour:
         flagRef: 7
         variableName: 
         resultRef: 1
-        operands: []
+        operands:
+        - rid: 6563294352026107906
+        - rid: 6563294352026107907
         everyN: 1
         convertToM: 1
     - rid: 1654833856827621603
@@ -391,6 +393,38 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 2
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 6563294352026107906
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 6563294352026107907
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
         intValue: 0
         floatValue: 0
         attributeRef: 1
