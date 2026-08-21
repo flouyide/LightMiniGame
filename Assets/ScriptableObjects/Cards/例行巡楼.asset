@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: "\u6DF1\u547C\u5438"
+  m_Name: "\u4F8B\u884C\u5DE1\u697C"
   m_EditorClassIdentifier: 
-  cardId: card_aad274ce
-  cardName: "\u6DF1\u547C\u5438"
-  normalDescription: "\u7406\u667A +1\uFF0C\u83B7\u5F97 5 \u683C\u6321\u3002"
-  lowSanityDescription: "\u7406\u667A +1\uFF0C\u83B7\u5F97 9 \u683C\u6321\u3002"
+  cardId: card_6f99c5ed
+  cardName: "\u4F8B\u884C\u5DE1\u697C"
+  normalDescription: "\u9020\u62103\u70B9\u4F24\u5BB3\uFF0C\u7406\u667A+2\uFF0C\u83B7\u5F973\u70B9\u683C\u6321\u3002"
+  lowSanityDescription: "\u9020\u62106\u70B9\u4F24\u5BB3\uFF0C\u7406\u667A+2\uFF0C\u83B7\u5F973\u70B9\u683C\u6321\u3002"
   cardArt: {fileID: 0}
   darkCardArt: {fileID: 0}
   grade: 0
-  cardType: 1
+  cardType: 0
   existence: 0
   lowSanityExistence: 0
   normalCost: 1
