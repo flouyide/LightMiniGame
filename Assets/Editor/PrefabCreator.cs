@@ -32,6 +32,21 @@ public static class PrefabCreator
         var frameImage = frameObj.AddComponent<Image>();
         frameImage.color = new Color(1, 1, 1, 0.08f);
 
+        // —— 书页显示载体（固定两个节点，PageCardUI 按事件类型换 sprite）——
+        var pageImageObj = CreateChild(rootRect, "Page");
+        StretchFill(pageImageObj);
+        var pageImage = pageImageObj.AddComponent<Image>();
+        pageImage.color = new Color(0.2f, 0.2f, 0.2f, 0.92f);   // 占位色；sprite 由 PageCardUI 运行时换
+
+        var pageLogoObj = CreateChild(rootRect, "PageLogo");
+        var pageLogoRect = pageLogoObj.GetComponent<RectTransform>();
+        SetAnchors(pageLogoRect, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+        pageLogoRect.anchoredPosition = new Vector2(20, -14);
+        pageLogoRect.sizeDelta = new Vector2(40, 40);
+        var pageLogoImage = pageLogoObj.AddComponent<Image>();
+        pageLogoImage.color = Color.white;
+        pageLogoObj.SetActive(false);   // 无 logo sprite 时隐藏，PageCardUI 运行时按需显示
+
         // Icon
         var iconObj = CreateChild(rootRect, "Icon");
         var iconRect = iconObj.GetComponent<RectTransform>();
@@ -129,8 +144,11 @@ public static class PrefabCreator
         so.FindProperty("iconImage").objectReferenceValue = iconImage;
         so.FindProperty("titleText").objectReferenceValue = titleText;
         so.FindProperty("descText").objectReferenceValue = descText;
-        so.FindProperty("typeBadgeText").objectReferenceValue = badgeText;
         so.FindProperty("cardButton").objectReferenceValue = button;
+
+        // 书页显示载体（PageCardUI 运行时按事件类型换 sprite；8 个 Sprite 字段为资源引用，美术在 Inspector 拖入）
+        so.FindProperty("pageImage").objectReferenceValue = pageImage;
+        so.FindProperty("pageLogoImage").objectReferenceValue = pageLogoImage;
         
 
 

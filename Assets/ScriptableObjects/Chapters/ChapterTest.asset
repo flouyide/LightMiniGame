@@ -148,13 +148,11 @@ MonoBehaviour:
         enterBattleEnemies: []
     enemies:
     - config: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
-      anchoredPosition: {x: 200, y: 0}
-    - config: {fileID: 11400000, guid: 50c15fb1f689b5f4e8d75ca51eba64cc, type: 2}
-      anchoredPosition: {x: -200, y: 0}
+      anchoredPosition: {x: 0, y: 0}
     lootTable:
       entries: []
-    normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
-    lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 5
     defaultEffects:
     - type: 6
@@ -231,8 +229,8 @@ MonoBehaviour:
         cardDrawCount: 0
         cardPickCount: 0
         relicRarities: 
-    normalBattleBackground: {fileID: 21300000, guid: 74bc5da9c1fd9bd4288754b62259cdff, type: 3}
-    lowSanityBattleBackground: {fileID: 21300000, guid: f793e0ed955f9be48a35f2790e2782ea, type: 3}
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 5
     defaultEffects:
     - type: 6
@@ -329,6 +327,6 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
-  NormalBG: {fileID: 21300000, guid: c3b2ce9a8a00ec34a846920a08408b72, type: 3}
-  AbnormalBG: {fileID: 21300000, guid: c3b2ce9a8a00ec34a846920a08408b72, type: 3}
-  sanityThreshold: 5
+  NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
+  sanityThreshold: 4

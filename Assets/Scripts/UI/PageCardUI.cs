@@ -12,14 +12,8 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI descText;
-    [SerializeField] private TextMeshProUGUI typeBadgeText;
-    [SerializeField] private Button cardButton;            // 整卡点击（点击卡片其它区域触发）
-    [SerializeField] private Image cardFrameImage;
+    [SerializeField] private Button cardButton;            // 点击整张卡片直接进入事件
     [SerializeField] private GameObject finalNodeIndicator;
-
-    [Header("底部进入按钮")]
-    [SerializeField] private Button enterButton;           // 底部"进入"按钮（独立 Button）
-    [SerializeField] private TextMeshProUGUI enterButtonText; // 按钮文字
 
     [Header("右上角删除按钮")]
     [SerializeField] private Button deleteButton;          // 右上角删除按钮
@@ -32,23 +26,29 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private bool showDeleteOnRest = true;      // 休整：默认显示
     [SerializeField] private bool showDeleteOnEvent = true;      // 事件：默认显示
 
-    [Header("事件类型颜色")]
-    [SerializeField] private Color ColorBattle = new(0.8f, 0.3f, 0.3f, 1f);
-    [SerializeField] private Color ColorShop = new(0.9f, 0.75f, 0.2f, 1f);
-    [SerializeField] private Color ColorRest = new(0.3f, 0.7f, 0.4f, 1f);
-    [SerializeField] private Color ColorEvent = new(0.6f, 0.3f, 0.8f, 1f);
+    [Header("书页显示载体（prefab 上固定的两个 Image，按类型换 sprite）")]
+    [Tooltip("书页背景显示位：整卡的背景 Image，按事件类型换 sprite")]
+    [SerializeField] private Image pageImage;
+    [Tooltip("书页 logo 显示位：左上角 logo Image，按事件类型换 sprite")]
+    [SerializeField] private Image pageLogoImage;
 
-    [Header("类型名称文案")]
-    [SerializeField] private string typeNameBattle = "战斗";
-    [SerializeField] private string typeNameShop = "商店";
-    [SerializeField] private string typeNameRest = "休整";
-    [SerializeField] private string typeNameEvent = "事件";
-
-    [Header("进入按钮文案")]
-    [SerializeField] private string enterLabelBattle = "进入战斗";
-    [SerializeField] private string enterLabelShop = "进入商店";
-    [SerializeField] private string enterLabelRest = "进入休整";
-    [SerializeField] private string enterLabelEvent = "进入事件";
+    [Header("书页样式（按事件类型的背景与 logo sprite）")]
+    [Tooltip("回复书页（Rest 类型）：卡片书页背景图")]
+    [SerializeField] private Sprite restPage;
+    [Tooltip("回复书页logo（Rest 类型）")]
+    [SerializeField] private Sprite restPageLogo;
+    [Tooltip("命运书页（Event 类型）：卡片书页背景图")]
+    [SerializeField] private Sprite fatePage;
+    [Tooltip("命运书页logo（Event 类型）")]
+    [SerializeField] private Sprite fatePageLogo;
+    [Tooltip("商店书页（Shop 类型）：卡片书页背景图")]
+    [SerializeField] private Sprite shopPage;
+    [Tooltip("商店书页logo（Shop 类型）")]
+    [SerializeField] private Sprite shopPageLogo;
+    [Tooltip("战斗书页（Battle 类型）：卡片书页背景图")]
+    [SerializeField] private Sprite battlePage;
+    [Tooltip("战斗书页logo（Battle 类型）")]
+    [SerializeField] private Sprite battlePageLogo;
 
     private int _index;
     private Action<int> _onClick;
@@ -56,13 +56,9 @@ public class PageCardUI : MonoBehaviour
 
     private void Awake()
     {
-        // 整卡与底部按钮都触发同一个回调。
-        // Unity UI 的 click 通过 ExecuteHierarchy 只命中最深的 IPointerClickHandler，
-        // 点底部按钮只触发 enterButton，点卡片其它区域触发 cardButton，不会双重触发。
+        // 整张卡片是唯一的进入入口。
         if (cardButton != null)
             cardButton.onClick.AddListener(OnClick);
-        if (enterButton != null)
-            enterButton.onClick.AddListener(OnClick);
         if (deleteButton != null)
             deleteButton.onClick.AddListener(OnDelete);
     }
@@ -85,7 +81,6 @@ public class PageCardUI : MonoBehaviour
 
         titleText.text = data.displayName;
         descText.text = data.description;
-        typeBadgeText.text = GetTypeName(data.eventType);
 
         if (data.icon != null)
         {
@@ -97,24 +92,15 @@ public class PageCardUI : MonoBehaviour
             iconImage.color = new Color(1, 1, 1, 0.1f);
         }
 
-        Color typeColor = GetColor(data.eventType);
-
-        // 卡片边框按类型上色
-        if (cardFrameImage != null)
-            cardFrameImage.color = typeColor;
-
-        // 底部"进入"按钮：按类型上色 + 文案（进入战斗/商店/休整/事件）
-        if (enterButton != null && enterButton.image != null)
-            enterButton.image.color = typeColor;
-        if (enterButtonText != null)
-            enterButtonText.text = GetEnterLabel(data.eventType);
-
         if (finalNodeIndicator != null)
             finalNodeIndicator.SetActive(data.isFinalNode);
 
         // 根据事件类型决定是否显示删除按钮
         if (deleteButton != null)
             deleteButton.gameObject.SetActive(ShouldShowDelete(data.eventType));
+
+        // 根据事件类型切换书页背景与 logo
+        ApplyPageStyle(data.eventType);
     }
 
     /// <summary>
@@ -126,34 +112,6 @@ public class PageCardUI : MonoBehaviour
         _index = index;
     }
 
-    private string GetTypeName(PageEventType type) => type switch
-    {
-        PageEventType.Battle => typeNameBattle,
-        PageEventType.Shop => typeNameShop,
-        PageEventType.Rest => typeNameRest,
-        PageEventType.Event => typeNameEvent,
-        _ => "未知"
-    };
-
-    // 底部按钮文案：进入 + 类型
-    private string GetEnterLabel(PageEventType type) => type switch
-    {
-        PageEventType.Battle => enterLabelBattle,
-        PageEventType.Shop => enterLabelShop,
-        PageEventType.Rest => enterLabelRest,
-        PageEventType.Event => enterLabelEvent,
-        _ => "进入"
-    };
-
-    private Color GetColor(PageEventType type) => type switch
-    {
-        PageEventType.Battle => ColorBattle,
-        PageEventType.Shop => ColorShop,
-        PageEventType.Rest => ColorRest,
-        PageEventType.Event => ColorEvent,
-        _ => Color.white
-    };
-
     // 根据事件类型判断是否显示删除按钮
     private bool ShouldShowDelete(PageEventType type) => type switch
     {
@@ -162,5 +120,46 @@ public class PageCardUI : MonoBehaviour
         PageEventType.Rest => showDeleteOnRest,
         PageEventType.Event => showDeleteOnEvent,
         _ => true
+    };
+
+    /// <summary>
+    /// 按事件类型给书页背景/logo 显示位换 sprite。
+    /// Battle → 战斗书页；Shop → 商店书页；Rest → 回复书页；Event → 命运书页。
+    /// 背景 sprite 未配置时以类型占位色显示；logo 未配置时隐藏 logo 节点。
+    /// </summary>
+    private void ApplyPageStyle(PageEventType type)
+    {
+        var (page, logo) = type switch
+        {
+            PageEventType.Battle => (battlePage, battlePageLogo),
+            PageEventType.Shop   => (shopPage, shopPageLogo),
+            PageEventType.Rest   => (restPage, restPageLogo),
+            PageEventType.Event  => (fatePage, fatePageLogo),
+            _ => (null, null)
+        };
+
+        if (pageImage != null)
+        {
+            pageImage.sprite = page;
+            pageImage.color = page != null ? Color.white : FallbackColor(type);
+        }
+
+        if (pageLogoImage != null)
+        {
+            pageLogoImage.sprite = logo;
+            pageLogoImage.color = Color.white;
+            if (pageLogoImage.gameObject.activeSelf != (logo != null))
+                pageLogoImage.gameObject.SetActive(logo != null);
+        }
+    }
+
+    /// <summary>未配置书页 sprite 时的类型占位色（回复绿 / 命运紫 / 商店金 / 战斗红）</summary>
+    private static Color FallbackColor(PageEventType type) => type switch
+    {
+        PageEventType.Rest   => new Color(0.16f, 0.38f, 0.22f, 0.92f),
+        PageEventType.Event  => new Color(0.28f, 0.16f, 0.38f, 0.92f),
+        PageEventType.Shop   => new Color(0.42f, 0.32f, 0.12f, 0.92f),
+        PageEventType.Battle => new Color(0.42f, 0.14f, 0.14f, 0.92f),
+        _ => new Color(0.2f, 0.2f, 0.2f, 0.92f)
     };
 }
