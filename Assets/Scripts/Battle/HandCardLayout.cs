@@ -199,8 +199,6 @@ public class HandCardLayout : MonoBehaviour
 
     public void SetHoveredIndex(int index)
     {
-        // 融合面板激活期间禁用手牌 hover 放大（避免卡移动导致高亮块与点击位置错位）
-        if (FusionController.IsFusionActive && index >= 0) return;
         if (_hoveredIndex == index) return;
 
         if (_hoveredIndex >= 0 && _hoveredIndex < _cardObjects.Count && _cardObjects[_hoveredIndex] != null)

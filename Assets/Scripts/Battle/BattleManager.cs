@@ -755,38 +755,6 @@ public class BattleManager : MonoBehaviour
         return v != null && v.TryGetEnemyHPNumberRect(isMax, out center, out size);
     }
 
-    private Color _originalHpCol;
-    private Color _originalAPCol;
-    private Color _originalArmorCol;
-    private TMPro.FontStyles _origHpStyle;
-    private TMPro.FontStyles _origAPStyle;
-    private TMPro.FontStyles _origArmorStyle;
-    private static readonly Color FusionNumberPurple = new Color(0.78f, 0.3f, 1f, 1f);
-
-    /// <summary>融合时把所有参与融合的非卡数字着色为高饱和紫（能量/护甲 + 各敌人）并加粗；on=false 恢复。
-    /// 血量类仅在非低理智时可染/可改（低理智下被锁定）。</summary>
-    public void ApplyFusionNumberTint(bool on)
-    {
-        // 低理智：血量类锁定，不染色
-        bool hpLocked = IsLowSanityForFusion;
-        if (on)
-        {
-            if (hpText != null) { _originalHpCol = hpText.color; _origHpStyle = hpText.fontStyle; }
-            if (armorText != null) { _originalArmorCol = armorText.color; _origArmorStyle = armorText.fontStyle; armorText.color = FusionNumberPurple; armorText.fontStyle = TMPro.FontStyles.Bold; }
-            if (actionPointText != null) { _originalAPCol = actionPointText.color; _origAPStyle = actionPointText.fontStyle; actionPointText.color = FusionNumberPurple; actionPointText.fontStyle = TMPro.FontStyles.Bold; }
-            if (!hpLocked && hpText != null) { hpText.color = FusionNumberPurple; hpText.fontStyle = TMPro.FontStyles.Bold; }
-            foreach (var e in _enemies)
-                if (e != null && e.View != null) e.View.SetFusionNumberTint(true, !hpLocked);
-        }
-        else
-        {
-            if (hpText != null) { hpText.color = _originalHpCol; hpText.fontStyle = _origHpStyle; }
-            if (armorText != null) { armorText.color = _originalArmorCol; armorText.fontStyle = _origArmorStyle; }
-            if (actionPointText != null) { actionPointText.color = _originalAPCol; actionPointText.fontStyle = _origAPStyle; }
-            foreach (var e in _enemies)
-                if (e != null && e.View != null) e.View.SetFusionNumberTint(false, true);
-        }
-    }
 
     /// <summary>指定槽位敌人意图牌库中各小卡的 CardDisplay（供融合高亮意图数值；死亡返回空列表）。</summary>
     public List<CardDisplay> GetEnemyIntentDeckDisplays(int slot)

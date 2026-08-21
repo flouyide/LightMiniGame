@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using LightMiniGame.CardEditor;
 
 /// <summary>
@@ -50,21 +49,6 @@ public class EnemyView : MonoBehaviour
     // 出牌牌库预览容器（首次展示时创建）
     private RectTransform _deckRoot;
     private readonly List<GameObject> _deckCards = new List<GameObject>();
-
-    // 重建意图牌库前先清除旧卡的 hover 置顶/放大，避免“鼠标尚未移入新卡却因旧事件/重建即触发放大”
-    private void ClearHoverState()
-    {
-        for (int i = 0; i < _deckCards.Count; i++)
-        {
-            if (_deckCards[i] == null) continue;
-            var rt = _deckCards[i].transform as RectTransform;
-            if (rt != null)
-            {
-                rt.localScale = Vector3.one;                      // 复位缩放
-                rt.SetAsLastSibling();                          // 如有置顶则复位（回到原位）
-            }
-        }
-    }
 
     /// <summary>绑定运行时实例并全量刷新显示</summary>
     public void Bind(EnemyInstance inst)
@@ -151,28 +135,6 @@ public class EnemyView : MonoBehaviour
         }
     }
 
-    private Color _origHpColor;
-    private Color _origArmorColor;
-    private TMPro.FontStyles _origHpStyle;
-    private TMPro.FontStyles _origArmorStyle;
-    private static readonly Color FusionPurple = new Color(0.78f, 0.3f, 1f, 1f);   // 高饱和紫
-
-    /// <summary>融合时把敌人血量/护甲数字整体变高饱和紫并加粗；on=false 恢复。
-    /// tintHP=false（低理智锁血量）时不染血量。</summary>
-    public void SetFusionNumberTint(bool on, bool tintHP = true)
-    {
-        if (on)
-        {
-            if (hpText != null) { _origHpColor = hpText.color; _origHpStyle = hpText.fontStyle; if (tintHP) { hpText.color = FusionPurple; hpText.fontStyle = TMPro.FontStyles.Bold; } }
-            if (armorText != null) { _origArmorColor = armorText.color; _origArmorStyle = armorText.fontStyle; armorText.color = FusionPurple; armorText.fontStyle = TMPro.FontStyles.Bold; }
-        }
-        else
-        {
-            if (hpText != null) { hpText.color = _origHpColor; hpText.fontStyle = _origHpStyle; }
-            if (armorText != null) { armorText.color = _origArmorColor; armorText.fontStyle = _origArmorStyle; }
-        }
-    }
-
     /// <summary>
     /// 标记/取消该敌人为当前受击对象（拖拽卡牌悬停其上时高亮）。
     /// 通过临时染色立绘实现，取消高亮时恢复原色。
@@ -195,12 +157,7 @@ public class EnemyView : MonoBehaviour
 
         if (nameText != null) nameText.text = _inst.Name;
         if (hpText != null) hpText.text = $"{_inst.HP}/{_inst.MaxHP}";
-        // 血条 slider：分值式（max=当前血量上限，value=当前血量），血量/上限变化都直接反映
-        if (hpBar != null)
-        {
-            hpBar.maxValue = Mathf.Max(1, _inst.MaxHP);
-            hpBar.value = Mathf.Clamp(_inst.HP, 0, hpBar.maxValue);
-        }
+        if (hpBar != null) hpBar.value = _inst.MaxHP > 0 ? Mathf.Clamp01((float)_inst.HP / _inst.MaxHP) : 0f;
         if (armorText != null) armorText.text = _inst.Armor > 0 ? $"护甲: {_inst.Armor}" : "";
 
         if (portraitImage != null && cfg != null)
@@ -212,12 +169,10 @@ public class EnemyView : MonoBehaviour
         }
     }
 
-    /// <summary>设置意图文本（已弃用：敌人意图条不再显示，改由出牌牌库预览代替）。</summary>
+    /// <summary>设置意图文本（玩家回合预览下个技能名；敌人回合由 BattleManager 控制）</summary>
     public void SetIntent(string text)
     {
-        // 意图文字条已移除：保留方法签名以兼容调用方，但不再显示
-        if (intentText != null && intentText.gameObject.activeSelf)
-            intentText.text = "";
+        if (intentText != null) intentText.text = text ?? "";
     }
 
     /// <summary>注入玩家同款卡面预制体（出牌牌库预览用），由 BattleManager 生成敌人时调用。</summary>
@@ -237,16 +192,13 @@ public class EnemyView : MonoBehaviour
         if (_deckRoot != null) _deckRoot.gameObject.SetActive(false);
     }
 
-/// <summary>
+    /// <summary>
     /// 在敌人立绘下方横向展示当前阶段整个出牌牌库（small casino 小卡）。
     /// 自动按牌数缩放/限宽，避免多张重叠拥挤；多敌人各自在各自立绘下方，互不重叠。
     /// lowSanity=true 时卡面用低理智（升级）形态显示（费用/描述随 lowSanity 变）。
     /// </summary>
     public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false)
     {
-        // 重建前清除旧卡的 hover 置顶/放大（避免“鼠标尚未移入新卡却因旧状态/重建即触发放大”）
-        ClearHoverState();
-
         // 清空上一批
         foreach (var c in _deckCards)
             if (c != null) Destroy(c);
@@ -290,12 +242,11 @@ public class EnemyView : MonoBehaviour
             var display = cardGo.GetComponent<CardDisplay>();
             if (display != null) display.ApplyCardEntry(entry, lowSanity);
 
-            // 禁用交互仅展示（保留悬停放大查看：鼠标移入放大到屏幕中央查看细节）
+            // 禁用交互仅展示
             var drag = cardGo.GetComponent<CardDragHandler>();
             if (drag != null) drag.enabled = false;
             var hover = cardGo.GetComponent<CardHoverEffect>();
             if (hover != null) hover.enabled = false;
-            cardGo.AddComponent<IntentCardHover>();
 
             var cardRect = cardGo.GetComponent<RectTransform>();
             float w = cardRect != null ? cardRect.rect.width : 148f;
@@ -399,52 +350,5 @@ public class EnemyView : MonoBehaviour
 
         if (text != null) Destroy(text.gameObject);
         _popupRoutine = null;
-    }
-
-    /// <summary>
-    /// 敌人意图牌库小卡的悬停放大查看：
-    /// 鼠标移入时放大并置顶（保持原位，鼠标不脱离卡面 → 不触发 Exit 频闪），移出后恢复。
-    /// </summary>
-    private class IntentCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
-    {
-        private Vector3 _origScale;
-        private int _origSibling;
-        private const float EnlargeScale = 2.6f;
-        private int _createdFrame = -1;   // 创建帧：重建生出的卡若恰在鼠标下，会立刻收到 OnPointerEnter
-
-        private void Awake()
-        {
-            _createdFrame = Time.frameCount;
-        }
-
-        public void OnPointerEnter(PointerEventData eventData)
-        {
-            // 重建/出生当帧+下帧内自动忽略进入事件：卡刚被实例化到鼠标位置时不属于真实的“移入”，
-            // 避免“鼠标没移上卡就放大”。之后（≥2 帧）的移入才正常放大。
-            if (Time.frameCount - _createdFrame < 2) return;
-
-            var rt = transform as RectTransform;
-            if (rt == null) return;
-            _origSibling = transform.GetSiblingIndex();
-            _origScale = transform.localScale;
-
-            transform.SetAsLastSibling();   // 同级内置顶
-            transform.localScale = _origScale * EnlargeScale;   // 原位放大，鼠标仍在卡上
-        }
-
-        public void OnPointerExit(PointerEventData eventData)
-        {
-            var rt = transform as RectTransform;
-            if (rt == null) return;
-            transform.SetSiblingIndex(_origSibling);
-            transform.localScale = _origScale;
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            // 融合面板激活时：卡面每个可融合数字都有独立命中层（可精准点击），
-            // 整卡点击不再作为选择单位，避免“点哪都是同一值”。
-            if (FusionController.IsFusionActive) return;
-        }
     }
 }
