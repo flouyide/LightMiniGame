@@ -719,6 +719,62 @@ public class ChapterManager : MonoBehaviour
         return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
 
+    /// <summary>
+    /// 领取战斗遗物掉落：将 1 件遗物发给玩家角色库中指定下标的角色（0=第一个角色，1=第二个角色）。
+    /// 候选仅来自该角色在 MasterRelicLibrary 中的可获取遗物池，且排除该角色已拥有的遗物。
+    /// allowedGrades 由 LootTable 的 Relic 条目汇总而来；每个允许品级等权抽取，再在该品级候选中均匀抽 1 件。
+    /// </summary>
+    public bool TryGrantBattleLootRelic(int characterIndex, IEnumerable<CardGrade> allowedGrades, out RelicData granted)
+    {
+        granted = null;
+        if (gameConfig == null || gameConfig.characters == null
+            || characterIndex < 0 || characterIndex >= gameConfig.characters.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 领取遗物失败：角色下标 {characterIndex} 无效");
+            return false;
+        }
+
+        var character = gameConfig.characters[characterIndex];
+        if (character == null || masterRelicLibrary == null) return false;
+
+        var allowed = new HashSet<CardGrade>();
+        if (allowedGrades != null)
+        {
+            foreach (var grade in allowedGrades)
+                allowed.Add(grade);
+        }
+        if (allowed.Count == 0)
+        {
+            Debug.LogWarning("[ChapterManager] 领取遗物失败：LootTable 未配置可选遗物品级");
+            return false;
+        }
+
+        GlobalRelicInventory.EnsureInstance();
+        var inventory = GlobalRelicInventory.Instance;
+        var pool = masterRelicLibrary.GetRelics(character);
+        if (inventory == null || pool == null) return false;
+
+        var candidates = new List<RelicData>();
+        foreach (var relic in pool)
+        {
+            if (relic != null && allowed.Contains(relic.grade) && !inventory.Has(character, relic))
+                candidates.Add(relic);
+        }
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning($"[ChapterManager] 领取遗物失败：{character.Label} 的遗物池没有符合掉落品级且未拥有的遗物");
+            return false;
+        }
+
+        // LootEntry 目前只保存“允许品级列表”而没有独立权重字段；故每个配置的品级等权，品级内均匀。
+        granted = GradeWeightedPick.Pick(candidates, relic => relic.grade, _ => 1f);
+        if (granted == null) return false;
+
+        inventory.Add(character, granted);
+        Debug.Log($"[ChapterManager] 战利品遗物：{granted.relicName} → {character.Label}（品级 {granted.grade}）");
+        return true;
+    }
+
     /// <summary>从总牌库中按品级随机抽取一张卡牌（用于战斗掉落）。返回 null 表示无可用卡牌。</summary>
     public CardData DrawRandomCard(CharacterData ch, CardGrade grade)
     {

@@ -1093,6 +1093,11 @@ public class BattleManager : MonoBehaviour
     /// <summary>绑定一次性 UI 监听（仅执行一次）。</summary>
     private void WireListeners()
     {
+        // LootPanel 是 BattleCanvas 下的嵌套 prefab；字段未在场景接线时自动从包含未激活对象的场景中补找。
+        // 防止 prefab 更新或场景引用丢失时，战斗胜利无法弹出结算面板。
+        if (lootPanel == null)
+            lootPanel = FindObjectOfType<LootPanelUI>(true);
+
         if (handLayout != null)
         {
             handLayout.SetCardClickCallback(OnCardClicked);
@@ -2760,7 +2765,7 @@ public class BattleManager : MonoBehaviour
         if (_enemyPlayedCard != null) { Destroy(_enemyPlayedCard); _enemyPlayedCard = null; } // 兜底：清理敌人出牌展示卡
         // 胜利：启用战利品结算面板（替代原 VictoryPanel），按掉落表显示奖励按钮；
         // 点击面板上的继续按钮 → OnQuitClicked → 回到局外。失败仍用 defeatPanel。
-        if (lootPanel != null)
+        if (victory && lootPanel != null)
         {
             lootPanel.gameObject.SetActive(true);
             lootPanel.ShowForLootTable(StartLootTable);
