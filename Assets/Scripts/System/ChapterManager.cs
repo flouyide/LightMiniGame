@@ -19,6 +19,14 @@ public class ChapterManager : MonoBehaviour
     [Tooltip("总牌库：掉落卡牌时按品级从中随机抽取。留空则战斗掉落卡牌时跳过")]
     [SerializeField] private MasterCardLibrary masterCardLibrary;  // 总牌库（掉落卡牌用）
 
+    [Header("品级掉落概率（卡牌抽取用，按金/银/铜权重归一化，与 ShopManager 一致）")]
+    [Tooltip("铜品级的抽取权重")]
+    [SerializeField] private float bronzeGradeProbability = 60f;
+    [Tooltip("银品级的抽取权重")]
+    [SerializeField] private float silverGradeProbability = 30f;
+    [Tooltip("金品级的抽取权重")]
+    [SerializeField] private float goldGradeProbability = 10f;
+
     [Header("低理智特效")]
     [Tooltip("理智低于 PlayerConfig.sanityThreshold 时启用的 Volume（如信号干扰后处理），否则禁用。留空则无特效")]
     [SerializeField] private Volume lowSanityVolume;
@@ -724,13 +732,18 @@ public class ChapterManager : MonoBehaviour
     /// 候选仅来自该角色在 MasterRelicLibrary 中的可获取遗物池，且排除该角色已拥有的遗物。
     /// allowedGrades 由 LootTable 的 Relic 条目汇总而来；每个允许品级等权抽取，再在该品级候选中均匀抽 1 件。
     /// </summary>
-    public bool TryGrantBattleLootRelic(int characterIndex, IEnumerable<CardGrade> allowedGrades, out RelicData granted)
+    /// <summary>
+    /// 仅抽取（不写入库存）一件符合品级且未拥有的遗物，供掉落面板预览图标使用。
+    /// 抽取规则与 TryGrantBattleLootRelic 一致：候选来自该角色 MasterRelicLibrary 池，
+    /// 排除已拥有遗物，各配置品级等权、品级内均匀。
+    /// </summary>
+    public bool PeekBattleLootRelic(int characterIndex, IEnumerable<CardGrade> allowedGrades, out RelicData relic)
     {
-        granted = null;
+        relic = null;
         if (gameConfig == null || gameConfig.characters == null
             || characterIndex < 0 || characterIndex >= gameConfig.characters.Count)
         {
-            Debug.LogWarning($"[ChapterManager] 领取遗物失败：角色下标 {characterIndex} 无效");
+            Debug.LogWarning($"[ChapterManager] 预览遗物失败：角色下标 {characterIndex} 无效");
             return false;
         }
 
@@ -745,7 +758,7 @@ public class ChapterManager : MonoBehaviour
         }
         if (allowed.Count == 0)
         {
-            Debug.LogWarning("[ChapterManager] 领取遗物失败：LootTable 未配置可选遗物品级");
+            Debug.LogWarning("[ChapterManager] 预览遗物失败：LootTable 未配置可选遗物品级");
             return false;
         }
 
@@ -755,24 +768,53 @@ public class ChapterManager : MonoBehaviour
         if (inventory == null || pool == null) return false;
 
         var candidates = new List<RelicData>();
-        foreach (var relic in pool)
+        foreach (var r in pool)
         {
-            if (relic != null && allowed.Contains(relic.grade) && !inventory.Has(character, relic))
-                candidates.Add(relic);
+            if (r != null && allowed.Contains(r.grade) && !inventory.Has(character, r))
+                candidates.Add(r);
         }
         if (candidates.Count == 0)
         {
-            Debug.LogWarning($"[ChapterManager] 领取遗物失败：{character.Label} 的遗物池没有符合掉落品级且未拥有的遗物");
+            Debug.LogWarning($"[ChapterManager] 预览遗物失败：{character.Label} 的遗物池没有符合掉落品级且未拥有的遗物");
             return false;
         }
 
         // LootEntry 目前只保存“允许品级列表”而没有独立权重字段；故每个配置的品级等权，品级内均匀。
-        granted = GradeWeightedPick.Pick(candidates, relic => relic.grade, _ => 1f);
-        if (granted == null) return false;
+        relic = GradeWeightedPick.Pick(candidates, r => r.grade, _ => 1f);
+        return relic != null;
+    }
 
-        inventory.Add(character, granted);
-        Debug.Log($"[ChapterManager] 战利品遗物：{granted.relicName} → {character.Label}（品级 {granted.grade}）");
+    /// <summary>将已确定的一件遗物写入指定角色库存（掉落面板点击领取时调用）。</summary>
+    public bool CommitBattleLootRelic(int characterIndex, RelicData relic)
+    {
+        if (relic == null) return false;
+        if (gameConfig == null || gameConfig.characters == null
+            || characterIndex < 0 || characterIndex >= gameConfig.characters.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 领取遗物失败：角色下标 {characterIndex} 无效");
+            return false;
+        }
+
+        var character = gameConfig.characters[characterIndex];
+        if (character == null) return false;
+
+        GlobalRelicInventory.EnsureInstance();
+        var inventory = GlobalRelicInventory.Instance;
+        if (inventory == null || inventory.Has(character, relic)) return false;
+
+        inventory.Add(character, relic);
+        Debug.Log($"[ChapterManager] 战利品遗物：{relic.relicName} → {character.Label}（品级 {relic.grade}）");
         return true;
+    }
+
+    /// <summary>
+    /// 领取战斗遗物掉落：先抽取一件符合品级且未拥有的遗物（Peek），再写入该角色库存（Commit）。
+    /// 面板预览图标走 Peek + Commit 的分离路径，避免重复随机。
+    /// </summary>
+    public bool TryGrantBattleLootRelic(int characterIndex, IEnumerable<CardGrade> allowedGrades, out RelicData granted)
+    {
+        if (!PeekBattleLootRelic(characterIndex, allowedGrades, out granted)) return false;
+        return CommitBattleLootRelic(characterIndex, granted);
     }
 
     /// <summary>从总牌库中按品级随机抽取一张卡牌（用于战斗掉落）。返回 null 表示无可用卡牌。</summary>
@@ -797,6 +839,153 @@ public class ChapterManager : MonoBehaviour
         if (candidates.Count == 0) return null;
         return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
+
+    /// <summary>获取品级抽取权重（金/银/铜）。供战斗卡牌掉落按品级概率抽取使用，与 ShopManager 一致。</summary>
+    public float GetGradeWeight(CardGrade grade) => grade switch
+    {
+        CardGrade.Gold => goldGradeProbability,
+        CardGrade.Silver => silverGradeProbability,
+        _ => bronzeGradeProbability,
+    };
+
+    /// <summary>
+    /// 按品级概率从指定角色的可获取牌库（MasterCardLibrary）抽取战斗掉落卡牌。
+    /// 候选先按 lootTable 的 cardRarities 过滤（只保留允许品级的卡），
+    /// 再用 GetGradeWeight 的品级权重无放回抽取 drawCount 张（即 LootEntry.cardDrawCount）。
+    /// characterIndex：0=角色1，1=角色2。返回是否成功抽到至少一张。
+    /// </summary>
+    public bool DrawBattleLootCards(int characterIndex, IEnumerable<CardGrade> allowedGrades, int drawCount, out List<CardData> result)
+    {
+        result = new List<CardData>();
+        if (gameConfig == null || gameConfig.characters == null
+            || characterIndex < 0 || characterIndex >= gameConfig.characters.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 抽取掉落卡牌失败：角色下标 {characterIndex} 无效");
+            return false;
+        }
+
+        var character = gameConfig.characters[characterIndex];
+        if (character == null || masterCardLibrary == null)
+        {
+            Debug.LogWarning("[ChapterManager] 抽取掉落卡牌失败：未配置角色或 MasterCardLibrary");
+            return false;
+        }
+
+        var pool = masterCardLibrary.GetCards(character);
+        if (pool == null || pool.Count == 0) return false;
+
+        // 仅保留允许品级的卡作为候选
+        var allowed = new HashSet<CardGrade>();
+        if (allowedGrades != null)
+            foreach (var g in allowedGrades) allowed.Add(g);
+        if (allowed.Count == 0) allowed.Add(CardGrade.Bronze);
+
+        var candidates = pool.FindAll(c => c != null && allowed.Contains(c.grade));
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning($"[ChapterManager] 抽取掉落卡牌失败：{character.Label} 的牌库没有符合掉落品级（{string.Join(",", allowed)}）的卡");
+            return false;
+        }
+
+        // 按品级概率无放回抽取 drawCount 张
+        result = new GradeWeightedCardDraw(GetGradeWeight).Draw(candidates, drawCount, null);
+        return result.Count > 0;
+    }
+
+    /// <summary>
+    /// 将玩家在卡牌选择面板中选中的一张卡牌发放给指定角色牌库（GlobalCardLibrary）。
+    /// characterIndex：0=角色1，1=角色2。
+    /// </summary>
+    public bool GrantBattleLootCard(int characterIndex, CardData card)
+    {
+        if (card == null) return false;
+        if (gameConfig == null || gameConfig.characters == null
+            || characterIndex < 0 || characterIndex >= gameConfig.characters.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 发放卡牌失败：角色下标 {characterIndex} 无效");
+            return false;
+        }
+
+        var character = gameConfig.characters[characterIndex];
+        if (character == null) return false;
+
+        GlobalCardLibrary.EnsureInstance();
+        var library = GlobalCardLibrary.Instance;
+        if (library == null) return false;
+        if (!library.IsRegistered(character))
+        {
+            Debug.LogWarning($"[ChapterManager] 发放卡牌失败：角色 {character.Label} 尚未注册牌库");
+            return false;
+        }
+
+        library.AddCard(character, card);
+        Debug.Log($"[ChapterManager] 战利品卡牌：{card.cardName} → {character.Label}（品级 {card.grade}）");
+        return true;
+    }
+
+    /// <summary>
+    /// 按品级概率从指定角色的可获取遗物库（MasterRelicLibrary）抽取战斗掉落遗物候选。
+    /// 候选先按 lootTable 的 relicRarities 过滤（只保留允许品级的遗物），
+    /// 再排除该角色已拥有的遗物，用 GetGradeWeight 的品级权重无放回抽取 drawCount 个（即 n选1 的 n）。
+    /// characterIndex：0=角色1，1=角色2。返回是否成功抽到至少 1 个。
+    /// 注：Relic 条目在 LootEntry 上目前只有 relicRarities（无独立 drawCount 字段），drawCount 由调用方传入（默认 3）。
+    /// </summary>
+    public bool DrawBattleLootRelics(int characterIndex, IEnumerable<CardGrade> allowedGrades, int drawCount, out List<RelicData> result)
+    {
+        result = new List<RelicData>();
+        if (gameConfig == null || gameConfig.characters == null
+            || characterIndex < 0 || characterIndex >= gameConfig.characters.Count)
+        {
+            Debug.LogWarning($"[ChapterManager] 抽取掉落遗物失败：角色下标 {characterIndex} 无效");
+            return false;
+        }
+
+        var character = gameConfig.characters[characterIndex];
+        if (character == null || masterRelicLibrary == null)
+        {
+            Debug.LogWarning("[ChapterManager] 抽取掉落遗物失败：未配置角色或 MasterRelicLibrary");
+            return false;
+        }
+
+        var pool = masterRelicLibrary.GetRelics(character);
+        if (pool == null || pool.Count == 0) return false;
+
+        var allowed = new HashSet<CardGrade>();
+        if (allowedGrades != null)
+            foreach (var g in allowedGrades) allowed.Add(g);
+        if (allowed.Count == 0) allowed.Add(CardGrade.Bronze);
+
+        GlobalRelicInventory.EnsureInstance();
+        var inventory = GlobalRelicInventory.Instance;
+
+        // 仅保留允许品级、且未拥有的遗物作为候选
+        var candidates = new List<RelicData>();
+        foreach (var r in pool)
+            if (r != null && allowed.Contains(r.grade) && (inventory == null || !inventory.Has(character, r)))
+                candidates.Add(r);
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning($"[ChapterManager] 抽取掉落遗物失败：{character.Label} 的遗物库没有符合掉落品级且未拥有的遗物");
+            return false;
+        }
+
+        // 无放回按品级概率抽取 drawCount 个
+        var remaining = new List<RelicData>(candidates);
+        for (int i = 0; i < drawCount && remaining.Count > 0; i++)
+        {
+            var pick = GradeWeightedPick.Pick(remaining, r => r.grade, GetGradeWeight);
+            if (pick == null) break;
+            result.Add(pick);
+            remaining.Remove(pick);
+        }
+        return result.Count > 0;
+    }
+
+    /// <summary>
+    /// 将玩家在遗物选择面板中选中的一件遗物发放给指定角色（写入 GlobalRelicInventory）。
+    /// characterIndex：0=角色1，1=角色2。与 CommitBattleLootRelic 等价，供面板统一调用。
+    /// </summary>
+    public bool GrantBattleLootRelic(int characterIndex, RelicData relic) => CommitBattleLootRelic(characterIndex, relic);
 
     // ===== 交互式效果请求（续体机制）=====
 

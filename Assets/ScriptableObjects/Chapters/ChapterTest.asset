@@ -215,11 +215,11 @@ MonoBehaviour:
       anchoredPosition: {x: -200, y: 0}
     lootTable:
       entries:
-      - kind: 2
+      - kind: 1
         currencyAmount: 10
-        cardRarities: 
-        cardDrawCount: 0
-        cardPickCount: 0
+        cardRarities: 0000000002000000
+        cardDrawCount: 3
+        cardPickCount: 1
         relicRarities: 0000000001000000
       - kind: 0
         currencyAmount: 10

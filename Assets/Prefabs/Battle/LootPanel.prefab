@@ -1780,7 +1780,6 @@ GameObject:
   serializedVersion: 7
   m_Component:
   - component: {fileID: 7067438915536711486}
-  - component: {fileID: 6088486732462409417}
   - component: {fileID: 6088486732462409418}
   m_Layer: 0
   m_HasEditorInfo: 1
@@ -1807,22 +1806,6 @@ Transform:
   - {fileID: 9084426616357444640}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6088486732462409417
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8219856345522142511}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b895fc45b38b7d48b905f7ca348cc55, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  panel: {fileID: 0}
-  continueButton: {fileID: 2392660538870168839}
-  restartButton: {fileID: 3562497387099388515}
-  quitButton: {fileID: 7900441275450094494}
 --- !u!114 &6088486732462409418
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1843,7 +1826,14 @@ MonoBehaviour:
   coinButton: {fileID: 2392660538870168839}
   relicAButton: {fileID: 3249586935810368704}
   relicBButton: {fileID: 3068743472513474612}
+  cardAButton: {fileID: 0}
+  cardBButton: {fileID: 0}
+  lootCardPanelPrefab: {fileID: 8779518230413255931, guid: cb61c3f44dc9b0143a001e837e2db384, type: 3}
+  cardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
   continueButton: {fileID: 1807928605131394066}
+  coinText: {fileID: 9081718544787258784}
+  relicAIcon: {fileID: 8386511884645256427}
+  relicBIcon: {fileID: 3806856536709225755}
 --- !u!1 &8713643603127114547
 GameObject:
   m_ObjectHideFlags: 0

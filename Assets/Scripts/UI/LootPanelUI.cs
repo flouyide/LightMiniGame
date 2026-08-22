@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LightMiniGame.Shop;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,10 +46,28 @@ public class LootPanelUI : MonoBehaviour
     [SerializeField] private Button coinButton;
     [SerializeField] private Button relicAButton;
     [SerializeField] private Button relicBButton;
+    [SerializeField] private Button cardAButton;   // 卡牌A按钮（a 角色），未接线时回退取 cardA 下 Button
+    [SerializeField] private Button cardBButton;   // 卡牌B按钮（b 角色），未接线时回退取 cardB 下 Button
+
+    [Header("卡牌选择面板")]
+    [Tooltip("卡牌选择面板预制体（LootCardPanel.prefab）；点击 CardA/CardB 时实例化")]
+    [SerializeField] private GameObject lootCardPanelPrefab;
+    [Tooltip("卡牌预制体（卡面 CardDisplay），用于在面板中实例化候选卡")]
+    [SerializeField] private GameObject cardPrefab;
 
     [Header("继续按钮")]
     [Tooltip("继续按钮：点击后触发 OnContinueClicked（BattleManager 订阅以回到局外）")]
     [SerializeField] private Button continueButton;
+
+    [Header("图标 / 文本引用")]
+    [Tooltip("Coin 按钮内的 TMP 组件，显示掉落的货币数量")]
+    [SerializeField] private TextMeshProUGUI coinText;
+
+    [Tooltip("RelicA 节点的 Image 组件，显示该角色将掉落的遗物图标")]
+    [SerializeField] private Image relicAIcon;
+
+    [Tooltip("RelicB 节点的 Image 组件，显示该角色将掉落的遗物图标")]
+    [SerializeField] private Image relicBIcon;
 
     /// <summary>继续按钮点击事件（BattleManager 订阅后走 OnQuitClicked 流程回到局外）。</summary>
     public event Action OnContinueClicked;
@@ -56,9 +75,18 @@ public class LootPanelUI : MonoBehaviour
     // 当前一局结算中由 ShowForLootTable 缓存的可领取内容。
     private int _currencyAmount;
     private readonly List<CardGrade> _relicGrades = new List<CardGrade>();
+    private RelicData _relicAData;   // 预抽取的角色A掉落遗物（仅预览图标，未写入库存）
+    private RelicData _relicBData;   // 预抽取的角色B掉落遗物（仅预览图标，未写入库存）
     private bool _coinClaimed;
     private bool _relicAClaimed;
     private bool _relicBClaimed;
+    private int _relicDrawCount = 3;   // 遗物选择面板展示个数（LootEntry 的 Relic 条目无独立 drawCount，默认 3）
+
+    // 卡牌掉落：合并自全部 Card 条目的允许品级与最大抽取数（供 CardA/CardB 弹出面板时使用）
+    private readonly List<CardGrade> _cardRarities = new List<CardGrade>();
+    private int _cardDrawCount = 3;
+    private bool _cardAClaimed;
+    private bool _cardBClaimed;
 
     private void Awake()
     {
@@ -67,9 +95,19 @@ public class LootPanelUI : MonoBehaviour
         if (coinButton != null)
             coinButton.onClick.AddListener(ClaimCurrency);
         if (relicAButton != null)
-            relicAButton.onClick.AddListener(() => ClaimRelic(0));
+            relicAButton.onClick.AddListener(() => OpenLootRelicPanel(0));
         if (relicBButton != null)
-            relicBButton.onClick.AddListener(() => ClaimRelic(1));
+            relicBButton.onClick.AddListener(() => OpenLootRelicPanel(1));
+
+        // 卡牌A/卡牌B按钮：优先用 Inspector 接线，未接线则回退到 cardA/cardB 节点下的 Button
+        if (cardAButton == null && cardA != null)
+            cardAButton = cardA.GetComponentInChildren<Button>();
+        if (cardBButton == null && cardB != null)
+            cardBButton = cardB.GetComponentInChildren<Button>();
+        if (cardAButton != null)
+            cardAButton.onClick.AddListener(() => OpenLootCardPanel(0));
+        if (cardBButton != null)
+            cardBButton.onClick.AddListener(() => OpenLootCardPanel(1));
     }
 
     /// <summary>
@@ -77,27 +115,34 @@ public class LootPanelUI : MonoBehaviour
     /// </summary>
     public void ShowForLootTable(LootTable table)
     {
-        bool hasCurrency = false, hasCard = false, hasRelic = false;
-        Scan(table, ref hasCurrency, ref hasCard, ref hasRelic);
-        CacheClaimableLoot(table);
-        Apply(hasCurrency, hasCard, hasRelic);
+        var tables = table != null ? new List<LootTable> { table } : new List<LootTable>();
+        Refresh(tables);
     }
 
     /// <summary>
-    /// 按多个 Battle 事件的掉落表汇总刷新按钮显示（任一事件掉某类型即显示该类型）。
+    /// 按多个 Battle 事件的掉落表汇总刷新按钮显示（任一事件掉某类型即显示该类型；货币累加）。
     /// 掉落表配置已从 EnemyConfig 迁移到 PageEventData.lootTable（仅 Battle 类型事件可配置）。
     /// </summary>
     public void ShowForEvents(IEnumerable<PageEventData> events)
     {
-        bool hasCurrency = false, hasCard = false, hasRelic = false;
+        var tables = new List<LootTable>();
         if (events != null)
         {
             foreach (var evt in events)
             {
-                if (evt == null) continue;
-                Scan(evt.lootTable, ref hasCurrency, ref hasCard, ref hasRelic);
+                if (evt == null || evt.lootTable == null) continue;
+                tables.Add(evt.lootTable);
             }
         }
+        Refresh(tables);
+    }
+
+    /// <summary>汇总多张掉落表，刷新按钮显示、货币文本与遗物图标。</summary>
+    private void Refresh(List<LootTable> tables)
+    {
+        bool hasCurrency = false, hasCard = false, hasRelic = false;
+        ScanAll(tables, ref hasCurrency, ref hasCard, ref hasRelic);
+        CacheClaimableLoot(tables);
         Apply(hasCurrency, hasCard, hasRelic);
     }
 
@@ -116,42 +161,121 @@ public class LootPanelUI : MonoBehaviour
         if (coinButton != null) coinButton.interactable = hasCurrency && !_coinClaimed;
         if (relicAButton != null) relicAButton.interactable = hasRelic && !_relicAClaimed;
         if (relicBButton != null) relicBButton.interactable = hasRelic && !_relicBClaimed;
+        if (cardAButton != null) cardAButton.interactable = hasCard && !_cardAClaimed;
+        if (cardBButton != null) cardBButton.interactable = hasCard && !_cardBClaimed;
 
+        ApplyDisplay(hasCurrency, hasRelic);
         Debug.Log($"[LootPanelUI] 按钮显示刷新：货币={hasCurrency}, 卡牌={hasCard}, 权柄={hasRelic}");
+    }
+
+    /// <summary>
+    /// 刷新 Coin 的货币数量文本，以及 RelicA/RelicB 的遗物图标（按预抽取结果）。
+    /// </summary>
+    private void ApplyDisplay(bool hasCurrency, bool hasRelic)
+    {
+        if (coinText != null)
+            coinText.text = hasCurrency ? $"货币：{_currencyAmount}" : string.Empty;
+
+        if (relicAIcon != null)
+        {
+            if (hasRelic && _relicAData != null && _relicAData.icon != null)
+            {
+                relicAIcon.sprite = _relicAData.icon;
+                relicAIcon.color = Color.white;
+                relicAIcon.enabled = true;
+            }
+            else
+            {
+                relicAIcon.sprite = null;
+                relicAIcon.enabled = false;
+            }
+        }
+
+        if (relicBIcon != null)
+        {
+            if (hasRelic && _relicBData != null && _relicBData.icon != null)
+            {
+                relicBIcon.sprite = _relicBData.icon;
+                relicBIcon.color = Color.white;
+                relicBIcon.enabled = true;
+            }
+            else
+            {
+                relicBIcon.sprite = null;
+                relicBIcon.enabled = false;
+            }
+        }
     }
 
     /// <summary>隐藏全部奖励按钮（面板复用前的重置）。</summary>
     public void HideAll() => Apply(false, false, false);
 
     /// <summary>
-    /// 从当前 Battle 事件的 LootTable 缓存可领取内容。
-    /// 货币条目数量累加；所有 Relic 条目的可选品级合并去重，供 RelicA/B 各抽 1 件使用。
+    /// 从掉落表列表缓存可领取内容：货币条目数量累加；所有 Relic 条目的可选品级合并去重；
+    /// 并按角色预抽取将掉落的遗物（仅预览图标，不写入库存，点击领取时再真正写入）。
     /// </summary>
-    private void CacheClaimableLoot(LootTable table)
+    private void CacheClaimableLoot(List<LootTable> tables)
     {
         _currencyAmount = 0;
         _relicGrades.Clear();
+        _relicAData = null;
+        _relicBData = null;
         _coinClaimed = false;
         _relicAClaimed = false;
         _relicBClaimed = false;
+        _relicDrawCount = 3;
+        _cardRarities.Clear();
+        _cardDrawCount = 3;
+        _cardAClaimed = false;
+        _cardBClaimed = false;
 
-        var entries = table?.entries;
-        if (entries == null) return;
-
-        foreach (var entry in entries)
+        if (tables != null)
         {
-            if (entry == null) continue;
-            if (entry.kind == LootEntry.LootKind.Currency)
+            foreach (var table in tables)
             {
-                _currencyAmount += Mathf.Max(0, entry.currencyAmount);
-            }
-            else if (entry.kind == LootEntry.LootKind.Relic && entry.relicRarities != null)
-            {
-                foreach (var grade in entry.relicRarities)
+                var entries = table?.entries;
+                if (entries == null) continue;
+                foreach (var entry in entries)
                 {
-                    if (!_relicGrades.Contains(grade))
-                        _relicGrades.Add(grade);
+                    if (entry == null) continue;
+                    if (entry.kind == LootEntry.LootKind.Currency)
+                    {
+                        _currencyAmount += Mathf.Max(0, entry.currencyAmount);
+                    }
+                    else if (entry.kind == LootEntry.LootKind.Relic && entry.relicRarities != null)
+                    {
+                        foreach (var grade in entry.relicRarities)
+                        {
+                            if (!_relicGrades.Contains(grade))
+                                _relicGrades.Add(grade);
+                        }
+                    }
+                    else if (entry.kind == LootEntry.LootKind.Card)
+                    {
+                        if (entry.cardRarities != null)
+                        {
+                            foreach (var grade in entry.cardRarities)
+                            {
+                                if (!_cardRarities.Contains(grade))
+                                    _cardRarities.Add(grade);
+                            }
+                        }
+                        // 多张 Card 条目时取最大抽取数，保证所有候选都能展示
+                        if (entry.cardDrawCount > _cardDrawCount)
+                            _cardDrawCount = entry.cardDrawCount;
+                    }
                 }
+            }
+        }
+
+        // 每个角色预抽取一件将掉落的遗物（仅用于面板预览图标，不写入库存）。
+        if (_relicGrades.Count > 0)
+        {
+            var chapter = FindObjectOfType<ChapterManager>();
+            if (chapter != null)
+            {
+                if (!chapter.PeekBattleLootRelic(0, _relicGrades, out _relicAData)) _relicAData = null;
+                if (!chapter.PeekBattleLootRelic(1, _relicGrades, out _relicBData)) _relicBData = null;
             }
         }
     }
@@ -176,54 +300,96 @@ public class LootPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// 领取 1 件遗物：characterIndex 0=玩家角色库第一个角色（RelicA），1=第二个角色（RelicB）。
-    /// 具体抽取/品级筛选/库存写入交给 ChapterManager，确保使用其 MasterRelicLibrary 配置与 GlobalRelicInventory。
+    /// 打开遗物选择面板（LootCardPanel.prefab，作为本面板子物体实例化）：
+    /// 抽取候选遗物供玩家选择 1 件并发放给对应角色。
+    /// characterIndex：0=角色1（RelicA），1=角色2（RelicB）。
+    /// 抽取的品级来自当前结算缓存的 Relic 条目（_relicGrades），展示个数取 _relicDrawCount（默认 3）。
     /// </summary>
-    private void ClaimRelic(int characterIndex)
+    private void OpenLootRelicPanel(int characterIndex)
     {
-        bool alreadyClaimed = characterIndex == 0 ? _relicAClaimed : _relicBClaimed;
-        if (alreadyClaimed || _relicGrades.Count == 0) return;
-
-        var chapter = FindObjectOfType<ChapterManager>();
-        if (chapter == null)
+        if (lootCardPanelPrefab == null)
         {
-            Debug.LogWarning("[LootPanelUI] 领取遗物失败：未找到 ChapterManager");
+            Debug.LogWarning("[LootPanelUI] 无法打开遗物选择面板：未配置 lootCardPanelPrefab（请在 Inspector 拖入 LootCardPanel.prefab）");
             return;
         }
+        if (_relicGrades.Count == 0) _relicGrades.Add(CardGrade.Bronze);
 
-        if (!chapter.TryGrantBattleLootRelic(characterIndex, _relicGrades, out var relic))
-            return; // 保持可点击，以便配置修正后重试
+        // 实例化面板并挂为本面板子物体（关闭时随父级一起清除）
+        var panel = Instantiate(lootCardPanelPrefab, transform);
+        var ui = panel.AddComponent<LootCardPanelUI>();
+        ui.OpenRelics(characterIndex, new List<CardGrade>(_relicGrades), _relicDrawCount, OnRelicPicked);
+        Debug.Log($"[LootPanelUI] 打开角色{characterIndex + 1} 遗物选择面板（品级：{string.Join(",", _relicGrades)}，个数：{_relicDrawCount}）");
+    }
 
+    /// <summary>玩家在遗物选择面板选中一件并发放后回调：标记该角色遗物已领取并隐藏对应按钮。</summary>
+    private void OnRelicPicked(int characterIndex)
+    {
         if (characterIndex == 0)
         {
             _relicAClaimed = true;
-            // RelicA 是整个奖励节点，隐藏它会同时移除其 Button 与视觉内容。
             SetActiveSafe(relicA, false);
         }
         else
         {
             _relicBClaimed = true;
-            // RelicB 是整个奖励节点，隐藏它会同时移除其 Button 与视觉内容。
             SetActiveSafe(relicB, false);
         }
-
-        Debug.Log($"[LootPanelUI] 角色{characterIndex + 1}领取遗物：{relic.relicName}");
+        Debug.Log($"[LootPanelUI] 角色{characterIndex + 1}已领取遗物掉落");
     }
 
-    /// <summary>扫描一张掉落表，把出现过的类型标记为 true（只做或运算，不覆盖已有 true）。</summary>
-    private static void Scan(LootTable table, ref bool hasCurrency, ref bool hasCard, ref bool hasRelic)
+    /// <summary>
+    /// 打开卡牌选择面板（LootCardPanel.prefab）：实例化面板、挂载 LootCardPanelUI 控制器并抽取候选卡。
+    /// characterIndex：0=角色1（CardA），1=角色2（CardB）。
+    /// 抽取的品级与张数来自当前结算缓存的 Card 条目（_cardRarities / _cardDrawCount）。
+    /// </summary>
+    private void OpenLootCardPanel(int characterIndex)
     {
-        var entries = table?.entries;
-        if (entries == null) return;
-
-        foreach (var e in entries)
+        if (lootCardPanelPrefab == null || cardPrefab == null)
         {
-            if (e == null) continue;
-            switch (e.kind)
+            Debug.LogWarning("[LootPanelUI] 无法打开卡牌选择面板：未配置 lootCardPanelPrefab 或 cardPrefab（请在 Inspector 拖入 LootCardPanel.prefab 与卡牌预制体）");
+            return;
+        }
+        if (_cardRarities.Count == 0) _cardRarities.Add(CardGrade.Bronze);
+
+        var panel = Instantiate(lootCardPanelPrefab);
+        var ui = panel.AddComponent<LootCardPanelUI>();
+        ui.Open(characterIndex, new List<CardGrade>(_cardRarities), _cardDrawCount, cardPrefab, OnCardPicked);
+        Debug.Log($"[LootPanelUI] 打开角色{characterIndex + 1} 卡牌选择面板（品级：{string.Join(",", _cardRarities)}，张数：{_cardDrawCount}）");
+    }
+
+    /// <summary>玩家在卡牌选择面板选中一张并发放后回调：标记该角色卡牌已领取并隐藏对应按钮。</summary>
+    private void OnCardPicked(int characterIndex)
+    {
+        if (characterIndex == 0)
+        {
+            _cardAClaimed = true;
+            SetActiveSafe(cardA, false);
+        }
+        else
+        {
+            _cardBClaimed = true;
+            SetActiveSafe(cardB, false);
+        }
+        Debug.Log($"[LootPanelUI] 角色{characterIndex + 1}已领取卡牌掉落");
+    }
+
+    /// <summary>扫描多张掉落表，把出现过的类型标记为 true（只做或运算，不覆盖已有 true）。</summary>
+    private static void ScanAll(IEnumerable<LootTable> tables, ref bool hasCurrency, ref bool hasCard, ref bool hasRelic)
+    {
+        if (tables == null) return;
+        foreach (var table in tables)
+        {
+            var entries = table?.entries;
+            if (entries == null) continue;
+            foreach (var e in entries)
             {
-                case LootEntry.LootKind.Currency: hasCurrency = true; break;
-                case LootEntry.LootKind.Card:     hasCard = true;     break;
-                case LootEntry.LootKind.Relic:    hasRelic = true;    break;
+                if (e == null) continue;
+                switch (e.kind)
+                {
+                    case LootEntry.LootKind.Currency: hasCurrency = true; break;
+                    case LootEntry.LootKind.Card:     hasCard = true;     break;
+                    case LootEntry.LootKind.Relic:    hasRelic = true;    break;
+                }
             }
         }
     }
