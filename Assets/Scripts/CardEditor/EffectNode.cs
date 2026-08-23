@@ -423,6 +423,114 @@ namespace LightMiniGame.CardEditor
         public string customParams = "";
 
         // === 描述生成 ===
+
+        /// <summary>
+        /// 生成带属性解析的描述文本：将 ValueNode 中的力量/敏捷引用解析为实际数值，
+        /// 并叠加 scalingMode 的属性加成（与运行时伤害/护甲计算一致）。
+        /// isEnemy=true 时，DealDamage 额外叠加力量（BattleManager 对敌人攻击总是加力量）。
+        /// </summary>
+        public string GetResolvedDescription(int strength, int dexterity, bool isEnemy = false)
+        {
+            var sb = new StringBuilder();
+
+            switch (operation)
+            {
+                case EffectOperation.DealDamage:
+                {
+                    int dmg = ValueNode.ResolveValue(value, strength, dexterity);
+                    if (scalingMode == ScalingMode.AddStrength || isEnemy)
+                        dmg += strength;
+                    sb.Append($"对{target.GetDescription()}造成 {dmg} 点的伤害");
+                    string repeat = repeatCount?.GetDescription() ?? "1";
+                    if (repeat != "1") sb.Append($" ×{repeat}次");
+                    if (criticalCheckMode == CriticalCheckMode.Guaranteed) sb.Append(" 必定暴击");
+                    else if (criticalCheckMode == CriticalCheckMode.Disabled) sb.Append(" 无法暴击");
+                    if (ignoreAllBlock) sb.Append(" 无视格挡");
+                    if (useArmorBreak) sb.Append($" 破甲{ValueNode.ResolveValue(armorBreakValue, strength, dexterity)}");
+                    break;
+                }
+
+                case EffectOperation.GainBlock:
+                {
+                    int block = ValueNode.ResolveValue(value, strength, dexterity);
+                    if (scalingMode == ScalingMode.AddStrength)
+                        block += dexterity;
+                    sb.Append($"获得 {block} 格挡");
+                    break;
+                }
+
+                case EffectOperation.ModifyAttribute:
+                    sb.Append($"{ValueNode.GetAttrName(attributeType)} {resourceOp} {ValueNode.ResolveValue(value, strength, dexterity)}");
+                    if (duration.type != DurationType.Instant) sb.Append($" ({duration.GetDescription()})");
+                    break;
+
+                case EffectOperation.ModifyResource:
+                    sb.Append($"{ValueNode.GetResourceName(resourceType)} {resourceOp} {ValueNode.ResolveValue(value, strength, dexterity)}");
+                    break;
+
+                case EffectOperation.ApplyStatus:
+                    sb.Append($"施加{ValueNode.GetStatusName(statusType)} {ValueNode.ResolveValue(statusValue, strength, dexterity)}层 → {target.GetDescription()}");
+                    if (duration.type != DurationType.Instant) sb.Append($" ({duration.GetDescription()})");
+                    break;
+
+                case EffectOperation.RemoveStatus:
+                    sb.Append($"移除{ValueNode.GetStatusName(statusType)} {ValueNode.ResolveValue(statusValue, strength, dexterity)}层 → {target.GetDescription()}");
+                    break;
+
+                case EffectOperation.DrawCards:
+                    sb.Append($"抽 {ValueNode.ResolveValue(value, strength, dexterity)} 张牌");
+                    break;
+
+                case EffectOperation.RestoreActionPoints:
+                    sb.Append($"恢复 {ValueNode.ResolveValue(value, strength, dexterity)} 行动点");
+                    break;
+
+                case EffectOperation.MoveCards:
+                    sb.Append($"{zoneOperation} {ValueNode.ResolveValue(zoneCount, strength, dexterity)}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
+                    break;
+
+                case EffectOperation.SwitchCharacter:
+                    sb.Append("切换角色");
+                    break;
+
+                case EffectOperation.RegisterTrigger:
+                    sb.Append($"注册触发器: {GetTriggerName(triggerEvent)}");
+                    if (duration.type != DurationType.Instant) sb.Append($" ({duration.GetDescription()})");
+                    if (childEffects.Count > 0) sb.Append($" → {childEffects.Count}个子效果");
+                    break;
+
+                case EffectOperation.SetVariable:
+                    sb.Append($"设置变量 {outputVariableName} = {ValueNode.ResolveValue(value, strength, dexterity)}");
+                    break;
+
+                case EffectOperation.ModifyVariable:
+                    sb.Append($"修改变量 {outputVariableName} {resourceOp} {ValueNode.ResolveValue(value, strength, dexterity)}");
+                    break;
+
+                case EffectOperation.CustomOperation:
+                    sb.Append(customOperation != null ? $"自定义: {customOperation.GetDisplayName()}" : "自定义(未绑定)");
+                    break;
+
+                default:
+                    sb.Append(operation.ToString());
+                    break;
+            }
+
+            // 条件
+            if (conditions != null && conditions.conditions != null && conditions.conditions.Count > 0)
+            {
+                sb.Append($" [条件: {conditions.GetDescription()}]");
+            }
+
+            // 输出变量
+            if (!string.IsNullOrEmpty(outputVariableName) && operation != EffectOperation.SetVariable)
+            {
+                sb.Append($" →保存:{outputVariableName}");
+            }
+
+            return sb.ToString();
+        }
+
         public string GetDescription()
         {
             var sb = new StringBuilder();

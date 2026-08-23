@@ -1319,6 +1319,10 @@ public class BattleManager : MonoBehaviour
         // 灵巧：每回合额外抽牌 = 基础值 + 敏捷（赋值式，避免多场战斗逐场累加）
         drawPerTurn = _baseDrawPerTurn + _playerAgility;
 
+        // 设置卡面描述属性解析提供者（力量/敏捷变化时卡面数值实时更新）
+        CardDisplay.PlayerStrengthProvider = () => PlayerStrength;
+        CardDisplay.PlayerDexterityProvider = () => PlayerDexterity;
+
         // 从出生配置（StartEnemies 或默认 defaultEnemies）生成 1-N 个敌人
         InitEnemies();
         _battleEnded = false;
@@ -2022,7 +2026,7 @@ public class BattleManager : MonoBehaviour
             {
                 e.UseLowSanityPool = low;
                 e.ResetDrawnSkill();   // 牌库变化 → 清空已抽，重新随机
-                e.View?.ShowIntentDeck(e.GetCurrentSkills(), low);
+                e.View?.ShowIntentDeck(e.GetCurrentSkills(), low, e.EffectiveStrength, e.EffectiveDexterity);
                 e.View?.Refresh();
                 Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）低理智牌库 {(low ? "启用(phase2)" : "关闭(phase1)")}");
             }
@@ -2413,7 +2417,7 @@ public class BattleManager : MonoBehaviour
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
-                inst.View?.ShowIntentDeck(inst.GetCurrentSkills(), _playerSanity <= _sanityThreshold);   // 阶段切换 → 重抽并按配置出招数刷新预览
+                inst.View?.ShowIntentDeck(inst.GetCurrentSkills(), _playerSanity <= _sanityThreshold, inst.EffectiveStrength, inst.EffectiveDexterity);   // 阶段切换 → 重抽并按配置出招数刷新预览
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
@@ -2830,7 +2834,7 @@ public class BattleManager : MonoBehaviour
             foreach (var e in _enemies)
             {
                 if (e == null || e.IsDead) continue;
-                e.View?.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold);   // 显示本回合实际会打的牌（按配置出招数抽取）
+                e.View?.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);   // 显示本回合实际会打的牌（按配置出招数抽取）
             }
         }
 
@@ -2853,7 +2857,10 @@ public class BattleManager : MonoBehaviour
         // 敌人 UI（血条/名字/护甲/立绘/凝视）由各 EnemyView 自刷（Bind/Refresh），这里不再集中管理
 
         if (handLayout != null)
+        {
             handLayout.RefreshPlayable(IsCardPlayable);
+            handLayout.RefreshCardDisplays();
+        }
 
         // 刷新融合入口按钮可用态（每回合一次 / 非玩家回合时置灰）
         if (_fusionController != null)

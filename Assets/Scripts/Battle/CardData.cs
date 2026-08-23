@@ -379,4 +379,15 @@ public class CardData : ScriptableObject
     {
         return string.IsNullOrWhiteSpace(description) ? GetAutoDescription() : description;
     }
+
+    /// <summary>
+    /// 获取带属性解析的描述（力量/敏捷引用替换为实际数值）。
+    /// 优先从 sourceEntry 的 GetResolvedDescription 生成；否则回退到 GetDisplayDescription。
+    /// </summary>
+    public string GetResolvedDescription(int strength, int dexterity, bool isEnemy = false)
+    {
+        if (sourceEntry != null)
+            return sourceEntry.GetResolvedDescription(isLowSanityForm, strength, dexterity, isEnemy);
+        return GetDisplayDescription();
+    }
 }

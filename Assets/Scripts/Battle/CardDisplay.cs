@@ -115,6 +115,18 @@ public class CardDisplay : MonoBehaviour
     private bool _darkMode = false;
     private FusionCardDelta _fusion;  // 融合覆盖层（从 CardData.fusion 读入，显示时优先覆盖）
 
+    // —— 属性上下文：用于卡面描述实时解析力量/敏捷 ——
+    /// <summary>玩家力量提供者（由 BattleManager 在战斗初始化时设置）</summary>
+    public static System.Func<int> PlayerStrengthProvider;
+    /// <summary>玩家敏捷提供者（由 BattleManager 在战斗初始化时设置）</summary>
+    public static System.Func<int> PlayerDexterityProvider;
+    /// <summary>是否为敌人卡牌（意图预览用）</summary>
+    private bool _isEnemyCard;
+    /// <summary>敌人力量（意图预览用）</summary>
+    private int _enemyStrength;
+    /// <summary>敌人敏捷（意图预览用）</summary>
+    private int _enemyDexterity;
+
     /// <summary>实时融合覆盖层：优先读 CardData.fusion（融合可能新建覆盖层使旧引用失效），否则用缓存。</summary>
     private FusionCardDelta LiveFusion => _data != null && _data.fusion != null ? _data.fusion : _fusion;
 
@@ -907,13 +919,16 @@ public class CardDisplay : MonoBehaviour
         if (LiveFusion == null || !LiveFusion.HasAny || _entry == null)
             return GetDisplayDescription();
 
-        var desc = description;
-        if (string.IsNullOrWhiteSpace(desc)) desc = GetAutoDescription();
+        // 使用属性解析后的描述作为基础文本（力量/敏捷已替换为实际数值）
+        var desc = GetDisplayDescription();
         if (string.IsNullOrEmpty(desc)) return desc;
 
         bool low = _data != null && _data.isLowSanityForm;
         var nodes = _entry.GetEffectNodes(low);
         if (nodes == null || nodes.Count == 0) return desc;
+
+        int str = ContextStrength;
+        int dex = ContextDexterity;
 
         var replacements = new List<(int start, int len, string newVal)>();
         int searchFrom = 0;
@@ -943,8 +958,8 @@ public class CardDisplay : MonoBehaviour
             }
             if (!fuseSet) continue;
 
-            // 取节点原静态值（用于在文案中定位对应数字）
-            if (!TryGetStaticValue(node, out oldVal)) continue;
+            // 取节点属性解析后的值（与描述文本中显示的数值一致，用于定位替换）
+            oldVal = ComputeResolvedEffectValue(node, str, dex, _isEnemyCard);
 
             // 从上次位置向后找值为 oldVal 的数字 token
             int pos = FindNumberToken(desc, oldVal, searchFrom);
@@ -987,6 +1002,28 @@ public class CardDisplay : MonoBehaviour
             else i++;
         }
         return -1;
+    }
+
+    /// <summary>
+    /// 计算效果节点的属性解析后数值（与描述文本中显示的数值一致）。
+    /// DealDamage 叠加力量（scalingMode==AddStrength 或敌人牌），GainBlock 叠加敏捷。
+    /// </summary>
+    private int ComputeResolvedEffectValue(LightMiniGame.CardEditor.EffectNode node, int str, int dex, bool isEnemy)
+    {
+        if (node == null || node.value == null) return 0;
+        int baseVal = LightMiniGame.CardEditor.ValueNode.ResolveValue(node.value, str, dex);
+        switch (node.operation)
+        {
+            case LightMiniGame.CardEditor.EffectOperation.DealDamage:
+                if (node.scalingMode == LightMiniGame.CardEditor.ScalingMode.AddStrength || isEnemy)
+                    baseVal += str;
+                break;
+            case LightMiniGame.CardEditor.EffectOperation.GainBlock:
+                if (node.scalingMode == LightMiniGame.CardEditor.ScalingMode.AddStrength)
+                    baseVal += dex;
+                break;
+        }
+        return baseVal;
     }
 
     /// <summary>
@@ -1070,8 +1107,34 @@ public class CardDisplay : MonoBehaviour
         return TryGetStaticValue(node.value, out value);
     }
 
+    /// <summary>
+    /// 设置为敌人卡牌（意图预览用），传入敌人当前力量/敏捷，使描述显示解析后的数值。
+    /// </summary>
+    public void SetEnemyAttributeContext(int strength, int dexterity)
+    {
+        _isEnemyCard = true;
+        _enemyStrength = strength;
+        _enemyDexterity = dexterity;
+    }
+
+    /// <summary>当前描述上下文的力量值</summary>
+    private int ContextStrength => _isEnemyCard ? _enemyStrength : (PlayerStrengthProvider?.Invoke() ?? 0);
+    /// <summary>当前描述上下文的敏捷值</summary>
+    private int ContextDexterity => _isEnemyCard ? _enemyDexterity : (PlayerDexterityProvider?.Invoke() ?? 0);
+
     public string GetDisplayDescription()
     {
+        // 有 CardEntry 时优先使用属性解析描述
+        if (_entry != null)
+        {
+            bool low = _data != null && _data.isLowSanityForm;
+            return _entry.GetResolvedDescription(low, ContextStrength, ContextDexterity, _isEnemyCard);
+        }
+        // 有 CardData 时尝试从 sourceEntry 解析
+        if (_data != null && _data.sourceEntry != null)
+        {
+            return _data.GetResolvedDescription(ContextStrength, ContextDexterity, _isEnemyCard);
+        }
         return string.IsNullOrWhiteSpace(description) ? GetAutoDescription() : description;
     }
 
@@ -1082,17 +1145,19 @@ public class CardDisplay : MonoBehaviour
         {
             case CardType.Attack:
                 int effAtk = (LiveFusion != null && LiveFusion.overrideAttack) ? LiveFusion.attackValue : attackValue;
+                // AttributeBased 时叠加当前力量值，显示解析后的实际伤害
                 string dmg = attackValueType == ValueType.Fixed
                     ? effAtk.ToString()
-                    : $"({effAtk}+{CardData.GetAttributeName(attackAttribute)})";
+                    : (effAtk + ContextStrength).ToString();
                 sb.Append($"造成{attackCount}次").Append(dmg).Append("点伤害");
                 if (ignoreArmor) sb.Append("\n无视护甲");
                 break;
             case CardType.Skill:
                 int effArm = (LiveFusion != null && LiveFusion.overrideArmor) ? LiveFusion.armorValue : armorValue;
+                // AttributeBased 时叠加当前敏捷值，显示解析后的实际护甲
                 string armor = armorValueType == ValueType.Fixed
                     ? effArm.ToString()
-                    : $"({effArm}+{CardData.GetAttributeName(armorAttribute)})";
+                    : (effArm + ContextDexterity).ToString();
                 sb.Append($"获得{armor}点护甲");
                 break;
             case CardType.Ability:

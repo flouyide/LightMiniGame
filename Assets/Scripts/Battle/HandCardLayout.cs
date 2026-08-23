@@ -197,6 +197,19 @@ public class HandCardLayout : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 刷新所有手牌的描述显示（力量/敏捷变化后调用，使卡面数值实时更新）。
+    /// 不重建卡牌对象，仅调用 UpdateDisplay 重刷文本。
+    /// </summary>
+    public void RefreshCardDisplays()
+    {
+        for (int i = 0; i < _cardDisplays.Count; i++)
+        {
+            if (_cardDisplays[i] != null)
+                _cardDisplays[i].UpdateDisplay();
+        }
+    }
+
     public void SetHoveredIndex(int index)
     {
         if (_hoveredIndex == index) return;

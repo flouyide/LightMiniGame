@@ -822,7 +822,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: -200.23}
-  m_SizeDelta: {x: 656.4577, y: 656.4577}
+  m_SizeDelta: {x: 656.46, y: 656.46}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1696812533393761410
 CanvasRenderer:
@@ -925,10 +925,11 @@ MonoBehaviour:
   armorText: {fileID: 2092861099016971916}
   damageAnchor: {fileID: 6084429079432763145}
   damagePopupPrefab: {fileID: 8386101708896167479}
-  deckMaxWidth: 340
-  deckYOffset: -280
-  deckBaseScale: 0.8
-  deckGap: 30
+  deckMaxWidth: 180
+  deckXOffset: 220
+  deckYOffset: 10
+  deckBaseScale: 0.48
+  deckGap: 4
 --- !u!1 &8386101708896167479
 GameObject:
   m_ObjectHideFlags: 0

@@ -49,6 +49,73 @@ namespace LightMiniGame.CardEditor
         [Tooltip("转换为 M 个单位")]
         public int convertToM = 1;
 
+        /// <summary>
+        /// 静态求值：给定力量/敏捷值，递归计算 ValueNode 表达式的数值。
+        /// ReadAttribute(Strength/Dexterity) 用传入值替换；其他动态节点（读资源/状态/计数器等）按 0 参与运算。
+        /// 用于卡面描述实时显示属性增幅后的数值。
+        /// </summary>
+        public static int ResolveValue(ValueNode node, int strength, int dexterity)
+        {
+            if (node == null) return 0;
+            switch (node.nodeType)
+            {
+                case ValueNodeType.IntegerConstant: return node.intValue;
+                case ValueNodeType.FloatConstant: return Mathf.RoundToInt(node.floatValue);
+                case ValueNodeType.ReadAttribute:
+                    return node.attributeRef switch
+                    {
+                        PlayerAttributeType.Strength => strength,
+                        PlayerAttributeType.Dexterity => dexterity,
+                        _ => 0
+                    };
+                case ValueNodeType.Add:
+                    return ResolveValue(Operand(node, 0), strength, dexterity) + ResolveValue(Operand(node, 1), strength, dexterity);
+                case ValueNodeType.Subtract:
+                    return ResolveValue(Operand(node, 0), strength, dexterity) - ResolveValue(Operand(node, 1), strength, dexterity);
+                case ValueNodeType.Multiply:
+                    return ResolveValue(Operand(node, 0), strength, dexterity) * ResolveValue(Operand(node, 1), strength, dexterity);
+                case ValueNodeType.Divide:
+                    {
+                        int b = ResolveValue(Operand(node, 1), strength, dexterity);
+                        if (b == 0) return 0;
+                        return ResolveValue(Operand(node, 0), strength, dexterity) / b;
+                    }
+                case ValueNodeType.Floor:
+                    return Mathf.FloorToInt(ResolveValue(Operand(node, 0), strength, dexterity));
+                case ValueNodeType.Ceil:
+                    return Mathf.CeilToInt(ResolveValue(Operand(node, 0), strength, dexterity));
+                case ValueNodeType.Round:
+                    return Mathf.RoundToInt(ResolveValue(Operand(node, 0), strength, dexterity));
+                case ValueNodeType.Min:
+                    return Mathf.Min(ResolveValue(Operand(node, 0), strength, dexterity), ResolveValue(Operand(node, 1), strength, dexterity));
+                case ValueNodeType.Max:
+                    return Mathf.Max(ResolveValue(Operand(node, 0), strength, dexterity), ResolveValue(Operand(node, 1), strength, dexterity));
+                case ValueNodeType.Clamp:
+                    {
+                        int v = ResolveValue(Operand(node, 0), strength, dexterity);
+                        int min = ResolveValue(Operand(node, 1), strength, dexterity);
+                        int max = ResolveValue(Operand(node, 2), strength, dexterity);
+                        return Mathf.Clamp(v, min, max);
+                    }
+                case ValueNodeType.Absolute:
+                    return Mathf.Abs(ResolveValue(Operand(node, 0), strength, dexterity));
+                case ValueNodeType.Negate:
+                    return -ResolveValue(Operand(node, 0), strength, dexterity);
+                case ValueNodeType.Percentage:
+                    return ResolveValue(Operand(node, 0), strength, dexterity);
+                case ValueNodeType.EveryNConvertToM:
+                    {
+                        int v = ResolveValue(Operand(node, 0), strength, dexterity);
+                        return node.everyN > 0 ? (v / node.everyN) * node.convertToM : 0;
+                    }
+                default: return 0;
+            }
+        }
+
+        /// <summary>取 ValueNode 的指定操作数子节点（越界返回 null）。</summary>
+        private static ValueNode Operand(ValueNode node, int index)
+            => (node != null && node.operands != null && index < node.operands.Count) ? node.operands[index] : null;
+
         // === 静态便捷工厂 ===
         public static ValueNode Constant(int v) => new ValueNode { nodeType = ValueNodeType.IntegerConstant, intValue = v };
         public static ValueNode ConstFloat(float v) => new ValueNode { nodeType = ValueNodeType.FloatConstant, floatValue = v };

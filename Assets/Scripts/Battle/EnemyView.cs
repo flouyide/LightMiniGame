@@ -29,13 +29,15 @@ public class EnemyView : MonoBehaviour
 
     [Header("出牌牌库意图预览")]
     [Tooltip("牌库卡面最大横向总宽（避免过宽/跨敌人重叠；超出则整体缩小）")]
-    [SerializeField] private float deckMaxWidth = 340f;
-    [Tooltip("牌库展示容器的纵向偏移（立绘下方，负数=下方）")]
-    [SerializeField] private float deckYOffset = -152f;
+    [SerializeField] private float deckMaxWidth = 180f;
+    [Tooltip("牌库展示容器的横向偏移（正数=右侧，用于放到怪物头右边）")]
+    [SerializeField] private float deckXOffset = 220f;
+    [Tooltip("牌库展示容器的纵向偏移（正数=上方，靠近头部）")]
+    [SerializeField] private float deckYOffset = 10f;
     [Tooltip("牌库卡牌基础缩放（配合牌数缩放，越大越清晰）")]
-    [SerializeField] private float deckBaseScale = 0.8f;
+    [SerializeField] private float deckBaseScale = 0.48f;
     [Tooltip("牌库卡牌之间间距（越小越紧凑）")]
-    [SerializeField] private float deckGap = 8f;
+    [SerializeField] private float deckGap = 4f;
 
     private EnemyInstance _inst;
     private Coroutine _popupRoutine;
@@ -189,7 +191,7 @@ public class EnemyView : MonoBehaviour
     /// 自动按牌数缩放/限宽，避免多张重叠拥挤；多敌人各自在各自立绘下方，互不重叠。
     /// lowSanity=true 时卡面用低理智（升级）形态显示（费用/描述随 lowSanity 变）。
     /// </summary>
-    public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false)
+    public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false, int enemyStrength = 0, int enemyDexterity = 0)
     {
         // 清空上一批
         foreach (var c in _deckCards)
@@ -213,7 +215,7 @@ public class EnemyView : MonoBehaviour
         // 定位：立绘下方居中
         _deckRoot.anchorMin = _deckRoot.anchorMax = new Vector2(0.5f, 0.5f);
         _deckRoot.pivot = new Vector2(0.5f, 0.5f);
-        _deckRoot.anchoredPosition = new Vector2(0f, deckYOffset);
+        _deckRoot.anchoredPosition = new Vector2(deckXOffset, deckYOffset);
 
         // 逐个实例化卡面
         List<(GameObject go, float w)> cards = new List<(GameObject, float)>();
@@ -232,7 +234,12 @@ public class EnemyView : MonoBehaviour
 
             var cardGo = Instantiate(prefab, _deckRoot);
             var display = cardGo.GetComponent<CardDisplay>();
-            if (display != null) display.ApplyCardEntry(entry, lowSanity);
+            if (display != null)
+            {
+                // 先设置敌人属性上下文，再应用卡牌数据（ApplyCardEntry 内部会调用 UpdateDisplay 生成描述）
+                display.SetEnemyAttributeContext(enemyStrength, enemyDexterity);
+                display.ApplyCardEntry(entry, lowSanity);
+            }
 
             // 禁用交互仅展示
             var drag = cardGo.GetComponent<CardDragHandler>();
