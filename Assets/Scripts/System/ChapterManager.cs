@@ -51,6 +51,15 @@ public class ChapterManager : MonoBehaviour
     public CharacterData ActiveCharacter => _activeCharacter;
     public CharacterData InactiveCharacter => _inactiveCharacter;
 
+    /// <summary>按开局索引获取角色（0=角色1，1=角色2）；未配置或越界返回 null。</summary>
+    public CharacterData GetCharacter(int index)
+    {
+        if (gameConfig == null || gameConfig.characters == null
+            || index < 0 || index >= gameConfig.characters.Count)
+            return null;
+        return gameConfig.characters[index];
+    }
+
     // --- 状态 ---
     private int _currentChapterIndex = -1;  // 当前章节索引（-1表示未开始）
     private ChapterConfig _currentChapter;  // 当前章节配置引用

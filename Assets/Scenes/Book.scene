@@ -703,6 +703,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1645358724542911124, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1996170175820447119, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -791,13 +795,25 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2774100782667415446, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -12.389893
+      objectReference: {fileID: 0}
     - target: {fileID: 4994853153616599315, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5046522081783349227, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_Camera
+      value: 
+      objectReference: {fileID: 519420031}
     - target: {fileID: 5596416395830292797, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Name
       value: BookCanvas2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7494088862950248313, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -32.600098
       objectReference: {fileID: 0}
     - target: {fileID: 8028750437916600090, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_SizeDelta.x
@@ -1234,6 +1250,9 @@ MonoBehaviour:
   playerConfig: {fileID: 11400000, guid: 9c1bb1a8fc6d166448f6d77beb295aba, type: 2}
   masterRelicLibrary: {fileID: 11400000, guid: 7ccc0877a23096244b53c2e81a68a324, type: 2}
   masterCardLibrary: {fileID: 11400000, guid: c1dd6fa44003228498e6bd0291c9012d, type: 2}
+  bronzeGradeProbability: 60
+  silverGradeProbability: 30
+  goldGradeProbability: 10
   lowSanityVolume: {fileID: 156470874}
   debugStartChapterIndex: 0
   battleCanvas: {fileID: 1997213926}

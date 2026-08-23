@@ -38,7 +38,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 600, y: 200}
+  m_SizeDelta: {x: 1348.0298, y: 635.2583}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3205261285029069223
 CanvasRenderer:
@@ -172,8 +172,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -251,8 +251,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 253.33765, y: -120.3}
-  m_SizeDelta: {x: 85.7247, y: 30}
+  m_AnchoredPosition: {x: 576.301, y: -275.7072}
+  m_SizeDelta: {x: 173.1227, y: 60.5855}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7739638140284088933
 CanvasRenderer:
@@ -546,10 +546,10 @@ RectTransform:
   - {fileID: 8257592503768656890}
   m_Father: {fileID: 6310179065546827531}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 0.15100001}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -48}
+  m_SizeDelta: {x: 0, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &3968325263801412539
 MonoBehaviour:
@@ -655,7 +655,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardLayer: {fileID: 1937775395481053026}
   skipButton: {fileID: 2329080074738803209}
-  noteText: {fileID: 0}
 --- !u!114 &4701576956064246705
 MonoBehaviour:
   m_ObjectHideFlags: 0

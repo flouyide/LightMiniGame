@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LightMiniGame.Card;
 using LightMiniGame.Shop;
 using TMPro;
 using UnityEngine;
@@ -63,11 +64,31 @@ public class LootPanelUI : MonoBehaviour
     [Tooltip("Coin 按钮内的 TMP 组件，显示掉落的货币数量")]
     [SerializeField] private TextMeshProUGUI coinText;
 
-    [Tooltip("RelicA 节点的 Image 组件，显示该角色将掉落的遗物图标")]
-    [SerializeField] private Image relicAIcon;
+    [Header("RelicA/RelicB 子节点（未接线时按名称自动查找）")]
+    [Tooltip("RelicA/RelicImage：显示该角色将掉落的遗物原画")]
+    [SerializeField] private Image relicAImage;
 
-    [Tooltip("RelicB 节点的 Image 组件，显示该角色将掉落的遗物图标")]
-    [SerializeField] private Image relicBIcon;
+    [Tooltip("RelicA/Text：显示该角色将掉落的遗物名")]
+    [SerializeField] private TextMeshProUGUI relicAText;
+
+    [Tooltip("RelicB/RelicImage：显示该角色将掉落的遗物原画")]
+    [SerializeField] private Image relicBImage;
+
+    [Tooltip("RelicB/Text：显示该角色将掉落的遗物名")]
+    [SerializeField] private TextMeshProUGUI relicBText;
+
+    [Header("CharacterImage 头像引用（未接线时按名称自动查找）")]
+    [Tooltip("CardA/CharacterImage：角色1头像")]
+    [SerializeField] private Image cardACharImage;
+
+    [Tooltip("CardB/CharacterImage：角色2头像")]
+    [SerializeField] private Image cardBCharImage;
+
+    [Tooltip("RelicA/CharacterImage：角色1头像")]
+    [SerializeField] private Image relicACharImage;
+
+    [Tooltip("RelicB/CharacterImage：角色2头像")]
+    [SerializeField] private Image relicBCharImage;
 
     /// <summary>继续按钮点击事件（BattleManager 订阅后走 OnQuitClicked 流程回到局外）。</summary>
     public event Action OnContinueClicked;
@@ -87,6 +108,7 @@ public class LootPanelUI : MonoBehaviour
     private int _cardDrawCount = 3;
     private bool _cardAClaimed;
     private bool _cardBClaimed;
+    private bool _avatarsApplied;   // 角色头像是否已写入（幂等标记）
 
     private void Awake()
     {
@@ -108,6 +130,36 @@ public class LootPanelUI : MonoBehaviour
             cardAButton.onClick.AddListener(() => OpenLootCardPanel(0));
         if (cardBButton != null)
             cardBButton.onClick.AddListener(() => OpenLootCardPanel(1));
+
+        // 解析各奖励按钮下的子节点（RelicImage / Text / CharacterImage），未接线时按名称自动查找
+        ResolveChildRefs();
+    }
+
+    /// <summary>解析各奖励按钮下的子节点引用；Inspector 已接线的优先，缺的按固定子节点名查找。</summary>
+    private void ResolveChildRefs()
+    {
+        if (relicAImage == null) relicAImage = FindChildImage(relicA, "RelicImage");
+        if (relicAText == null) relicAText = FindChildText(relicA, "Text");
+        if (relicBImage == null) relicBImage = FindChildImage(relicB, "RelicImage");
+        if (relicBText == null) relicBText = FindChildText(relicB, "Text");
+        if (cardACharImage == null) cardACharImage = FindChildImage(cardA, "CharacterImage");
+        if (cardBCharImage == null) cardBCharImage = FindChildImage(cardB, "CharacterImage");
+        if (relicACharImage == null) relicACharImage = FindChildImage(relicA, "CharacterImage");
+        if (relicBCharImage == null) relicBCharImage = FindChildImage(relicB, "CharacterImage");
+    }
+
+    private static Image FindChildImage(GameObject parent, string childName)
+    {
+        if (parent == null) return null;
+        var t = parent.transform.Find(childName);
+        return t != null ? t.GetComponent<Image>() : null;
+    }
+
+    private static TextMeshProUGUI FindChildText(GameObject parent, string childName)
+    {
+        if (parent == null) return null;
+        var t = parent.transform.Find(childName);
+        return t != null ? t.GetComponent<TextMeshProUGUI>() : null;
     }
 
     /// <summary>
@@ -169,42 +221,63 @@ public class LootPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// 刷新 Coin 的货币数量文本，以及 RelicA/RelicB 的遗物图标（按预抽取结果）。
+    /// 刷新 Coin 的货币数量文本、RelicA/RelicB 的遗物原画与名字（按预抽取结果），
+    /// 以及四个奖励按钮 CharacterImage 的角色头像。
     /// </summary>
     private void ApplyDisplay(bool hasCurrency, bool hasRelic)
     {
         if (coinText != null)
             coinText.text = hasCurrency ? $"货币：{_currencyAmount}" : string.Empty;
 
-        if (relicAIcon != null)
-        {
-            if (hasRelic && _relicAData != null && _relicAData.icon != null)
-            {
-                relicAIcon.sprite = _relicAData.icon;
-                relicAIcon.color = Color.white;
-                relicAIcon.enabled = true;
-            }
-            else
-            {
-                relicAIcon.sprite = null;
-                relicAIcon.enabled = false;
-            }
-        }
+        // RelicA/RelicB：RelicImage 显示预抽取遗物原画，Text 显示遗物名（仅预览，领取时面板会重新抽取）
+        UpdateRelicPreview(relicAImage, relicAText, hasRelic ? _relicAData : null);
+        UpdateRelicPreview(relicBImage, relicBText, hasRelic ? _relicBData : null);
 
-        if (relicBIcon != null)
+        ApplyCharacterAvatars();
+    }
+
+    /// <summary>刷新单个遗物按钮的预览：RelicImage 显示原画，Text 显示遗物名；data 为空时清空。</summary>
+    private static void UpdateRelicPreview(Image icon, TextMeshProUGUI label, RelicData data)
+    {
+        if (icon != null)
         {
-            if (hasRelic && _relicBData != null && _relicBData.icon != null)
+            if (data != null && data.icon != null)
             {
-                relicBIcon.sprite = _relicBData.icon;
-                relicBIcon.color = Color.white;
-                relicBIcon.enabled = true;
+                icon.sprite = data.icon;
+                icon.color = Color.white;
+                icon.preserveAspect = true;
+                icon.enabled = true;
             }
             else
             {
-                relicBIcon.sprite = null;
-                relicBIcon.enabled = false;
+                icon.sprite = null;
+                icon.enabled = false;
             }
         }
+        if (label != null)
+            label.text = data != null ? data.relicName : string.Empty;
+    }
+
+    /// <summary>把四个奖励按钮的 CharacterImage 设为所属角色头像（CardA/RelicA=角色1，CardB/RelicB=角色2）。幂等。</summary>
+    private void ApplyCharacterAvatars()
+    {
+        if (_avatarsApplied) return;
+        var chapter = FindObjectOfType<ChapterManager>();
+        if (chapter == null) return;   // ChapterManager 尚未就绪时下次刷新重试
+
+        ApplyAvatar(cardACharImage, chapter.GetCharacter(0));
+        ApplyAvatar(relicACharImage, chapter.GetCharacter(0));
+        ApplyAvatar(cardBCharImage, chapter.GetCharacter(1));
+        ApplyAvatar(relicBCharImage, chapter.GetCharacter(1));
+        _avatarsApplied = true;
+    }
+
+    private static void ApplyAvatar(Image target, CharacterData character)
+    {
+        if (target == null || character == null || character.avatar == null) return;
+        target.sprite = character.avatar;
+        target.color = Color.white;
+        target.preserveAspect = true;
     }
 
     /// <summary>隐藏全部奖励按钮（面板复用前的重置）。</summary>
