@@ -11,7 +11,8 @@ using UnityEngine.UI;
 /// 再调用 Open(...) 抽取并展示候选卡牌。
 ///
 /// 展示规则：按 LootEntry.cardDrawCount（n）从指定角色 MasterCardLibrary 中按品级概率抽 n 张，
-/// 放入 CardLayer 的 HorizontalLayoutGroup；点击某张卡即发放给该角色并关闭面板，点击 Skip 直接关闭。
+/// 放入 CardLayer 的 HorizontalLayoutGroup，并按白色背景自动缩放使 n 张牌铺满（默认 3 张）；
+/// 点击某张卡即发放给该角色并关闭面板，点击 Skip 直接关闭。
 ///
 /// 容器与按钮优先使用 Inspector 字段，未配置时按 prefab 固定结构自动查找，免去手工接线：
 ///   - CardLayer：transform.Find("Background/CardLayer")
@@ -100,13 +101,17 @@ public class LootCardPanelUI : MonoBehaviour
             return;
         }
 
-        // 自适应容器尺寸，确保 n 张卡完整显示
-        FitBackgroundToCards(cards.Count, cardPrefab);
+        // 按白色背景自动缩放卡牌：n 张牌（默认 3 张）统一缩放铺满 CardLayer
+        var cardRT = cardPrefab.GetComponent<RectTransform>();
+        float baseW = cardRT != null ? cardRT.rect.width : 180f;
+        float baseH = cardRT != null ? cardRT.rect.height : 252f;
+        float scale = ComputeFillScale(cards.Count, baseW, baseH);
 
-        // 实例化候选卡牌
+        // 实例化候选卡牌（按铺满缩放）
         foreach (var data in cards)
         {
             var go = Instantiate(cardPrefab, cardLayer);
+            go.transform.localScale = Vector3.one * scale;
             var display = go.GetComponent<CardDisplay>();
             if (display != null) display.ApplyCardData(data);
 
@@ -117,7 +122,7 @@ public class LootCardPanelUI : MonoBehaviour
             btn.onClick.AddListener(() => OnCardPicked(capturedIndex, capturedData));
         }
 
-        Debug.Log($"[LootCardPanelUI] 角色{characterIndex + 1} 卡牌选择面板：展示 {cards.Count} 张候选");
+        Debug.Log($"[LootCardPanelUI] 角色{characterIndex + 1} 卡牌选择面板：展示 {cards.Count} 张候选（缩放 {scale:F2}x）");
     }
 
     private void OnCardPicked(int characterIndex, CardData data)
@@ -146,23 +151,38 @@ public class LootCardPanelUI : MonoBehaviour
         }
     }
 
-    private void FitBackgroundToCards(int count, GameObject cardPrefab)
+    /// <summary>
+    /// 计算 count 张基准尺寸 baseW×baseH 的卡牌铺满 CardLayer 所需的统一缩放：
+    /// 宽度方向 n 张 + 间距正好铺满可用宽度；高度方向不超过可用高度（含内边距），取两者较小值。
+    /// 间距随缩放等比放大以保持视觉比例。需要 CardLayer 的 HorizontalLayoutGroup 开启 Child Scale。
+    /// </summary>
+    private float ComputeFillScale(int count, float baseW, float baseH)
     {
-        var bg = transform.Find("Background");
-        if (bg == null) return;
-        var cardRT = cardPrefab != null ? cardPrefab.GetComponent<RectTransform>() : null;
-        float cardW = cardRT != null ? cardRT.rect.width : 180f;
-        float cardH = cardRT != null ? cardRT.rect.height : 252f;
-        var hlg = cardLayer != null ? cardLayer.GetComponent<HorizontalLayoutGroup>() : null;
+        if (cardLayer == null || count <= 0) return 1f;
+        var layerRT = cardLayer as RectTransform;
+        if (layerRT == null) layerRT = cardLayer.GetComponent<RectTransform>();
+        if (layerRT == null) return 1f;
+
+        var hlg = cardLayer.GetComponent<HorizontalLayoutGroup>();
         float padX = hlg != null ? (hlg.padding.left + hlg.padding.right) : 32f;
         float padY = hlg != null ? (hlg.padding.top + hlg.padding.bottom) : 32f;
         float spacing = hlg != null ? hlg.spacing : 16f;
 
-        float width = count * cardW + (count - 1) * spacing + padX;
-        float height = cardH + padY;
-        var bgRT = bg.GetComponent<RectTransform>();
-        if (bgRT != null)
-            bgRT.sizeDelta = new Vector2(Mathf.Max(width, bgRT.sizeDelta.x), Mathf.Max(height, bgRT.sizeDelta.y));
+        // 强制刷新布局，确保拿到 CardLayer 的最新实际尺寸
+        LayoutRebuilder.ForceRebuildLayoutImmediate(layerRT);
+
+        float availW = layerRT.rect.width - padX;
+        float availH = layerRT.rect.height - padY;
+        if (availW <= 0f || availH <= 0f) return 1f;
+
+        float needW = count * baseW + (count - 1) * spacing;
+        float scaleX = availW / needW;
+        float scaleY = availH / baseH;
+        float scale = Mathf.Min(scaleX, scaleY);
+
+        // 间距随缩放等比调整，保持牌间空隙与卡牌尺寸的比例
+        if (hlg != null) hlg.spacing = spacing * scale;
+        return scale;
     }
 
     /// <summary>
@@ -196,12 +216,12 @@ public class LootCardPanelUI : MonoBehaviour
             return;
         }
 
-        FitBackgroundToRelics(relics.Count);
-
+        // 遗物单元格同样按铺满缩放（基准 180×252，与卡牌一致）
+        float scale = ComputeFillScale(relics.Count, 180f, 252f);
         foreach (var relic in relics)
-            BuildRelicCell(relic, characterIndex);
+            BuildRelicCell(relic, characterIndex, scale);
 
-        Debug.Log($"[LootCardPanelUI] 角色{characterIndex + 1} 遗物选择面板：展示 {relics.Count} 个候选");
+        Debug.Log($"[LootCardPanelUI] 角色{characterIndex + 1} 遗物选择面板：展示 {relics.Count} 个候选（缩放 {scale:F2}x）");
     }
 
     private void OnRelicPicked(int characterIndex, RelicData relic)
@@ -212,13 +232,14 @@ public class LootCardPanelUI : MonoBehaviour
         Close();
     }
 
-    /// <summary>运行时构建单个遗物候选单元格（图标 + 名称/品级），并挂 Button 用于选中发放。</summary>
-    private void BuildRelicCell(RelicData relic, int characterIndex)
+    /// <summary>运行时构建单个遗物候选单元格（图标 + 名称/品级），按铺满缩放，并挂 Button 用于选中发放。</summary>
+    private void BuildRelicCell(RelicData relic, int characterIndex, float scale)
     {
         if (cardLayer == null || relic == null) return;
 
         var cell = new GameObject("RelicCell", typeof(RectTransform));
         cell.transform.SetParent(cardLayer, false);
+        cell.transform.localScale = Vector3.one * scale;
         var rt = cell.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -263,22 +284,5 @@ public class LootCardPanelUI : MonoBehaviour
         int ci = characterIndex;
         var captured = relic;
         btn.onClick.AddListener(() => OnRelicPicked(ci, captured));
-    }
-
-    private void FitBackgroundToRelics(int count)
-    {
-        var bg = transform.Find("Background");
-        if (bg == null) return;
-        float cardW = 180f, cardH = 252f;
-        var hlg = cardLayer != null ? cardLayer.GetComponent<HorizontalLayoutGroup>() : null;
-        float padX = hlg != null ? (hlg.padding.left + hlg.padding.right) : 32f;
-        float padY = hlg != null ? (hlg.padding.top + hlg.padding.bottom) : 32f;
-        float spacing = hlg != null ? hlg.spacing : 16f;
-
-        float width = count * cardW + (count - 1) * spacing + padX;
-        float height = cardH + padY;
-        var bgRT = bg.GetComponent<RectTransform>();
-        if (bgRT != null)
-            bgRT.sizeDelta = new Vector2(Mathf.Max(width, bgRT.sizeDelta.x), Mathf.Max(height, bgRT.sizeDelta.y));
     }
 }

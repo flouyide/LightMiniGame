@@ -16,7 +16,7 @@ using UnityEngine.UI;
 /// 显示规则（按 LootEntry.kind 统计）：
 ///   Currency 存在 → 启用 Coin
 ///   Card 存在     → 启用 CardA、CardB（双角色各一次卡牌选择）
-///   Relic 存在    → 启用 RelicA、RelicB（双角色各一次权柄选择）
+///   Relic 存在    → 启用 RelicA、RelicB（点击直接领取各自预抽取的遗物，按钮随即消失）
 ///   某类型不存在  → 对应按钮 SetActive(false)
 ///
 /// 例：只掉金币 → 只有 Coin 显示；金币+卡牌 → Coin、CardA、CardB 显示。
@@ -101,7 +101,6 @@ public class LootPanelUI : MonoBehaviour
     private bool _coinClaimed;
     private bool _relicAClaimed;
     private bool _relicBClaimed;
-    private int _relicDrawCount = 3;   // 遗物选择面板展示个数（LootEntry 的 Relic 条目无独立 drawCount，默认 3）
 
     // 卡牌掉落：合并自全部 Card 条目的允许品级与最大抽取数（供 CardA/CardB 弹出面板时使用）
     private readonly List<CardGrade> _cardRarities = new List<CardGrade>();
@@ -117,9 +116,9 @@ public class LootPanelUI : MonoBehaviour
         if (coinButton != null)
             coinButton.onClick.AddListener(ClaimCurrency);
         if (relicAButton != null)
-            relicAButton.onClick.AddListener(() => OpenLootRelicPanel(0));
+            relicAButton.onClick.AddListener(() => ClaimRelic(0));
         if (relicBButton != null)
-            relicBButton.onClick.AddListener(() => OpenLootRelicPanel(1));
+            relicBButton.onClick.AddListener(() => ClaimRelic(1));
 
         // 卡牌A/卡牌B按钮：优先用 Inspector 接线，未接线则回退到 cardA/cardB 节点下的 Button
         if (cardAButton == null && cardA != null)
@@ -211,8 +210,8 @@ public class LootPanelUI : MonoBehaviour
 
         // 每次显示一张新的掉落表时重新允许领取；具体领取后会将各自按钮禁用，防止重复点。
         if (coinButton != null) coinButton.interactable = hasCurrency && !_coinClaimed;
-        if (relicAButton != null) relicAButton.interactable = hasRelic && !_relicAClaimed;
-        if (relicBButton != null) relicBButton.interactable = hasRelic && !_relicBClaimed;
+        if (relicAButton != null) relicAButton.interactable = hasRelic && !_relicAClaimed && _relicAData != null;
+        if (relicBButton != null) relicBButton.interactable = hasRelic && !_relicBClaimed && _relicBData != null;
         if (cardAButton != null) cardAButton.interactable = hasCard && !_cardAClaimed;
         if (cardBButton != null) cardBButton.interactable = hasCard && !_cardBClaimed;
 
@@ -229,7 +228,7 @@ public class LootPanelUI : MonoBehaviour
         if (coinText != null)
             coinText.text = hasCurrency ? $"货币：{_currencyAmount}" : string.Empty;
 
-        // RelicA/RelicB：RelicImage 显示预抽取遗物原画，Text 显示遗物名（仅预览，领取时面板会重新抽取）
+        // RelicA/RelicB：RelicImage 显示预抽取遗物原画，Text 显示遗物名（点击按钮即领取这件）
         UpdateRelicPreview(relicAImage, relicAText, hasRelic ? _relicAData : null);
         UpdateRelicPreview(relicBImage, relicBText, hasRelic ? _relicBData : null);
 
@@ -296,7 +295,6 @@ public class LootPanelUI : MonoBehaviour
         _coinClaimed = false;
         _relicAClaimed = false;
         _relicBClaimed = false;
-        _relicDrawCount = 3;
         _cardRarities.Clear();
         _cardDrawCount = 3;
         _cardAClaimed = false;
@@ -373,30 +371,30 @@ public class LootPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// 打开遗物选择面板（LootCardPanel.prefab，作为本面板子物体实例化）：
-    /// 抽取候选遗物供玩家选择 1 件并发放给对应角色。
-    /// characterIndex：0=角色1（RelicA），1=角色2（RelicB）。
-    /// 抽取的品级来自当前结算缓存的 Relic 条目（_relicGrades），展示个数取 _relicDrawCount（默认 3）。
+    /// 直接领取该角色预抽取的遗物（不弹选择面板）：characterIndex 0=角色1（RelicA），1=角色2（RelicB）。
+    /// 领取的就是按钮预览原画/名字显示的那件（PeekBattleLootRelic 预抽取结果），写入库存走
+    /// ChapterManager.CommitBattleLootRelic；领取后整个 RelicA/RelicB 奖励节点消失。
     /// </summary>
-    private void OpenLootRelicPanel(int characterIndex)
+    private void ClaimRelic(int characterIndex)
     {
-        if (lootCardPanelPrefab == null)
+        bool alreadyClaimed = characterIndex == 0 ? _relicAClaimed : _relicBClaimed;
+        var data = characterIndex == 0 ? _relicAData : _relicBData;
+        if (alreadyClaimed || data == null) return;
+
+        var chapter = FindObjectOfType<ChapterManager>();
+        if (chapter == null)
         {
-            Debug.LogWarning("[LootPanelUI] 无法打开遗物选择面板：未配置 lootCardPanelPrefab（请在 Inspector 拖入 LootCardPanel.prefab）");
+            Debug.LogWarning("[LootPanelUI] 领取遗物失败：未找到 ChapterManager");
             return;
         }
-        if (_relicGrades.Count == 0) _relicGrades.Add(CardGrade.Bronze);
 
-        // 实例化面板并挂为本面板子物体（关闭时随父级一起清除）
-        var panel = Instantiate(lootCardPanelPrefab, transform);
-        var ui = panel.AddComponent<LootCardPanelUI>();
-        ui.OpenRelics(characterIndex, new List<CardGrade>(_relicGrades), _relicDrawCount, OnRelicPicked);
-        Debug.Log($"[LootPanelUI] 打开角色{characterIndex + 1} 遗物选择面板（品级：{string.Join(",", _relicGrades)}，个数：{_relicDrawCount}）");
-    }
+        // 把预览阶段已确定的遗物真正写入对应角色库存（与按钮上显示的图标/名字一致，不重复随机）
+        if (!chapter.CommitBattleLootRelic(characterIndex, data))
+        {
+            Debug.LogWarning($"[LootPanelUI] 领取遗物失败：{data.relicName} 已拥有或写入库存失败");
+            return; // 保持可点击，以便配置修正后重试
+        }
 
-    /// <summary>玩家在遗物选择面板选中一件并发放后回调：标记该角色遗物已领取并隐藏对应按钮。</summary>
-    private void OnRelicPicked(int characterIndex)
-    {
         if (characterIndex == 0)
         {
             _relicAClaimed = true;
@@ -407,7 +405,8 @@ public class LootPanelUI : MonoBehaviour
             _relicBClaimed = true;
             SetActiveSafe(relicB, false);
         }
-        Debug.Log($"[LootPanelUI] 角色{characterIndex + 1}已领取遗物掉落");
+
+        Debug.Log($"[LootPanelUI] 角色{characterIndex + 1}领取遗物：{data.relicName}");
     }
 
     /// <summary>
