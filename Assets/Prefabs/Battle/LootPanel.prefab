@@ -2286,6 +2286,8 @@ MonoBehaviour:
   cardBCharImage: {fileID: 2963722143437637098}
   relicACharImage: {fileID: 1045788948421619573}
   relicBCharImage: {fileID: 8752245467720414184}
+  cardAText: {fileID: 6821531708766201835}
+  cardBText: {fileID: 4343086895766930456}
 --- !u!1 &8640644203634738977
 GameObject:
   m_ObjectHideFlags: 0

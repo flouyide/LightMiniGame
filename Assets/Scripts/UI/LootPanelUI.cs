@@ -90,6 +90,13 @@ public class LootPanelUI : MonoBehaviour
     [Tooltip("RelicB/CharacterImage：角色2头像")]
     [SerializeField] private Image relicBCharImage;
 
+    [Header("CardA/CardB 文本引用（未接线时按名称自动查找）")]
+    [Tooltip("CardA/Text：显示 角色1名字 + 卡牌")]
+    [SerializeField] private TextMeshProUGUI cardAText;
+
+    [Tooltip("CardB/Text：显示 角色2名字 + 卡牌")]
+    [SerializeField] private TextMeshProUGUI cardBText;
+
     /// <summary>继续按钮点击事件（BattleManager 订阅后走 OnQuitClicked 流程回到局外）。</summary>
     public event Action OnContinueClicked;
 
@@ -145,6 +152,8 @@ public class LootPanelUI : MonoBehaviour
         if (cardBCharImage == null) cardBCharImage = FindChildImage(cardB, "CharacterImage");
         if (relicACharImage == null) relicACharImage = FindChildImage(relicA, "CharacterImage");
         if (relicBCharImage == null) relicBCharImage = FindChildImage(relicB, "CharacterImage");
+        if (cardAText == null) cardAText = FindChildText(cardA, "Text");
+        if (cardBText == null) cardBText = FindChildText(cardB, "Text");
     }
 
     private static Image FindChildImage(GameObject parent, string childName)
@@ -233,6 +242,24 @@ public class LootPanelUI : MonoBehaviour
         UpdateRelicPreview(relicBImage, relicBText, hasRelic ? _relicBData : null);
 
         ApplyCharacterAvatars();
+        ApplyCardLabels();
+    }
+
+    /// <summary>刷新 CardA/CardB 文本：所属角色名字 + "卡牌"（CardA=角色1，CardB=角色2）。</summary>
+    private void ApplyCardLabels()
+    {
+        var chapter = FindObjectOfType<ChapterManager>();
+        if (chapter == null) return;   // ChapterManager 尚未就绪时下次刷新重试
+        UpdateCardLabel(cardAText, chapter.GetCharacter(0));
+        UpdateCardLabel(cardBText, chapter.GetCharacter(1));
+    }
+
+    /// <summary>把卡牌按钮文本设为「角色名字 + 卡牌」。character 为空时清空。</summary>
+    private static void UpdateCardLabel(TextMeshProUGUI label, CharacterData character)
+    {
+        if (label == null) return;
+        string name = character != null ? character.Label : string.Empty;
+        label.text = name + "卡牌";
     }
 
     /// <summary>刷新单个遗物按钮的预览：RelicImage 显示原画，Text 显示遗物名；data 为空时清空。</summary>
