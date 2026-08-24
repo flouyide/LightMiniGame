@@ -1345,10 +1345,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BookCanvas2
       objectReference: {fileID: 0}
-<<<<<<< Updated upstream
     - target: {fileID: 5596416395830292797, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_IsActive
-=======
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6625891099148427147, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -99.00003
@@ -1379,7 +1379,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7257339196560054218, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_RaycastTarget
->>>>>>> Stashed changes
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7494088862950248313, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
