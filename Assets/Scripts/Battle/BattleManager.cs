@@ -1941,11 +1941,14 @@ public class BattleManager : MonoBehaviour
             case LightMiniGame.CardEditor.PlayerAttributeType.Strength:
                 e.StrengthBuff += delta;
                 e.View?.Refresh();
+                // 力量变化后立即刷新意图牌库（不受 _isPlayerTurn 守卫限制，敌人回合buff也要实时反映到卡面数值）
+                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);
                 UpdateUI();
                 return true;
             case LightMiniGame.CardEditor.PlayerAttributeType.Dexterity:
                 e.DexterityBuff += delta;
                 e.View?.Refresh();
+                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);
                 UpdateUI();
                 return true;
             default:
@@ -2496,7 +2499,7 @@ public class BattleManager : MonoBehaviour
     private IEnumerator ExecuteEnemySkillCoroutine(EnemyInstance inst, CardEntry skill)
     {
         // 用玩家同款卡面（BattleCard 预制体 + CardRequest）展示敌人出牌，尽量贴近玩家视角。
-        GameObject shownCard = ShowEnemyPlayedCard(skill);
+        GameObject shownCard = ShowEnemyPlayedCard(skill, inst);
         bool showFallbackPanel = shownCard == null && enemySkillCard != null;
 
         if (shownCard != null)
@@ -2526,7 +2529,7 @@ public class BattleManager : MonoBehaviour
             }
             if (enemySkillDescText != null)
             {
-                enemySkillDescText.text = skill.GetDescription(false);
+                enemySkillDescText.text = skill.GetResolvedDescription(false, inst?.EffectiveStrength ?? 0, inst?.EffectiveDexterity ?? 0, true);
                 enemySkillDescText.color = new Color(0.9f, 0.85f, 0.95f, 1f);
             }
 
@@ -2549,7 +2552,7 @@ public class BattleManager : MonoBehaviour
     /// 用玩家同款卡面预制体 + 卡牌编辑器 CardEntry 生成一张“敌人出牌展示卡”，
     /// 挂在敌人技能卡面板同父节点下并居中。返回该卡 GameObject；若无可用预制体返回 null。
     /// </summary>
-    private GameObject ShowEnemyPlayedCard(CardEntry skill)
+    private GameObject ShowEnemyPlayedCard(CardEntry skill, EnemyInstance inst = null)
     {
         if (skill == null) return null;
 
@@ -2572,7 +2575,12 @@ public class BattleManager : MonoBehaviour
 
         var display = go.GetComponent<CardDisplay>();
         if (display != null)
+        {
+            // 传入敌人当前力量/敏捷，使卡面描述显示属性增幅后的实际数值
+            if (inst != null)
+                display.SetEnemyAttributeContext(inst.EffectiveStrength, inst.EffectiveDexterity);
             display.ApplyCardEntry(skill, false);
+        }
         else
         {
             Destroy(go);
