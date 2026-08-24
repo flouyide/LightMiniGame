@@ -269,6 +269,11 @@ public class CardLibraryPanelUI : MonoBehaviour
 
             var go = Instantiate(prefab, gridContent, false);
             go.SetActive(true);
+
+            // 直接替换卡面模板既有节点的 Image.sprite：不创建任何 GameObject。
+            // CardFrame ← CardData.descBoxSprite；CardType ← CardData.typeBoxSprite；
+            // ArtImage 同时读取 CardData.cardArt。
+            ApplyCardEntrySprites(go, inst.template);
             ApplyCardData(go, inst);
             _entryObjects.Add(go);
 
@@ -301,6 +306,49 @@ public class CardLibraryPanelUI : MonoBehaviour
     }
 
     /// <summary>
+    /// 直接替换卡牌 prefab 已有节点的三层 Image.sprite，不创建也不附加任何 GameObject/组件。
+    /// 节点约定（卡牌.prefab）：ArtImage ← cardArt；CardFrame ← descBoxSprite；CardType ← typeBoxSprite。
+    /// 优先使用 CardData 字段；兼容旧 CardData 时回退其 sourceEntry 中的同名字段。
+    /// </summary>
+    private static void ApplyCardEntrySprites(GameObject cardGo, CardData data)
+    {
+        if (cardGo == null || data == null) return;
+
+        Sprite art = data.cardArt != null ? data.cardArt : data.sourceEntry?.cardArt;
+        Sprite descBox = data.descBoxSprite != null ? data.descBoxSprite : data.sourceEntry?.descBoxSprite;
+        Sprite typeBox = data.typeBoxSprite != null ? data.typeBoxSprite : data.sourceEntry?.typeBoxSprite;
+
+        foreach (var image in cardGo.GetComponentsInChildren<Image>(true))
+        {
+            if (image == null) continue;
+            switch (image.gameObject.name)
+            {
+                case "ArtImage":
+                    if (art != null)
+                    {
+                        image.sprite = art;
+                        image.color = Color.white;
+                    }
+                    break;
+                case "CardFrame":
+                    if (descBox != null)
+                    {
+                        image.sprite = descBox;
+                        image.color = Color.white;
+                    }
+                    break;
+                case "CardType":
+                    if (typeBox != null)
+                    {
+                        image.sprite = typeBox;
+                        image.color = Color.white;
+                    }
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
     /// 将一张 CardInstance 的有效值写入 Battle 卡面预制体的 CardDisplay 并刷新显示。
     /// 尊重覆盖层（改过的属性优先），模板缺失时降级为孤儿卡显示。
     /// </summary>
@@ -314,6 +362,37 @@ public class CardLibraryPanelUI : MonoBehaviour
         }
 
         var tpl = inst.template;
+        // 优先从 CardEntry 读取三层 sprite（cardArt / descBoxSprite / typeBoxSprite）
+        // CardData 上的同名字段通常为 null，没有这一层会显示空白卡面。
+        if (tpl != null && tpl.sourceEntry != null)
+        {
+            d.ApplyCardEntry(tpl.sourceEntry, false);
+            // 仍允许运行时调整（费用/词条等覆盖层在 CardInstance 里）：
+            d.cardName = inst.EffectiveName;
+            d.value = inst.EffectiveValue;
+            d.grade = inst.EffectiveGrade;
+            d.actionPointCost = inst.EffectiveCost;
+            d.consumeType = inst.EffectiveConsume;
+            d.keywords = inst.EffectiveKeywords;
+            d.attackCount = inst.EffectiveAttackCount;
+            d.attackValueType = inst.EffectiveAttackValType;
+            d.attackValue = inst.EffectiveAttackValue;
+            d.attackAttribute = inst.EffectiveAttackAttr;
+            d.ignoreArmor = inst.EffectiveIgnoreArmor;
+            d.armorValueType = inst.EffectiveArmorValType;
+            d.armorValue = inst.EffectiveArmorValue;
+            d.armorAttribute = inst.EffectiveArmorAttr;
+            d.buffDuration = inst.EffectiveBuffDuration;
+            d.buffDurationTurns = inst.EffectiveBuffTurns;
+            d.buffStacks = inst.EffectiveBuffStacks;
+            d.buffEffects = inst.EffectiveBuffEffects != null
+                ? new List<BuffEffect>(inst.EffectiveBuffEffects)
+                : new List<BuffEffect>();
+            d.description = inst.EffectiveDescription;
+            d.UpdateDisplay();
+            return;
+        }
+
         d.cardName = inst.EffectiveName;
         d.cardType = tpl != null ? tpl.cardType : CardType.Attack;
         d.cardArt  = tpl != null ? tpl.cardArt : null;

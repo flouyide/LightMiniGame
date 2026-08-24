@@ -433,6 +433,12 @@ public class CardDisplay : MonoBehaviour
             actionPointCost = data.GetEffectiveCost();
             keywords = data.keywords;
             UpdateDisplay();
+
+            // CardData 自身的三层 sprite 优先；老数据字段为空时回退 sourceEntry。
+            ApplyPrefabLayerSprites(
+                data.cardArt != null ? data.cardArt : data.sourceEntry.cardArt,
+                data.descBoxSprite != null ? data.descBoxSprite : data.sourceEntry.descBoxSprite,
+                data.typeBoxSprite != null ? data.typeBoxSprite : data.sourceEntry.typeBoxSprite);
             return;
         }
 
@@ -462,6 +468,10 @@ public class CardDisplay : MonoBehaviour
             ? new List<BuffEffect>(data.buffEffects)
             : new List<BuffEffect>();
         UpdateDisplay();
+
+        // 局内战斗手牌：直接替换卡牌 prefab 已有的三层 Image，不创建任何 GameObject。
+        // ArtImage ← cardArt；CardFrame ← descBoxSprite；CardType ← typeBoxSprite。
+        ApplyPrefabLayerSprites(data.cardArt, data.descBoxSprite, data.typeBoxSprite);
     }
 
     /// <summary>
@@ -512,6 +522,45 @@ public class CardDisplay : MonoBehaviour
             keywords |= KeywordType.Fate;
 
         UpdateDisplay();
+
+        // CardEntry 路径同样直接替换模板节点，避免 prefab 的旧字段接线导致描述框/类型框不刷新。
+        ApplyPrefabLayerSprites(entry.cardArt, entry.descBoxSprite, entry.typeBoxSprite);
+    }
+
+    /// <summary>
+    /// 直接替换当前卡牌 prefab 已有节点的三层 Image.sprite，不创建或附加任何 GameObject/组件。
+    /// 节点约定：ArtImage ← cardArt；CardFrame ← descBoxSprite；CardType ← typeBoxSprite。
+    /// </summary>
+    private void ApplyPrefabLayerSprites(Sprite art, Sprite descBox, Sprite typeBox)
+    {
+        foreach (var image in GetComponentsInChildren<Image>(true))
+        {
+            if (image == null) continue;
+            switch (image.gameObject.name)
+            {
+                case "ArtImage":
+                    if (art != null)
+                    {
+                        image.sprite = art;
+                        image.color = Color.white;
+                    }
+                    break;
+                case "CardFrame":
+                    if (descBox != null)
+                    {
+                        image.sprite = descBox;
+                        image.color = Color.white;
+                    }
+                    break;
+                case "CardType":
+                    if (typeBox != null)
+                    {
+                        image.sprite = typeBox;
+                        image.color = Color.white;
+                    }
+                    break;
+            }
+        }
     }
 
     /// <summary>
