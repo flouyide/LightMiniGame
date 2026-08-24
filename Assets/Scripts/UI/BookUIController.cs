@@ -184,7 +184,7 @@ public class BookUIController : MonoBehaviour
     }
 
     /// <summary>
-    /// 剩余页数为 0 时选中卡片 → 删除该卡片，不刷新新卡片
+    /// 当前页没有可替换事件，或剩余页数为 0 时，移除对应卡片，不创建占位卡片。
     /// </summary>
     private void HandlePageConsumed(int consumedIndex)
     {
