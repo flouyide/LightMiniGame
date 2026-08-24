@@ -113,7 +113,14 @@ public class LootCardPanelUI : MonoBehaviour
             var go = Instantiate(cardPrefab, cardLayer);
             go.transform.localScale = Vector3.one * scale;
             var display = go.GetComponent<CardDisplay>();
-            if (display != null) display.ApplyCardData(data);
+            if (display != null)
+            {
+                // 优先从 CardEntry 读取三层 sprite（卡面 / 描述框 / 类型框）—— CardData 的 sprite 字段常为空
+                if (data != null && data.sourceEntry != null)
+                    display.ApplyCardEntry(data.sourceEntry, data.isLowSanityForm);
+                else
+                    display.ApplyCardData(data);
+            }
 
             var btn = go.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
