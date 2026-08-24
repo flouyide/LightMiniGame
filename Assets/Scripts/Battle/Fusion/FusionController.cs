@@ -27,7 +27,9 @@ public class FusionController : MonoBehaviour
 
     // === 运行时构建的 UI ===
     private GameObject _entryButtonGO;
+
     private Image _entryButtonImage;
+
     private GameObject _panelRoot;
     private TextMeshProUGUI _statusText;
     private readonly List<GameObject> _highlights = new();   // 原位高亮片（与候选一一对应）
@@ -40,6 +42,12 @@ public class FusionController : MonoBehaviour
     private const string SelectFrameC = "Assets/Art/Animation/未命名作品-3.png";
     private const string SelectFrameD = "Assets/Art/Animation/未命名作品-4.png";
     private const float SelectFrameInterval = 0.2f;
+
+    // === 融合入口按钮图标（魔方） ===
+    private const string CubeClosedPath = "Assets/Art/局内/魔方关.png";
+    private const string CubeOpenPath = "Assets/Art/局内/魔方开.png";
+    private static Sprite _cubeClosedSprite;
+    private static Sprite _cubeOpenSprite;
 
     private bool PanelActive => _panelRoot != null;
 
@@ -55,6 +63,7 @@ public class FusionController : MonoBehaviour
         _battle = battle;
         if (_initialized) return;
         _initialized = true;
+
         BuildEntryButton();
     }
 
@@ -74,32 +83,33 @@ public class FusionController : MonoBehaviour
         _entryButtonGO = new GameObject("FusionEntryButton");
         _entryButtonGO.transform.SetParent(parent.transform, false);
         var rt = _entryButtonGO.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(56, 56);
+        rt.sizeDelta = new Vector2(60.0f, 60.0f);
+        // TopBar 占 anchor 0.88~1.0 区域，按钮放在其左端正下方
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
-        rt.pivot = new Vector2(0f, 1f);
-        rt.anchoredPosition = new Vector2(330f, -30f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(78f, -99f);
 
         _entryButtonImage = _entryButtonGO.AddComponent<Image>();
+        _entryButtonImage.preserveAspect = true;
+        _entryButtonImage.sprite = EnsureCubeSprite(false);
+
         var btn = _entryButtonGO.AddComponent<Button>();
         btn.onClick.AddListener(OnEntryClicked);
-
-        var labelGO = new GameObject("Label");
-        labelGO.transform.SetParent(_entryButtonGO.transform, false);
-        var labelRT = labelGO.AddComponent<RectTransform>();
-        labelRT.anchorMin = labelRT.anchorMax = new Vector2(0.5f, 0.5f);
-        labelRT.sizeDelta = new Vector2(50, 50);
-        var label = labelGO.AddComponent<TextMeshProUGUI>();
-        label.text = "∮";
-        label.fontSize = 28;
-        label.alignment = TextAlignmentOptions.Center;
-        label.color = Color.white;
 
         UpdateEntryInteractable();
     }
 
     private Canvas FindParentCanvas()
     {
+        // 优先找名为 "BattleCanvas" 的 Canvas（避免找到 BookCanvas2）
+        var canvases = FindObjectsOfType<Canvas>();
+        foreach (var c in canvases)
+        {
+            if (c.name == "BattleCanvas" && c.gameObject.activeSelf)
+                return c;
+        }
+        // 回退：从自身向上找
         var t = transform;
         while (t != null)
         {
@@ -129,9 +139,25 @@ public class FusionController : MonoBehaviour
     {
         if (_entryButtonImage == null) return;
         bool canEnter = _battle != null && _battle.IsPlayerTurn && !_battle.FusionUsedThisTurn;
-        _entryButtonImage.color = canEnter
-            ? new Color(0.55f, 0.28f, 0.75f, 0.95f)
-            : new Color(0.35f, 0.28f, 0.45f, 0.5f);
+
+        if (PanelActive)
+        {
+            // 正在融合 → 魔方开
+            _entryButtonImage.sprite = EnsureCubeSprite(true);
+            _entryButtonImage.color = Color.white;
+        }
+        else if (canEnter)
+        {
+            // 可以融合 → 魔方关
+            _entryButtonImage.sprite = EnsureCubeSprite(false);
+            _entryButtonImage.color = Color.white;
+        }
+        else
+        {
+            // 不可融合 → 魔方关（灰显）
+            _entryButtonImage.sprite = EnsureCubeSprite(false);
+            _entryButtonImage.color = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+        }
     }
 
     // ========================================================================
@@ -558,6 +584,30 @@ public class FusionController : MonoBehaviour
         _selectFrames = null;
 #endif
         return _selectFrames;
+    }
+
+    private static Sprite EnsureCubeSprite(bool isOpen)
+    {
+        if (isOpen)
+        {
+            if (_cubeOpenSprite == null)
+            {
+#if UNITY_EDITOR
+                _cubeOpenSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(CubeOpenPath);
+#endif
+            }
+            return _cubeOpenSprite;
+        }
+        else
+        {
+            if (_cubeClosedSprite == null)
+            {
+#if UNITY_EDITOR
+                _cubeClosedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(CubeClosedPath);
+#endif
+            }
+            return _cubeClosedSprite;
+        }
     }
 
     /// <summary>在指定高亮块上播放 Selected 动画覆盖层（5 倍大，居中于块），返回 GameObject。</summary>

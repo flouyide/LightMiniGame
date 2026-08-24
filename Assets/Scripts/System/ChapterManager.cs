@@ -1089,7 +1089,15 @@ public class ChapterManager : MonoBehaviour
         _inBattle = true;
         _battleResume = onResolved;
 
-        if (bookCanvas != null) bookCanvas.SetActive(false);
+        if (bookCanvas != null)
+        {
+            // 保留 TopBar：只禁用 BookCanvas 下除 TopBar 外的子物体，使 BookUIController 保持活跃
+            var bookUI = bookCanvas.GetComponent<BookUIController>();
+            if (bookUI != null)
+                bookUI.SetNonTopBarChildrenActive(false);
+            else
+                bookCanvas.SetActive(false);
+        }
         if (battleCanvas != null) battleCanvas.SetActive(true);
 
         var bm = battleManager != null ? battleManager : FindObjectOfType<BattleManager>();
@@ -1132,7 +1140,13 @@ public class ChapterManager : MonoBehaviour
         _inBattle = false;
 
         if (battleCanvas != null) battleCanvas.SetActive(false);
-        if (bookCanvas != null) bookCanvas.SetActive(true);
+        if (bookCanvas != null)
+        {
+            // 恢复 BookCanvas 下所有子物体（进入战斗时只禁用了非 TopBar 的子物体）
+            var bookUI = bookCanvas.GetComponent<BookUIController>();
+            if (bookUI != null)
+                bookUI.SetNonTopBarChildrenActive(true);
+        }
 
         // 战斗后的玩家属性已由 BattleManager 在退出前通过 ApplyBattleResult 写回本管理器
         OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);

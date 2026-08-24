@@ -502,4 +502,31 @@ public class BookUIController : MonoBehaviour
         if (target != null)
             _backgroundImage.sprite = target;
     }
+
+    /// <summary>
+    /// 进入/退出战斗时切换非 TopBar 子物体的显隐。
+    /// 遍历 BookCanvas 的直接子物体，保留 TopBar 不变，其余 SetActive。
+    /// 这样 BookUIController 保持活跃，TopBar 的事件订阅和按钮功能不受影响。
+    /// </summary>
+    public void SetNonTopBarChildrenActive(bool active)
+    {
+        foreach (Transform child in transform)
+        {
+            if (child.name == "TopBar") continue;
+            child.gameObject.SetActive(active);
+        }
+    }
+
+    /// <summary>
+    /// 战斗中由 BattleManager.UpdateUI 调用，同步更新 TopBar 上的 HP/Gold/Sanity 文本。
+    /// </summary>
+    public void UpdateTopBarBattleStats(int hp, int maxHp, int gold, int sanity, int maxSanity)
+    {
+        if (hpText != null)
+            hpText.text = $"HP: {hp}/{maxHp}";
+        if (goldText != null)
+            goldText.text = $"金币: {gold}";
+        if (sanText != null)
+            sanText.text = $"理智: {sanity}/{maxSanity}";
+    }
 }
