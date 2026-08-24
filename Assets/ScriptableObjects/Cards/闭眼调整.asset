@@ -18,8 +18,8 @@ MonoBehaviour:
     40%\u3002"
   lowSanityDescription: "\u63A5\u4E0B\u6765\u4E24\u5F20\u653B\u51FB\u724C\u7684\u66B4\u51FB\u4F24\u5BB3\u589E\u52A0
     40%\u3002"
-  cardArt: {fileID: 0}
-  descBoxSprite: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: 524c7954bc3d24245bbfc850dfc7a055, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
   descBoxOffsetY: 0

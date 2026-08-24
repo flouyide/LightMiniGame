@@ -16,10 +16,11 @@ MonoBehaviour:
   cardName: "\u6293\u4F4F\u75DB\u70B9"
   normalDescription: "\u9020\u6210 10 \u70B9\u4F24\u5BB3\uFF0C\u5E76\u4F7F\u8BE5\u654C\u4EBA\u53D7\u5230\u7684\u66B4\u51FB\u7387\u6C38\u4E45\u589E\u52A0
     40%\uFF0C\u968F\u540E\u79FB\u9664\u6B64\u724C\u3002"
-  lowSanityDescription: "\u4F24\u5BB3\u63D0\u9AD8\u4E3A 17\u3002"
-  cardArt: {fileID: 0}
-  descBoxSprite: {fileID: 0}
-  typeBoxSprite: {fileID: 0}
+  lowSanityDescription: "\u9020\u6210 17 \u70B9\u4F24\u5BB3\uFF0C\u5E76\u4F7F\u8BE5\u654C\u4EBA\u53D7\u5230\u7684\u66B4\u51FB\u7387\u6C38\u4E45\u589E\u52A0
+    40%\uFF0C\u968F\u540E\u79FB\u9664\u6B64\u724C\u3002"
+  cardArt: {fileID: 21300000, guid: 7d644ba5b66e8fd41bbccde1fa8da065, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
+  typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
   descBoxOffsetX: 0
   descBoxOffsetY: 0
   descBoxHeight: 0
@@ -154,7 +155,7 @@ MonoBehaviour:
     countAsAttack: 1
     resourceType: 4
     resourceOp: 0
-    attributeType: 1
+    attributeType: 10
     statusType: 1
     statusValue:
       rid: 1654833856827621466
