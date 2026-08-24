@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: "\u654F\u6377Buff"
   m_EditorClassIdentifier: Assembly-CSharp::BuffData
   buffName: "\u654F\u6377Buff"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 146544ea9f6dd934c84489d17b8ccb33, type: 3}
   attributeType: 1
   minValue: -2147483648
