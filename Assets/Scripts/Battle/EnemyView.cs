@@ -28,8 +28,8 @@ public class EnemyView : MonoBehaviour
     [SerializeField] private GameObject damagePopupPrefab;
 
     [Header("出牌牌库意图预览")]
-    [Tooltip("牌库卡面最大横向总宽（避免过宽/跨敌人重叠；超出则整体缩小）")]
-    [SerializeField] private float deckMaxWidth = 180f;
+    [Tooltip("牌库卡面最大纵向总高（避免过高超出屏幕；超出则整体缩小）")]
+    [SerializeField] private float deckMaxHeight = 400f;
     [Tooltip("牌库展示容器的横向偏移（正数=右侧，用于放到怪物头右边）")]
     [SerializeField] private float deckXOffset = 220f;
     [Tooltip("牌库展示容器的纵向偏移（正数=上方，靠近头部）")]
@@ -187,8 +187,8 @@ public class EnemyView : MonoBehaviour
     }
 
     /// <summary>
-    /// 在敌人立绘下方横向展示当前阶段整个出牌牌库（small casino 小卡）。
-    /// 自动按牌数缩放/限宽，避免多张重叠拥挤；多敌人各自在各自立绘下方，互不重叠。
+    /// 在敌人立绘旁纵向展示当前阶段整个出牌牌库（small casino 小卡）。
+    /// 自动按牌数缩放/限高，避免多张重叠拥挤；多敌人各自在各自立绘旁，互不重叠。
     /// lowSanity=true 时卡面用低理智（升级）形态显示（费用/描述随 lowSanity 变）。
     /// </summary>
     public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false, int enemyStrength = 0, int enemyDexterity = 0)
@@ -218,7 +218,7 @@ public class EnemyView : MonoBehaviour
         _deckRoot.anchoredPosition = new Vector2(deckXOffset, deckYOffset);
 
         // 逐个实例化卡面
-        List<(GameObject go, float w)> cards = new List<(GameObject, float)>();
+        List<(GameObject go, float w, float h)> cards = new List<(GameObject, float, float)>();
         for (int i = 0; i < deck.Count; i++)
         {
             var entry = deck[i];
@@ -252,7 +252,8 @@ public class EnemyView : MonoBehaviour
 
             var cardRect = cardGo.GetComponent<RectTransform>();
             float w = cardRect != null ? cardRect.rect.width : 148f;
-            cards.Add((cardGo, w));
+            float h = cardRect != null ? cardRect.rect.height : 200f;
+            cards.Add((cardGo, w, h));
             _deckCards.Add(cardGo);
         }
 
@@ -262,29 +263,28 @@ public class EnemyView : MonoBehaviour
             return;
         }
 
-        // 横向布局：总宽超 deckMaxWidth 则整体再缩小，保持不重叠
+        // 纵向布局：总高超 deckMaxHeight 则整体再缩小，保持不重叠
         float gap = deckGap;
-        float totalW = 0f;
-        foreach (var c in cards) totalW += c.w;
-        totalW += gap * (cards.Count - 1);
+        float totalH = 0f;
+        foreach (var c in cards) totalH += c.h;
+        totalH += gap * (cards.Count - 1);
 
         float scale = deckBaseScale;
-        if (totalW * scale > deckMaxWidth)
-            scale = deckMaxWidth / totalW;
+        if (totalH * scale > deckMaxHeight)
+            scale = deckMaxHeight / totalH;
 
-        // 逐卡定位：以缩放后的实际尺寸排布。注意 localScale 会同时缩放位置偏移，
-        // 因此相邻卡的中心距 = (缩放后卡宽 + 缩放后间距) = scale * (w + gap)。
-        float scaledW = cards[0].w * scale;
-        float curX = -((totalW / 2f) * scale) + scaledW / 2f;   // 首卡中心（居中对齐）
+        // 逐卡定位：以缩放后的实际尺寸纵向排布。相邻卡的中心距 = scale * (h + gap)。
+        float scaledH = cards[0].h * scale;
+        float curY = ((totalH / 2f) * scale) - scaledH / 2f;   // 首卡中心（居中对齐，从上到下）
         for (int i = 0; i < cards.Count; i++)
         {
             var c = cards[i];
             var ct = c.go.transform as RectTransform;
             ct.anchorMin = ct.anchorMax = new Vector2(0.5f, 0.5f);
             ct.pivot = new Vector2(0.5f, 0.5f);
-            ct.anchoredPosition = new Vector2(curX, 0f);
+            ct.anchoredPosition = new Vector2(0f, curY);
             ct.localScale = Vector3.one * scale;
-            curX += (c.w + gap) * scale;   // 注意乘以 scale：位置随缩放同步，保证视觉紧凑无空隙
+            curY -= (c.h + gap) * scale;   // 向下排列
         }
     }
 

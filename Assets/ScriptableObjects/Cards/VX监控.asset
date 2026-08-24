@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_006b578c
   cardName: "VX\u76D1\u63A7"
-  normalDescription: "18\u4F24\u5BB3\uFF0C\u5176\u4E2D6\u70B9\u65E0\u89C6\u683C\u6321"
+  normalDescription: "{18+\u529B\u91CF}\u4F24\u5BB3\uFF0C\u5176\u4E2D6\u70B9\u65E0\u89C6\u683C\u6321"
   lowSanityDescription: "18\u4F24\u5BB3\uFF0C\u5176\u4E2D6\u70B9\u65E0\u89C6\u683C\u6321"
   cardArt: {fileID: 21300000, guid: 0658e1f16ec0dca4e9c5ed1c2d25b005, type: 3}
   descBoxSprite: {fileID: 21300000, guid: 3b4c83669b7d9d3439fb75f21c8b736b, type: 3}

@@ -88,7 +88,8 @@ public class EnemyInstance
         {
             if (Config == null) return 1;
             int c = UseLowSanityPool ? Config.lowSanityCardCount : (Phase == 1 ? Config.highSanityCardCount : Config.lowSanityCardCount);
-            return c > 0 ? c : 1;
+            if (c <= 0) return CurrentSkillPool != null ? CurrentSkillPool.Count : 1;   // 0=全部轮转：出牌库全部牌
+            return c;
         }
     }
 
