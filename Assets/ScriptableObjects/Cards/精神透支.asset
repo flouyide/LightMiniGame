@@ -18,9 +18,9 @@ MonoBehaviour:
     +1\u3002"
   lowSanityDescription: "\u9020\u6210 7 \u70B9\u4F24\u5BB33\u6B21\uFF1B\u7406\u667A\u6BCF\u4F4E\u4E8E\u9608\u503C\u4E00\u56DE\u5408\uFF0C\u6BB5\u6570
     +1\u3002"
-  cardArt: {fileID: 0}
-  descBoxSprite: {fileID: 0}
-  typeBoxSprite: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: 943a0766c3e433a4bab7daff31ddd63c, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: d68433df2ddc7e74eace8ccef9b24e7d, type: 3}
+  typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
   descBoxOffsetX: 0
   descBoxOffsetY: 0
   descBoxHeight: 0

@@ -17,8 +17,8 @@ MonoBehaviour:
   normalDescription: "\u7406\u667A +2\uFF0C\u672C\u56DE\u5408\u624B\u724C\u8D39\u7528
     -1\u3002"
   lowSanityDescription: "\u7406\u667A +2\uFF0C\u672C\u56DE\u5408\u624B\u724C\u8D39\u7528-1\u3002"
-  cardArt: {fileID: 0}
-  descBoxSprite: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: 31e3b026d54a5534fa4d21f0e336d7f2, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: d68433df2ddc7e74eace8ccef9b24e7d, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
   descBoxOffsetY: 0
