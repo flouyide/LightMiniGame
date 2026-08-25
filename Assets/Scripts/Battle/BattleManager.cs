@@ -2023,14 +2023,14 @@ public class BattleManager : MonoBehaviour
             case LightMiniGame.CardEditor.PlayerAttributeType.Strength:
                 e.StrengthBuff += delta;
                 e.View?.Refresh();
-                // 力量变化后立即刷新意图牌库（不受 _isPlayerTurn 守卫限制，敌人回合buff也要实时反映到卡面数值）
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);
+                // 力量变化后立即刷新意图牌（不受 _isPlayerTurn 守卫限制，敌人回合 buff 也要实时反映到卡面数值）
+                RefreshEnemyIntentDeck(e);
                 UpdateUI();
                 return true;
             case LightMiniGame.CardEditor.PlayerAttributeType.Dexterity:
                 e.DexterityBuff += delta;
                 e.View?.Refresh();
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);
+                RefreshEnemyIntentDeck(e);
                 UpdateUI();
                 return true;
             default:
@@ -2110,8 +2110,8 @@ public class BattleManager : MonoBehaviour
             if (e.UseLowSanityPool != low)
             {
                 e.UseLowSanityPool = low;
-                e.ResetDrawnSkill();   // 牌库变化 → 清空已抽，重新随机
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, low, e.EffectiveStrength, e.EffectiveDexterity);
+                e.ResetDrawnSkill();   // 牌库变化 → 清空已抽，重新随机下一回合出牌
+                RefreshEnemyIntentDeck(e);
                 e.View?.Refresh();
                 Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）低理智牌库 {(low ? "启用(phase2)" : "关闭(phase1)")}");
             }
@@ -2517,7 +2517,7 @@ public class BattleManager : MonoBehaviour
             if (inst.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
             {
                 inst.View?.Refresh();
-                inst.View?.ShowIntentDeck(inst.CurrentSkillPool, _playerSanity <= _sanityThreshold, inst.EffectiveStrength, inst.EffectiveDexterity);   // 阶段切换 → 展示当前牌库全部牌
+                RefreshEnemyIntentDeck(inst);   // 阶段切换后重新抽取并展示下一回合出牌
                 Debug.Log($"[BattleManager] {inst.Name}（槽位{slot}）阶段切换 → 阶段{inst.Phase}，HP {inst.HP}/{inst.MaxHP}");
             }
 
@@ -2913,6 +2913,13 @@ public class BattleManager : MonoBehaviour
             handLayout.UpdateHand(_hand, IsCardPlayable);
     }
 
+    /// <summary>刷新敌人意图牌展示：只显示已抽取、下一回合（或本回合尚未打出）会打出的卡。</summary>
+    private void RefreshEnemyIntentDeck(EnemyInstance e)
+    {
+        if (e == null || e.IsDead || e.View == null) return;
+        e.View.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);
+    }
+
     /// <summary>取指定敌人的意图文本（预览本回合将出的所有技能卡名；无技能配置时空过）。</summary>
     private string GetEnemyIntentText(EnemyInstance inst)
     {
@@ -2933,13 +2940,13 @@ public class BattleManager : MonoBehaviour
         if (actionPointText != null) actionPointText.text = _actionPoints.ToString();
         if (armorText != null) armorText.text = _playerArmor > 0 ? $"护甲: {_playerArmor}" : "";
 
-        // 玩家回合：刷新每个存活敌人的意图预览 + 出牌牌库横向预览（阶段切换后牌库可能变化，每次 UpdateUI 都刷）
+        // 玩家回合：刷新每个存活敌人的意图预览（下一回合将打出的卡）
         if (_isPlayerTurn && !_battleEnded)
         {
             foreach (var e in _enemies)
             {
                 if (e == null || e.IsDead) continue;
-                e.View?.ShowIntentDeck(e.CurrentSkillPool, _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);   // 展示当前牌库全部牌
+                RefreshEnemyIntentDeck(e);
             }
         }
 

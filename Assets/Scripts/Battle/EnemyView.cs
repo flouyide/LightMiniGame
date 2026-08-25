@@ -35,8 +35,8 @@ public class EnemyView : MonoBehaviour
     [Tooltip("淡出持续秒数")]
     [SerializeField] private float damagePopupFade = 0.55f;
 
-    [Header("出牌牌库意图预览")]
-    [Tooltip("牌库卡面最大纵向总高（避免过高超出屏幕；超出则整体缩小）")]
+    [Header("出牌意图预览")]
+    [Tooltip("意图卡面最大纵向总高（避免过高超出屏幕；超出则整体缩小）")]
     [SerializeField] private float deckMaxHeight = 400f;
     [Tooltip("牌库展示容器的横向偏移（正数=右侧，用于放到怪物头右边）")]
     [SerializeField] private float deckXOffset = 220f;
@@ -198,7 +198,7 @@ public class EnemyView : MonoBehaviour
     }
 
     /// <summary>
-    /// 在敌人立绘旁纵向展示当前阶段整个出牌牌库（small casino 小卡）。
+    /// 在敌人立绘旁纵向展示下一回合将打出的卡牌（small casino 小卡）。
     /// 自动按牌数缩放/限高，避免多张重叠拥挤；多敌人各自在各自立绘旁，互不重叠。
     /// lowSanity=true 时卡面用低理智（升级）形态显示（费用/描述随 lowSanity 变）。
     /// </summary>
