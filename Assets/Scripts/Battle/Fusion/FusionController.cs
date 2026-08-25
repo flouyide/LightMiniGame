@@ -6,13 +6,11 @@ using UnityEngine.UI;
 /// <summary>
 /// 融合（Fusion）核心控制器 —— 由 BattleManager.BeginBattle() 自动创建并挂载。
 /// UI 流程（原位高亮版）：
-///  1) 常驻“融合”按钮（左上角），每回合可用一次。
+///  1) 常驻“融合”按钮（左上角魔方），每回合可用一次。
 ///  2) 点击进入融合状态：立即扣 4 理智 + 全屏暗色蒙版 + 在每个可融合数值的“原位”
-///     生成半透明高亮片（贴合对应数字，不遮字）。手牌描述内数字（攻击/护甲/增益/抽牌/回费）
-///     用卡面文本精确字位定位；费用/能量/护甲/敌人护甲/意图用对应 UI 文本 rect 定位。
-///     紫/金=未选、红=选中、理智锁定灰显；点击高亮片切换选中。
-///  3) 再次点击入口按钮 = 确认融合 → 随机拆分回填 → 蒙版消失，本回合禁用。
-///  4) 蒙版右下提供“退出”按钮取消。
+///     生成半透明高亮片（贴合对应数字，不遮字）。
+///  3) 已选 ≥2 个数值时再点魔方 = 随机融合并回填，本回合禁用。
+///  4) 未选满（0 或 1 个）时再点魔方 = 退出融合状态。
 /// 全部 UI 由代码在运行时创建，不依赖场景手工摆放。
 /// 重分配总值 = 选中数字之和 + 当前福报值。
 /// </summary>
@@ -24,7 +22,6 @@ public class FusionController : MonoBehaviour
     private bool _initialized;
     private List<FusableValue> _candidates = new();
     private readonly List<FusableValue> _selected = new();
-    private List<int> _lastPreviewSplit = new();   // 最近一次预览的随机拆分（确认时使用，所见即所得）
 
     // === 运行时构建的 UI ===
     private GameObject _entryButtonGO;
@@ -32,7 +29,6 @@ public class FusionController : MonoBehaviour
     private Image _entryButtonImage;
 
     private GameObject _panelRoot;
-    private TextMeshProUGUI _statusText;
     private readonly List<GameObject> _highlights = new();   // 原位高亮片（与候选一一对应）
 
     // === Selected 选中动画（覆盖在被选中的数字上，5 倍于高亮块）===
@@ -125,10 +121,13 @@ public class FusionController : MonoBehaviour
     {
         if (_battle == null) return;
 
-        // 已在融合状态：再次点击入口 = 确认融合
+        // 已在融合状态：选满 2 项及以上 → 随机融合；否则退出
         if (PanelActive)
         {
-            ConfirmFusion();
+            if (_selected.Count >= 2)
+                ConfirmFusion();
+            else
+                ExitFusion();
             return;
         }
         if (!_battle.IsPlayerTurn || _battle.FusionUsedThisTurn) return;
@@ -169,10 +168,13 @@ public class FusionController : MonoBehaviour
     {
         // 立即扣 4 理智（代价而非条件，不足也可进，clamp≥0）
         _battle.DeductSanityAsCost(SanityCost);
+        _battle.MarkFusionUsed();
 
         _candidates = CollectCandidates();
         _selected.Clear();
         BuildPanel();
+        if (_entryButtonGO != null)
+            _entryButtonGO.transform.SetAsLastSibling();
         UpdateEntryInteractable();
         // 高亮定位依赖 TMP 文本网格（低理智切形态后需一帧重建），延迟一帧构建避免错位/fallback 大块
         StartCoroutine(BuildHighlightsNextFrame());
@@ -186,6 +188,8 @@ public class FusionController : MonoBehaviour
         yield return null;   // 再等一帧应用 layout 约束
         BuildHighlights();
         RefreshHighlights();
+        if (_entryButtonGO != null)
+            _entryButtonGO.transform.SetAsLastSibling();
     }
 
     /// <summary>枚举当前要高亮的融合数值。
@@ -326,7 +330,7 @@ public class FusionController : MonoBehaviour
     }
 
     // ========================================================================
-    // 面板构建：全屏蒙层 + 原位高亮 + 状态/确认/退出
+    // 面板构建：全屏蒙层 + 原位高亮
     // ========================================================================
 
     private void BuildPanel()
@@ -352,27 +356,6 @@ public class FusionController : MonoBehaviour
         blocker.transition = Selectable.Transition.None;
         blocker.image = maskImg;
         blocker.image.raycastTarget = true;
-
-        // 顶部状态
-        _statusText = CreateText(_panelRoot.transform, "StatusText", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0.5f, 1f), new Vector2(0, -30), new Vector2(700, 54),
-            "点选要融合的数值（至少 2 项）", 24, new Color(0.95f, 0.9f, 0.5f, 1f));
-
-        // 原位高亮（作为蒙层的子物体，渲染在蒙层之上；由 EnterFusion 延迟一帧构建，保证 TMP mesh 就绪）
-        // BuildHighlights();   // 已移到 BuildHighlightsNextFrame
-
-        // 右下：确认 + 重掷 + 退出
-        CreateButton(_panelRoot.transform, "ConfirmButton", new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(1f, 0f), new Vector2(-90, 80), new Vector2(200, 56),
-            "确认融合", 20, () => ConfirmFusion(), new Color(0.55f, 0.28f, 0.75f, 0.95f));
-        CreateButton(_panelRoot.transform, "RerollButton", new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(1f, 0f), new Vector2(-90, 12), new Vector2(160, 44),
-            "重新随机", 16, () => UpdateStatus(), new Color(0.45f, 0.4f, 0.55f, 0.9f));
-        CreateButton(_panelRoot.transform, "CancelButton", new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(1f, 0f), new Vector2(-90, -44), new Vector2(160, 40),
-            "退出", 16, ExitFusion, new Color(0.4f, 0.4f, 0.4f, 0.9f));
-
-        UpdateStatus();
     }
 
     /// <summary>为每个候选在原位生成一个半透明高亮片（蒙层之上，不遮字，可点击）。</summary>
@@ -535,7 +518,6 @@ public class FusionController : MonoBehaviour
         else { _selected.Add(fv); }
 
         RefreshHighlights();
-        UpdateStatus();
     }
 
     private void RefreshHighlights()
@@ -644,22 +626,6 @@ public class FusionController : MonoBehaviour
         if (img != null && img.gameObject != null) Destroy(img.gameObject);
     }
 
-    private void UpdateStatus()
-    {
-        if (_statusText == null) return;
-        if (_selected.Count < 2)
-        {
-            _statusText.text = FormatFusionStatus(FusionPoolTotal());
-            return;
-        }
-        // 每次刷新状态都重新随机拆分，预览“这次确认将如何分配”
-        int total = FusionPoolTotal();
-        int parts = _selected.Count;
-        int minEach = total >= parts ? 1 : 0;
-        _lastPreviewSplit = FusionSplitAlgorithm.Split(total, parts, minEach: minEach);
-        _statusText.text = FormatFusionStatus(total);
-    }
-
     private int SumSelected()
     {
         int s = 0;
@@ -672,18 +638,6 @@ public class FusionController : MonoBehaviour
 
     /// <summary>融合重分配总值 = 选中数字之和 + 当前福报值。</summary>
     private int FusionPoolTotal() => SumSelected() + CurrentFortune;
-
-    private string FormatFusionStatus(int total)
-    {
-        int fortune = CurrentFortune;
-        int selectedSum = SumSelected();
-        string pool = fortune > 0
-            ? $"选中和: {selectedSum} + 福报 {fortune} = {total}"
-            : $"总和: {total}";
-        if (_selected.Count < 2)
-            return $"已选 {_selected.Count} 项（至少 2 项）  {pool}";
-        return $"已选 {_selected.Count} 项  {pool}\n随机分配: [{string.Join(" , ", _lastPreviewSplit)}]  （点“重新随机”再掷）";
-    }
 
     // ========================================================================
     // 确认融合
@@ -700,10 +654,7 @@ public class FusionController : MonoBehaviour
 
         int total = FusionPoolTotal();
         int parts = _selected.Count;
-        // 使用预览过的拆分（所见即所得）；无预览或数量不符则现拆
-        var split = (_lastPreviewSplit != null && _lastPreviewSplit.Count == parts)
-            ? _lastPreviewSplit
-            : FusionSplitAlgorithm.Split(total, parts, minEach: total >= parts ? 1 : 0);
+        var split = FusionSplitAlgorithm.Split(total, parts, minEach: total >= parts ? 1 : 0);
 
         // 血量对（current+max）同时被选需原子回填，避免 SetHP/SetMaxHP 相互钳制
         // —— 玩家：player:hp + player:maxhp ——
@@ -769,7 +720,6 @@ public class FusionController : MonoBehaviour
         }
 
         Debug.Log($"[Fusion] 融合 {total} → [{string.Join(",", split)}]");
-        _battle.MarkFusionUsed();
         _battle.SetDirtyUI();
         ExitFusion();
     }
@@ -782,44 +732,6 @@ public class FusionController : MonoBehaviour
         _highlights.Clear();
         _selected.Clear();
         _candidates.Clear();
-        _lastPreviewSplit.Clear();
         UpdateEntryInteractable();
-    }
-
-    // ========================================================================
-    // UI 辅助
-    // ========================================================================
-
-    private TextMeshProUGUI CreateText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
-        Vector2 pivot, Vector2 pos, Vector2 size, string text, int fontSize, Color color)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax; rt.pivot = pivot;
-        rt.anchoredPosition = pos; rt.sizeDelta = size;
-        var txt = go.AddComponent<TextMeshProUGUI>();
-        txt.text = text; txt.fontSize = fontSize; txt.color = color;
-        txt.alignment = TextAlignmentOptions.Center; txt.enableWordWrapping = true;
-        return txt;
-    }
-
-    private Button CreateButton(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
-        Vector2 pivot, Vector2 pos, Vector2 size,
-        string text, int fontSize, UnityEngine.Events.UnityAction onClick, Color bg)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax; rt.pivot = pivot;
-        rt.anchoredPosition = pos; rt.sizeDelta = size;
-        var img = go.AddComponent<Image>();
-        img.color = bg;
-        var btn = go.AddComponent<Button>();
-        btn.onClick.AddListener(onClick);
-
-        CreateText(go.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f), Vector2.zero, size, text, fontSize, Color.white);
-        return btn;
     }
 }
