@@ -166,6 +166,9 @@ namespace LightMiniGame.CardEditor.Editor
                 case EffectOperation.ApplyStatus:
                     DrawApplyStatusFields(node);
                     break;
+                case EffectOperation.RemoveStatus:
+                    DrawRemoveStatusFields(node);
+                    break;
                 case EffectOperation.DrawCards:
                     EditorGUILayout.LabelField("抽牌配置", EditorStyles.boldLabel);
                     DrawValueNodeField("抽牌数", node.value);
@@ -269,6 +272,16 @@ namespace LightMiniGame.CardEditor.Editor
             node.stackMode = (StatusStackMode)EditorGUILayout.Popup("叠加方式", (int)node.stackMode,
                 new[] { "叠加层数", "叠加数值", "替换", "保留较高", "保留较低", "刷新时间", "独立实例" });
             DrawDurationField(node);
+        }
+
+        // ========================================================================
+        // 移除状态字段
+        // ========================================================================
+        private static void DrawRemoveStatusFields(EffectNode node)
+        {
+            EditorGUILayout.LabelField("状态配置", EditorStyles.boldLabel);
+            node.statusType = (StatusType2)EditorGUILayout.Popup("状态类型", (int)node.statusType, GetStatusNames());
+            DrawValueNodeField("移除层数", node.statusValue);
         }
 
         // ========================================================================
