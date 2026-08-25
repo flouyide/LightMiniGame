@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: dirty work
+  m_EditorClassIdentifier: 
+  cardId: card_dcf61c43
+  cardName: dirty work
+  normalDescription: "\u65BD\u52A02\u5C42\u75B2\u60EB\u3002\u6D88\u8017"
+  lowSanityDescription: 
+  cardArt: {fileID: 21300000, guid: a31f77cef0a2e774dbdc445aecdca697, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: 78d1f640318bab44da1b4e67a128114b, type: 3}
+  typeBoxSprite: {fileID: 0}
+  descBoxOffsetX: 0
+  descBoxOffsetY: 0
+  descBoxHeight: 0
+  descBoxInset: 0
+  grade: 0
+  cardType: 0
+  existence: 1
+  lowSanityExistence: 0
+  normalCost: 0
+  lowSanityCost: 1
+  price: 10
+  keyword: 0
+  hasLowSanityForm: 0
+  normalEffectNodes: []
+  lowSanityEffectNodes: []
+  customCardScript: {fileID: 0}
+  designerNotes: 
+  references:
+    version: 2
+    RefIds: []

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: 'All in '
+  m_EditorClassIdentifier: 
+  cardId: card_981b2bbf
+  cardName: 'All in '
+  normalDescription: "\u5BF9\u6240\u6709\u654C\u4EBA\u9020\u62108\u70B9\u4F24\u5BB3X\u6B21\u3002\u6BCF5\u70B9\u70ED\u5EA6\u989D\u5916\u9020\u6210\u4E00\u6B21\u4F24\u5BB3\u3002"
+  lowSanityDescription: "\u5BF9\u6240\u6709\u654C\u4EBA\u9020\u62108\u70B9\u4F24\u5BB3X+1\u6B21\u3002\u6BCF5\u70B9\u70ED\u5EA6\u989D\u5916\u9020\u6210\u4E00\u6B21\u4F24\u5BB3\u3002"
+  cardArt: {fileID: 21300000, guid: 425b9aabf5e734d47a4d725f19262778, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
+  typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
+  descBoxOffsetX: -1
+  descBoxOffsetY: 90
+  descBoxHeight: 95
+  descBoxInset: 10
+  grade: 0
+  cardType: 0
+  existence: 0
+  lowSanityExistence: 0
+  normalCost: 1
+  lowSanityCost: 1
+  price: 10
+  keyword: 0
+  hasLowSanityForm: 1
+  normalEffectNodes: []
+  lowSanityEffectNodes: []
+  customCardScript: {fileID: 0}
+  designerNotes: 
+  references:
+    version: 2
+    RefIds: []

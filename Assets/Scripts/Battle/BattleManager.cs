@@ -77,10 +77,6 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI sanityText;
     [SerializeField] private Slider sanityBar;
 
-    [Header("UI引用 - 福报")]
-    [Tooltip("福报值文本。留空则运行时在理智条右侧自动创建")]
-    [SerializeField] private TextMeshProUGUI fortuneText;
-
     [Header("UI引用 - 敌人（多敌）")]
     [Tooltip("单个敌人视图预制体（挂 EnemyView 组件）。每个敌人生成一个实例")]
     [SerializeField] private EnemyView enemyViewPrefab;
@@ -441,6 +437,7 @@ public class BattleManager : MonoBehaviour
         if (actual > 0) inst.View?.ShowDamage(actual, isCrit);
         if (inst.HP <= 0) HandleEnemyFatalDamage(inst);
         inst.View?.Refresh();
+        if (!inst.IsDead) inst.View?.PlayHitFeedback();
         UpdateUI();
         CheckBattleEnd();
     }
@@ -456,6 +453,7 @@ public class BattleManager : MonoBehaviour
             if (actual > 0) inst.View?.ShowDamage(actual, isCrit);
             if (inst.HP <= 0) HandleEnemyFatalDamage(inst);
             inst.View?.Refresh();
+            if (!inst.IsDead) inst.View?.PlayHitFeedback();
         }
         UpdateUI();
         CheckBattleEnd();
@@ -1768,6 +1766,11 @@ public class BattleManager : MonoBehaviour
             target.View?.ShowDamage(totalDamageDealt);
             if (target.HP <= 0) HandleEnemyFatalDamage(target);
             target.View?.Refresh();
+            if (target != null && !target.IsDead) target.View?.PlayHitFeedback();
+        }
+        else if (target != null && !target.IsDead)
+        {
+            target.View?.PlayHitFeedback();
         }
     }
 
@@ -1851,8 +1854,7 @@ public class BattleManager : MonoBehaviour
         if (inst == null || inst.IsDead) return 0;
 
         // 应用伤害倍率：最终伤害 = 基础伤害 * 玩家造成伤害倍率 * 敌人受击倍率
-        int enemyTakenMult = inst.Config != null ? inst.Config.damageTakenMultiplier : 100;
-        float mult = (_playerDamageMultiplier / 100f) * (enemyTakenMult / 100f);
+        float mult = PercentToFactor(_playerDamageMultiplier) * PercentToFactor(inst.Config != null ? inst.Config.damageTakenMultiplier : 100);
         damage = Mathf.RoundToInt(damage * mult);
         int armorBreakScaled = Mathf.RoundToInt(Mathf.Max(0, armorBreak) * mult);
 
@@ -1867,6 +1869,16 @@ public class BattleManager : MonoBehaviour
         }
 
         return inst.TakeDamage(damage, ignoreArmor, armorBreakScaled);
+    }
+
+    /// <summary>
+    /// 百分比倍率 → 乘数。约定 100 = 1.0 倍。
+    /// 0/负数视为未配置（按 100）；1 视为误把「1.0 倍」写成了 1，否则普通攻击会四舍五入成 0。
+    /// </summary>
+    private static float PercentToFactor(int percent)
+    {
+        if (percent <= 1) return 1f;
+        return percent / 100f;
     }
 
     /// <summary>给指定槽位敌人叠加护甲（敌人自护盾/给友军护盾），越界/死亡忽略。</summary>
@@ -2043,7 +2055,7 @@ public class BattleManager : MonoBehaviour
 
         // 应用伤害倍率：敌人对玩家的最终伤害 = (技能伤害 + 力量) * 敌人造成伤害倍率 * 玩家受击倍率
         int enemyDealtMult = inst != null && inst.Config != null ? inst.Config.damageDealtMultiplier : 100;
-        float mult = (enemyDealtMult / 100f) * (_playerDamageTakenMultiplier / 100f);
+        float mult = PercentToFactor(enemyDealtMult) * PercentToFactor(_playerDamageTakenMultiplier);
         damage = Mathf.RoundToInt(damage * mult);
         int actualDamage = damage;
         if (_playerArmor > 0)
@@ -2118,7 +2130,6 @@ public class BattleManager : MonoBehaviour
     public void SetPlayerFortune(int value)
     {
         _playerFortune = Mathf.Max(0, value);
-        if (fortuneText != null) fortuneText.text = $"福报 {_playerFortune}";
     }
 
     /// <summary>修改福报值。delta 为正则增加；结果钳到 ≥0。</summary>
@@ -2127,55 +2138,6 @@ public class BattleManager : MonoBehaviour
         if (delta == 0) return;
         SetPlayerFortune(_playerFortune + delta);
         UpdateUI();
-    }
-
-    /// <summary>
-    /// 若未在 Inspector 指定 fortuneText，则在理智条右侧自动创建一个福报文本。
-    /// </summary>
-    private void EnsureFortuneText()
-    {
-        if (fortuneText != null) return;
-        if (sanityBar == null) return;
-
-        var barRT = sanityBar.transform as RectTransform;
-        if (barRT == null || barRT.parent == null) return;
-
-        var existing = barRT.parent.Find("FortuneText");
-        if (existing != null)
-        {
-            fortuneText = existing.GetComponent<TextMeshProUGUI>();
-            if (fortuneText != null) return;
-        }
-
-        var go = new GameObject("FortuneText");
-        go.transform.SetParent(barRT.parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = barRT.anchorMin;
-        rt.anchorMax = barRT.anchorMax;
-        rt.pivot = new Vector2(0f, 0.5f);
-        float visualW = barRT.sizeDelta.x * Mathf.Abs(barRT.localScale.x);
-        float visualH = barRT.sizeDelta.y * Mathf.Abs(barRT.localScale.y);
-        rt.anchoredPosition = new Vector2(
-            barRT.anchoredPosition.x + visualW + 10f,
-            barRT.anchoredPosition.y - visualH * 0.5f);
-        rt.sizeDelta = new Vector2(180f, Mathf.Max(36f, visualH));
-
-        go.transform.SetAsLastSibling();
-
-        fortuneText = go.AddComponent<TextMeshProUGUI>();
-        fortuneText.raycastTarget = false;
-        fortuneText.alignment = TextAlignmentOptions.MidlineLeft;
-        fortuneText.enableWordWrapping = false;
-        fortuneText.overflowMode = TextOverflowModes.Overflow;
-        fortuneText.fontSize = 22;
-        fortuneText.color = new Color(1f, 0.84f, 0.35f, 1f);
-        fortuneText.text = $"福报 {_playerFortune}";
-        if (sanityText != null)
-        {
-            fortuneText.font = sanityText.font;
-            if (sanityText.fontSharedMaterial != null)
-                fortuneText.fontSharedMaterial = sanityText.fontSharedMaterial;
-        }
     }
 
     /// <summary>
@@ -2997,9 +2959,6 @@ public class BattleManager : MonoBehaviour
             sanityBar.value = _playerSanity;
         }
 
-        EnsureFortuneText();
-        if (fortuneText != null) fortuneText.text = $"福报 {_playerFortune}";
-
         // 敌人 UI（血条/名字/护甲/立绘/凝视）由各 EnemyView 自刷（Bind/Refresh），这里不再集中管理
 
         if (handLayout != null)
@@ -3016,6 +2975,6 @@ public class BattleManager : MonoBehaviour
         if (_bookUI == null)
             _bookUI = FindObjectOfType<BookUIController>();
         if (_bookUI != null)
-            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity);
+            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity, _playerFortune);
     }
 }

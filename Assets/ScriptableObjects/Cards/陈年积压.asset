@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u9648\u5E74\u79EF\u538B"
+  m_EditorClassIdentifier: 
+  cardId: card_bd69d33a
+  cardName: "\u9648\u5E74\u79EF\u538B"
+  normalDescription: "\u76EE\u6807\u6BCF\u6709 2 \u5C42\u75B2\u60EB\u503C\uFF0C\u62BD
+    1 \u5F20\u724C"
+  lowSanityDescription: "\u76EE\u6807\u6BCF\u6709 1 \u5C42\u75B2\u60EB\u503C\uFF0C\u62BD
+    1 \u5F20\u724C"
+  cardArt: {fileID: 21300000, guid: 069acf0b225c3fb4cad5a84d6a95f22e, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: 78d1f640318bab44da1b4e67a128114b, type: 3}
+  typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
+  descBoxOffsetX: 0
+  descBoxOffsetY: 0
+  descBoxHeight: 0
+  descBoxInset: 0
+  grade: 1
+  cardType: 1
+  existence: 0
+  lowSanityExistence: 0
+  normalCost: 1
+  lowSanityCost: 1
+  price: 10
+  keyword: 0
+  hasLowSanityForm: 1
+  normalEffectNodes: []
+  lowSanityEffectNodes: []
+  customCardScript: {fileID: 0}
+  designerNotes: 
+  references:
+    version: 2
+    RefIds: []

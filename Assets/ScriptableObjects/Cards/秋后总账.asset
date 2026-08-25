@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
+  m_Name: "\u79CB\u540E\u603B\u8D26"
+  m_EditorClassIdentifier: 
+  cardId: card_46c29d20
+  cardName: "\u79CB\u540E\u603B\u8D26"
+  normalDescription: "\u9020\u6210\u6240\u6709\u654C\u4EBA\u75B2\u60EB\u503C\u5C42\u6570\u603B\u548C\u7684\u4F24\u5BB3\u5E76\u6E05\u7A7A\u6240\u6709\u75B2\u60EB\u503C\u3002\u6D88\u8017"
+  lowSanityDescription: "\u9020\u6210\u6240\u6709\u654C\u4EBA\u75B2\u60EB\u503C\u5C42\u6570\u603B\u548C\u7684\u4F24\u5BB3\u5E76\u6E05\u7A7A\u6240\u6709\u75B2\u60EB\u503C\u3002\u6D88\u8017"
+  cardArt: {fileID: 21300000, guid: 86e3dd734bc722d4c9b64908e9b1ca3d, type: 3}
+  descBoxSprite: {fileID: 21300000, guid: 78d1f640318bab44da1b4e67a128114b, type: 3}
+  typeBoxSprite: {fileID: 21300000, guid: 4716f5aa6b69d1f45a3c7948ab309a4f, type: 3}
+  descBoxOffsetX: 0
+  descBoxOffsetY: 0
+  descBoxHeight: 0
+  descBoxInset: 0
+  grade: 2
+  cardType: 0
+  existence: 1
+  lowSanityExistence: 1
+  normalCost: 3
+  lowSanityCost: 2
+  price: 10
+  keyword: 0
+  hasLowSanityForm: 1
+  normalEffectNodes: []
+  lowSanityEffectNodes: []
+  customCardScript: {fileID: 0}
+  designerNotes: 
+  references:
+    version: 2
+    RefIds: []
