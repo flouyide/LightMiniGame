@@ -100,15 +100,6 @@ public class CardDisplayEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("silverColor"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("goldColor"));
 
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField("黑暗卡面", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkFrameSprite"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkBackgroundSprite"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkFrameColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkBackgroundColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("darkTextColor"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("corruptedBadgeColor"));
-
         serializedObject.ApplyModifiedProperties();
 
         // 手动触发刷新

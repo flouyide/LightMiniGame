@@ -218,12 +218,12 @@ public class EnemyView : MonoBehaviour
         if (_deckRoot == null)
         {
             var go = new GameObject("IntentDeck", typeof(RectTransform));
-            go.transform.SetParent(transform, false);
             _deckRoot = go.GetComponent<RectTransform>();
         }
-        _deckRoot.gameObject.SetActive(true);
 
-        // 定位：立绘下方居中
+        // 先按敌人本地坐标摆好，再提到所有立绘之上的独立层，避免后生成的敌人画像盖住先手的意图牌
+        _deckRoot.SetParent(transform, false);
+        _deckRoot.gameObject.SetActive(true);
         _deckRoot.anchorMin = _deckRoot.anchorMax = new Vector2(0.5f, 0.5f);
         _deckRoot.pivot = new Vector2(0.5f, 0.5f);
         _deckRoot.anchoredPosition = new Vector2(deckXOffset, deckYOffset);
@@ -297,6 +297,53 @@ public class EnemyView : MonoBehaviour
             ct.localScale = Vector3.one * scale;
             curY -= (c.h + gap) * scale;   // 向下排列
         }
+
+        AttachDeckAbovePortraits();
+    }
+
+    /// <summary>
+    /// 把意图牌挂到 EnemyContainer 的下一个兄弟节点上，保证所有意图牌都画在所有敌人立绘之上。
+    /// </summary>
+    private void AttachDeckAbovePortraits()
+    {
+        if (_deckRoot == null) return;
+        var overlay = EnsureIntentDeckOverlay();
+        if (overlay == null) return;
+        _deckRoot.SetParent(overlay, true);
+        _deckRoot.SetAsLastSibling();
+    }
+
+    private Transform EnsureIntentDeckOverlay()
+    {
+        var container = transform.parent;
+        if (container == null) return null;
+        var canvasParent = container.parent;
+        if (canvasParent == null) return container;
+
+        Transform overlay = canvasParent.Find("IntentDeckOverlay");
+        if (overlay == null)
+        {
+            var go = new GameObject("IntentDeckOverlay", typeof(RectTransform));
+            overlay = go.transform;
+            overlay.SetParent(canvasParent, false);
+            var rt = overlay as RectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+        }
+
+        int afterContainer = container.GetSiblingIndex() + 1;
+        if (overlay.GetSiblingIndex() != afterContainer)
+            overlay.SetSiblingIndex(afterContainer);
+        return overlay;
+    }
+
+    private void OnDestroy()
+    {
+        if (_deckRoot != null)
+            Destroy(_deckRoot.gameObject);
     }
 
     /// <summary>

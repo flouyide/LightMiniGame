@@ -96,23 +96,7 @@ public class CardDisplay : MonoBehaviour
     [Header("不可打出状态")]
     [SerializeField] private Color unplayableColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
 
-    // —— 黑暗卡面（理智转阶段时启用，策划可在此配置黑暗素材） ——
-    [Header("黑暗卡面（理智转阶段）")]
-    [Tooltip("黑暗模式边框 Sprite，留空则仅变色")]
-    [SerializeField] private Sprite darkFrameSprite;
-    [Tooltip("黑暗模式背景 Sprite，留空则仅变色")]
-    [SerializeField] private Sprite darkBackgroundSprite;
-    [Tooltip("黑暗模式边框颜色")]
-    [SerializeField] private Color darkFrameColor = new Color(0.35f, 0.1f, 0.45f, 1f);
-    [Tooltip("黑暗模式背景颜色")]
-    [SerializeField] private Color darkBackgroundColor = new Color(0.08f, 0.04f, 0.12f, 0.95f);
-    [Tooltip("黑暗模式文本颜色")]
-    [SerializeField] private Color darkTextColor = new Color(0.75f, 0.6f, 0.85f, 1f);
-    [Tooltip("侵蚀词条徽章颜色")]
-    [SerializeField] private Color corruptedBadgeColor = new Color(0.6f, 0.15f, 0.75f, 1f);
-
     private bool _playable = true;
-    private bool _darkMode = false;
     private FusionCardDelta _fusion;  // 融合覆盖层（从 CardData.fusion 读入，显示时优先覆盖）
 
     // —— 属性上下文：用于卡面描述实时解析力量/敏捷 ——
@@ -134,12 +118,6 @@ public class CardDisplay : MonoBehaviour
     private LightMiniGame.CardEditor.CardEntry _entry;   // 源 CardEntry（融合感知描述用）
     private Sprite _descBoxSprite;  // 从 CardData/CardEntry 读入的中层描述框
     private Sprite _typeBoxSprite;  // 从 CardData/CardEntry 读入的顶层类型框
-
-    // 缓存正常模式颜色/精灵，退出黑暗模式时恢复
-    private Sprite _origFrameSprite;
-    private Sprite _origBgSprite;
-    private Color _origFrameColor;
-    private Color _origBgColor;
 
     // ========================================================================
     // 公共方法
@@ -219,25 +197,6 @@ public class CardDisplay : MonoBehaviour
     }
 
     /// <summary>
-    /// 开启/关闭黑暗卡面模式（理智转阶段时调用）。
-    /// 开启时替换边框/背景 Sprite 与颜色，文本变为暗紫色。
-    /// </summary>
-    public void SetDarkMode(bool enabled)
-    {
-        if (_darkMode == enabled) return;
-        _darkMode = enabled;
-
-        if (enabled)
-        {
-            // 缓存原始值
-            if (frameImage) { _origFrameSprite = frameImage.sprite; _origFrameColor = frameImage.color; }
-            if (backgroundImage) { _origBgSprite = backgroundImage.sprite; _origBgColor = backgroundImage.color; }
-        }
-
-        UpdateDisplay();
-    }
-
-    /// <summary>
     /// 全局标记：融合面板激活时避免 UpdateDisplay 清掉原位高亮（由 FusionController 置位/复位）。
     /// </summary>
     public static bool FusionHighlightActive;
@@ -267,18 +226,6 @@ public class CardDisplay : MonoBehaviour
             keywordText.text = kwNames.Count > 0 ? string.Join("  ", kwNames) : "";
             keywordText.gameObject.SetActive(kwNames.Count > 0);
         }
-
-        // —— 黑暗模式覆盖 ——
-        if (_darkMode)
-        {
-            ApplyDarkTheme();
-            return;
-        }
-
-        // —— 正常模式 ——
-        // 恢复精灵（从黑暗模式切回时）
-        if (frameImage && _origFrameSprite != null) frameImage.sprite = _origFrameSprite;
-        if (backgroundImage && _origBgSprite != null) backgroundImage.sprite = _origBgSprite;
 
         Color typeColor = GetCardTypeColor();
         if (costBadgeImage) costBadgeImage.color = _playable ? typeColor : new Color(0.5f, 0.5f, 0.5f, 1f);
@@ -352,55 +299,6 @@ public class CardDisplay : MonoBehaviour
         if (typeText) typeText.color = normalTextColor;
         if (gradeText) gradeText.color = normalTextColor;
         if (keywordText) keywordText.color = normalTextColor;
-    }
-
-    /// <summary>应用黑暗卡面主题：替换边框/背景精灵与颜色，文本变为暗紫色</summary>
-    private void ApplyDarkTheme()
-    {
-        Color typeColor = GetCardTypeColor();
-
-        // 边框：替换精灵 + 黑暗颜色
-        if (frameImage)
-        {
-            if (darkFrameSprite != null) frameImage.sprite = darkFrameSprite;
-            frameImage.color = _playable ? darkFrameColor : new Color(0.2f, 0.08f, 0.25f, 1f);
-        }
-
-        // 背景：替换精灵 + 黑暗颜色
-        if (backgroundImage)
-        {
-            if (darkBackgroundSprite != null) backgroundImage.sprite = darkBackgroundSprite;
-            backgroundImage.color = darkBackgroundColor;
-        }
-
-        // 类型徽章 / 费用徽章
-        if (typeBadgeImage) typeBadgeImage.color = darkFrameColor;
-        if (costBadgeImage) costBadgeImage.color = _playable ? darkFrameColor : new Color(0.3f, 0.15f, 0.35f, 1f);
-
-        // 卡牌插图：无黑暗卡面，叠加紫色滤镜
-        if (artImage)
-        {
-            if (cardArt != null)
-            {
-                artImage.sprite = cardArt;
-                artImage.color = new Color(0.5f, 0.4f, 0.6f, 1f);  // 紫色滤镜
-            }
-            else
-            {
-                artImage.color = new Color(0.15f, 0.08f, 0.2f, 0.3f);
-            }
-        }
-
-        // 文本颜色
-        if (nameText) nameText.color = darkTextColor;
-        if (descText) descText.color = darkTextColor;
-        if (costText) costText.color = darkTextColor;
-        if (typeText) typeText.color = darkTextColor;
-        if (gradeText) gradeText.color = darkTextColor;
-
-        // 词条高亮
-        if (keywordText)
-            keywordText.color = darkTextColor;
     }
 
     /// <summary>

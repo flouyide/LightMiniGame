@@ -275,7 +275,6 @@ public class BattleManager : MonoBehaviour
     private bool _isPlayerTurn = true;
     private bool _battleEnded = false;
     private bool _waitingEnemyConfirm = false;
-    private bool _isDarkMode = false;
     private Coroutine _sanityTrembleRoutine;
     private bool _listenersWired = false;
     private Image _backgroundImage;   // Background GameObject 下的背景 Image（按理智切换）
@@ -2253,20 +2252,15 @@ public class BattleManager : MonoBehaviour
     protected virtual void OnSanityPhaseTransition()
     {
         Debug.Log($"[BattleManager] 理智转阶段触发！理智 {_playerSanity}/{_playerMaxSanity}（阈值 {SanityPhaseThreshold}）");
-        _isDarkMode = true;
 
-        // 1. 升级所有卡牌效果 + 施加侵蚀词条
+        // 1. 升级所有卡牌效果
         UpgradeAllCardsForDarkMode();
 
-        // 2. 切换手牌为黑暗卡面
-        if (handLayout != null)
-            handLayout.SetDarkMode(true);
-
-        // 3. 全屏暗色遮罩淡入
+        // 2. 全屏暗色遮罩淡入
         if (darkOverlay != null)
             StartCoroutine(DarkOverlayFadeRoutine());
 
-        // 4. 理智条颤抖效果
+        // 3. 理智条颤抖效果
         if (sanityBar != null)
         {
             if (_sanityTrembleRoutine != null) StopCoroutine(_sanityTrembleRoutine);

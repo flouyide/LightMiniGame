@@ -523,7 +523,13 @@ public class BookUIController : MonoBehaviour
     {
         foreach (Transform child in transform)
         {
-            if (child.name == "TopBar") continue;
+            if (child.name == "TopBar")
+            {
+                // 战斗中 TopBar 是 Overlay，整栏 Image 会挡住 BattleCanvas 上的魔方点击
+                var img = child.GetComponent<Image>();
+                if (img != null) img.raycastTarget = active;
+                continue;
+            }
             child.gameObject.SetActive(active);
         }
     }

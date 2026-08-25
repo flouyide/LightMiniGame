@@ -41,6 +41,7 @@ public class FusionController : MonoBehaviour
     private const float SelectFrameInterval = 0.2f;
 
     // === 融合入口按钮图标（魔方） ===
+    private const float EntryButtonSize = 60f;
     private const string CubeClosedPath = "Assets/Art/局内/魔方关.png";
     private const string CubeOpenPath = "Assets/Art/局内/魔方开.png";
     private static Sprite _cubeClosedSprite;
@@ -80,21 +81,60 @@ public class FusionController : MonoBehaviour
         _entryButtonGO = new GameObject("FusionEntryButton");
         _entryButtonGO.transform.SetParent(parent.transform, false);
         var rt = _entryButtonGO.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(60.0f, 60.0f);
-        // TopBar 占 anchor 0.88~1.0 区域，按钮放在其左端正下方
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(78f, -99f);
+        // TopBar 约占屏幕顶部 12%；略叠进栏下沿，战斗中栏背景已关 raycast
+        const float liftIntoBar = 36f;
+        float barH = ResolveTopBarHeight(parent.transform as RectTransform);
+        rt.anchoredPosition = new Vector2(78f, -barH + liftIntoBar);
+        rt.sizeDelta = new Vector2(EntryButtonSize, EntryButtonSize);
 
         _entryButtonImage = _entryButtonGO.AddComponent<Image>();
-        _entryButtonImage.preserveAspect = true;
+        _entryButtonImage.preserveAspect = false;
+        _entryButtonImage.maskable = false;
+        _entryButtonImage.raycastTarget = true;
         _entryButtonImage.sprite = EnsureCubeSprite(false);
+        FitEntryButtonToSprite();
 
         var btn = _entryButtonGO.AddComponent<Button>();
+        btn.targetGraphic = _entryButtonImage;
         btn.onClick.AddListener(OnEntryClicked);
 
+        RaiseEntryButton();
         UpdateEntryInteractable();
+    }
+
+    private static float ResolveTopBarHeight(RectTransform canvasRT)
+    {
+        var topBar = FindTopBar();
+        if (topBar != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            if (topBar.rect.height > 1f)
+                return topBar.rect.height;
+        }
+        if (canvasRT != null && canvasRT.rect.height > 1f)
+            return canvasRT.rect.height * (1f - 0.877f);
+        return 140f;
+    }
+
+    private static RectTransform FindTopBar()
+    {
+        var canvases = FindObjectsOfType<Canvas>();
+        foreach (var c in canvases)
+        {
+            if (c == null || c.name != "BookCanvas") continue;
+            var tb = c.transform.Find("TopBar") as RectTransform;
+            if (tb != null) return tb;
+        }
+        return null;
+    }
+
+    private void RaiseEntryButton()
+    {
+        if (_entryButtonGO != null)
+            _entryButtonGO.transform.SetAsLastSibling();
     }
 
     private Canvas FindParentCanvas()
@@ -158,6 +198,24 @@ public class FusionController : MonoBehaviour
             _entryButtonImage.sprite = EnsureCubeSprite(false);
             _entryButtonImage.color = new Color(0.5f, 0.5f, 0.5f, 0.6f);
         }
+        FitEntryButtonToSprite();
+    }
+
+    /// <summary>按当前魔方图的宽高比设置按钮 Rect，点击范围与贴图一致。</summary>
+    private void FitEntryButtonToSprite()
+    {
+        if (_entryButtonGO == null || _entryButtonImage == null || _entryButtonImage.sprite == null)
+            return;
+        var rt = _entryButtonGO.transform as RectTransform;
+        if (rt == null) return;
+        var sprite = _entryButtonImage.sprite;
+        float w = sprite.rect.width;
+        float h = sprite.rect.height;
+        if (w < 1f || h < 1f) return;
+        float scale = EntryButtonSize / Mathf.Max(w, h);
+        rt.sizeDelta = new Vector2(w * scale, h * scale);
+        _entryButtonImage.preserveAspect = false;
+        _entryButtonImage.raycastTarget = true;
     }
 
     // ========================================================================
@@ -173,8 +231,7 @@ public class FusionController : MonoBehaviour
         _candidates = CollectCandidates();
         _selected.Clear();
         BuildPanel();
-        if (_entryButtonGO != null)
-            _entryButtonGO.transform.SetAsLastSibling();
+        RaiseEntryButton();
         UpdateEntryInteractable();
         // 高亮定位依赖 TMP 文本网格（低理智切形态后需一帧重建），延迟一帧构建避免错位/fallback 大块
         StartCoroutine(BuildHighlightsNextFrame());
@@ -188,8 +245,7 @@ public class FusionController : MonoBehaviour
         yield return null;   // 再等一帧应用 layout 约束
         BuildHighlights();
         RefreshHighlights();
-        if (_entryButtonGO != null)
-            _entryButtonGO.transform.SetAsLastSibling();
+        RaiseEntryButton();
     }
 
     /// <summary>枚举当前要高亮的融合数值。
