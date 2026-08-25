@@ -182,6 +182,14 @@ public class BattleManager : MonoBehaviour
     // 遗物效果扩展：过载时所有手牌费用+1（由枪械师初始遗物 GunsmithHeatRelicEffect 驱动）
     private int _handCostBonus = 0;
 
+    // 遗物时机事件：只在玩家手动打出的原始卡牌效果结算完成后广播，不会因自动重放再次触发。
+    // 这让“复印机”等遗物可以安全地对当前打出的牌执行一次免费重放，而不会递归触发自身。
+    public event Action<CardData> OnPlayerCardPlayed;
+
+    // 玩家卡牌实际进入 consumedPile 后广播：仅 BattleRemove / PermanentRemove（旧卡为 ThisBattle / ThisRun）会触发；
+    // 普通弃置到 discardPile 的卡不会触发。供“报销单据”等以“消耗牌”为条件的遗物监听。
+    public event Action<CardData> OnPlayerCardConsumed;
+
     // 热度系统事件钩子（热度逻辑已迁移至枪械师遗物 GunsmithHeatRelicEffect，BattleManager 仅广播时机）
     public event Action OnAttackCardPlayed;
     public event Action OnPlayerTurnStarted;
@@ -1592,6 +1600,13 @@ public class BattleManager : MonoBehaviour
         ApplyCardEffects(card);
         _currentFusionCard = null;   // 执行完清除避免串扰
 
+        // 原始出牌效果结算完成后通知遗物。自动重放不走此事件，避免“复印机”重复递归。
+        // 此时卡牌仍在手牌区，遗物可复用相同 CardData 重放其效果；随后才按原逻辑消耗原卡。
+        if (!_battleEnded)
+            OnPlayerCardPlayed?.Invoke(card);
+
+        HandleCardConsumption(card);
+
         TryAttachAccessoryToHost(card);
 
         if (card.HasKeyword(KeywordType.Consult))
@@ -1733,6 +1748,29 @@ public class BattleManager : MonoBehaviour
         return -1;
     }
 
+    /// <summary>
+    /// 免费重放一张已打出的卡牌：仅再次结算其效果，不额外扣行动点、不增加出牌计数、
+    /// 不触发 OnPlayerCardPlayed，也不会移动牌堆或再次消耗原卡。
+    /// 调用方须在原始出牌效果结算完成后调用；攻击牌会沿用原始出牌已经选定的目标。
+    /// </summary>
+    public bool ReplayCardEffects(CardData card)
+    {
+        if (card == null || _battleEnded) return false;
+
+        _currentFusionCard = card;
+        try
+        {
+            ApplyCardEffects(card);
+        }
+        finally
+        {
+            _currentFusionCard = null;
+        }
+
+        Debug.Log($"[BattleManager] 免费重放卡牌效果：{card.cardName}");
+        return true;
+    }
+
     private void ApplyCardEffects(CardData card)
     {
         if (card.sourceEntry != null)
@@ -1855,6 +1893,7 @@ public class BattleManager : MonoBehaviour
                 case CardExistence.BattleRemove:
                 case CardExistence.PermanentRemove:
                     ActiveChar.consumedPile.Add(card);
+                    OnPlayerCardConsumed?.Invoke(card);
                     break;
             }
             return;
@@ -1869,6 +1908,7 @@ public class BattleManager : MonoBehaviour
             case ConsumeType.ThisBattle:
             case ConsumeType.ThisRun:
                 ActiveChar.consumedPile.Add(card);
+                OnPlayerCardConsumed?.Invoke(card);
                 break;
         }
     }

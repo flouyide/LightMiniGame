@@ -64,6 +64,10 @@ public class ChapterManager : MonoBehaviour
     private int _currentChapterIndex = -1;  // 当前章节索引（-1表示未开始）
     private ChapterConfig _currentChapter;  // 当前章节配置引用
     private int _remainingSelections;   // 章节剩余选择次数
+    // 遗物等局外效果登记的“每章额外书页选择次数”。key 为效果来源，便于遗物失去时精确移除。
+    private readonly Dictionary<string, int> _chapterSelectionBonuses = new();
+    // 遗物等局外效果登记的“休整生命恢复倍率”。key 为效果来源；多个来源的额外比例相加。
+    private readonly Dictionary<string, float> _restHealingMultipliers = new();
     private List<PageEventData> _currentPages = new();  // 当前显示的3个页面事件列表
     private HashSet<string> _completedEvents = new();   // 已完成事件ID集合
     private HashSet<string> _unlockedEvents = new();    // 已解锁事件ID集合（后续事件解锁）
@@ -116,6 +120,100 @@ public class ChapterManager : MonoBehaviour
 
     /// <summary>是否买得起 amount 金币。</summary>
     public bool CanAfford(int amount) => PlayerGold >= amount;
+
+    /// <summary>
+    /// 设置某个局外效果为每一章提供的额外书页选择次数。
+    /// 若当前章节已开始，会立刻把本次变更的差值作用到剩余选择次数，确保中途获得遗物当章生效。
+    /// amount 为 0 时移除该来源的加成。
+    /// </summary>
+    public void SetChapterSelectionBonus(string sourceKey, int amount)
+    {
+        if (string.IsNullOrEmpty(sourceKey))
+        {
+            Debug.LogWarning("[ChapterManager] 章节选择次数加成来源不能为空");
+            return;
+        }
+
+        int previous = _chapterSelectionBonuses.TryGetValue(sourceKey, out int value) ? value : 0;
+        int normalized = Mathf.Max(0, amount);
+        if (normalized == 0)
+            _chapterSelectionBonuses.Remove(sourceKey);
+        else
+            _chapterSelectionBonuses[sourceKey] = normalized;
+
+        int delta = normalized - previous;
+        if (delta == 0 || _currentChapter == null) return;
+
+        _remainingSelections = Mathf.Max(0, _remainingSelections + delta);
+        OnChapterInfoUpdated?.Invoke(_currentChapter.chapterName, _remainingSelections);
+        Debug.Log($"[ChapterManager] 章节选择次数加成变更：来源={sourceKey}，变化={delta:+#;-#;0}，当前剩余={_remainingSelections}");
+    }
+
+    private int GetChapterSelectionBonus()
+    {
+        int total = 0;
+        foreach (int bonus in _chapterSelectionBonuses.Values)
+            total += bonus;
+        return total;
+    }
+
+    /// <summary>
+    /// 设置指定局外效果对休整处生命恢复量的倍率。
+    /// multiplier 为 1 表示无加成；小于等于 1 时会移除该来源。多个来源的额外比例相加，
+    /// 例如两个 1.5 倍来源会得到 2 倍恢复量。
+    /// </summary>
+    public void SetRestHealingMultiplier(string sourceKey, float multiplier)
+    {
+        if (string.IsNullOrEmpty(sourceKey))
+        {
+            Debug.LogWarning("[ChapterManager] 休整治疗加成来源不能为空");
+            return;
+        }
+
+        float normalized = Mathf.Max(1f, multiplier);
+        if (normalized <= 1f)
+            _restHealingMultipliers.Remove(sourceKey);
+        else
+            _restHealingMultipliers[sourceKey] = normalized;
+
+        Debug.Log($"[ChapterManager] 休整治疗倍率已更新：来源={sourceKey}，倍率={normalized:P0}");
+    }
+
+    private float GetRestHealingMultiplier()
+    {
+        float bonus = 0f;
+        foreach (float multiplier in _restHealingMultipliers.Values)
+            bonus += Mathf.Max(0f, multiplier - 1f);
+        return 1f + bonus;
+    }
+
+    /// <summary>
+    /// 应用休整书页效果。仅放大其中“增加生命值”的数值；扣血、金币、理智及其他效果均不受影响。
+    /// </summary>
+    public void ApplyRestEffects(List<EffectData> effects, Action onComplete = null)
+    {
+        ApplyEffects(effects, onComplete, GetRestHealingMultiplier());
+    }
+
+    /// <summary>
+    /// 执行 Rest 类型书页的固定百分比治疗。
+    /// 回复量以玩家最大生命值为基准，并叠加折叠床等休整治疗倍率；不读取 defaultEffects，
+    /// 因此 Rest 书页不会因为旧配置中的 EnterBattle 效果而进入战斗。
+    /// </summary>
+    public void RestoreHealthAtRest(float healingPercent, Action onComplete = null)
+    {
+        float percent = Mathf.Max(0f, healingPercent);
+        float multiplier = GetRestHealingMultiplier();
+        float baseAmount = PlayerMaxHP * percent / 100f;
+        int healingAmount = Mathf.CeilToInt(baseAmount * multiplier);
+        int previousHp = PlayerHP;
+        PlayerHP = Mathf.Clamp(PlayerHP + healingAmount, 0, PlayerMaxHP);
+        int actualAmount = PlayerHP - previousHp;
+
+        Debug.Log($"[ChapterManager] 休整回复：配置={percent:0.##}% | 基础={baseAmount} | 倍率={multiplier:0.##}x | 实际回复={actualAmount} | HP={PlayerHP}/{PlayerMaxHP}");
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
+        onComplete?.Invoke();
+    }
 
     /// <summary>
     /// 扣减金币（用于商店消费）。成功返回 true 并广播玩家属性变化（刷新金币 UI）。
@@ -267,7 +365,7 @@ public class ChapterManager : MonoBehaviour
         }
 
         _currentChapter = gameConfig.chapters[_currentChapterIndex];
-        _remainingSelections = _currentChapter.maxSelections;
+        _remainingSelections = Mathf.Max(0, _currentChapter.maxSelections + GetChapterSelectionBonus());
         _completedEvents.Clear();
         _unlockedEvents.Clear();
         _excludedEvents.Clear();
@@ -545,17 +643,22 @@ public class ChapterManager : MonoBehaviour
     /// </summary>
     public void ApplyEffects(List<EffectData> effects, Action onComplete = null)
     {
+        ApplyEffects(effects, onComplete, 1f);
+    }
+
+    private void ApplyEffects(List<EffectData> effects, Action onComplete, float positiveHpGainMultiplier)
+    {
         if (effects == null || effects.Count == 0)
         {
             OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
             onComplete?.Invoke();
             return;
         }
-        ProcessEffect(effects, 0, onComplete);
+        ProcessEffect(effects, 0, onComplete, positiveHpGainMultiplier);
     }
 
     /// <summary>按顺序处理效果；遇到交互式效果时挂起，待 UI 关闭后续体恢复。</summary>
-    private void ProcessEffect(List<EffectData> effects, int index, Action onComplete)
+    private void ProcessEffect(List<EffectData> effects, int index, Action onComplete, float positiveHpGainMultiplier)
     {
         if (index >= effects.Count)
         {
@@ -583,11 +686,11 @@ public class ChapterManager : MonoBehaviour
             case EffectType.EnterBattle:
                 // 作为选项效果：挂起效果序列，战斗结束（ReturnFromBattle）后续体，继续后续效果并最终触发 onComplete
                 // 该次战斗的出战敌人由 EffectData.enterBattleEnemies 指定（留空=回退 BattleManager 默认敌人）
-                suspended = EnterBattle(null, () => ProcessEffect(effects, next, onComplete), effect.enterBattleEnemies);
+                suspended = EnterBattle(null, () => ProcessEffect(effects, next, onComplete, positiveHpGainMultiplier), effect.enterBattleEnemies);
                 break;
 
             case EffectType.ModifyAttribute:
-                ApplyModifyAttribute(effect);
+                ApplyModifyAttribute(effect, positiveHpGainMultiplier);
                 break;
             case EffectType.GrantRelic:
                 ApplyGrantRelic(effect);
@@ -596,13 +699,13 @@ public class ChapterManager : MonoBehaviour
                 ApplyGrantCard(effect);
                 break;
             case EffectType.EnterDiscountShop:
-                suspended = RequestDiscountShop(effect, () => ProcessEffect(effects, next, onComplete));
+                suspended = RequestDiscountShop(effect, () => ProcessEffect(effects, next, onComplete, positiveHpGainMultiplier));
                 break;
             case EffectType.RemoveCard:
-                suspended = RequestRemoveCard(() => ProcessEffect(effects, next, onComplete));
+                suspended = RequestRemoveCard(() => ProcessEffect(effects, next, onComplete, positiveHpGainMultiplier));
                 break;
             case EffectType.AddKeywordToCard:
-                suspended = RequestAddKeyword(effect.keywordToAdd, () => ProcessEffect(effects, next, onComplete));
+                suspended = RequestAddKeyword(effect.keywordToAdd, () => ProcessEffect(effects, next, onComplete, positiveHpGainMultiplier));
                 break;
             default:
                 Debug.LogWarning($"[ChapterManager] 未处理的效果类型: {effect.type}");
@@ -610,15 +713,18 @@ public class ChapterManager : MonoBehaviour
         }
 
         if (!suspended)
-            ProcessEffect(effects, next, onComplete);
+            ProcessEffect(effects, next, onComplete, positiveHpGainMultiplier);
     }
 
     // ===== 扩展效果实现 =====
 
-    private void ApplyModifyAttribute(EffectData effect)
+    private void ApplyModifyAttribute(EffectData effect, float positiveHpGainMultiplier = 1f)
     {
         // amount 恒为正数，方向由 attributeOp 决定（Gain=加，Lose=减）
         int mag = Mathf.Abs(effect.amount);
+        if (effect.targetAttribute == PlayerBaseAttribute.HP && effect.attributeOp == PlayerAttributeOp.Gain)
+            // 生命值只能为整数，向上取整保证 1.5 倍休整治疗不会因小数舍入而低于设计值。
+            mag = Mathf.CeilToInt(mag * Mathf.Max(1f, positiveHpGainMultiplier));
         int delta = effect.attributeOp == PlayerAttributeOp.Lose ? -mag : mag;
         string sign = delta >= 0 ? "+" : "";
 

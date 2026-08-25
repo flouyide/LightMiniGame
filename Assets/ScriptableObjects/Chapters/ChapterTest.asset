@@ -48,14 +48,14 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    - optionText: "\u6218\uFF01"
+    - optionText: "\u83B7\u5F97\u9057\u7269"
       effects:
-      - type: 6
+      - type: 10
         amount: 50
         itemDesc: 
         attributeOp: 0
         targetAttribute: 5
-        relic: {fileID: 0}
+        relic: {fileID: 11400000, guid: 5f50bcd10b9818d498034db51871fe82, type: 2}
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5
@@ -90,6 +90,7 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects:
     - type: 6
       amount: 0
@@ -154,6 +155,7 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 5
+    restHealingPercent: 30
     defaultEffects:
     - type: 6
       amount: 0
@@ -236,6 +238,7 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 5
+    restHealingPercent: 30
     defaultEffects:
     - type: 6
       amount: 0
@@ -247,7 +250,7 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
-  - eventId: event_test2
+  - eventId: shop_test
     displayName: "\u5546\u5E97\u6D4B\u8BD5"
     description: "\u563B\u563B"
     icon: {fileID: 21300000, guid: e30a5551eac02794d8191053506809c1, type: 3}
@@ -320,6 +323,177 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
+  - eventId: shop_test2
+    displayName: "\u5546\u5E97\u6D4B\u8BD52"
+    description: "\u563B\u563B"
+    icon: {fileID: 21300000, guid: e30a5551eac02794d8191053506809c1, type: 3}
+    eventType: 1
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+40\u91D1\u5E01\uFF0C+10 San"
+      effects:
+      - type: 9
+        amount: 40
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u6218\uFF01"
+      effects:
+      - type: 6
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    - optionText: "\u83B7\u5F97\u5361\u724C\uFF0C\u6DFB\u52A0\u8BCD\u6761"
+      effects:
+      - type: 11
+        amount: 3
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
+        card: {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+      - type: 14
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: c424a08b8d4faa24f8417a73231f6a8b, type: 2}
+        card: {fileID: 0}
+        keywordToAdd: 1
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies: []
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
+  - eventId: rest_test
+    displayName: "\u4F11\u606F\u5904\u6D4B\u8BD5"
+    description: "\u563B\u563B"
+    icon: {fileID: 21300000, guid: e30a5551eac02794d8191053506809c1, type: 3}
+    eventType: 2
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+40\u91D1\u5E01\uFF0C+10 San"
+      effects:
+      - type: 9
+        amount: 40
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u6218\uFF01"
+      effects:
+      - type: 6
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    - optionText: "\u83B7\u5F97\u5361\u724C\uFF0C\u6DFB\u52A0\u8BCD\u6761"
+      effects:
+      - type: 11
+        amount: 3
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: 4a6e6129decea8346bf679c523c68053, type: 2}
+        card: {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+      - type: 14
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: c424a08b8d4faa24f8417a73231f6a8b, type: 2}
+        card: {fileID: 0}
+        keywordToAdd: 1
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies: []
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects:
     - type: 6
       amount: 0
