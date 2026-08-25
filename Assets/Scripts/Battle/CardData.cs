@@ -91,13 +91,36 @@ public class CardData : ScriptableObject
     /// <summary>运行时费用附加（遗物效果如过载+1使用），不持久化；叠加在基础/融合费用之上。</summary>
     [NonSerialized] public int extraCost = 0;
 
+    /// <summary>运行时附加效果（配件打出后叠到「主机」上，本场战斗内永久、不限层数）。</summary>
+    [NonSerialized] public List<EffectNode> attachedEffectNodes;
+
+    /// <summary>该卡是否带指定词条。</summary>
+    public bool HasKeyword(KeywordType k) => CardKeywords.Has(keywords, k);
+
+    /// <summary>是否为卡牌「主机」（按卡名识别，不是词条）。</summary>
+    public bool IsHostCard
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(cardName) && cardName.Trim() == CardKeywords.HostCardName)
+                return true;
+            return sourceEntry != null
+                && !string.IsNullOrEmpty(sourceEntry.cardName)
+                && sourceEntry.cardName.Trim() == CardKeywords.HostCardName;
+        }
+    }
+
     /// <summary>
-    /// 获取当前效果列表（EffectNode 格式）。如果有关联的 CardEntry，从其读取；否则返回 null。
+    /// 获取当前效果列表（EffectNode 格式）。含 CardEntry 基础效果 + 配件叠加上去的效果。
     /// </summary>
     public List<EffectNode> GetEffectNodes(bool lowSanity)
     {
-        if (sourceEntry == null) return null;
-        return sourceEntry.GetEffectNodes(lowSanity);
+        List<EffectNode> baseNodes = sourceEntry != null ? sourceEntry.GetEffectNodes(lowSanity) : null;
+        if (attachedEffectNodes == null || attachedEffectNodes.Count == 0)
+            return baseNodes;
+        var all = baseNodes != null ? new List<EffectNode>(baseNodes) : new List<EffectNode>();
+        all.AddRange(attachedEffectNodes);
+        return all;
     }
 
     /// <summary>
@@ -107,6 +130,8 @@ public class CardData : ScriptableObject
     {
         int baseCost = sourceEntry != null ? sourceEntry.GetCost(isLowSanityForm) : actionPointCost;
         int cost = (fusion != null && fusion.overrideCost) ? fusion.cost : baseCost;
+        if (HasKeyword(KeywordType.InternalPrice))
+            cost = Mathf.Max(0, cost - 1);
         return Mathf.Max(0, cost + extraCost);
     }
 
@@ -301,14 +326,7 @@ public class CardData : ScriptableObject
     /// <summary>
     /// 获取词条中文名列表
     /// </summary>
-    public static List<string> GetKeywordNames(KeywordType keywords)
-    {
-        var result = new List<string>();
-        if ((keywords & KeywordType.Echo) != 0) result.Add("回响");
-        if ((keywords & KeywordType.Calamity) != 0) result.Add("灾厄");
-        if ((keywords & KeywordType.Fate) != 0) result.Add("命运");
-        return result;
-    }
+    public static List<string> GetKeywordNames(KeywordType keywords) => CardKeywords.GetNames(keywords);
 
     /// <summary>
     /// 获取增益效果描述文本

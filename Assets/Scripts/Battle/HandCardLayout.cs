@@ -37,7 +37,6 @@ public class HandCardLayout : MonoBehaviour
     private System.Action<int> _onCardClicked;
     private System.Action<int, UnityEngine.Vector2> _onCardDrop;
     private System.Action<int, UnityEngine.Vector2> _onCardDragOver;
-    private bool _isDarkMode = false;  // 黑暗卡面模式（理智转阶段时开启）
 
     public int CardCount => _cardObjects.Count;
 
@@ -55,9 +54,6 @@ public class HandCardLayout : MonoBehaviour
         if (index < 0 || index >= _cardDisplays.Count) return null;
         return _cardDisplays[index];
     }
-
-    /// <summary>当前是否处于黑暗卡面模式</summary>
-    public bool IsDarkMode => _isDarkMode;
 
     public void SetCardClickCallback(System.Action<int> callback)
     {
@@ -86,19 +82,6 @@ public class HandCardLayout : MonoBehaviour
         _draggedIndex = index;
         if (index >= 0 && index < _cardObjects.Count && _cardObjects[index] != null)
             _cardObjects[index].transform.SetAsLastSibling();
-    }
-
-    /// <summary>
-    /// 开启/关闭黑暗卡面模式。对所有当前手牌及后续新手牌生效。
-    /// </summary>
-    public void SetDarkMode(bool enabled)
-    {
-        _isDarkMode = enabled;
-        foreach (var display in _cardDisplays)
-        {
-            if (display != null)
-                display.SetDarkMode(enabled);
-        }
     }
 
     /// <summary>
@@ -162,8 +145,6 @@ public class HandCardLayout : MonoBehaviour
             }
 
             display.ApplyCardData(hand[i]);
-            if (_isDarkMode)
-                display.SetDarkMode(true);
             if (isPlayable != null)
                 display.SetPlayable(isPlayable(hand[i]));
 

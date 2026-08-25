@@ -87,7 +87,9 @@ namespace LightMiniGame.Shop
         private readonly List<ShopRelicEntry> _relicStock = new List<ShopRelicEntry>();
         private int _usedRemovalsThisShop;   // 本店已用删牌次数（开新店重置，per-shop 语义）
         private int _globalRemovals;        // 全局累计删牌次数（跨店递增、永不清零），用于费用全局上涨
-        private float _discountRatio = 1f;  // 本店折扣比例：1=不打折；特价商店由调用方通过 OpenShop 传入
+        private float _discountRatio = 1f;  // 当前商店的统一商品折扣比例：1=不打折。
+        // 已获得的“内部福利”对之后每一间普通商店持续生效；特价商店不使用该折扣。
+        private float _regularShopDiscountRatio = 1f;
 
         // ===== 单例 =====
         // 优先复用场景中已放好的 ShopManager（其 Inspector 上的配置才会被读取）；
@@ -138,18 +140,33 @@ namespace LightMiniGame.Shop
 
         // 本店剩余可删次数（每次开新店重置，per-shop 语义）
         public int RemovalsRemaining => Mathf.Max(0, (Config != null ? Config.removalCount : 0) - _usedRemovalsThisShop);
-        // 当前删牌费用：随【全局累计】删牌次数上涨（跨店持续递增，不再每店清零）
-        public int CurrentRemovalPrice => (Config != null ? Config.removalBasePrice : 0)
-                                          + (Config != null ? Config.removalPriceStep : 0) * _globalRemovals;
+        // 当前删牌费用：随【全局累计】删牌次数上涨（跨店持续递增），再应用当前商店的统一商品折扣。
+        public int CurrentRemovalPrice
+        {
+            get
+            {
+                int basePrice = (Config != null ? Config.removalBasePrice : 0)
+                                + (Config != null ? Config.removalPriceStep : 0) * _globalRemovals;
+                return Mathf.RoundToInt(basePrice * _discountRatio);
+            }
+        }
 
         public IReadOnlyList<ShopCardEntry> CardStock => _cardStock;
         public IReadOnlyList<ShopRelicEntry> RelicStock => _relicStock;
+        public float CurrentDiscountRatio => _discountRatio;
 
         // ===== 进店：重新随机抽取全部商品 =====
-        // discountRatio: 折扣比例（0~1）。1=不打折；特价商店由 ApplyEffects 传入 EffectData.discountRatio（原 ChapterConfig.discountShopRatio 已迁移，如 0.6=6折）
-        public void OpenShop(List<CharacterData> characters, float discountRatio = 1f)
+        // discountRatio: 本次开店的基础折扣比例（0~1）。
+        // isRegularShop: true=普通商店；false=事件触发的特价商店。内部福利持续作用于每一间普通商店。
+        public void OpenShop(List<CharacterData> characters, float discountRatio = 1f, bool isRegularShop = true)
         {
             _discountRatio = Mathf.Clamp(discountRatio, 0f, 1f);
+            if (isRegularShop)
+            {
+                // 内部福利和普通商店基础折扣取更优惠的一档；不消耗，之后的普通商店继续生效。
+                _discountRatio = Mathf.Min(_discountRatio, _regularShopDiscountRatio);
+            }
+
             _characters = characters ?? new List<CharacterData>();
             _usedRemovalsThisShop = 0;   // 仅重置本店计数；_globalRemovals 保留，费用继续上涨
             GlobalCardLibrary.EnsureInstance();
@@ -162,6 +179,17 @@ namespace LightMiniGame.Shop
             OnStockChanged?.Invoke();
 
             Debug.Log($"[ShopManager] 开张：卡牌 {_cardStock.Count} 张，遗物 {_relicStock.Count} 件，可删牌 {RemovalsRemaining} 次，折扣 {_discountRatio:P0}");
+        }
+
+        /// <summary>
+        /// 登记“内部福利”对之后所有普通商店持续生效的统一商品折扣。
+        /// 特价商店不使用该折扣；重复获得时保留更低价格比例，不叠乘。
+        /// </summary>
+        public void RegisterRegularShopDiscount(float discountRatio)
+        {
+            float clampedRatio = Mathf.Clamp(discountRatio, 0f, 1f);
+            _regularShopDiscountRatio = Mathf.Min(_regularShopDiscountRatio, clampedRatio);
+            Debug.Log($"[ShopManager] 已登记所有普通商店折扣：{_regularShopDiscountRatio:P0}");
         }
 
         // ===== 抽卡：按 Character1 / Character2 比例拆分 =====

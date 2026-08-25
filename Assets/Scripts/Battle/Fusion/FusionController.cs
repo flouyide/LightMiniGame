@@ -41,6 +41,7 @@ public class FusionController : MonoBehaviour
     private const float SelectFrameInterval = 0.2f;
 
     // === 融合入口按钮图标（魔方） ===
+    private const float EntryButtonSize = 60f;
     private const string CubeClosedPath = "Assets/Art/局内/魔方关.png";
     private const string CubeOpenPath = "Assets/Art/局内/魔方开.png";
     private static Sprite _cubeClosedSprite;
@@ -80,21 +81,60 @@ public class FusionController : MonoBehaviour
         _entryButtonGO = new GameObject("FusionEntryButton");
         _entryButtonGO.transform.SetParent(parent.transform, false);
         var rt = _entryButtonGO.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(60.0f, 60.0f);
-        // TopBar 占 anchor 0.88~1.0 区域，按钮放在其左端正下方
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(78f, -99f);
+        // TopBar 约占屏幕顶部 12%；略叠进栏下沿，战斗中栏背景已关 raycast
+        const float liftIntoBar = 36f;
+        float barH = ResolveTopBarHeight(parent.transform as RectTransform);
+        rt.anchoredPosition = new Vector2(78f, -barH + liftIntoBar);
+        rt.sizeDelta = new Vector2(EntryButtonSize, EntryButtonSize);
 
         _entryButtonImage = _entryButtonGO.AddComponent<Image>();
-        _entryButtonImage.preserveAspect = true;
+        _entryButtonImage.preserveAspect = false;
+        _entryButtonImage.maskable = false;
+        _entryButtonImage.raycastTarget = true;
         _entryButtonImage.sprite = EnsureCubeSprite(false);
+        FitEntryButtonToSprite();
 
         var btn = _entryButtonGO.AddComponent<Button>();
+        btn.targetGraphic = _entryButtonImage;
         btn.onClick.AddListener(OnEntryClicked);
 
+        RaiseEntryButton();
         UpdateEntryInteractable();
+    }
+
+    private static float ResolveTopBarHeight(RectTransform canvasRT)
+    {
+        var topBar = FindTopBar();
+        if (topBar != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            if (topBar.rect.height > 1f)
+                return topBar.rect.height;
+        }
+        if (canvasRT != null && canvasRT.rect.height > 1f)
+            return canvasRT.rect.height * (1f - 0.877f);
+        return 140f;
+    }
+
+    private static RectTransform FindTopBar()
+    {
+        var canvases = FindObjectsOfType<Canvas>();
+        foreach (var c in canvases)
+        {
+            if (c == null || c.name != "BookCanvas") continue;
+            var tb = c.transform.Find("TopBar") as RectTransform;
+            if (tb != null) return tb;
+        }
+        return null;
+    }
+
+    private void RaiseEntryButton()
+    {
+        if (_entryButtonGO != null)
+            _entryButtonGO.transform.SetAsLastSibling();
     }
 
     private Canvas FindParentCanvas()
@@ -158,6 +198,24 @@ public class FusionController : MonoBehaviour
             _entryButtonImage.sprite = EnsureCubeSprite(false);
             _entryButtonImage.color = new Color(0.5f, 0.5f, 0.5f, 0.6f);
         }
+        FitEntryButtonToSprite();
+    }
+
+    /// <summary>按当前魔方图的宽高比设置按钮 Rect，点击范围与贴图一致。</summary>
+    private void FitEntryButtonToSprite()
+    {
+        if (_entryButtonGO == null || _entryButtonImage == null || _entryButtonImage.sprite == null)
+            return;
+        var rt = _entryButtonGO.transform as RectTransform;
+        if (rt == null) return;
+        var sprite = _entryButtonImage.sprite;
+        float w = sprite.rect.width;
+        float h = sprite.rect.height;
+        if (w < 1f || h < 1f) return;
+        float scale = EntryButtonSize / Mathf.Max(w, h);
+        rt.sizeDelta = new Vector2(w * scale, h * scale);
+        _entryButtonImage.preserveAspect = false;
+        _entryButtonImage.raycastTarget = true;
     }
 
     // ========================================================================
@@ -173,8 +231,7 @@ public class FusionController : MonoBehaviour
         _candidates = CollectCandidates();
         _selected.Clear();
         BuildPanel();
-        if (_entryButtonGO != null)
-            _entryButtonGO.transform.SetAsLastSibling();
+        RaiseEntryButton();
         UpdateEntryInteractable();
         // 高亮定位依赖 TMP 文本网格（低理智切形态后需一帧重建），延迟一帧构建避免错位/fallback 大块
         StartCoroutine(BuildHighlightsNextFrame());
@@ -188,8 +245,7 @@ public class FusionController : MonoBehaviour
         yield return null;   // 再等一帧应用 layout 约束
         BuildHighlights();
         RefreshHighlights();
-        if (_entryButtonGO != null)
-            _entryButtonGO.transform.SetAsLastSibling();
+        RaiseEntryButton();
     }
 
     /// <summary>枚举当前要高亮的融合数值。
@@ -639,6 +695,49 @@ public class FusionController : MonoBehaviour
     /// <summary>融合重分配总值 = 选中数字之和 + 当前福报值。</summary>
     private int FusionPoolTotal() => SumSelected() + CurrentFortune;
 
+    /// <summary>
+    /// 股神拿拆分里的最大份，韭菜拿 0；剩余守恒分给其它槽。
+    /// </summary>
+    private void ApplyFusionKeywordBias(List<int> split)
+    {
+        if (split == null || split.Count != _selected.Count) return;
+
+        var god = new List<int>();
+        var leek = new List<int>();
+        var rest = new List<int>();
+        for (int i = 0; i < _selected.Count; i++)
+        {
+            var kw = _selected[i].cardView != null ? _selected[i].cardView.keywords : KeywordType.None;
+            if (CardKeywords.Has(kw, KeywordType.Leek)) leek.Add(i);
+            if (CardKeywords.Has(kw, KeywordType.StockGod)) god.Add(i);
+            if (!CardKeywords.Has(kw, KeywordType.Leek) && !CardKeywords.Has(kw, KeywordType.StockGod))
+                rest.Add(i);
+        }
+        if (god.Count == 0 && leek.Count == 0) return;
+
+        int total = 0;
+        for (int i = 0; i < split.Count; i++) total += split[i];
+
+        foreach (int i in leek) split[i] = 0;
+
+        var freeIdx = new List<int>(god.Count + rest.Count);
+        freeIdx.AddRange(god);
+        freeIdx.AddRange(rest);
+        if (freeIdx.Count == 0)
+        {
+            if (leek.Count > 0) split[leek[0]] = total;
+            return;
+        }
+
+        var sub = FusionSplitAlgorithm.Split(total, freeIdx.Count, minEach: total >= freeIdx.Count ? 1 : 0);
+        sub.Sort();
+        int p = 0;
+        foreach (int i in rest)
+            split[i] = sub[p++];
+        foreach (int i in god)
+            split[i] = sub[p++];
+    }
+
     // ========================================================================
     // 确认融合
     // ========================================================================
@@ -655,6 +754,7 @@ public class FusionController : MonoBehaviour
         int total = FusionPoolTotal();
         int parts = _selected.Count;
         var split = FusionSplitAlgorithm.Split(total, parts, minEach: total >= parts ? 1 : 0);
+        ApplyFusionKeywordBias(split);
 
         // 血量对（current+max）同时被选需原子回填，避免 SetHP/SetMaxHP 相互钳制
         // —— 玩家：player:hp + player:maxhp ——

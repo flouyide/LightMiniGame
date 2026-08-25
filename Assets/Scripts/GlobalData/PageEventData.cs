@@ -142,6 +142,11 @@ public class PageEventData
     [Tooltip("切换为低理智背景的理智阈值：玩家理智 <= 此值时使用 lowSanityBattleBackground。")]
     public int backgroundSanityThreshold = 4;       // 背景切换理智阈值
 
-    [Header("默认效果")]
+    [Header("休整配置（Rest 类型用）")]
+    [Range(0f, 100f)]
+    [Tooltip("Rest 类型点击后按玩家最大生命值的百分比回复；例如 30 表示回复最大生命值的 30%。折叠床等休整加成会在此基础上生效。")]
+    public float restHealingPercent = 30f;
+
+    [Header("默认效果（Battle / Shop 类型用）")]
     public List<EffectData> defaultEffects = new();
 }

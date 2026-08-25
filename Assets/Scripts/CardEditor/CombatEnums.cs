@@ -20,7 +20,18 @@ namespace LightMiniGame.CardEditor
     // ========================================================================
     // 卡牌词条
     // ========================================================================
-    public enum CardKeyword2 { None, Echo }
+    public enum CardKeyword2
+    {
+        None,
+        StockGod,
+        Leek,
+        Recycle,
+        Accessory,
+        Consult,
+        InternalPrice,
+        Bribe,
+        Slack
+    }
 
     // ========================================================================
     // 费用类型

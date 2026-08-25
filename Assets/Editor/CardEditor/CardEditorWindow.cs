@@ -184,7 +184,7 @@ namespace LightMiniGame.CardEditor.Editor
             EditorGUILayout.BeginHorizontal();
             if (_filterEnabled)
             {
-                _filterKeywordIdx = EditorGUILayout.Popup(_filterKeywordIdx, new[] { "全部词条", "无", "回响" }, GUILayout.Width(60));
+                _filterKeywordIdx = EditorGUILayout.Popup(_filterKeywordIdx, CardKeywords.FilterPopupNames, GUILayout.Width(80));
                 _filterCost = EditorGUILayout.IntField("费用", _filterCost, GUILayout.Width(80));
             }
             EditorGUILayout.EndHorizontal();
@@ -290,7 +290,7 @@ namespace LightMiniGame.CardEditor.Editor
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
             card.cardType = (CardType)EditorGUILayout.Popup("卡牌类型", (int)card.cardType, new[] { "攻击", "技能", "能力" });
             card.existence = (CardExistence)EditorGUILayout.Popup("存在形式(普通)", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
-            card.keyword = (CardKeyword)EditorGUILayout.Popup("词条", (int)card.keyword, new[] { "无", "回响", "灾厄", "命运" });
+            card.keyword = (CardKeyword)EditorGUILayout.EnumFlagsField("词条（可多选）", card.keyword);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
@@ -737,10 +737,7 @@ namespace LightMiniGame.CardEditor.Editor
                     CardExistence.PermanentRemove => ConsumeType.ThisRun,
                     _ => ConsumeType.None
                 };
-                display.keywords = KeywordType.None;
-                if (card.keyword == CardKeyword.Echo) display.keywords |= KeywordType.Echo;
-                if (card.keyword == CardKeyword.Calamity) display.keywords |= KeywordType.Calamity;
-                if (card.keyword == CardKeyword.Fate) display.keywords |= KeywordType.Fate;
+                display.keywords = CardKeywords.FromEditor(card.keyword);
 
                 // 三层卡面：底层卡画 / 中层描述框 / 顶层类型框（通过 CardDisplay 刷新写精灵）
                 display.ApplyCardEntry(card, false);
@@ -806,10 +803,7 @@ namespace LightMiniGame.CardEditor.Editor
                         CardExistence.PermanentRemove => ConsumeType.ThisRun,
                         _ => ConsumeType.None
                     };
-                    display.keywords = KeywordType.None;
-                    if (card.keyword == CardKeyword.Echo) display.keywords |= KeywordType.Echo;
-                    if (card.keyword == CardKeyword.Calamity) display.keywords |= KeywordType.Calamity;
-                    if (card.keyword == CardKeyword.Fate) display.keywords |= KeywordType.Fate;
+                    display.keywords = CardKeywords.FromEditor(card.keyword);
 
                     display.ApplyCardEntry(card);
                     PrefabUtility.SaveAsPrefabAsset(root, destPath);
@@ -898,7 +892,13 @@ namespace LightMiniGame.CardEditor.Editor
             {
                 if (_filterGradeIdx > 0) query = query.Where(c => (int)c.grade == _filterGradeIdx - 1);
                 if (_filterTypeIdx > 0) query = query.Where(c => (int)c.cardType == _filterTypeIdx - 1);
-                if (_filterKeywordIdx > 0) query = query.Where(c => (int)c.keyword == _filterKeywordIdx - 1);
+                if (_filterKeywordIdx == 1)
+                    query = query.Where(c => c.keyword == CardKeyword.None);
+                else if (_filterKeywordIdx > 1)
+                {
+                    var flag = CardEntry.SequentialToFlags(_filterKeywordIdx - 1);
+                    query = query.Where(c => (c.keyword & flag) != 0);
+                }
                 if (_filterCost >= 0) query = query.Where(c => c.normalCost == _filterCost);
             }
 

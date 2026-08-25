@@ -78,14 +78,8 @@ public static class CardEntryAdapter
             _ => CardType.Attack
         };
 
-        // 词条映射（3词条：回响/灾厄/命运）
-        cd.keywords = KeywordType.None;
-        if (entry.keyword == CardKeyword.Echo)
-            cd.keywords |= KeywordType.Echo;
-        if (entry.keyword == CardKeyword.Calamity)
-            cd.keywords |= KeywordType.Calamity;
-        if (entry.keyword == CardKeyword.Fate)
-            cd.keywords |= KeywordType.Fate;
+        // 词条映射（默认无词条）
+        cd.keywords = CardKeywords.FromEditor(entry.keyword);
 
         // 消耗类型映射
         cd.consumeType = entry.existence switch

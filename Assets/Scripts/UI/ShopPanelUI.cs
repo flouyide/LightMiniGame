@@ -360,18 +360,19 @@ public class ShopPanelUI : MonoBehaviour
     }
 
     // ===== 对外：显示商店 =====
-    public void Show(ShopManager shop, List<CharacterData> characters, Action onClose, float discountRatio = 1f)
+    public void Show(ShopManager shop, List<CharacterData> characters, Action onClose, float discountRatio = 1f, bool isRegularShop = true)
     {
         _shop = shop;
         _characters = characters;
         _onClose = onClose;
-        _discountRatio = discountRatio;   // 记录折扣：特价商店 <1，正常商店 =1
+        _discountRatio = discountRatio;   // 记录本次开店的基础折扣；内部福利的普通商店折扣由 ShopManager 叠加。
         _goodsPage = 0;                  // 每次重新进店从第一页开始
         HookPageButtons();                // 面板重开后确保箭头监听已恢复
 
         if (_shop != null)
         {
-            _shop.OpenShop(_characters, discountRatio);   // 每次进店重抽一次卡牌与遗物（特价店带折扣）
+            _shop.OpenShop(_characters, discountRatio, isRegularShop); // 每次进店重抽一次卡牌与遗物；普通商店会消费内部福利折扣。
+            _discountRatio = _shop.CurrentDiscountRatio;
             _shop.OnStockChanged -= Render;
             _shop.OnStockChanged += Render;
         }
