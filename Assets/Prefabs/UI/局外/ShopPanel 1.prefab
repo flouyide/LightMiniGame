@@ -286,11 +286,15 @@ MonoBehaviour:
   goodsLayerPosition: {x: 4.6325, y: -24.7071}
   goodsLayerSize: {x: 1631.685, y: 483.6244}
   goodsLayerScale: {x: 1, y: 1, z: 1}
-  attackCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
-  armorCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
-  buffCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
+  cardItemPrefab: {fileID: 460558179267894742, guid: 57c065b48c6e8e947a36caefc7af95c1, type: 3}
+  relicItemPrefab: {fileID: 1450422795469039436, guid: 2fb4235ca2af82e4294d6c4b5a6fae5c, type: 3}
   deleteCardPrefab: {fileID: 7258994312282142446, guid: bea71b2a001ff2749a31739dbdd64a72, type: 3}
-  currencyIcon: {fileID: 21300000, guid: e77dd0e7c1e586f41870e2bc44bbc70e, type: 3}
+  cardItemPositionOffset: {x: 0, y: 0}
+  cardItemSize: {x: 100, y: 100}
+  relicItemPositionOffset: {x: 0, y: -100}
+  relicItemSize: {x: 100, y: 132.998}
+  deleteCardPositionOffset: {x: 0, y: -100}
+  deleteCardSize: {x: 244.92, y: 303.24}
   highlight1: {fileID: 4189409308965514253}
   highlight2: {fileID: 5712316900212363060}
   highlight3: {fileID: 7014658407307425754}
@@ -469,8 +473,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -899, y: 27}
-  m_SizeDelta: {x: 78.8168, y: 146.5098}
+  m_AnchoredPosition: {x: -912.3815, y: 15}
+  m_SizeDelta: {x: 52.0538, y: 96.761}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5088197560142303953
 CanvasRenderer:
@@ -1253,8 +1257,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 897, y: 27}
-  m_SizeDelta: {x: 78.8168, y: 146.5098}
+  m_AnchoredPosition: {x: 897, y: 11}
+  m_SizeDelta: {x: 52.0538, y: 96.761}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8900368907275554574
 CanvasRenderer:
