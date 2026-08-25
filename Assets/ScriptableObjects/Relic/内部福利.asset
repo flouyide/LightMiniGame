@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u5185\u90E8\u798F\u5229"
+  m_EditorClassIdentifier: 
+  relicId: InternalBenefit
+  relicName: "\u5185\u90E8\u798F\u5229"
+  description: "\u63A5\u4E0B\u6765\u7684\u6240\u6709\u666E\u901A\u5546\u5E97\uFF0C\u6240\u6709\u5546\u54C1
+    5 \u6298"
+  icon: {fileID: 0}
+  value: 100
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.InternalBenefitEffect
+  effectParams:
+  - 0.5
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 11500000, guid: 35ff3d89e3699b84db7f26b6999bc7cf, type: 3}
