@@ -148,7 +148,7 @@ MonoBehaviour:
         enterBattleEnemies: []
     enemies:
     - config: {fileID: 11400000, guid: 480937e7dec504a1493033b3031b0162, type: 2}
-      anchoredPosition: {x: 0, y: 0}
+      anchoredPosition: {x: 0, y: -50}
     lootTable:
       entries: []
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
