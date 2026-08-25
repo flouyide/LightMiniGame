@@ -1,22 +1,25 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using LightMiniGame.Card;
 using LightMiniGame.Shop;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// 商店面板 UI（仿《杀戮尖塔2》布局）：
 ///  - GoodsLayer 单排显示所有货物，每页最多5个，货物包含卡牌、遗物和删牌服务；
 ///  - ArrowLeft / ArrowRight 控制 GoodsLayer 左右翻页；
-///  - prefab 里的 Service（删牌）按钮作为一个货物参与分页，运行时按 ShopBoard/Service 节点查找；
 ///  - 每次进店刷新一次卡牌 / 遗物（由 ShopManager.OpenShop 负责抽取）；
 ///  - 每张卡牌 / 遗物下方显示价格，点击即购买：卡牌进对应角色牌库（CharacterCardLibrary），
 ///    遗物进对应角色的遗物库（GlobalRelicInventory），并扣除对应货币。
-/// 卡牌条目使用 Assets/Prefabs/Battle/Cards 下按类型（攻击/护甲/增益）细分的卡牌预制体，
-/// 由牌库数据驱动绘制卡面；遗物条目在运行时动态生成。卡牌、遗物和删牌服务统一挂到 GoodsLayer，
-/// 由 GoodsLayer 的 HorizontalLayoutGroup 负责单排排列。
+/// 所有货物均直接实例化现有 UI 预制体：CardItem.prefab、RelicItem.prefab、DeleteCard.prefab。
+/// ShopPanelUI 只负责向预制体中的既有节点写入数据并绑定交互，不在运行时创建货物层级。
+/// 卡牌、遗物和删牌服务统一挂到 GoodsLayer，由 GoodsLayer 的 HorizontalLayoutGroup 负责单排排列。
 /// </summary>
 public class ShopPanelUI : MonoBehaviour
 {
@@ -36,19 +39,27 @@ public class ShopPanelUI : MonoBehaviour
     [Tooltip("GoodsLayer 缩放")]
     [SerializeField] private Vector3 goodsLayerScale = Vector3.one;
 
-    [Header("卡牌预制体（按 CardType 细分，拖入对应 prefab）")]
-    [Tooltip("攻击牌预制体（Assets/Prefabs/Battle/Cards/攻击牌.prefab），须含 CardDisplay 组件")]
-    public GameObject attackCardPrefab;
-    [Tooltip("护甲牌预制体（Assets/Prefabs/Battle/Cards/护甲牌.prefab），须含 CardDisplay 组件")]
-    public GameObject armorCardPrefab;
-    [Tooltip("增益牌预制体（Assets/Prefabs/Battle/Cards/增益牌.prefab），须含 CardDisplay 组件")]
-    public GameObject buffCardPrefab;
-    [Tooltip("删牌货物预制体（DeleteCard.prefab）。会作为每个商店的一个货物加入 GoodsLayer。")]
+    [Header("货物预制体")]
+    [Tooltip("卡牌货物预制体：Assets/Prefabs/UI/局外/CardItem.prefab")]
+    [SerializeField] private GameObject cardItemPrefab;
+    [Tooltip("遗物货物预制体：Assets/Prefabs/UI/局外/RelicItem.prefab")]
+    [SerializeField] private GameObject relicItemPrefab;
+    [Tooltip("删牌货物预制体：Assets/Prefabs/UI/局外/DeleteCard.prefab")]
     [SerializeField] private GameObject deleteCardPrefab;
 
-    [Header("货币图标")]
-    [Tooltip("商店卡牌与遗物价格左侧显示的货币 Sprite。留空时仍显示纯数字价格。")]
-    [SerializeField] private Sprite currencyIcon;
+    [Header("货物布局（相对 HorizontalLayoutGroup 的排列结果）")]
+    [Tooltip("卡牌货物在 HorizontalLayoutGroup 自动排列位置基础上的偏移")]
+    [SerializeField] private Vector2 cardItemPositionOffset;
+    [Tooltip("卡牌货物尺寸。X/Y 必须大于 0；默认使用 CardItem.prefab 的 100 × 100")]
+    [SerializeField] private Vector2 cardItemSize = new Vector2(100f, 100f);
+    [Tooltip("遗物货物在 HorizontalLayoutGroup 自动排列位置基础上的偏移")]
+    [SerializeField] private Vector2 relicItemPositionOffset;
+    [Tooltip("遗物货物尺寸。X/Y 必须大于 0；默认使用 RelicItem.prefab 的 100 × 132.998")]
+    [SerializeField] private Vector2 relicItemSize = new Vector2(100f, 132.998f);
+    [Tooltip("删牌货物在 HorizontalLayoutGroup 自动排列位置基础上的偏移")]
+    [SerializeField] private Vector2 deleteCardPositionOffset;
+    [Tooltip("删牌货物尺寸。X/Y 必须大于 0；默认使用 DeleteCard.prefab 的 420 × 520")]
+    [SerializeField] private Vector2 deleteCardSize = new Vector2(420f, 520f);
 
     [Header("货物槽位高亮（当前页从左到右 1-5）")]
     [Tooltip("第1个货物下方的红色椭圆高亮；该货物购买成功后隐藏")]
@@ -75,6 +86,7 @@ public class ShopPanelUI : MonoBehaviour
 
     private const int GoodsPerPage = 5;
     private int _goodsPage;
+    private int _goodsOnCurrentPage;
 
     private enum GoodsKind { Card, Relic, Service }
 
@@ -86,6 +98,11 @@ public class ShopPanelUI : MonoBehaviour
     }
 
     private readonly List<GoodsEntry> _goods = new List<GoodsEntry>();
+    private Coroutine _goodsItemLayoutOverrideRoutine;
+
+#if UNITY_EDITOR
+    private static bool _savePrefabBindingsQueued;
+#endif
 
     // ===== 特价商店角标（运行时动态创建，避免改动 prefab）=====
     private float _discountRatio = 1f;   // 本店折扣比例：1=不打折；<1=特价商店
@@ -100,6 +117,25 @@ public class ShopPanelUI : MonoBehaviour
     public CardLibraryPanelUI cardLibraryPanel;
 
     // ===== 生命周期 =====
+#if UNITY_EDITOR
+    [ContextMenu("自动绑定商店货物预制体")]
+    private void AssignGoodsPrefabsInEditor()
+    {
+        cardItemPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/局外/CardItem.prefab");
+        relicItemPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/局外/RelicItem.prefab");
+        deleteCardPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/局外/DeleteCard.prefab");
+        EditorUtility.SetDirty(this);
+
+        if (_savePrefabBindingsQueued) return;
+        _savePrefabBindingsQueued = true;
+        EditorApplication.delayCall += () =>
+        {
+            _savePrefabBindingsQueued = false;
+            AssetDatabase.SaveAssets();
+        };
+    }
+#endif
+
     private void Start()
     {
         if (panel == null) panel = transform.Find("Panel")?.gameObject;
@@ -162,9 +198,17 @@ public class ShopPanelUI : MonoBehaviour
     /// </summary>
     private void OnValidate()
     {
+#if UNITY_EDITOR
+        if (cardItemPrefab == null || relicItemPrefab == null || deleteCardPrefab == null)
+            AssignGoodsPrefabsInEditor();
+#endif
         if (goodsLayer == null)
             goodsLayer = transform.Find("Panel/ShopBoard/GoodsLayer");
         ApplyGoodsLayerLayout();
+
+        // Play Mode 中 Inspector 改偏移值时，不重新打开商店也能在当前帧末生效。
+        if (Application.isPlaying)
+            QueueGoodsItemLayoutOverrides();
     }
 
     private void OnDisable()
@@ -174,6 +218,11 @@ public class ShopPanelUI : MonoBehaviour
         _closeHooked = false;
         if (_shop != null)
             _shop.OnStockChanged -= Render;
+        if (_goodsItemLayoutOverrideRoutine != null)
+        {
+            StopCoroutine(_goodsItemLayoutOverrideRoutine);
+            _goodsItemLayoutOverrideRoutine = null;
+        }
         UnhookPageButtons();
     }
 
@@ -396,8 +445,13 @@ public class ShopPanelUI : MonoBehaviour
             }
         }
 
+        // HorizontalLayoutGroup 在本帧后续的 Canvas 布局阶段会回写子节点位置，
+        // 因此将偏移安排到布局完成后的帧末再叠加。
+        QueueGoodsItemLayoutOverrides();
+
+        _goodsOnCurrentPage = end - start;
         int pageCount = Mathf.Max(1, Mathf.CeilToInt(_goods.Count / (float)GoodsPerPage));
-        RefreshCurrentPageHighlights(end - start);
+        RefreshCurrentPageHighlights(_goodsOnCurrentPage);
         if (arrowLeft != null)
             arrowLeft.interactable = _goodsPage > 0;
         if (arrowRight != null)
@@ -528,6 +582,11 @@ public class ShopPanelUI : MonoBehaviour
         if (deleteCardPrefab == null || _goodsLayer == null) return;
 
         _deleteCardInstance = Instantiate(deleteCardPrefab, _goodsLayer, false);
+        // 与 CardItem / RelicItem 一样固定实例名，供类型布局覆盖准确匹配。
+        _deleteCardInstance.name = "DeleteCard";
+        ApplyGoodsItemSize(_deleteCardInstance, deleteCardSize);
+        SetTmpText(_deleteCardInstance.transform, "Price", _shop != null ? _shop.CurrentRemovalPrice.ToString() : "0");
+
         var frame = _deleteCardInstance.transform.Find("Frame");
         _deleteCardButton = frame != null ? frame.GetComponent<Button>() : null;
         if (_deleteCardButton == null)
@@ -542,223 +601,204 @@ public class ShopPanelUI : MonoBehaviour
         Debug.Log($"[ShopPanelUI] 已创建删牌货物：Frame/Button={_deleteCardButton.name}，可删次数={_shop?.RemovalsRemaining ?? 0}");
     }
 
-    private void AddNote(Transform parent, string text)
-    {
-        var go = new GameObject("Note", typeof(RectTransform), typeof(Text));
-        go.transform.SetParent(parent, false);
-        var t = go.GetComponent<Text>();
-        t.text = text;
-        t.fontSize = 14;
-        t.color = new Color(0.7f, 0.7f, 0.7f);
-        t.alignment = TextAnchor.MiddleCenter;
-        var le = go.AddComponent<LayoutElement>();
-        le.minWidth = 160;
-        le.minHeight = 160;
-    }
-
     // ===== 商品条目 =====
-    private GameObject GetCardPrefab(CardType type) => type switch
-    {
-        CardType.Attack => attackCardPrefab,
-        CardType.Skill => armorCardPrefab,
-        CardType.Ability => buffCardPrefab,
-        _ => attackCardPrefab
-    };
-
     /// <summary>
-    /// 用对应类型的卡牌预制体渲染一张待售卡牌：
-    ///  - 竖向容器 = 角色名（上，TMP）+ 卡牌（中，含 CardDisplay）+ 价格（下，TMP）；
-    ///  - 卡牌用 CardDisplay.Apply(CardData) 由数据驱动绘制；
-    ///  - 点击卡牌即购买。
+    /// 实例化 CardItem.prefab，并只刷新其既有的角色名、卡牌、价格和货币图标节点。
     /// </summary>
     private void BuildCardItem(Transform parent, ShopCardEntry e)
     {
-        if (e.card == null) { AddNote(parent, "(空卡牌)"); return; }
-
-        bool sold = e.sold;
-        bool affordable = !sold && _shop.CanAfford(e.price);
-
-        var prefab = GetCardPrefab(e.card.cardType);
-        if (prefab == null)
+        if (e.card == null || cardItemPrefab == null)
         {
-            AddNote(parent, $"[缺少 {CardData.GetCardTypeName(e.card.cardType)} 预制体]");
+            Debug.LogWarning("[ShopPanelUI] CardItem.prefab 未配置或卡牌数据为空，无法创建卡牌货物");
             return;
         }
 
-        // 竖向容器：角色名（上）→ 卡牌（中）→ 价格（下）
-        var wrapper = new GameObject("CardItem", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        wrapper.transform.SetParent(parent, false);
-        var vlg = wrapper.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 4;
-        vlg.childAlignment = TextAnchor.MiddleCenter;
-        vlg.childControlWidth = false;
-        vlg.childControlHeight = false;
-        vlg.childForceExpandWidth = false;
-        vlg.childForceExpandHeight = false;
-
-        // 角色名（卡牌上方，TMP）—— 此卡牌属于哪个角色的牌库
-        string ownerName = e.ownerCharacter != null ? e.ownerCharacter.displayName : "通用";
-        AddTmpText(wrapper.transform, ownerName, 18, new Color(0.85f, 0.9f, 1f), FontStyles.Bold);
-
-        // 实例化卡牌预制体
-        var cardGO = Instantiate(prefab, wrapper.transform, false);
-        var cardRT = cardGO.GetComponent<RectTransform>();
-        if (cardRT != null)
-            cardRT.localScale = Vector3.one;
-
-        // 用牌库数据驱动绘制卡面
-        var display = cardGO.GetComponent<CardDisplay>();
-        if (display != null) display.ApplyCardData(e.card);
-
-        // 价格：货币图标 + 纯数字；已售时只显示状态文字。
-        AddPriceRow(wrapper.transform, sold ? "已售" : e.price.ToString(), !sold,
-            sold ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.85f, 0.3f));
-
-        // 点击卡牌即购买（整张卡牌作为按钮）
-        var btn = cardGO.GetComponent<Button>() ?? cardGO.AddComponent<Button>();
-        btn.targetGraphic = cardGO.GetComponent<Image>();
-        btn.interactable = affordable;
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() => OnBuyCard(e));
-
-        if (sold)
-        {
-            var img = cardGO.GetComponent<Image>();
-            if (img != null) img.color = new Color(0.4f, 0.4f, 0.4f, 0.6f);
-        }
-    }
-
-    private void BuildRelicItem(Transform parent, ShopRelicEntry e)
-    {
-        if (e.relic == null) { AddNote(parent, "(空遗物)"); return; }
-
         bool sold = e.sold;
         bool affordable = !sold && _shop.CanAfford(e.price);
-        string name = e.relic.relicName;
-        // 遗物上方显示所属角色名（每个角色有独立遗物池）
-        string ownerName = e.ownerCharacter != null ? e.ownerCharacter.displayName : "";
-        string price = sold ? "已售" : $"{e.price}";
-        Sprite icon = e.relic.icon;   // RelicData.icon：遗物图标
-        BuildItem(parent, ownerName, name, price, icon, new Color(0.45f, 0.76f, 0.44f), affordable,
-            () => OnBuyRelic(e));
+        var item = Instantiate(cardItemPrefab, parent, false);
+        item.name = "CardItem";
+        ApplyGoodsItemSize(item, cardItemSize);
+
+        SetTmpText(item.transform, "CharacterName", e.ownerCharacter != null ? e.ownerCharacter.displayName : "通用");
+        var display = item.GetComponentInChildren<CardDisplay>(true);
+        if (display != null)
+            display.ApplyCardData(e.card);
+
+        var cardButton = display != null ? display.GetComponent<Button>() : null;
+        if (cardButton != null)
+        {
+            cardButton.interactable = affordable;
+            cardButton.onClick.RemoveAllListeners();
+            cardButton.onClick.AddListener(() => OnBuyCard(e));
+        }
+        else
+        {
+            Debug.LogWarning("[ShopPanelUI] CardItem.prefab 内的卡牌缺少 Button 组件");
+        }
+
+        SetPrice(item.transform, sold ? "已售" : e.price.ToString(), !sold,
+            sold ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.85f, 0.3f));
     }
 
     /// <summary>
-    /// 生成一个遗物商品条目：竖向布局 = [所属角色名(TMP)] + [图标(RelicData.icon)] + [名称(TMP)] + [价格(TMP, 下方)]，
-    /// 整块可点击购买。图标缺失时仅显示纯色块背景。
+    /// 实例化 RelicItem.prefab，并刷新其既有的角色名、图标、名称、价格和货币图标节点。
     /// </summary>
-    private void BuildItem(Transform parent, string ownerName, string name, string price, Sprite icon,
-        Color bgColor, bool affordable, Action onClick)
+    private void BuildRelicItem(Transform parent, ShopRelicEntry e)
     {
-        var go = new GameObject("RelicItem", typeof(RectTransform), typeof(Image), typeof(Button));
-        go.transform.SetParent(parent, false);
-
-        var img = go.GetComponent<Image>();
-        img.color = affordable ? bgColor : new Color(0.45f, 0.45f, 0.45f, 1f);
-
-        var btn = go.GetComponent<Button>();
-        btn.targetGraphic = img;
-        btn.interactable = affordable;
-        btn.onClick.AddListener(() => onClick?.Invoke());
-
-        var vlg = go.AddComponent<VerticalLayoutGroup>();
-        vlg.spacing = 6;
-        vlg.childAlignment = TextAnchor.MiddleCenter;
-        vlg.childControlWidth = false;
-        vlg.childControlHeight = false;
-        vlg.childForceExpandWidth = false;
-        vlg.childForceExpandHeight = false;
-
-        // 所属角色名（TMP，置顶，金色）—— 每个角色有独立遗物池
-        if (!string.IsNullOrEmpty(ownerName))
-            AddTmpText(go.transform, ownerName, 13, new Color(0.95f, 0.85f, 0.45f), FontStyles.Bold);
-
-        // 遗物图标：使用 RelicData.icon（缺失则跳过，仅留背景色块）
-        if (icon != null)
+        if (e.relic == null || relicItemPrefab == null)
         {
-            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-            iconGO.transform.SetParent(go.transform, false);
-            var iconRT = iconGO.GetComponent<RectTransform>();
-            iconRT.sizeDelta = new Vector2(96, 96);
-            var iconImg = iconGO.GetComponent<Image>();
-            iconImg.sprite = icon;
-            iconImg.color = Color.white;
-            iconImg.preserveAspect = true;
+            Debug.LogWarning("[ShopPanelUI] RelicItem.prefab 未配置或遗物数据为空，无法创建遗物货物");
+            return;
         }
 
-        // 名称（TMP）
-        AddTmpText(go.transform, name, 16, Color.white, FontStyles.Bold);
+        bool sold = e.sold;
+        bool affordable = !sold && _shop.CanAfford(e.price);
+        var item = Instantiate(relicItemPrefab, parent, false);
+        item.name = "RelicItem";
+        ApplyGoodsItemSize(item, relicItemSize);
 
-        // 价格：货币图标 + 纯数字；已售时只显示状态文字。
-        bool sold = price == "已售";
-        AddPriceRow(go.transform, price, !sold,
+        SetTmpText(item.transform, "CharacterName", e.ownerCharacter != null ? e.ownerCharacter.displayName : string.Empty);
+        SetTmpText(item.transform, "Name", e.relic.relicName);
+
+        var icon = item.transform.Find("Icon")?.GetComponent<Image>();
+        if (icon != null)
+        {
+            icon.sprite = e.relic.icon;
+            icon.gameObject.SetActive(e.relic.icon != null);
+        }
+
+        // RelicItem.prefab 的根 Image 颜色完全由预制体自身控制；商店不再根据售价/购买状态覆盖它。
+
+        var button = item.GetComponent<Button>();
+        if (button != null)
+        {
+            button.interactable = affordable;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => OnBuyRelic(e));
+        }
+
+        SetPrice(item.transform, sold ? "已售" : e.price.ToString(), !sold,
             affordable ? new Color(1f, 0.85f, 0.3f) : new Color(0.6f, 0.6f, 0.6f));
     }
 
     /// <summary>
-    /// 创建价格行：可配置的货币图标在左，右侧只显示价格数字；售罄状态不显示货币图标。
+    /// 将尺寸写入货物根节点。GoodsLayer 禁用 childControlWidth/Height，因此不会覆盖这里的尺寸。
     /// </summary>
-    private void AddPriceRow(Transform parent, string priceText, bool showCurrencyIcon, Color color)
+    private static void ApplyGoodsItemSize(GameObject item, Vector2 size)
     {
-        var row = new GameObject("PriceRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-        row.transform.SetParent(parent, false);
+        if (item == null || size.x <= 0f || size.y <= 0f) return;
 
-        var rowLayout = row.GetComponent<HorizontalLayoutGroup>();
-        rowLayout.spacing = 4f;
-        rowLayout.childAlignment = TextAnchor.MiddleCenter;
-        rowLayout.childControlWidth = false;
-        rowLayout.childControlHeight = false;
-        rowLayout.childForceExpandWidth = false;
-        rowLayout.childForceExpandHeight = false;
-
-        var rowElement = row.GetComponent<LayoutElement>();
-        rowElement.preferredHeight = 24f;
-        rowElement.preferredWidth = 100f;
-
-        if (showCurrencyIcon && currencyIcon != null)
-        {
-            var iconGo = new GameObject("CurrencyIcon", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-            iconGo.transform.SetParent(row.transform, false);
-            var iconImage = iconGo.GetComponent<Image>();
-            iconImage.sprite = currencyIcon;
-            iconImage.color = Color.white;
-            iconImage.preserveAspect = true;
-            var iconElement = iconGo.GetComponent<LayoutElement>();
-            iconElement.preferredWidth = 18f;
-            iconElement.preferredHeight = 18f;
-        }
-
-        var textGo = new GameObject("Price", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
-        textGo.transform.SetParent(row.transform, false);
-        var text = textGo.GetComponent<TextMeshProUGUI>();
-        text.text = priceText;
-        text.fontSize = 18f;
-        text.color = color;
-        text.fontStyle = FontStyles.Bold;
-        text.alignment = TextAlignmentOptions.Center;
-        text.raycastTarget = false;
-        var textElement = textGo.GetComponent<LayoutElement>();
-        textElement.preferredWidth = 64f;
-        textElement.preferredHeight = 24f;
+        var rect = item.GetComponent<RectTransform>();
+        if (rect != null)
+            rect.sizeDelta = size;
     }
 
-    /// <summary>动态创建一个 TextMeshProUGUI 文本（用于卡牌的角色名 / 价格，避免依赖 prefab）。</summary>
-    private void AddTmpText(Transform parent, string text, float fontSize, Color color, FontStyles style = FontStyles.Normal)
+    /// <summary>
+    /// 将位置覆盖延后到当前帧的 Canvas 布局完成后执行。
+    /// HorizontalLayoutGroup 会在 Canvas 更新阶段强制回写子节点位置，若提前赋值会被覆盖。
+    /// </summary>
+    private void QueueGoodsItemLayoutOverrides()
     {
-        var go = new GameObject("TmpTxt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        go.transform.SetParent(parent, false);
-        var rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0f, 0f);
-        rt.anchorMax = new Vector2(1f, 0f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(180f, 24f);
-        var t = go.GetComponent<TextMeshProUGUI>();
-        t.text = text;
-        t.fontSize = fontSize;
-        t.color = color;
-        t.alignment = TextAlignmentOptions.Center;
-        t.fontStyle = style;
-        t.raycastTarget = false;
+        if (!Application.isPlaying || _goodsLayer == null) return;
+
+        if (_goodsItemLayoutOverrideRoutine != null)
+            StopCoroutine(_goodsItemLayoutOverrideRoutine);
+        _goodsItemLayoutOverrideRoutine = StartCoroutine(ApplyGoodsItemLayoutOverridesAtEndOfFrame());
+    }
+
+    private IEnumerator ApplyGoodsItemLayoutOverridesAtEndOfFrame()
+    {
+        yield return new WaitForEndOfFrame();
+        _goodsItemLayoutOverrideRoutine = null;
+        ApplyGoodsItemLayoutOverrides();
+        AlignCurrentPageGoodsToHighlights();
+    }
+
+    /// <summary>
+    /// HorizontalLayoutGroup 负责货物的基础横向排列；布局完成后再叠加各类型的偏移，
+    /// 从而在不新增包装节点、不脱离 HorizontalLayoutGroup 的前提下分别微调三类货物。
+    /// </summary>
+    private void ApplyGoodsItemLayoutOverrides()
+    {
+        var layerRect = _goodsLayer as RectTransform;
+        if (layerRect == null) return;
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(layerRect);
+        foreach (Transform child in _goodsLayer)
+        {
+            var itemRect = child as RectTransform;
+            if (itemRect == null) continue;
+
+            Vector2 offset = child.name switch
+            {
+                "CardItem" => cardItemPositionOffset,
+                "RelicItem" => relicItemPositionOffset,
+                "DeleteCard" => deleteCardPositionOffset,
+                _ => Vector2.zero
+            };
+            itemRect.anchoredPosition += offset;
+        }
+    }
+
+    /// <summary>
+    /// 货物不足一页时，HorizontalLayoutGroup 会将现有货物居中；这里保持高亮图片不动，
+    /// 将第 N 个货物的中心沿 X 轴对齐到第 N 个高亮图片的中心（即落在该高亮的 Y 轴上）。
+    /// </summary>
+    private void AlignCurrentPageGoodsToHighlights()
+    {
+        if (_goodsLayer == null || _goodsOnCurrentPage >= GoodsPerPage) return;
+
+        var highlights = new[] { highlight1, highlight2, highlight3, highlight4, highlight5 };
+        int goodsIndex = 0;
+        foreach (Transform child in _goodsLayer)
+        {
+            if (goodsIndex >= _goodsOnCurrentPage || goodsIndex >= highlights.Length) break;
+
+            var itemRect = child as RectTransform;
+            var highlightRect = highlights[goodsIndex] != null
+                ? highlights[goodsIndex].transform as RectTransform
+                : null;
+            if (itemRect != null && highlightRect != null)
+            {
+                // 两者父级与锚点可能不同，以世界坐标计算目标中心，再只修正货物的 X 坐标。
+                // Y 坐标（包括 Inspector 的各类货物 Position Offset.y）保持不变。
+                float targetWorldX = highlightRect.TransformPoint(highlightRect.rect.center).x;
+                float itemWorldX = itemRect.TransformPoint(itemRect.rect.center).x;
+                itemRect.position += new Vector3(targetWorldX - itemWorldX, 0f, 0f);
+            }
+            goodsIndex++;
+        }
+    }
+
+    /// <summary>按明确节点名写入其 TMP，避免依赖 prefab 子节点顺序。</summary>
+    private static void SetTmpText(Transform parent, string nodeName, string value)
+    {
+        var text = parent.Find(nodeName)?.GetComponent<TextMeshProUGUI>();
+        if (text == null)
+        {
+            Debug.LogWarning($"[ShopPanelUI] 未找到 {parent.name}/{nodeName} 的 TextMeshProUGUI 组件");
+            return;
+        }
+
+        text.text = value ?? string.Empty;
+    }
+
+    /// <summary>复用货物 prefab 内既有 PriceRow/CurrencyIcon/Price 节点，不运行时创建节点。</summary>
+    private static void SetPrice(Transform item, string priceText, bool showCurrencyIcon, Color color)
+    {
+        var priceRow = item.Find("PriceRow");
+        if (priceRow == null) return;
+
+        var currencyIcon = priceRow.Find("CurrencyIcon");
+        if (currencyIcon != null)
+            currencyIcon.gameObject.SetActive(showCurrencyIcon);
+
+        var price = priceRow.Find("Price")?.GetComponent<TextMeshProUGUI>();
+        if (price != null)
+        {
+            price.text = priceText;
+            price.color = color;
+        }
     }
 
     // ===== 购买回调 =====
