@@ -639,6 +639,48 @@ public class FusionController : MonoBehaviour
     /// <summary>融合重分配总值 = 选中数字之和 + 当前福报值。</summary>
     private int FusionPoolTotal() => SumSelected() + CurrentFortune;
 
+    /// <summary>
+    /// 股神拿拆分里的最大份，韭菜拿 0；剩余守恒分给其它槽。
+    /// </summary>
+    private void ApplyFusionKeywordBias(List<int> split)
+    {
+        if (split == null || split.Count != _selected.Count) return;
+
+        var god = new List<int>();
+        var leek = new List<int>();
+        var rest = new List<int>();
+        for (int i = 0; i < _selected.Count; i++)
+        {
+            var kw = _selected[i].cardView != null ? _selected[i].cardView.keywords : KeywordType.None;
+            if (CardKeywords.Has(kw, KeywordType.Leek)) leek.Add(i);
+            else if (CardKeywords.Has(kw, KeywordType.StockGod)) god.Add(i);
+            else rest.Add(i);
+        }
+        if (god.Count == 0 && leek.Count == 0) return;
+
+        int total = 0;
+        for (int i = 0; i < split.Count; i++) total += split[i];
+
+        foreach (int i in leek) split[i] = 0;
+
+        var freeIdx = new List<int>(god.Count + rest.Count);
+        freeIdx.AddRange(god);
+        freeIdx.AddRange(rest);
+        if (freeIdx.Count == 0)
+        {
+            if (leek.Count > 0) split[leek[0]] = total;
+            return;
+        }
+
+        var sub = FusionSplitAlgorithm.Split(total, freeIdx.Count, minEach: total >= freeIdx.Count ? 1 : 0);
+        sub.Sort();
+        int p = 0;
+        foreach (int i in rest)
+            split[i] = sub[p++];
+        foreach (int i in god)
+            split[i] = sub[p++];
+    }
+
     // ========================================================================
     // 确认融合
     // ========================================================================
@@ -655,6 +697,7 @@ public class FusionController : MonoBehaviour
         int total = FusionPoolTotal();
         int parts = _selected.Count;
         var split = FusionSplitAlgorithm.Split(total, parts, minEach: total >= parts ? 1 : 0);
+        ApplyFusionKeywordBias(split);
 
         // 血量对（current+max）同时被选需原子回填，避免 SetHP/SetMaxHP 相互钳制
         // —— 玩家：player:hp + player:maxhp ——

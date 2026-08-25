@@ -211,6 +211,8 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private BuffData[] buffDataAssets;
     private readonly Dictionary<string, int> _customData = new();
     private readonly HashSet<string> _eventsThisTurn = new();
+    private readonly HashSet<CardData> _recycleUsedThisTurn = new();
+    private int _slackBonusDraw;
     private readonly HashSet<string> _eventsThisBattle = new();
     private readonly Dictionary<string, int> _turnCounters = new();
     private readonly Dictionary<string, int> _battleCounters = new();
@@ -1552,11 +1554,17 @@ public class BattleManager : MonoBehaviour
 
         var card = _hand[handIndex];
         int cost = card.GetEffectiveCost();
+        int paidAP = Mathf.Min(_actionPoints, cost);
+        int missing = cost - paidAP;
+        if (missing > 0)
+        {
+            int goldCost = missing * 5;
+            if (!card.HasKeyword(KeywordType.Bribe) || PlayerGold < goldCost)
+                return false;
+            SetPlayerGold(PlayerGold - goldCost);
+        }
 
-        if (_actionPoints < cost)
-            return false;
-
-        _actionPoints -= cost;
+        _actionPoints -= paidAP;
 
         // 热度系统：打出攻击牌时通知枪械师遗物（由遗物负责加热度）
         if (card.sourceEntry != null && card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack)
@@ -1583,16 +1591,38 @@ public class BattleManager : MonoBehaviour
         _currentFusionCard = card;   // 让 EffectExecutor 在执行效果时读取此卡融合覆盖
         ApplyCardEffects(card);
         _currentFusionCard = null;   // 执行完清除避免串扰
-        HandleCardConsumption(card);
 
-        if (_hand.Contains(card))
-            _hand.Remove(card);
+        TryAttachAccessoryToHost(card);
+
+        if (card.HasKeyword(KeywordType.Consult))
+            DrawCards(1);
+
+        bool recycleToHand = card.HasKeyword(KeywordType.Recycle) && !_recycleUsedThisTurn.Contains(card);
+        if (recycleToHand)
+        {
+            _recycleUsedThisTurn.Add(card);
+        }
         else
-            _hand.RemoveAt(handIndex);
+        {
+            HandleCardConsumption(card);
+            if (_hand.Contains(card))
+                _hand.Remove(card);
+            else if (handIndex >= 0 && handIndex < _hand.Count && _hand[handIndex] == card)
+                _hand.RemoveAt(handIndex);
+            else
+                _hand.Remove(card);
+        }
+
+        bool slack = card.HasKeyword(KeywordType.Slack);
+        if (slack)
+            _slackBonusDraw++;
+
         RefreshHandUI();
 
         UpdateUI();
         CheckBattleEnd();
+        if (slack && !_battleEnded && _isPlayerTurn)
+            OnEndTurnClicked();
         return true;
     }
 
@@ -1711,9 +1741,10 @@ public class BattleManager : MonoBehaviour
 
             // 执行 EffectNode 列表（统一路径，能力卡和普通卡都走这里）
             // 形态已在 PlayCard 中提前确定
-            if (entry.HasEffectNodes(card.isLowSanityForm))
+            if (entry.HasEffectNodes(card.isLowSanityForm)
+                || (card.attachedEffectNodes != null && card.attachedEffectNodes.Count > 0))
             {
-                var nodes = entry.GetEffectNodes(card.isLowSanityForm);
+                var nodes = card.GetEffectNodes(card.isLowSanityForm);
                 _triggerSystem?.FireEvent(TriggerEvent.OnCardPlayed);
                 _effectExecutorV2.ExecuteEffectList(nodes);
                 UpdateUI();
@@ -1840,6 +1871,34 @@ public class BattleManager : MonoBehaviour
                 ActiveChar.consumedPile.Add(card);
                 break;
         }
+    }
+
+    /// <summary>
+    /// 配件是词条、主机是卡牌。带「配件」词条的卡打出时，若手牌里还有名为「主机」的卡，
+    /// 则把本卡效果叠到那张主机上（不限层数）。须在本卡移出手牌之前调用。
+    /// </summary>
+    private void TryAttachAccessoryToHost(CardData accessory)
+    {
+        if (accessory == null || !accessory.HasKeyword(KeywordType.Accessory)) return;
+
+        CardData host = null;
+        foreach (var c in _hand)
+        {
+            if (c != null && c != accessory && c.IsHostCard)
+            {
+                host = c;
+                break;
+            }
+        }
+        if (host == null) return;
+
+        var nodes = accessory.GetEffectNodes(accessory.isLowSanityForm);
+        if (nodes == null || nodes.Count == 0) return;
+
+        if (host.attachedEffectNodes == null)
+            host.attachedEffectNodes = new List<EffectNode>();
+        host.attachedEffectNodes.AddRange(nodes);
+        Debug.Log($"[BattleManager] 配件「{accessory.cardName}」效果已叠加到主机「{host.cardName}」（现 {host.attachedEffectNodes.Count} 条附加效果）");
     }
 
     // ========================================================================
@@ -2178,7 +2237,7 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 升级所有牌堆中的卡牌效果（使用每张牌配置的升级数据），并施加灾厄词条。
+    /// 升级所有牌堆中的卡牌效果（使用每张牌配置的升级数据）。
     /// 涵盖手牌、两角色抽牌堆、弃牌堆、消耗堆。
     /// </summary>
     private void UpgradeAllCardsForDarkMode()
@@ -2201,13 +2260,12 @@ public class BattleManager : MonoBehaviour
 
         // 刷新手牌 UI（重新应用数据以显示升级后的描述）
         RefreshHandUI();
-        Debug.Log("[BattleManager] 所有卡牌已升级并施加灾厄词条");
+        Debug.Log("[BattleManager] 所有卡牌已升级为低理智形态");
     }
 
     /// <summary>
-    /// 单张卡牌低理智化：仅设置 isLowSanityForm 标记并施加灾厄词条。
-    /// 升级后的效果由 EffectExecutor 通过 card.GetEffects(true) 自动读取 CardEntry.upgradeEffects，
-    /// 无需写回 CardData flat fields。
+    /// 单张卡牌低理智化：仅设置 isLowSanityForm 标记。
+    /// 升级后的效果由 EffectExecutor 通过 card.GetEffectNodes(true) 自动读取 CardEntry.lowSanityEffectNodes。
     /// </summary>
     private void UpgradeSingleCard(CardData card)
     {
@@ -2215,7 +2273,6 @@ public class BattleManager : MonoBehaviour
         if (card.isLowSanityForm) return;
 
         card.isLowSanityForm = true;
-        card.keywords |= KeywordType.Calamity;
     }
 
     /// <summary>全屏暗色遮罩淡入协程</summary>
@@ -2295,7 +2352,10 @@ public class BattleManager : MonoBehaviour
     private bool IsCardPlayable(CardData card)
     {
         if (card == null) return false;
-        return _actionPoints >= card.GetEffectiveCost();
+        int cost = card.GetEffectiveCost();
+        if (_actionPoints >= cost) return true;
+        int missing = cost - _actionPoints;
+        return card.HasKeyword(KeywordType.Bribe) && PlayerGold >= missing * 5;
     }
 
     // ========================================================================
@@ -2805,7 +2865,9 @@ public class BattleManager : MonoBehaviour
         // 热度系统：通知枪械师遗物回合开始（由遗物重置本回合过载标记等）
         OnPlayerTurnStarted?.Invoke();
 
-        DrawCards(drawPerTurn);
+        DrawCards(drawPerTurn + _slackBonusDraw);
+        _slackBonusDraw = 0;
+        _recycleUsedThisTurn.Clear();
         _isPlayerTurn = true;
 
         if (endTurnButton != null) endTurnButton.interactable = true;

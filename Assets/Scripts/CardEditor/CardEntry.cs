@@ -75,7 +75,7 @@ namespace LightMiniGame.CardEditor
         [Tooltip("商店售价（金币）")]
         public int price = 10;
 
-        [Tooltip("词条（普通形态）")]
+        [Tooltip("词条（默认无；可指定股神/韭菜/回流/配件/查阅/内部价/贿赂/摸鱼）")]
         public CardKeyword keyword = CardKeyword.None;
 
         [Tooltip("是否配置低理智形态")]
@@ -179,7 +179,16 @@ namespace LightMiniGame.CardEditor
         };
         public static string GetKeywordName(CardKeyword k) => k switch
         {
-            CardKeyword.None => "无", CardKeyword.Echo => "回响", CardKeyword.Calamity => "灾厄", CardKeyword.Fate => "命运", _ => k.ToString()
+            CardKeyword.None => "无",
+            CardKeyword.StockGod => "股神",
+            CardKeyword.Leek => "韭菜",
+            CardKeyword.Recycle => "回流",
+            CardKeyword.Accessory => "配件",
+            CardKeyword.Consult => "查阅",
+            CardKeyword.InternalPrice => "内部价",
+            CardKeyword.Bribe => "贿赂",
+            CardKeyword.Slack => "摸鱼",
+            _ => k.ToString()
         };
 
         // === 描述模板解析 ===
