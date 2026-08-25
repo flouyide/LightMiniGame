@@ -21,6 +21,9 @@ public class EnemyInstance
     public int MaxHP;
     public int Armor;
 
+    /// <summary>当前被破甲削减的护甲总量（用于 RemoveStatus 还原）</summary>
+    public int ArmorBreakStacks;
+
     /// <summary>运行时力量增益（叠加在 Config.strength 之上，战斗内临时）。</summary>
     public int StrengthBuff;
     /// <summary>运行时敏捷增益（叠加在 Config.dexterity 之上，战斗内临时）。</summary>
@@ -191,7 +194,22 @@ public class EnemyInstance
     public void ApplyStatus(StatusType status, int stacks)
     {
         if (status == StatusType.ArmorBreak)
-            Armor = Mathf.Max(0, Armor - stacks);
+        {
+            int actual = Mathf.Min(Armor, stacks);
+            Armor -= actual;
+            ArmorBreakStacks += actual;
+        }
+    }
+
+    /// <summary>移除状态（ArmorBreak：还原被削减的护甲，上限为 ArmorBreakStacks）</summary>
+    public void RemoveStatus(StatusType status, int stacks)
+    {
+        if (status == StatusType.ArmorBreak)
+        {
+            int restore = Mathf.Min(ArmorBreakStacks, stacks);
+            Armor += restore;
+            ArmorBreakStacks -= restore;
+        }
     }
 
     /// <summary>获得护甲（加法累加）。由 BattleManager 在执行 gainBlock 技能时调用。</summary>

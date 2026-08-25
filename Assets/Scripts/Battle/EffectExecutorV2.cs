@@ -806,8 +806,28 @@ public class EffectExecutorV2
     private void ExecuteRemoveStatus(EffectNode node)
     {
         int stacks = EvaluateValue(node.statusValue);
-        Log($"  [移除状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 (需要状态系统支持)");
+
+        bool toPlayer = TargetIsPlayerSide(node.target.unitTarget);
+        if (toPlayer)
+        {
+            _ctx.RemoveStatusFromPlayer(MapStatus(node.statusType), stacks);
+            Log($"  [移除状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 玩家");
+        }
+        else if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
+        {
+            _ctx.RemoveStatusFromEnemy(_initiatorEnemySlot, MapStatus(node.statusType), stacks);
+            Log($"  [移除状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → {_initiatorEnemySlot}号敌人");
+        }
+        else
+        {
+            if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
+                _ctx.RemoveStatusFromEnemy(-1, MapStatus(node.statusType), stacks);
+            else
+                _ctx.RemoveStatusFromEnemy(_ctx.SelectedEnemyIndex, MapStatus(node.statusType), stacks);
+            Log($"  [移除状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 敌人");
+        }
         _lastResult[EffectResultType.StatusStacksRemoved] = stacks;
+        _lastResult[EffectResultType.ActualValue] = stacks;
     }
 
     // ========================================================================

@@ -63,6 +63,10 @@ public class BattleCardContext : ICardRuntimeContext
         => _battle.ApplyStatusToEnemy(enemyIndex, status, stacks);
     public void ApplyStatusToPlayer(StatusType status, int stacks)
         => _battle.ApplyStatusToPlayer(status, stacks);
+    public void RemoveStatusFromEnemy(int enemyIndex, StatusType status, int stacks)
+        => _battle.RemoveStatusFromEnemy(enemyIndex, status, stacks);
+    public void RemoveStatusFromPlayer(StatusType status, int stacks)
+        => _battle.RemoveStatusFromPlayer(status, stacks);
     public void AddEnemyArmor(int slotIndex, int amount) => _battle.AddEnemyArmor(slotIndex, amount);
     public bool ApplyEnemyAttributeBuff(int slotIndex, LightMiniGame.CardEditor.PlayerAttributeType attr, int delta) => _battle.ApplyEnemyAttributeBuff(slotIndex, attr, delta);
     public void DealDamageToPlayer(int amount, int sourceEnemySlot) => _battle.DealDamageToPlayer(amount, sourceEnemySlot);

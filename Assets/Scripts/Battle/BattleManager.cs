@@ -327,7 +327,7 @@ public class BattleManager : MonoBehaviour
     public int GetEnemyHP(int index) { var e = GetEnemy(index); return e != null && !e.IsDead ? e.HP : 0; }
     public int GetEnemyArmor(int index) { var e = GetEnemy(index); return e != null && !e.IsDead ? e.Armor : 0; }
     public int GetEnemyBleed(int index) => 0;
-    public int GetEnemyArmorBreak(int index) => 0;
+    public int GetEnemyArmorBreak(int index) { var e = GetEnemy(index); return e != null && !e.IsDead ? e.ArmorBreakStacks : 0; }
 
     /// <summary>指定槽位敌人的有效力量（含运行时增益；敌人作为效果发起者时作攻击缩放；死亡/越界返回 0）。</summary>
     public int GetEnemyStrength(int index)
@@ -919,6 +919,60 @@ public class BattleManager : MonoBehaviour
             case StatusType.CritRateBoost: _playerCritRate += stacks; break;
             case StatusType.CritDamageBoost: _playerCritDamage += stacks; break;
         }*/
+    }
+
+    /// <summary>对敌人移除状态效果（ArmorBreak 还原护甲）。index=-1 表示全体存活敌人；已死/越界则忽略。</summary>
+    public void RemoveStatusFromEnemy(int index, StatusType status, int stacks)
+    {
+        if (status != StatusType.ArmorBreak)
+        {
+            Debug.Log($"[状态] 对敌人移除 {status}（多敌人框架下暂未实现）");
+            return;
+        }
+
+        if (index < 0)
+        {
+            foreach (var inst in _enemies)
+            {
+                if (inst == null || inst.IsDead) continue;
+                inst.RemoveStatus(status, stacks);
+                Debug.Log($"[状态] {inst.Name} 破甲移除{stacks}层，护甲恢复至 {inst.Armor}");
+                inst.View?.Refresh();
+            }
+        }
+        else
+        {
+            var inst = GetEnemy(index);
+            if (inst == null || inst.IsDead) return;
+            inst.RemoveStatus(status, stacks);
+            Debug.Log($"[状态] {inst.Name} 破甲移除{stacks}层，护甲恢复至 {inst.Armor}");
+            inst.View?.Refresh();
+        }
+        UpdateUI();
+    }
+
+    /// <summary>对玩家移除状态效果（路由到 BuffSystem）。</summary>
+    public void RemoveStatusFromPlayer(StatusType status, int stacks)
+    {
+        if (_playerBuffs == null) return;
+        switch (status)
+        {
+            case StatusType.Strength:
+                _playerBuffs.RemoveBuff(BuffAttributeType.Strength, stacks);
+                break;
+            case StatusType.Dexterity:
+                _playerBuffs.RemoveBuff(BuffAttributeType.Dexterity, stacks);
+                break;
+            case StatusType.CritRateBoost:
+                _playerBuffs.RemoveBuff(BuffAttributeType.CriticalChance, stacks);
+                break;
+            case StatusType.CritDamageBoost:
+                _playerBuffs.RemoveBuff(BuffAttributeType.CriticalDamage, stacks);
+                break;
+            default:
+                Debug.Log($"[状态] 对玩家移除 {status}（暂未实现）");
+                break;
+        }
     }
 
     public int RequestSelectCardFromHand(string prompt) => -1; // 简化：暂不支持运行时选牌

@@ -57,6 +57,8 @@ namespace LightMiniGame.CardEditor
         void ModifyPlayerAttribute(ModifiableAttribute attr, ModifyMethod method, int amount);
         void ApplyStatusToEnemy(int enemyIndex, StatusType status, int stacks);
         void ApplyStatusToPlayer(StatusType status, int stacks);
+        void RemoveStatusFromEnemy(int enemyIndex, StatusType status, int stacks);
+        void RemoveStatusFromPlayer(StatusType status, int stacks);
 
         // === 敌人侧修改（敌人作为效果发起者 / 对敌人自身结算时使用）===
         /// <summary>给指定槽位敌人叠加护甲（敌人自护盾/给友军护盾）。</summary>

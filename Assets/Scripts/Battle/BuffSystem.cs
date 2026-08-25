@@ -125,6 +125,23 @@ public class BuffSystem
         }
     }
 
+    /// <summary>移除指定属性最多 stacks 层 buff（减少绝对值，不产生反方向 buff）</summary>
+    public void RemoveBuff(BuffAttributeType type, int stacks)
+    {
+        if (stacks <= 0) return;
+        for (int i = _buffs.Count - 1; i >= 0; i--)
+        {
+            var b = _buffs[i];
+            if (b.attributeType != type) continue;
+            int magnitude = Mathf.Abs(b.stacks);
+            int remove = Mathf.Min(magnitude, stacks);
+            b.stacks += b.stacks > 0 ? -remove : remove;
+            stacks -= remove;
+            if (b.stacks == 0) _buffs.RemoveAt(i);
+            if (stacks <= 0) return;
+        }
+    }
+
     /// <summary>清空所有 buff</summary>
     public void Clear() => _buffs.Clear();
 
