@@ -253,6 +253,7 @@ public class BattleManager : MonoBehaviour
     }
 
     private FusionController _fusionController;
+    private BattlePilePanel _pilePanel;
     private BookUIController _bookUI;   // 缓存局外 UI 控制器（战斗中更新 TopBar 文本用）
     private CardData _currentFusionCard;   // 当前正在执行效果的手牌（供 effect 读取 fusion 覆盖）
 
@@ -331,6 +332,15 @@ public class BattleManager : MonoBehaviour
     public int HandCount => _hand.Count;
     public int DrawPileCount => ActiveChar?.drawPile.Count ?? 0;
     public int DiscardPileCount => ActiveChar?.discardPile.Count ?? 0;
+    public bool IsBattleEnded => _battleEnded;
+
+    /// <summary>当前角色抽牌堆剩余牌（只读，供抽牌堆面板展示）。</summary>
+    public IReadOnlyList<CardData> GetActiveDrawPile() =>
+        ActiveChar != null ? ActiveChar.drawPile : System.Array.Empty<CardData>();
+
+    /// <summary>当前角色弃牌堆（只读，供弃牌堆面板展示）。</summary>
+    public IReadOnlyList<CardData> GetActiveDiscardPile() =>
+        ActiveChar != null ? ActiveChar.discardPile : System.Array.Empty<CardData>();
 
     /// <summary>指定槽位的敌人是否存活（越界返回 false）</summary>
     public bool IsEnemyAlive(int index) => GetEnemy(index) is { IsDead: false };
@@ -1204,6 +1214,9 @@ public class BattleManager : MonoBehaviour
             _fusionController = gameObject.AddComponent<FusionController>();
             _fusionController.Setup(this);
         }
+        if (_pilePanel == null)
+            _pilePanel = gameObject.AddComponent<BattlePilePanel>();
+        _pilePanel.Bind(this, attackCardPrefab, skillCardPrefab, abilityCardPrefab);
         _fusionUsedThisTurn = false;   // 每场战斗重置
         StartBattle();
     }
@@ -2957,6 +2970,8 @@ public class BattleManager : MonoBehaviour
         _waitingEnemyConfirm = false;
         _playerBuffs?.Clear();
         _enemyBuffs?.Clear();
+        if (_pilePanel != null && _pilePanel.IsOpen)
+            _pilePanel.Hide();
 
         // 遗物效果：战斗结束钩子（枪械师热度系统在此清理）
         RelicEffectManager.Instance?.NotifyBattleEnd(this, victory);
@@ -3073,6 +3088,8 @@ public class BattleManager : MonoBehaviour
         // 刷新融合入口按钮可用态（每回合一次 / 非玩家回合时置灰）
         if (_fusionController != null)
             _fusionController.UpdateEntryInteractable();
+        if (_pilePanel != null)
+            _pilePanel.RefreshDrawIcon();
 
         // 同步更新局外 TopBar 文本（进入战斗后 BookCanvas 的 TopBar 仍保持显示）
         if (_bookUI == null)
