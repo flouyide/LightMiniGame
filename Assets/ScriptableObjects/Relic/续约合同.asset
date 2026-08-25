@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u7EED\u7EA6\u5408\u540C"
+  m_EditorClassIdentifier: 
+  relicId: ContractRenewal
+  relicName: "\u7EED\u7EA6\u5408\u540C"
+  description: "\u9996\u6B21\u6B7B\u4EA1\u540E\u56DE\u590D30%\u7684\u8840\u91CF\uFF0C\u4E4B\u540E\u8BE5\u9057\u7269\u5931\u6548"
+  icon: {fileID: 0}
+  value: 100
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.ContractRenewalEffect
+  effectParams:
+  - 30
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 11500000, guid: 56e431225f21a5c4fb02e4738ac9c4e4, type: 3}

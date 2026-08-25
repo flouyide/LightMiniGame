@@ -190,6 +190,12 @@ public class BattleManager : MonoBehaviour
     // 普通弃置到 discardPile 的卡不会触发。供“报销单据”等以“消耗牌”为条件的遗物监听。
     public event Action<CardData> OnPlayerCardConsumed;
 
+    /// <summary>当前手牌的只读列表。遗物可更新卡牌自身的运行时字段（如费用减免），但不得调整手牌集合。</summary>
+    public IReadOnlyList<CardData> HandCards => _hand;
+
+    /// <summary>手牌加入新卡后、卡面刷新前广播。供“计算器”等需要把运行时费用状态同步到新抽手牌的遗物监听。</summary>
+    public event Action OnHandCardsChanged;
+
     // 热度系统事件钩子（热度逻辑已迁移至枪械师遗物 GunsmithHeatRelicEffect，BattleManager 仅广播时机）
     public event Action OnAttackCardPlayed;
     public event Action OnPlayerTurnStarted;
@@ -208,6 +214,21 @@ public class BattleManager : MonoBehaviour
     /// 供敌人能力效果（EnemyConfig.abilities）使用，如"该敌人死亡时玩家理智-1"。
     /// </summary>
     public event Action<EnemyInstance> OnEnemyDied;
+
+    /// <summary>
+    /// 玩家致命伤拦截事件：玩家生命归零、即将判负前广播。
+    /// 返回 true 表示有遗物接管了死亡（例如“续约合同”复活），跳过本场战斗失败判定；
+    /// 返回 false（或无人订阅）则按原逻辑判负。供战斗遗物监听。
+    /// </summary>
+    public event Func<bool> OnPlayerFatalDamage;
+
+    /// <summary>
+    /// 玩家理智从阈值以上降至阈值（含）以下、进入低理智状态时广播（阈值 _sanityThreshold，
+    /// 与敌人阶段切换/低理智牌库同口径）。在阶段切换判定之前触发，遗物可在回调里回理智，
+    /// 从而影响本次是否真正进入低理智/黑暗阶段。理智恢复后再次跨越边界会再次广播，
+    /// 是否生效由各遗物自行控制（如“速效救心丸”每场仅首次生效）。
+    /// </summary>
+    public event Action OnPlayerEnteredLowSanity;
 
     // === CardEntry 效果系统支持 ===
     private EffectExecutorV2 _effectExecutorV2;
@@ -1554,6 +1575,7 @@ public class BattleManager : MonoBehaviour
             _hand.Add(drawn);
             activeChar.drawPile.RemoveAt(0);
         }
+        OnHandCardsChanged?.Invoke();
         RefreshHandUI();
     }
 
@@ -1567,13 +1589,19 @@ public class BattleManager : MonoBehaviour
         PlayCard(handIndex);
     }
 
+    /// <summary>计算卡牌本次出牌的实际费用。遗物减免已写入 CardData.relicCostReduction，最低 0。</summary>
+    private int ResolveCardPlayCost(CardData card)
+    {
+        return card != null ? card.GetEffectiveCost() : 0;
+    }
+
     public bool PlayCard(int handIndex)
     {
         if (handIndex < 0 || handIndex >= _hand.Count) return false;
         if (!_isPlayerTurn || _battleEnded) return false;
 
         var card = _hand[handIndex];
-        int cost = card.GetEffectiveCost();
+        int cost = ResolveCardPlayCost(card);
         int paidAP = Mathf.Min(_actionPoints, cost);
         int missing = cost - paidAP;
         if (missing > 0)
@@ -2189,7 +2217,39 @@ public class BattleManager : MonoBehaviour
         _triggerSystem?.FireEvent(TriggerEvent.OnDamageTaken);
         UpdateUI();
         if (_playerHP <= 0)
-            EndBattle(false);
+            HandlePlayerDefeat();
+    }
+
+    /// <summary>
+    /// 玩家死亡统一处理：先给遗物一次“复活/接管死亡”的机会（OnPlayerFatalDamage）；
+    /// 有接管者复活则刷新 UI 并继续战斗，否则按原逻辑判负。
+    /// </summary>
+    private void HandlePlayerDefeat()
+    {
+        if (TryReviveFromFatal())
+        {
+            UpdateUI();
+            return;
+        }
+        EndBattle(false);
+    }
+
+    /// <summary>遍历致命伤拦截回调，首个返回 true 者生效（复活玩家），其余不再触发。</summary>
+    private bool TryReviveFromFatal()
+    {
+        if (OnPlayerFatalDamage == null) return false;
+        foreach (Func<bool> handler in OnPlayerFatalDamage.GetInvocationList())
+        {
+            try
+            {
+                if (handler()) return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[BattleManager] 致命伤拦截回调抛出异常: {ex}");
+            }
+        }
+        return false;
     }
 
     /// <summary>
@@ -2201,6 +2261,10 @@ public class BattleManager : MonoBehaviour
         if (delta == 0) return;
         int prev = _playerSanity;
         _playerSanity = Mathf.Clamp(_playerSanity + delta, 0, _playerMaxSanity);
+
+        // 进入低理智状态（从 >阈值 降至 ≤阈值）时广播，供遗物在阶段切换判定前回理智。
+        if (prev > _sanityThreshold && _playerSanity <= _sanityThreshold)
+            OnPlayerEnteredLowSanity?.Invoke();
 
         // 理智变化后刷新低理智特效开关
         UpdateLowSanityVolume();
@@ -2399,7 +2463,7 @@ public class BattleManager : MonoBehaviour
     private bool IsCardPlayable(CardData card)
     {
         if (card == null) return false;
-        int cost = card.GetEffectiveCost();
+        int cost = ResolveCardPlayCost(card);
         if (_actionPoints >= cost) return true;
         int missing = cost - _actionPoints;
         return card.HasKeyword(KeywordType.Bribe) && PlayerGold >= missing * 5;
@@ -2650,7 +2714,7 @@ public class BattleManager : MonoBehaviour
             UpdateUI();
             if (_playerHP <= 0)
             {
-                EndBattle(false);
+                HandlePlayerDefeat();
                 break;
             }
 
@@ -2953,7 +3017,7 @@ public class BattleManager : MonoBehaviour
 
         if (_playerHP <= 0)
         {
-            EndBattle(false);
+            HandlePlayerDefeat();
             return;
         }
 

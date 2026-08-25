@@ -16,10 +16,10 @@ MonoBehaviour:
   startingCards:
   - {fileID: 11400000, guid: c05c6d9c4dbfb40f2a461b95cb7fed35, type: 2}
   - {fileID: 11400000, guid: 8d7e348ec937a4d01911eca1e9729110, type: 2}
-  - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
-  - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
-  - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
-  - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
-  - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
+  - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
+  - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
+  - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
+  - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
+  - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
   - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
   - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}

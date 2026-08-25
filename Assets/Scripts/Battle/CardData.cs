@@ -91,6 +91,12 @@ public class CardData : ScriptableObject
     /// <summary>运行时费用附加（遗物效果如过载+1使用），不持久化；叠加在基础/融合费用之上。</summary>
     [NonSerialized] public int extraCost = 0;
 
+    /// <summary>
+    /// 运行时遗物费用减免，不持久化；在额外费用叠加后结算，最低费用固定为 0。
+    /// 例如“计算器”在下一张牌命中减免时写入此值，使卡面显示与实际扣费共用同一份费用数据。
+    /// </summary>
+    [NonSerialized] public int relicCostReduction = 0;
+
     /// <summary>运行时附加效果（配件打出后叠到「主机」上，本场战斗内永久、不限层数）。</summary>
     [NonSerialized] public List<EffectNode> attachedEffectNodes;
 
@@ -132,7 +138,7 @@ public class CardData : ScriptableObject
         int cost = (fusion != null && fusion.overrideCost) ? fusion.cost : baseCost;
         if (HasKeyword(KeywordType.InternalPrice))
             cost = Mathf.Max(0, cost - 1);
-        return Mathf.Max(0, cost + extraCost);
+        return Mathf.Max(0, cost + extraCost - relicCostReduction);
     }
 
     /// <summary>有效攻击值（融合覆盖优先；供显示/执行统一使用）。</summary>

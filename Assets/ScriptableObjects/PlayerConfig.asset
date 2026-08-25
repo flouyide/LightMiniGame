@@ -15,7 +15,7 @@ MonoBehaviour:
   maxHP: 65
   startHP: 10
   startGold: 10000
-  startSanity: 10
+  startSanity: 6
   maxSanity: 10
   sanityThreshold: 4
   startFortune: 0
