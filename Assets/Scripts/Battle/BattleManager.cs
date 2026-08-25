@@ -77,6 +77,10 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI sanityText;
     [SerializeField] private Slider sanityBar;
 
+    [Header("UI引用 - 福报")]
+    [Tooltip("福报值文本。留空则运行时在理智条右侧自动创建")]
+    [SerializeField] private TextMeshProUGUI fortuneText;
+
     [Header("UI引用 - 敌人（多敌）")]
     [Tooltip("单个敌人视图预制体（挂 EnemyView 组件）。每个敌人生成一个实例")]
     [SerializeField] private EnemyView enemyViewPrefab;
@@ -171,6 +175,7 @@ public class BattleManager : MonoBehaviour
     private int _playerSanity;
     private int _playerMaxSanity;
     private int _sanityThreshold;   // 理智阈值：玩家理智低于此值时所有敌人进入低理智阶段
+    private int _playerFortune;     // 福报值：融合重分配总值加成，无上限
 
     // === 伤害倍率（以百分比存储，100 = 1.0倍；从 PlayerConfig / EnemyConfig 读入） ===
     private int _playerDamageMultiplier = 100;       // 玩家造成伤害倍率（来自 PlayerConfig）
@@ -297,6 +302,7 @@ public class BattleManager : MonoBehaviour
     public float PlayerCritRate => (_playerBuffs?.GetEffectiveValue(BuffAttributeType.CriticalChance, _playerBaseCritRate) ?? _playerCritRate) / 100f;
     public float PlayerCritDamage => (_playerBuffs?.GetEffectiveValue(BuffAttributeType.CriticalDamage, _playerBaseCritDamage) ?? _playerCritDamage) / 100f;
     public int PlayerSanity => _playerSanity;
+    public int PlayerFortune => _playerFortune;
     public int PlayerArmor => _playerArmor;
     public int PlayerBleed => 0;
     public int ActionPoints => _actionPoints;
@@ -1094,6 +1100,7 @@ public class BattleManager : MonoBehaviour
         ModifiableAttribute.EnergyPerTurn => maxActionPoints,
         ModifiableAttribute.CurrentSanity => _playerSanity,
         ModifiableAttribute.MaxSanity => _playerMaxSanity,
+        ModifiableAttribute.Fortune => _playerFortune,
         ModifiableAttribute.PlayerDamageMultiplier => _playerDamageMultiplier,
         ModifiableAttribute.PlayerDamageTakenMultiplier => _playerDamageTakenMultiplier,
         // EnemyDamageMultiplier / EnemyDamageTakenMultiplier 已迁入 EnemyConfig（个体倍率），不再全局可改
@@ -1114,6 +1121,7 @@ public class BattleManager : MonoBehaviour
             case ModifiableAttribute.EnergyPerTurn: maxActionPoints = value; break;
             case ModifiableAttribute.CurrentSanity: ModifySanity(value - _playerSanity); break;
             case ModifiableAttribute.MaxSanity: _playerMaxSanity = value; break;
+            case ModifiableAttribute.Fortune: SetPlayerFortune(value); break;
             case ModifiableAttribute.PlayerDamageMultiplier: _playerDamageMultiplier = value; break;
             case ModifiableAttribute.PlayerDamageTakenMultiplier: _playerDamageTakenMultiplier = value; break;
             // EnemyDamageMultiplier / EnemyDamageTakenMultiplier 已迁入 EnemyConfig（个体倍率），不再全局可改
@@ -1198,6 +1206,9 @@ public class BattleManager : MonoBehaviour
         // 测试：按 1 降低 1 点理智
         if (Input.GetKeyDown(KeyCode.Alpha1))
             ModifySanity(-1);
+        // 测试：按 2 增加 1 点福报
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+            ModifyFortune(1);
     }
 
     // ========================================================================
@@ -1310,6 +1321,7 @@ public class BattleManager : MonoBehaviour
             _playerMaxSanity = cm.PlayerMaxSanity;
             _playerSanity = cm.PlayerSanity;
             _sanityThreshold = cm.PlayerSanityThreshold;
+            _playerFortune = cm.PlayerFortune;
             _playerStrength = cm.PlayerStrength;
             _playerAgility = cm.PlayerAgility;
             _playerLifesteal = cm.PlayerLifesteal;
@@ -1317,7 +1329,7 @@ public class BattleManager : MonoBehaviour
             _playerCritDamage = cm.PlayerCritDamage;
             _playerDamageMultiplier = cm.PlayerDamageMultiplier;
             _playerDamageTakenMultiplier = cm.PlayerDamageTakenMultiplier;
-            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 福报:{_playerFortune} 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
         }
         else if (playerConfig != null)
         {
@@ -1329,6 +1341,7 @@ public class BattleManager : MonoBehaviour
             _playerMaxSanity = playerConfig.maxSanity;
             _playerSanity = playerConfig.startSanity;
             _sanityThreshold = playerConfig.sanityThreshold;
+            _playerFortune = Mathf.Max(0, playerConfig.startFortune);
             _playerStrength = playerConfig.strength;
             _playerAgility = playerConfig.agility;
             _playerLifesteal = playerConfig.lifesteal;
@@ -1345,6 +1358,7 @@ public class BattleManager : MonoBehaviour
             _playerMaxSanity = 10;
             _playerSanity = 10;
             _sanityThreshold = 4;
+            _playerFortune = 0;
             _playerDamageMultiplier = 100;
             _playerDamageTakenMultiplier = 100;
             _playerDexterity = 0;
@@ -2100,6 +2114,70 @@ public class BattleManager : MonoBehaviour
         ApplyBackground();   // 理智变化实时切换背景
     }
 
+    /// <summary>覆盖福报值（防负，无上限）。</summary>
+    public void SetPlayerFortune(int value)
+    {
+        _playerFortune = Mathf.Max(0, value);
+        if (fortuneText != null) fortuneText.text = $"福报 {_playerFortune}";
+    }
+
+    /// <summary>修改福报值。delta 为正则增加；结果钳到 ≥0。</summary>
+    public void ModifyFortune(int delta)
+    {
+        if (delta == 0) return;
+        SetPlayerFortune(_playerFortune + delta);
+        UpdateUI();
+    }
+
+    /// <summary>
+    /// 若未在 Inspector 指定 fortuneText，则在理智条右侧自动创建一个福报文本。
+    /// </summary>
+    private void EnsureFortuneText()
+    {
+        if (fortuneText != null) return;
+        if (sanityBar == null) return;
+
+        var barRT = sanityBar.transform as RectTransform;
+        if (barRT == null || barRT.parent == null) return;
+
+        var existing = barRT.parent.Find("FortuneText");
+        if (existing != null)
+        {
+            fortuneText = existing.GetComponent<TextMeshProUGUI>();
+            if (fortuneText != null) return;
+        }
+
+        var go = new GameObject("FortuneText");
+        go.transform.SetParent(barRT.parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = barRT.anchorMin;
+        rt.anchorMax = barRT.anchorMax;
+        rt.pivot = new Vector2(0f, 0.5f);
+        float visualW = barRT.sizeDelta.x * Mathf.Abs(barRT.localScale.x);
+        float visualH = barRT.sizeDelta.y * Mathf.Abs(barRT.localScale.y);
+        rt.anchoredPosition = new Vector2(
+            barRT.anchoredPosition.x + visualW + 10f,
+            barRT.anchoredPosition.y - visualH * 0.5f);
+        rt.sizeDelta = new Vector2(180f, Mathf.Max(36f, visualH));
+
+        go.transform.SetAsLastSibling();
+
+        fortuneText = go.AddComponent<TextMeshProUGUI>();
+        fortuneText.raycastTarget = false;
+        fortuneText.alignment = TextAlignmentOptions.MidlineLeft;
+        fortuneText.enableWordWrapping = false;
+        fortuneText.overflowMode = TextOverflowModes.Overflow;
+        fortuneText.fontSize = 22;
+        fortuneText.color = new Color(1f, 0.84f, 0.35f, 1f);
+        fortuneText.text = $"福报 {_playerFortune}";
+        if (sanityText != null)
+        {
+            fortuneText.font = sanityText.font;
+            if (sanityText.fontSharedMaterial != null)
+                fortuneText.fontSharedMaterial = sanityText.fontSharedMaterial;
+        }
+    }
+
     /// <summary>
     /// 理智低于阈值（_playerSanity &lt; _sanityThreshold，与敌人阶段切换同口径）时启用
     /// lowSanityVolume（如信号干扰后处理），否则禁用。在战斗属性初始化与每次理智变化后调用。
@@ -2363,6 +2441,7 @@ public class BattleManager : MonoBehaviour
                 _playerCritRate, _playerCritDamage,
                 maxActionPoints, drawPerTurn,
                 _playerDamageMultiplier, _playerDamageTakenMultiplier,
+                _playerFortune,
                 ActiveChar?.data, InactiveChar?.data);   // 把战斗结束时的激活/未激活角色同步回局外
         }
         OnBattleEnded?.Invoke();
@@ -2917,6 +2996,9 @@ public class BattleManager : MonoBehaviour
             sanityBar.maxValue = _playerMaxSanity;
             sanityBar.value = _playerSanity;
         }
+
+        EnsureFortuneText();
+        if (fortuneText != null) fortuneText.text = $"福报 {_playerFortune}";
 
         // 敌人 UI（血条/名字/护甲/立绘/凝视）由各 EnemyView 自刷（Bind/Refresh），这里不再集中管理
 

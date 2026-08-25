@@ -18,6 +18,7 @@ MonoBehaviour:
   startSanity: 10
   maxSanity: 10
   sanityThreshold: 4
+  startFortune: 0
   maxActionPoints: 3
   drawPerTurn: 5
   strength: 0

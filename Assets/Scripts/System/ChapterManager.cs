@@ -95,6 +95,7 @@ public class ChapterManager : MonoBehaviour
     public int PlayerSanity { get; private set; }   // 理智（背景切换依据）
     public int PlayerMaxSanity { get; private set; }   // 理智上限
     public int PlayerSanityThreshold { get; private set; }   // 理智阈值：低于此值时所有敌人进入低理智阶段
+    public int PlayerFortune { get; private set; }   // 福报值（融合重分配总值加成，无上限）
     public int PlayerMaxActionPoints { get; private set; }  // 每回合行动点
     public int PlayerDrawPerTurn { get; private set; }      // 每回合基础抽牌数
 
@@ -168,6 +169,7 @@ public class ChapterManager : MonoBehaviour
             PlayerSanity = playerConfig.startSanity;
             PlayerMaxSanity = playerConfig.maxSanity;
             PlayerSanityThreshold = playerConfig.sanityThreshold;
+            PlayerFortune = Mathf.Max(0, playerConfig.startFortune);
             PlayerMaxActionPoints = playerConfig.maxActionPoints;
             PlayerDrawPerTurn = playerConfig.drawPerTurn;
             // 持久基础属性：每次开局从 PlayerConfig（仅作初始值来源）重新读入
@@ -187,6 +189,7 @@ public class ChapterManager : MonoBehaviour
             PlayerSanity = 10;
             PlayerMaxSanity = 10;
             PlayerSanityThreshold = 4;
+            PlayerFortune = 0;
             PlayerMaxActionPoints = 3;
             PlayerDrawPerTurn = 3;
             PlayerStrength = PlayerAgility = PlayerLifesteal = PlayerCritRate = PlayerCritDamage = 0;
@@ -641,6 +644,9 @@ public class ChapterManager : MonoBehaviour
                 // 理智有上限：以 PlayerMaxSanity（开局取自 PlayerConfig.maxSanity）封顶，避免通过事件效果获得理智时溢出
                 PlayerSanity = Mathf.Clamp(PlayerSanity + delta, 0, PlayerMaxSanity);
                 UpdateLowSanityVolume();   // 理智变化后刷新低理智特效开关
+                break;
+            case PlayerBaseAttribute.Fortune:
+                PlayerFortune = Mathf.Max(0, PlayerFortune + delta);
                 break;
 
             default:
@@ -1163,19 +1169,21 @@ public class ChapterManager : MonoBehaviour
 
     /// <summary>
     /// 战斗结束后由 BattleManager 调用：把战斗后的玩家属性写回局外系统。
-    /// hp/maxHp：战斗结算后的当前/最大 HP；sanity/maxSanity：理智；
+    /// hp/maxHp：战斗结算后的当前/最大 HP；sanity/maxSanity：理智；fortune：福报值；
     /// 其余为战斗内可能变化的持久基础属性与每回合数值。
     /// </summary>
     public void ApplyBattleResult(int hp, int maxHp, int sanity, int maxSanity,
         int strength, int agility, int lifesteal, int critRate, int critDamage,
         int maxActionPoints, int drawPerTurn,
         int playerDamageMultiplier, int playerDamageTakenMultiplier,
+        int fortune,
         CharacterData activeChar = null, CharacterData inactiveChar = null)
     {
         PlayerMaxHP   = maxHp > 0 ? maxHp : PlayerMaxHP;
         PlayerHP      = Mathf.Clamp(hp, 0, PlayerMaxHP);
         PlayerMaxSanity  = maxSanity > 0 ? maxSanity : PlayerMaxSanity;
         PlayerSanity  = Mathf.Clamp(sanity, 0, PlayerMaxSanity);
+        PlayerFortune = Mathf.Max(0, fortune);
         PlayerMaxActionPoints = maxActionPoints;
         PlayerDrawPerTurn      = drawPerTurn;
         PlayerStrength   = strength;
@@ -1191,7 +1199,7 @@ public class ChapterManager : MonoBehaviour
         if (activeChar != null)   _activeCharacter = activeChar;
         if (inactiveChar != null) _inactiveCharacter = inactiveChar;
 
-        Debug.Log($"[ChapterManager] 战斗结果已写回：HP {PlayerHP}/{PlayerMaxHP}，理智 {PlayerSanity}/{PlayerMaxSanity}，力量 {PlayerStrength}；激活角色={_activeCharacter?.displayName}，未激活={_inactiveCharacter?.displayName}");
+        Debug.Log($"[ChapterManager] 战斗结果已写回：HP {PlayerHP}/{PlayerMaxHP}，理智 {PlayerSanity}/{PlayerMaxSanity}，福报 {PlayerFortune}，力量 {PlayerStrength}；激活角色={_activeCharacter?.displayName}，未激活={_inactiveCharacter?.displayName}");
     }
 
     private static string TypeNameOf(PageEventType type) => type switch

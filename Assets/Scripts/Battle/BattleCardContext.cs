@@ -20,6 +20,7 @@ public class BattleCardContext : ICardRuntimeContext
     public float PlayerCritRate => _battle.PlayerCritRate;
     public float PlayerCritDamage => _battle.PlayerCritDamage;
     public int PlayerSanity => _battle.PlayerSanity;
+    public int PlayerFortune => _battle.PlayerFortune;
     public int PlayerEnergy => _battle.ActionPoints;
     public int PlayerArmor => _battle.PlayerArmor;
     public int PlayerBleed => _battle.PlayerBleed;
@@ -80,6 +81,8 @@ public class BattleCardContext : ICardRuntimeContext
     public void SetCustomData(string key, int value) => _battle.SetCustomData(key, value);
     public void ModifyCustomData(string key, int delta) => _battle.ModifyCustomData(key, delta);
     public void ModifySanity(int delta) => _battle.ModifySanity(delta);
+    public void ModifyFortune(int delta) => _battle.ModifyFortune(delta);
+    public void SetPlayerFortune(int value) => _battle.SetPlayerFortune(value);
 
     // === 融合覆盖读取（供 EffectExecutor 在打出卡时覆盖数值）===
 

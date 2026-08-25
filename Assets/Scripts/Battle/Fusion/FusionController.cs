@@ -14,6 +14,7 @@ using UnityEngine.UI;
 ///  3) 再次点击入口按钮 = 确认融合 → 随机拆分回填 → 蒙版消失，本回合禁用。
 ///  4) 蒙版右下提供“退出”按钮取消。
 /// 全部 UI 由代码在运行时创建，不依赖场景手工摆放。
+/// 重分配总值 = 选中数字之和 + 当前福报值。
 /// </summary>
 public class FusionController : MonoBehaviour
 {
@@ -648,15 +649,15 @@ public class FusionController : MonoBehaviour
         if (_statusText == null) return;
         if (_selected.Count < 2)
         {
-            _statusText.text = $"已选 {_selected.Count} 项（至少 2 项）  总和: {SumSelected()}";
+            _statusText.text = FormatFusionStatus(FusionPoolTotal());
             return;
         }
         // 每次刷新状态都重新随机拆分，预览“这次确认将如何分配”
-        int total = SumSelected();
+        int total = FusionPoolTotal();
         int parts = _selected.Count;
         int minEach = total >= parts ? 1 : 0;
         _lastPreviewSplit = FusionSplitAlgorithm.Split(total, parts, minEach: minEach);
-        _statusText.text = $"已选 {_selected.Count} 项  总和: {total}\n随机分配: [{string.Join(" , ", _lastPreviewSplit)}]  （点“重新随机”再掷）";
+        _statusText.text = FormatFusionStatus(total);
     }
 
     private int SumSelected()
@@ -664,6 +665,24 @@ public class FusionController : MonoBehaviour
         int s = 0;
         foreach (var v in _selected) s += v.current;
         return s;
+    }
+
+    /// <summary>当前福报值（未接入战斗时视为 0）。</summary>
+    private int CurrentFortune => _battle != null ? Mathf.Max(0, _battle.PlayerFortune) : 0;
+
+    /// <summary>融合重分配总值 = 选中数字之和 + 当前福报值。</summary>
+    private int FusionPoolTotal() => SumSelected() + CurrentFortune;
+
+    private string FormatFusionStatus(int total)
+    {
+        int fortune = CurrentFortune;
+        int selectedSum = SumSelected();
+        string pool = fortune > 0
+            ? $"选中和: {selectedSum} + 福报 {fortune} = {total}"
+            : $"总和: {total}";
+        if (_selected.Count < 2)
+            return $"已选 {_selected.Count} 项（至少 2 项）  {pool}";
+        return $"已选 {_selected.Count} 项  {pool}\n随机分配: [{string.Join(" , ", _lastPreviewSplit)}]  （点“重新随机”再掷）";
     }
 
     // ========================================================================
@@ -679,7 +698,7 @@ public class FusionController : MonoBehaviour
         }
         if (_panelRoot == null) return;
 
-        int total = SumSelected();
+        int total = FusionPoolTotal();
         int parts = _selected.Count;
         // 使用预览过的拆分（所见即所得）；无预览或数量不符则现拆
         var split = (_lastPreviewSplit != null && _lastPreviewSplit.Count == parts)

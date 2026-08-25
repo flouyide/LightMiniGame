@@ -237,6 +237,7 @@ public class EffectExecutorV2
                     LightMiniGame.CardEditor.PlayerResourceType.Heat => _ctx.GetCustomData("Heat"),
                     LightMiniGame.CardEditor.PlayerResourceType.Block => _ctx.PlayerArmor,
                     LightMiniGame.CardEditor.PlayerResourceType.Currency => _ctx.GetCustomData("Currency"),
+                    LightMiniGame.CardEditor.PlayerResourceType.Fortune => _ctx.PlayerFortune,
                     _ => 0
                 };
 
@@ -711,6 +712,22 @@ public class EffectExecutorV2
                     _ctx.AddPlayerArmor(amount);
                 _lastResult[EffectResultType.ActualValue] = amount;
                 Log($"  [格挡] +{amount}");
+                break;
+
+            case LightMiniGame.CardEditor.PlayerResourceType.Fortune:
+                if (node.resourceOp == ResourceOperation.Add || node.resourceOp == ResourceOperation.Subtract)
+                {
+                    int delta = node.resourceOp == ResourceOperation.Subtract ? -amount : amount;
+                    _ctx.ModifyFortune(delta);
+                    _lastResult[EffectResultType.ActualValue] = delta;
+                    Log($"  [福报] 变化 {delta}");
+                }
+                else if (node.resourceOp == ResourceOperation.Set)
+                {
+                    _ctx.SetPlayerFortune(amount);
+                    _lastResult[EffectResultType.ActualValue] = amount;
+                    Log($"  [福报] 设置为 {amount}");
+                }
                 break;
 
             default:

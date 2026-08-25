@@ -883,6 +883,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7732197774279571699, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.26872253
+      objectReference: {fileID: 0}
     - target: {fileID: 8746881825268409285, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
       propertyPath: m_Colors.m_PressedColor.b
       value: 0.5377358
@@ -1408,6 +1412,14 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6989493030389473068, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: relicItemPrefab
+      value: 
+      objectReference: {fileID: 1450422795469039436, guid: 2fb4235ca2af82e4294d6c4b5a6fae5c, type: 3}
+    - target: {fileID: 6989493030389473068, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: deleteCardPrefab
+      value: 
+      objectReference: {fileID: 7258994312282142446, guid: bea71b2a001ff2749a31739dbdd64a72, type: 3}
     - target: {fileID: 6989493030389473068, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: goodsLayerScale.x
       value: 1.4

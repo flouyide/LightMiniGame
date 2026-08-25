@@ -202,6 +202,7 @@ namespace LightMiniGame.CardEditor
             PlayerResourceType.Currency => "货币",
             PlayerResourceType.Heat => "热度",
             PlayerResourceType.Block => "格挡",
+            PlayerResourceType.Fortune => "福报",
             _ => r.ToString()
         };
 

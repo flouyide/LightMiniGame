@@ -212,7 +212,8 @@ namespace LightMiniGame.CardEditor
         PlayerDamageMultiplier,        // 玩家总伤害倍率
         PlayerDamageTakenMultiplier,   // 玩家受击倍率
         EnemyDamageMultiplier,         // 敌人总伤害倍率
-        EnemyDamageTakenMultiplier     // 敌人受击倍率
+        EnemyDamageTakenMultiplier,    // 敌人受击倍率
+        Fortune                        // 福报值
     }
 
     // ========================================================================
