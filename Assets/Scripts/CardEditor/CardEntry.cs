@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -10,7 +11,7 @@ namespace LightMiniGame.CardEditor
     /// 普通形态和低理智形态两套完整数据，理智 <= 4 时自动切换为低理智形态。
     /// </summary>
     [CreateAssetMenu(menuName = "CardEditor/Card Entry", fileName = "NewCard")]
-    public class CardEntry : ScriptableObject
+    public class CardEntry : ScriptableObject, ISerializationCallbackReceiver
     {
         // === 基础信息 ===
         [Header("基础信息")]
@@ -75,8 +76,9 @@ namespace LightMiniGame.CardEditor
         [Tooltip("商店售价（金币）")]
         public int price = 10;
 
-        [Tooltip("词条（默认无；可指定股神/韭菜/回流/配件/查阅/内部价/贿赂/摸鱼）")]
+        [Tooltip("词条（可多选，同时生效）")]
         public CardKeyword keyword = CardKeyword.None;
+        [SerializeField] private bool keywordsAreFlags;
 
         [Tooltip("是否配置低理智形态")]
         [FormerlySerializedAs("upgradable")]
@@ -177,19 +179,34 @@ namespace LightMiniGame.CardEditor
         {
             CardExistence.Normal => "普通", CardExistence.BattleRemove => "战斗内移除", CardExistence.PermanentRemove => "永久移除", _ => e.ToString()
         };
-        public static string GetKeywordName(CardKeyword k) => k switch
+        public static string GetKeywordName(CardKeyword k)
         {
-            CardKeyword.None => "无",
-            CardKeyword.StockGod => "股神",
-            CardKeyword.Leek => "韭菜",
-            CardKeyword.Recycle => "回流",
-            CardKeyword.Accessory => "配件",
-            CardKeyword.Consult => "查阅",
-            CardKeyword.InternalPrice => "内部价",
-            CardKeyword.Bribe => "贿赂",
-            CardKeyword.Slack => "摸鱼",
-            _ => k.ToString()
+            var names = CardKeywords.GetNames((KeywordType)(int)k);
+            return names.Count == 0 ? "无" : string.Join("  ", names);
+        }
+
+        /// <summary>旧版单选序号 → 位标。1=股神…8=摸鱼；其它值原样保留。</summary>
+        public static CardKeyword SequentialToFlags(int old) => old switch
+        {
+            1 => CardKeyword.StockGod,
+            2 => CardKeyword.Leek,
+            3 => CardKeyword.Recycle,
+            4 => CardKeyword.Accessory,
+            5 => CardKeyword.Consult,
+            6 => CardKeyword.InternalPrice,
+            7 => CardKeyword.Bribe,
+            8 => CardKeyword.Slack,
+            _ => (CardKeyword)old
         };
+
+        public void OnBeforeSerialize() => keywordsAreFlags = true;
+
+        public void OnAfterDeserialize()
+        {
+            if (keywordsAreFlags) return;
+            keyword = SequentialToFlags((int)keyword);
+            keywordsAreFlags = true;
+        }
 
         // === 描述模板解析 ===
 

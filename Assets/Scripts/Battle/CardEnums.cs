@@ -93,18 +93,8 @@ public static class CardKeywords
         "全部词条", "无", "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼"
     };
 
-    public static KeywordType FromEditor(LightMiniGame.CardEditor.CardKeyword k) => k switch
-    {
-        LightMiniGame.CardEditor.CardKeyword.StockGod => KeywordType.StockGod,
-        LightMiniGame.CardEditor.CardKeyword.Leek => KeywordType.Leek,
-        LightMiniGame.CardEditor.CardKeyword.Recycle => KeywordType.Recycle,
-        LightMiniGame.CardEditor.CardKeyword.Accessory => KeywordType.Accessory,
-        LightMiniGame.CardEditor.CardKeyword.Consult => KeywordType.Consult,
-        LightMiniGame.CardEditor.CardKeyword.InternalPrice => KeywordType.InternalPrice,
-        LightMiniGame.CardEditor.CardKeyword.Bribe => KeywordType.Bribe,
-        LightMiniGame.CardEditor.CardKeyword.Slack => KeywordType.Slack,
-        _ => KeywordType.None
-    };
+    public static KeywordType FromEditor(LightMiniGame.CardEditor.CardKeyword k) =>
+        (KeywordType)(int)k;
 
     public static bool Has(KeywordType flags, KeywordType k) => k != KeywordType.None && (flags & k) != 0;
 

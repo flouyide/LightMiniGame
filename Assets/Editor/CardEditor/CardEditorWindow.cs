@@ -290,7 +290,7 @@ namespace LightMiniGame.CardEditor.Editor
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
             card.cardType = (CardType)EditorGUILayout.Popup("卡牌类型", (int)card.cardType, new[] { "攻击", "技能", "能力" });
             card.existence = (CardExistence)EditorGUILayout.Popup("存在形式(普通)", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
-            card.keyword = (CardKeyword)EditorGUILayout.Popup("词条", (int)card.keyword, CardKeywords.EditorPopupNames);
+            card.keyword = (CardKeyword)EditorGUILayout.EnumFlagsField("词条（可多选）", card.keyword);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
@@ -892,7 +892,13 @@ namespace LightMiniGame.CardEditor.Editor
             {
                 if (_filterGradeIdx > 0) query = query.Where(c => (int)c.grade == _filterGradeIdx - 1);
                 if (_filterTypeIdx > 0) query = query.Where(c => (int)c.cardType == _filterTypeIdx - 1);
-                if (_filterKeywordIdx > 0) query = query.Where(c => (int)c.keyword == _filterKeywordIdx - 1);
+                if (_filterKeywordIdx == 1)
+                    query = query.Where(c => c.keyword == CardKeyword.None);
+                else if (_filterKeywordIdx > 1)
+                {
+                    var flag = CardEntry.SequentialToFlags(_filterKeywordIdx - 1);
+                    query = query.Where(c => (c.keyword & flag) != 0);
+                }
                 if (_filterCost >= 0) query = query.Where(c => c.normalCost == _filterCost);
             }
 

@@ -709,8 +709,9 @@ public class FusionController : MonoBehaviour
         {
             var kw = _selected[i].cardView != null ? _selected[i].cardView.keywords : KeywordType.None;
             if (CardKeywords.Has(kw, KeywordType.Leek)) leek.Add(i);
-            else if (CardKeywords.Has(kw, KeywordType.StockGod)) god.Add(i);
-            else rest.Add(i);
+            if (CardKeywords.Has(kw, KeywordType.StockGod)) god.Add(i);
+            if (!CardKeywords.Has(kw, KeywordType.Leek) && !CardKeywords.Has(kw, KeywordType.StockGod))
+                rest.Add(i);
         }
         if (god.Count == 0 && leek.Count == 0) return;
 

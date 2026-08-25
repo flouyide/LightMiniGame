@@ -1,3 +1,5 @@
+using System;
+
 namespace LightMiniGame.CardEditor
 {
     // ========================================================================
@@ -18,17 +20,19 @@ namespace LightMiniGame.CardEditor
     // ========================================================================
     // 词条
     // ========================================================================
+    /// <summary>词条（位标，可多选同时生效）。数值与运行时 KeywordType 对齐。</summary>
+    [Flags]
     public enum CardKeyword
     {
-        None,
-        StockGod,       // 股神
-        Leek,           // 韭菜
-        Recycle,        // 回流
-        Accessory,      // 配件
-        Consult,        // 查阅
-        InternalPrice,  // 内部价
-        Bribe,          // 贿赂
-        Slack           // 摸鱼
+        None          = 0,
+        StockGod      = 1 << 0,  // 股神
+        Leek          = 1 << 1,  // 韭菜
+        Recycle       = 1 << 2,  // 回流
+        Accessory     = 1 << 3,  // 配件
+        Consult       = 1 << 4,  // 查阅
+        InternalPrice = 1 << 5,  // 内部价
+        Bribe         = 1 << 6,  // 贿赂
+        Slack         = 1 << 7   // 摸鱼
     }
 
     // ========================================================================
