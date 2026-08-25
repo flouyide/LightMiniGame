@@ -242,10 +242,16 @@ public class BookUIController : MonoBehaviour
             // 把当前事件数据透传，使 BattleManager 使用本事件配置的敌人列表（PageEventData.enemies）
             chapterManager.EnterBattle(data);
         }
+        else if (data.eventType == PageEventType.Rest)
+        {
+            // Rest 类型不读取 defaultEffects，也不进入战斗；直接按最大生命值百分比回复。
+            // 折叠床等休整遗物加成由 ChapterManager.RestoreHealthAtRest 统一处理。
+            chapterManager.RestoreHealthAtRest(data.restHealingPercent, () => chapterManager.OnOptionResolved());
+        }
         else
         {
-            // Rest 类型：直接应用 defaultEffects，不弹面板
-            chapterManager.ApplyEffects(data.defaultEffects, () => chapterManager.OnOptionResolved());
+            Debug.LogWarning($"[BookUIController] 未处理的书页事件类型：{data.eventType}");
+            chapterManager.OnOptionResolved();
         }
     }
 
@@ -282,7 +288,7 @@ public class BookUIController : MonoBehaviour
         var mgr = ShopManager.EnsureInstance();
         if (mgr != null) mgr.Init(chapterManager);
         if (shopPanel != null)
-            shopPanel.Show(mgr, gameConfig != null ? gameConfig.characters : null, () => resume?.Invoke(), ratio);
+            shopPanel.Show(mgr, gameConfig != null ? gameConfig.characters : null, () => resume?.Invoke(), ratio, false);
         else
             resume?.Invoke();
     }

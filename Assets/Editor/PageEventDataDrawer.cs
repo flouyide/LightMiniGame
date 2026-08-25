@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// PageEventData 的自定义属性绘制器：
 /// 1. 每个 event 在 Inspector 里显示为可折叠标题（用 eventId 作为标题）。
-/// 2. Event 类型显示 options 字段；Battle/Shop/Rest 类型显示 defaultEffects 字段。
+/// 2. Event 类型显示 options 字段；Rest 类型显示休整回复百分比；Battle/Shop 类型显示 defaultEffects 字段。
 /// 3. description / displayName 等核心字段对任意 EventType 都强制显示（不会被类型切换逻辑隐藏）。
 /// </summary>
 [CustomPropertyDrawer(typeof(PageEventData))]
@@ -62,6 +62,8 @@ public class PageEventDataDrawer : PropertyDrawer
         {
             bool isEvent = eventTypeProp != null
                 && eventTypeProp.enumValueIndex == (int)PageEventType.Event;
+            bool isRest = eventTypeProp != null
+                && eventTypeProp.enumValueIndex == (int)PageEventType.Rest;
             bool isBattle = eventTypeProp != null
                 && eventTypeProp.enumValueIndex == (int)PageEventType.Battle;
 
@@ -77,10 +79,14 @@ public class PageEventDataDrawer : PropertyDrawer
                 y = DrawProperty(position, y, prop);
             }
 
-            // —— 类型相关：Event 显示 options，其余显示 defaultEffects ——
-            var typeSpecific = isEvent
-                ? property.FindPropertyRelative("options")
-                : property.FindPropertyRelative("defaultEffects");
+            // —— 类型相关：Event 显示 options；Rest 显示回复百分比；Battle/Shop 显示 defaultEffects ——
+            SerializedProperty typeSpecific = null;
+            if (isEvent)
+                typeSpecific = property.FindPropertyRelative("options");
+            else if (isRest)
+                typeSpecific = property.FindPropertyRelative("restHealingPercent");
+            else
+                typeSpecific = property.FindPropertyRelative("defaultEffects");
             if (typeSpecific != null)
                 y = DrawProperty(position, y, typeSpecific);
 
@@ -126,6 +132,8 @@ public class PageEventDataDrawer : PropertyDrawer
         var eventTypeProp = property.FindPropertyRelative("eventType");
         bool isEvent = (eventTypeProp != null
             && eventTypeProp.enumValueIndex == (int)PageEventType.Event);
+        bool isRest = (eventTypeProp != null
+            && eventTypeProp.enumValueIndex == (int)PageEventType.Rest);
         bool isBattle = (eventTypeProp != null
             && eventTypeProp.enumValueIndex == (int)PageEventType.Battle);
 
@@ -138,9 +146,13 @@ public class PageEventDataDrawer : PropertyDrawer
             height += EditorGUI.GetPropertyHeight(prop, true) + Spacing;
         }
 
-        var typeSpecific = isEvent
-            ? property.FindPropertyRelative("options")
-            : property.FindPropertyRelative("defaultEffects");
+        SerializedProperty typeSpecific = null;
+        if (isEvent)
+            typeSpecific = property.FindPropertyRelative("options");
+        else if (isRest)
+            typeSpecific = property.FindPropertyRelative("restHealingPercent");
+        else
+            typeSpecific = property.FindPropertyRelative("defaultEffects");
         if (typeSpecific != null)
             height += EditorGUI.GetPropertyHeight(typeSpecific, true) + Spacing;
 

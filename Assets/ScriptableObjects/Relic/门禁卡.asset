@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u95E8\u7981\u5361"
+  m_EditorClassIdentifier: 
+  relicId: AccessCard
+  relicName: "\u95E8\u7981\u5361"
+  description: "\u6BCF\u4E00\u7AE0\u989D\u5916\u589E\u52A0 3 \u6B21\u4E66\u9875\u9009\u62E9\u6B21\u6570\uFF08\u83B7\u5F97\u540E\u7ACB\u5373\u5728\u672C\u7AE0\u751F\u6548\uFF09"
+  icon: {fileID: 0}
+  value: 100
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.AccessCardEffect
+  effectParams:
+  - 3
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 11500000, guid: 9d4c74e3a53654a42939d98b1ef141ef, type: 3}

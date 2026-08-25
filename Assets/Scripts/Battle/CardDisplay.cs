@@ -215,16 +215,7 @@ public class CardDisplay : MonoBehaviour
     /// <summary>生成词条提示文本</summary>
     private string GetKeywordTooltipText()
     {
-        if (keywords == KeywordType.None) return "";
-
-        var parts = new System.Collections.Generic.List<string>();
-        if ((keywords & KeywordType.Echo) != 0)
-            parts.Add("回响：本回合第一次打出时回到手牌");
-        if ((keywords & KeywordType.Calamity) != 0)
-            parts.Add("灾厄：卡牌效果提升，但需支付代价");
-        if ((keywords & KeywordType.Fate) != 0)
-            parts.Add("命运：打出后随机触发好运与厄运效果");
-        return string.Join("\n", parts);
+        return CardKeywords.GetTooltip(keywords);
     }
 
     /// <summary>
@@ -262,8 +253,8 @@ public class CardDisplay : MonoBehaviour
         if (nameText) nameText.text = cardName;
         // 费用：融合覆盖优先于原始费用
         if (costText)
-            costText.text = (LiveFusion != null && LiveFusion.overrideCost)
-                ? LiveFusion.cost.ToString()
+            costText.text = _data != null
+                ? _data.GetEffectiveCost().ToString()
                 : actionPointCost.ToString();
         if (typeText) typeText.text = CardData.GetCardTypeName(cardType);
         if (gradeText) gradeText.text = CardData.GetGradeName(grade);
@@ -407,10 +398,8 @@ public class CardDisplay : MonoBehaviour
         if (typeText) typeText.color = darkTextColor;
         if (gradeText) gradeText.color = darkTextColor;
 
-        // 灾厄词条高亮
-        if (keywordText && (keywords & KeywordType.Calamity) != 0)
-            keywordText.color = corruptedBadgeColor;
-        else if (keywordText)
+        // 词条高亮
+        if (keywordText)
             keywordText.color = darkTextColor;
     }
 
@@ -512,14 +501,10 @@ public class CardDisplay : MonoBehaviour
         // 描述框位置（卡牌编辑器配置，导出预制体/运行时统一应用）
         ApplyDescBoxLayoutPosition(entry);
 
-        // 词条映射（3词条：回响/灾厄/命运）
-        keywords = KeywordType.None;
-        if (entry.keyword == LightMiniGame.CardEditor.CardKeyword.Echo)
-            keywords |= KeywordType.Echo;
-        if (entry.keyword == LightMiniGame.CardEditor.CardKeyword.Calamity)
-            keywords |= KeywordType.Calamity;
-        if (entry.keyword == LightMiniGame.CardEditor.CardKeyword.Fate)
-            keywords |= KeywordType.Fate;
+        // 词条映射（默认无词条）
+        keywords = CardKeywords.FromEditor(entry.keyword);
+        if (CardKeywords.Has(keywords, KeywordType.InternalPrice))
+            actionPointCost = Mathf.Max(0, actionPointCost - 1);
 
         UpdateDisplay();
 

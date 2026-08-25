@@ -92,6 +92,7 @@ MonoBehaviour:
     description: 
     icon: {fileID: 0}
     eventType: 2
+    restHealingPercent: 30
     isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []

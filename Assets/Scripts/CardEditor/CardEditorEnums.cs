@@ -18,7 +18,18 @@ namespace LightMiniGame.CardEditor
     // ========================================================================
     // 词条
     // ========================================================================
-    public enum CardKeyword { None, Echo, Calamity, Fate }
+    public enum CardKeyword
+    {
+        None,
+        StockGod,       // 股神
+        Leek,           // 韭菜
+        Recycle,        // 回流
+        Accessory,      // 配件
+        Consult,        // 查阅
+        InternalPrice,  // 内部价
+        Bribe,          // 贿赂
+        Slack           // 摸鱼
+    }
 
     // ========================================================================
     // 效果类型
