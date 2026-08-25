@@ -134,6 +134,7 @@ public class BattleManager : MonoBehaviour
     [Tooltip("战斗背景容器 GameObject；其下的 Image 组件用于显示战斗背景（正常 / 低理智）。留空则不切换背景。")]
     [SerializeField] private GameObject background;
 
+
     // ========================================================================
     // 运行时状态
     // ========================================================================
@@ -241,6 +242,7 @@ public class BattleManager : MonoBehaviour
     }
 
     private FusionController _fusionController;
+    private BookUIController _bookUI;   // 缓存局外 UI 控制器（战斗中更新 TopBar 文本用）
     private CardData _currentFusionCard;   // 当前正在执行效果的手牌（供 effect 读取 fusion 覆盖）
 
     /// <summary>开启进阶效果1：融合修改跨战斗持久化。</summary>
@@ -2873,5 +2875,11 @@ public class BattleManager : MonoBehaviour
         // 刷新融合入口按钮可用态（每回合一次 / 非玩家回合时置灰）
         if (_fusionController != null)
             _fusionController.UpdateEntryInteractable();
+
+        // 同步更新局外 TopBar 文本（进入战斗后 BookCanvas 的 TopBar 仍保持显示）
+        if (_bookUI == null)
+            _bookUI = FindObjectOfType<BookUIController>();
+        if (_bookUI != null)
+            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity);
     }
 }

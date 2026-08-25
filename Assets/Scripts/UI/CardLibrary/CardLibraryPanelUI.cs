@@ -270,11 +270,11 @@ public class CardLibraryPanelUI : MonoBehaviour
             var go = Instantiate(prefab, gridContent, false);
             go.SetActive(true);
 
-            // 直接替换卡面模板既有节点的 Image.sprite：不创建任何 GameObject。
-            // CardFrame ← CardData.descBoxSprite；CardType ← CardData.typeBoxSprite；
-            // ArtImage 同时读取 CardData.cardArt。
-            ApplyCardEntrySprites(go, inst.template);
             ApplyCardData(go, inst);
+            // ApplyCardData / CardDisplay 可能在内部再次刷新模板默认图；最后一步直接覆盖实际 prefab 节点。
+            // 不创建任何 GameObject：ArtArea(或 ArtImage) ← cardArt；
+            // DescBox(或 CardFrame) ← descBoxSprite；TypeBadge(或 CardType) ← typeBoxSprite。
+            ApplyCardEntrySprites(go, inst.template);
             _entryObjects.Add(go);
 
             // 删除模式：让卡牌变为可点击按钮，点击触发回调
@@ -307,7 +307,8 @@ public class CardLibraryPanelUI : MonoBehaviour
 
     /// <summary>
     /// 直接替换卡牌 prefab 已有节点的三层 Image.sprite，不创建也不附加任何 GameObject/组件。
-    /// 节点约定（卡牌.prefab）：ArtImage ← cardArt；CardFrame ← descBoxSprite；CardType ← typeBoxSprite。
+    /// 战斗卡牌节点：ArtArea ← cardArt；DescBox ← descBoxSprite；TypeBadge ← typeBoxSprite。
+    /// 同时兼容通用卡牌节点：ArtImage / CardFrame / CardType。
     /// 优先使用 CardData 字段；兼容旧 CardData 时回退其 sourceEntry 中的同名字段。
     /// </summary>
     private static void ApplyCardEntrySprites(GameObject cardGo, CardData data)
@@ -317,27 +318,36 @@ public class CardLibraryPanelUI : MonoBehaviour
         Sprite art = data.cardArt != null ? data.cardArt : data.sourceEntry?.cardArt;
         Sprite descBox = data.descBoxSprite != null ? data.descBoxSprite : data.sourceEntry?.descBoxSprite;
         Sprite typeBox = data.typeBoxSprite != null ? data.typeBoxSprite : data.sourceEntry?.typeBoxSprite;
+        bool foundArt = false, foundDescBox = false, foundTypeBox = false;
 
         foreach (var image in cardGo.GetComponentsInChildren<Image>(true))
         {
             if (image == null) continue;
             switch (image.gameObject.name)
             {
+                // 商店/战斗用的攻击牌、护甲牌、增益牌 prefab 实际节点名。
+                case "ArtArea":
+                // 通用卡牌 prefab 的兼容节点名。
                 case "ArtImage":
+                    foundArt = true;
                     if (art != null)
                     {
                         image.sprite = art;
                         image.color = Color.white;
                     }
                     break;
+                case "DescBox":
                 case "CardFrame":
+                    foundDescBox = true;
                     if (descBox != null)
                     {
                         image.sprite = descBox;
                         image.color = Color.white;
                     }
                     break;
+                case "TypeBadge":
                 case "CardType":
+                    foundTypeBox = true;
                     if (typeBox != null)
                     {
                         image.sprite = typeBox;
@@ -346,6 +356,8 @@ public class CardLibraryPanelUI : MonoBehaviour
                     break;
             }
         }
+
+        Debug.Log($"[CardLibraryPanel] 三层卡面：{data.cardName} | 节点 Art={foundArt}, DescBox={foundDescBox}, TypeBadge={foundTypeBox} | Sprite Art={(art != null ? art.name : "null")}, Desc={(descBox != null ? descBox.name : "null")}, Type={(typeBox != null ? typeBox.name : "null")}");
     }
 
     /// <summary>

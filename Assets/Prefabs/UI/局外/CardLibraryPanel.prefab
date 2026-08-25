@@ -380,9 +380,9 @@ MonoBehaviour:
   CharacterButton1: {fileID: 4409897414358860782}
   CharacterButton2: {fileID: 6117925116016090284}
   gridContent: {fileID: 3357280920212368793}
-  attackCardPrefab: {fileID: 5473407269505765583, guid: 81d0e6b49544d49058648e04bf9c1527, type: 3}
-  armorCardPrefab: {fileID: 2973715665040290557, guid: f5f692f5311d94c8bb8e53e0ad3773f9, type: 3}
-  buffCardPrefab: {fileID: 7474974900366243079, guid: 554d0b2b98f0e436c861a89e6893f1a5, type: 3}
+  attackCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
+  armorCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
+  buffCardPrefab: {fileID: 5473407269505765583, guid: 083d221ef42bc454fa4b682c48ed681a, type: 3}
   cardsPerRow: 7
 --- !u!1 &3299403877449751716
 GameObject:

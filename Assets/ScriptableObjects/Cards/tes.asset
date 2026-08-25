@@ -58,7 +58,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 3
+    operation: 8
     value:
       rid: 1654833856827621478
     repeatCount:
@@ -109,7 +109,7 @@ MonoBehaviour:
     countAsAttack: 1
     resourceType: 5
     resourceOp: 0
-    attributeType: 1
+    attributeType: 8
     statusType: 1
     statusValue:
       rid: 1654833856827621485

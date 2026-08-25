@@ -351,7 +351,8 @@ public class ChapterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 刷新指定位置的页面（删除页面功能）
+    /// 刷新指定位置的页面（删除页面功能）。
+    /// 如果没有新的可用事件，则直接移除该位置，不创建“无事件”占位页。
     /// </summary>
     public void RefreshPageAt(int index)
     {
@@ -420,17 +421,11 @@ public class ChapterManager : MonoBehaviour
             }
             else
             {
-                // 如果没有可用事件，创建一个默认的空事件
-                newPage = new PageEventData
-                {
-                    eventId = "empty_" + index,
-                    displayName = "无事件",
-                    description = "暂无可用事件",
-                    eventType = PageEventType.Rest,
-                    icon = null,
-                    isRepeatable = true,
-                    isFinalNode = false
-                };
+                // 没有可用事件时，不创建“无事件”占位页。
+                // 删除按钮的语义是移除当前书页，因此直接移除该位置，UI 会从 3 张变为 2 张。
+                _currentPages.RemoveAt(index);
+                OnPageConsumed?.Invoke(index);
+                return;
             }
         }
 
@@ -440,7 +435,7 @@ public class ChapterManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 删除某一页（刷新为新页面）
+    /// 删除某一页：有可用事件时刷新为新页面；没有可用事件时直接减少当前书页数量。
     /// </summary>
     public void DeletePage(int index)
     {
@@ -1089,7 +1084,15 @@ public class ChapterManager : MonoBehaviour
         _inBattle = true;
         _battleResume = onResolved;
 
-        if (bookCanvas != null) bookCanvas.SetActive(false);
+        if (bookCanvas != null)
+        {
+            // 保留 TopBar：只禁用 BookCanvas 下除 TopBar 外的子物体，使 BookUIController 保持活跃
+            var bookUI = bookCanvas.GetComponent<BookUIController>();
+            if (bookUI != null)
+                bookUI.SetNonTopBarChildrenActive(false);
+            else
+                bookCanvas.SetActive(false);
+        }
         if (battleCanvas != null) battleCanvas.SetActive(true);
 
         var bm = battleManager != null ? battleManager : FindObjectOfType<BattleManager>();
@@ -1132,7 +1135,13 @@ public class ChapterManager : MonoBehaviour
         _inBattle = false;
 
         if (battleCanvas != null) battleCanvas.SetActive(false);
-        if (bookCanvas != null) bookCanvas.SetActive(true);
+        if (bookCanvas != null)
+        {
+            // 恢复 BookCanvas 下所有子物体（进入战斗时只禁用了非 TopBar 的子物体）
+            var bookUI = bookCanvas.GetComponent<BookUIController>();
+            if (bookUI != null)
+                bookUI.SetNonTopBarChildrenActive(true);
+        }
 
         // 战斗后的玩家属性已由 BattleManager 在退出前通过 ApplyBattleResult 写回本管理器
         OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
