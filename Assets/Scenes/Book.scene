@@ -3065,6 +3065,7 @@ MonoBehaviour:
   playerHPBar: {fileID: 1842713035}
   sanityText: {fileID: 200609500}
   sanityBar: {fileID: 1842713034}
+  fortuneText: {fileID: 0}
   enemyViewPrefab: {fileID: 5775013132926666537, guid: 5c4941702e88b88478c7ec13e8c3a311, type: 3}
   enemyContainer: {fileID: 2088526939}
   enemyActionInterval: 0.5

@@ -22,10 +22,18 @@ public class EnemyView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI armorText;
 
     [Header("伤害飘字")]
-    [Tooltip("飘字出生点（空 RectTransform）")]
+    [Tooltip("飘字出生点（空 RectTransform）。留空则绕本视图中心一圈随机")]
     [SerializeField] private RectTransform damageAnchor;
     [Tooltip("飘字模板（含 TextMeshProUGUI 的 GameObject，可为 prefab 内隐藏的模板子物体，运行时克隆）")]
     [SerializeField] private GameObject damagePopupPrefab;
+    [Tooltip("飘字随机环的内半径（相对敌人中心）")]
+    [SerializeField] private float damagePopupMinRadius = 110f;
+    [Tooltip("飘字随机环的外半径（相对敌人中心）")]
+    [SerializeField] private float damagePopupMaxRadius = 175f;
+    [Tooltip("突然出现后停留秒数，再开始淡出")]
+    [SerializeField] private float damagePopupHold = 0.2f;
+    [Tooltip("淡出持续秒数")]
+    [SerializeField] private float damagePopupFade = 0.55f;
 
     [Header("出牌牌库意图预览")]
     [Tooltip("牌库卡面最大纵向总高（避免过高超出屏幕；超出则整体缩小）")]
@@ -40,8 +48,11 @@ public class EnemyView : MonoBehaviour
     [SerializeField] private float deckGap = 4f;
 
     private EnemyInstance _inst;
-    private Coroutine _popupRoutine;
+    private readonly List<GameObject> _livePopups = new List<GameObject>();
     private bool _highlighted = false;
+    private Coroutine _shakeRoutine;
+    private Vector2 _portraitRestPos;
+    private bool _portraitRestPosCaptured;
 
     // 玩家同款卡面预制体（由 BattleManager 注入），用于渲染敌人出牌库小卡
     private GameObject _attackCardPrefab;
@@ -163,8 +174,8 @@ public class EnemyView : MonoBehaviour
         {
             var sprite = (_inst.Phase == 2 && cfg.phase2Portrait != null) ? cfg.phase2Portrait : cfg.phase1Portrait;
             if (sprite != null) portraitImage.sprite = sprite;
-            // 阶段2红色高亮（沿用原单敌人逻辑）
-            portraitImage.color = _inst.Phase == 2 ? Color.red : Color.white;
+            if (_shakeRoutine == null)
+                portraitImage.color = PortraitRestColor();
         }
     }
 
@@ -288,70 +299,227 @@ public class EnemyView : MonoBehaviour
         }
     }
 
-    /// <summary>飘字显示伤害数字（从 BattleManager.ShowEnemyDamage 迁入，锚点改为本视图的 damageAnchor）</summary>
+    /// <summary>
+    /// 玩家出牌打到该敌人时，在敌人周围一圈随机位置突然弹出 "-X"，停留后淡出。
+    /// 多次伤害可同时存在，互不打断。
+    /// </summary>
     public void ShowDamage(int amount, bool isCrit = false)
     {
         if (amount <= 0) return;
-        if (damagePopupPrefab == null || damageAnchor == null) return;
 
-        var go = Instantiate(damagePopupPrefab, damageAnchor);
-        var rect = go.GetComponent<RectTransform>();
-        if (rect != null) rect.anchoredPosition = Vector2.zero;
+        var parent = transform as RectTransform;
+        if (parent == null) return;
 
-        var text = go.GetComponent<TextMeshProUGUI>();
-        if (text == null) text = go.GetComponentInChildren<TextMeshProUGUI>();
-        if (text == null)
+        GameObject go;
+        TextMeshProUGUI text;
+        if (damagePopupPrefab != null)
         {
-            Debug.LogWarning("[EnemyView] damagePopupPrefab 缺少 TextMeshProUGUI 组件");
-            Destroy(go);
-            return;
+            go = Instantiate(damagePopupPrefab, parent);
+            text = go.GetComponent<TextMeshProUGUI>();
+            if (text == null) text = go.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (text == null)
+            {
+                Debug.LogWarning("[EnemyView] damagePopupPrefab 缺少 TextMeshProUGUI 组件");
+                Destroy(go);
+                return;
+            }
+        }
+        else
+        {
+            go = new GameObject("DamagePopup");
+            go.transform.SetParent(parent, false);
+            var created = go.AddComponent<RectTransform>();
+            created.sizeDelta = new Vector2(160f, 56f);
+            text = go.AddComponent<TextMeshProUGUI>();
+            if (hpText != null)
+            {
+                text.font = hpText.font;
+                if (hpText.fontSharedMaterial != null)
+                    text.fontSharedMaterial = hpText.fontSharedMaterial;
+            }
+            text.alignment = TextAlignmentOptions.Center;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Overflow;
         }
 
-        text.text = isCrit ? $"{amount}!" : amount.ToString();
-        text.color = isCrit ? new Color(1f, 0.8f, 0.1f, 1f) : new Color(1f, 0.35f, 0.2f, 1f);
-        text.gameObject.SetActive(true);
+        go.SetActive(true);
+        go.transform.SetAsLastSibling();
 
-        if (_popupRoutine != null) StopCoroutine(_popupRoutine);
-        _popupRoutine = StartCoroutine(DamagePopupRoutine(text));
+        var rt = go.GetComponent<RectTransform>();
+        if (rt == null) rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        float minR = Mathf.Max(0f, damagePopupMinRadius);
+        float maxR = Mathf.Max(minR, damagePopupMaxRadius);
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        float radius = Random.Range(minR, maxR);
+        rt.anchoredPosition = new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
+        rt.localRotation = Quaternion.identity;
+        rt.localScale = Vector3.one;
+
+        text.raycastTarget = false;
+        text.fontStyle = FontStyles.Bold;
+        text.margin = Vector4.zero;
+        text.overflowMode = TextOverflowModes.Overflow;
+        text.enableWordWrapping = false;
+        text.fontSize = isCrit ? 40 : 34;
+        text.text = isCrit ? $"-{amount}!" : $"-{amount}";
+        Color color = isCrit ? new Color(1f, 0.82f, 0.15f, 1f) : new Color(1f, 0.28f, 0.22f, 1f);
+        text.color = color;
+        ApplyWhiteOutline(text);
+
+        _livePopups.Add(go);
+        StartCoroutine(DamagePopupRoutine(go, text, color));
     }
 
-    /// <summary>死亡：停止飘字并隐藏整个视图（尸体不保留在场上）</summary>
+    /// <summary>受击反馈：立绘短暂震动 + 闪白。</summary>
+    public void PlayHitFeedback()
+    {
+        if (portraitImage == null) return;
+        var rt = portraitImage.rectTransform;
+        if (rt == null) return;
+
+        if (!_portraitRestPosCaptured)
+        {
+            _portraitRestPos = rt.anchoredPosition;
+            _portraitRestPosCaptured = true;
+        }
+
+        if (_shakeRoutine != null) StopCoroutine(_shakeRoutine);
+        rt.anchoredPosition = _portraitRestPos;
+        _shakeRoutine = StartCoroutine(HitShakeRoutine(rt));
+    }
+
+    /// <summary>死亡：清掉飘字并隐藏整个视图（尸体不保留在场上）</summary>
     public void Hide()
     {
-        if (_popupRoutine != null)
-        {
-            StopCoroutine(_popupRoutine);
-            _popupRoutine = null;
-        }
+        StopAllCoroutines();
+        _shakeRoutine = null;
+        if (portraitImage != null && _portraitRestPosCaptured)
+            portraitImage.rectTransform.anchoredPosition = _portraitRestPos;
+        foreach (var p in _livePopups)
+            if (p != null) Destroy(p);
+        _livePopups.Clear();
         ClearIntentDeck();
         gameObject.SetActive(false);
     }
 
-    private IEnumerator DamagePopupRoutine(TextMeshProUGUI text)
+    private IEnumerator HitShakeRoutine(RectTransform rt)
     {
-        if (text == null) { _popupRoutine = null; yield break; }
-        var rect = text.GetComponent<RectTransform>();
-        Vector2 startPos = rect != null ? rect.anchoredPosition : Vector2.zero;
-        const float duration = 0.8f;
+        const float duration = 0.22f;
+        const float magnitude = 18f;
+        Color restColor = PortraitRestColor();
         float elapsed = 0f;
-        Color baseColor = text.color;
-
         while (elapsed < duration)
         {
-            if (text == null) { _popupRoutine = null; yield break; }
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
+            float damp = 1f - Mathf.Clamp01(elapsed / duration);
+            rt.anchoredPosition = _portraitRestPos + Random.insideUnitCircle * (magnitude * damp);
+            if (portraitImage != null)
+                portraitImage.color = Color.Lerp(Color.white, restColor, 1f - damp);
+            yield return null;
+        }
+        rt.anchoredPosition = _portraitRestPos;
+        if (portraitImage != null)
+            portraitImage.color = restColor;
+        _shakeRoutine = null;
+    }
 
-            if (rect != null)
-                rect.anchoredPosition = startPos + new Vector2(0f, 60f * t);
+    private Color PortraitRestColor()
+    {
+        if (_highlighted) return new Color(1f, 1f, 0.45f);
+        if (_inst != null && _inst.Phase == 2) return Color.red;
+        return Color.white;
+    }
 
-            float alpha = t < 0.6f ? 1f : Mathf.Lerp(1f, 0f, (t - 0.6f) / 0.4f);
-            text.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+    /// <summary>
+    /// 白色描边：当前伤害字用的是像素 SDF 字体，材质 Outline 几乎看不见，
+    /// 所以用八方向错位复制一层白字，保证任意字体都有一圈描边。
+    /// </summary>
+    private static readonly Vector2[] OutlineDirs =
+    {
+        new Vector2(-1f, 0f), new Vector2(1f, 0f),
+        new Vector2(0f, -1f), new Vector2(0f, 1f),
+        new Vector2(-1f, -1f), new Vector2(1f, -1f),
+        new Vector2(-1f, 1f), new Vector2(1f, 1f)
+    };
+
+    private static void ApplyWhiteOutline(TextMeshProUGUI source, float pixelOffset = 0.7f)
+    {
+        if (source == null) return;
+
+        var mat = source.fontMaterial;
+        if (mat != null)
+        {
+            mat.EnableKeyword("OUTLINE_ON");
+            if (mat.HasProperty("_OutlineWidth"))
+                mat.SetFloat("_OutlineWidth", 0.02f);
+            if (mat.HasProperty("_FaceDilate"))
+                mat.SetFloat("_FaceDilate", 0.1f);
+            if (mat.HasProperty("_OutlineColor"))
+                mat.SetColor("_OutlineColor", Color.white);
+            source.fontMaterial = mat;
+            source.UpdateMeshPadding();
+        }
+
+        for (int i = 0; i < OutlineDirs.Length; i++)
+        {
+            var stroke = new GameObject("Stroke");
+            stroke.transform.SetParent(source.transform, false);
+            stroke.transform.SetAsFirstSibling();
+            var rt = stroke.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            Vector2 shift = OutlineDirs[i] * pixelOffset;
+            rt.offsetMin = shift;
+            rt.offsetMax = shift;
+            var tmp = stroke.AddComponent<TextMeshProUGUI>();
+            tmp.font = source.font;
+            tmp.fontSharedMaterial = source.fontSharedMaterial;
+            tmp.fontSize = source.fontSize;
+            tmp.fontStyle = source.fontStyle;
+            tmp.alignment = source.alignment;
+            tmp.enableWordWrapping = false;
+            tmp.overflowMode = TextOverflowModes.Overflow;
+            tmp.raycastTarget = false;
+            tmp.margin = Vector4.zero;
+            tmp.text = source.text;
+            tmp.color = Color.white;
+        }
+    }
+
+    private IEnumerator DamagePopupRoutine(GameObject go, TextMeshProUGUI text, Color baseColor)
+    {
+        // 突然出现：已是满透明度，先停一瞬再淡出
+        if (damagePopupHold > 0f)
+            yield return new WaitForSeconds(damagePopupHold);
+
+        float fade = Mathf.Max(0.05f, damagePopupFade);
+        float elapsed = 0f;
+        var labels = go != null ? go.GetComponentsInChildren<TextMeshProUGUI>(true) : null;
+        while (elapsed < fade)
+        {
+            if (text == null) break;
+            elapsed += Time.deltaTime;
+            float alpha = 1f - Mathf.Clamp01(elapsed / fade);
+            if (labels != null)
+            {
+                for (int i = 0; i < labels.Length; i++)
+                {
+                    var label = labels[i];
+                    if (label == null) continue;
+                    Color c = label == text ? baseColor : Color.white;
+                    label.color = new Color(c.r, c.g, c.b, alpha);
+                }
+            }
             yield return null;
         }
 
-        if (text != null) Destroy(text.gameObject);
-        _popupRoutine = null;
+        if (go != null)
+        {
+            _livePopups.Remove(go);
+            Destroy(go);
+        }
     }
 
     /// <summary>

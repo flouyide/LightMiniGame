@@ -1002,10 +1002,14 @@ MonoBehaviour:
   hpBar: {fileID: 876905236068782483}
   armorText: {fileID: 2092861099016971916}
   damageAnchor: {fileID: 6084429079432763145}
-  damagePopupPrefab: {fileID: 8386101708896167479}
+  damagePopupPrefab: {fileID: 8632132199425164748, guid: bcdbb62492eb341d6beee30238fc90dd, type: 3}
+  damagePopupMinRadius: 110
+  damagePopupMaxRadius: 175
+  damagePopupHold: 0.2
+  damagePopupFade: 0.55
   deckMaxHeight: 500
   deckXOffset: 250
-  deckYOffset: -50
+  deckYOffset: -100
   deckBaseScale: 0.42
   deckGap: 45
 --- !u!1 &8386101708896167479
