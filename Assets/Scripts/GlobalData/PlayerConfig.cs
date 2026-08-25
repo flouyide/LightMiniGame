@@ -16,6 +16,8 @@ public class PlayerConfig : ScriptableObject
     public int maxSanity = 10;   // 理智上限
     [Tooltip("理智阈值：玩家理智低于此值时，所有敌人进入低理智阶段")]
     public int sanityThreshold = 4;  // 理智阈值
+    [Tooltip("福报值初始值（融合重分配时加到选中数字之和上；无上限）")]
+    public int startFortune = 0; // 初始福报值
     [Tooltip("每回合能量回复")]
     public int maxActionPoints = 3;  // 每回合行动点
     [Tooltip("每回合基础抽牌数")]

@@ -51,7 +51,8 @@ public enum PlayerBaseAttribute
     // —— 运行时资源（追加，不重排）：由 ModifyAttribute + attributeOp 处理，等价于原 Gain*/Lose*HP/Gold/Sanity ——
     Gold,        // 金币
     HP,          // 生命值
-    Sanity       // 理智（背景据此切换）
+    Sanity,      // 理智（背景据此切换）
+    Fortune      // 福报值（融合重分配总值加成；追加在末尾，保持旧资产序列化兼容）
 }
 
 /// <summary>

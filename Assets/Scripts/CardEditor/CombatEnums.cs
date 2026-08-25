@@ -55,7 +55,8 @@ namespace LightMiniGame.CardEditor
         ActionPoints,
         Currency,
         Heat,
-        Block
+        Block,
+        Fortune          // 福报值
     }
 
     // ========================================================================
