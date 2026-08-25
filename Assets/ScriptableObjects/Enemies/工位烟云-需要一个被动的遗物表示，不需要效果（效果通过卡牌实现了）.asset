@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac676fbe4e26547eb9f86e31bd682f65, type: 3}
+  m_Name: "\u5DE5\u4F4D\u70DF\u4E91-\u9700\u8981\u4E00\u4E2A\u88AB\u52A8\u7684\u9057\u7269\u8868\u793A\uFF0C\u4E0D\u9700\u8981\u6548\u679C\uFF08\u6548\u679C\u901A\u8FC7\u5361\u724C\u5B9E\u73B0\u4E86\uFF09"
+  m_EditorClassIdentifier: 
+  enemyName: "\u5DE5\u4F4D\u70DF\u4E91-\u9700\u8981\u4E00\u4E2A\u88AB\u52A8\u7684\u9057\u7269\u8868\u793A\uFF0C\u4E0D\u9700\u8981\u6548\u679C\uFF08\u6548\u679C\u901A\u8FC7\u5361\u724C\u5B9E\u73B0\u4E86\uFF09"
+  maxHP: 150
+  armor: 0
+  phase1Portrait: {fileID: 0}
+  phase2Portrait: {fileID: 0}
+  phase1Skills:
+  - {fileID: 11400000, guid: c4a7d98f54036704097aceeba4f8a10b, type: 2}
+  - {fileID: 11400000, guid: 8abebfe7105c2324096c203d3e9e1431, type: 2}
+  - {fileID: 11400000, guid: f0717631de5d9414cb82030dff9fd4dc, type: 2}
+  phase2Skills:
+  - {fileID: 11400000, guid: c4a7d98f54036704097aceeba4f8a10b, type: 2}
+  - {fileID: 11400000, guid: 8abebfe7105c2324096c203d3e9e1431, type: 2}
+  - {fileID: 11400000, guid: f0717631de5d9414cb82030dff9fd4dc, type: 2}
+  difficulty: 1
+  actionPriority: 1
+  strength: 0
+  dexterity: 0
+  damageDealtMultiplier: 100
+  damageTakenMultiplier: 100
+  highSanityCardCount: 1
+  lowSanityCardCount: 1
+  abilities: []
