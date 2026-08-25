@@ -441,6 +441,7 @@ public class BattleManager : MonoBehaviour
         if (actual > 0) inst.View?.ShowDamage(actual, isCrit);
         if (inst.HP <= 0) HandleEnemyFatalDamage(inst);
         inst.View?.Refresh();
+        if (!inst.IsDead) inst.View?.PlayHitFeedback();
         UpdateUI();
         CheckBattleEnd();
     }
@@ -456,6 +457,7 @@ public class BattleManager : MonoBehaviour
             if (actual > 0) inst.View?.ShowDamage(actual, isCrit);
             if (inst.HP <= 0) HandleEnemyFatalDamage(inst);
             inst.View?.Refresh();
+            if (!inst.IsDead) inst.View?.PlayHitFeedback();
         }
         UpdateUI();
         CheckBattleEnd();
@@ -1768,6 +1770,11 @@ public class BattleManager : MonoBehaviour
             target.View?.ShowDamage(totalDamageDealt);
             if (target.HP <= 0) HandleEnemyFatalDamage(target);
             target.View?.Refresh();
+            if (target != null && !target.IsDead) target.View?.PlayHitFeedback();
+        }
+        else if (target != null && !target.IsDead)
+        {
+            target.View?.PlayHitFeedback();
         }
     }
 
@@ -1851,8 +1858,7 @@ public class BattleManager : MonoBehaviour
         if (inst == null || inst.IsDead) return 0;
 
         // 应用伤害倍率：最终伤害 = 基础伤害 * 玩家造成伤害倍率 * 敌人受击倍率
-        int enemyTakenMult = inst.Config != null ? inst.Config.damageTakenMultiplier : 100;
-        float mult = (_playerDamageMultiplier / 100f) * (enemyTakenMult / 100f);
+        float mult = PercentToFactor(_playerDamageMultiplier) * PercentToFactor(inst.Config != null ? inst.Config.damageTakenMultiplier : 100);
         damage = Mathf.RoundToInt(damage * mult);
         int armorBreakScaled = Mathf.RoundToInt(Mathf.Max(0, armorBreak) * mult);
 
@@ -1867,6 +1873,16 @@ public class BattleManager : MonoBehaviour
         }
 
         return inst.TakeDamage(damage, ignoreArmor, armorBreakScaled);
+    }
+
+    /// <summary>
+    /// 百分比倍率 → 乘数。约定 100 = 1.0 倍。
+    /// 0/负数视为未配置（按 100）；1 视为误把「1.0 倍」写成了 1，否则普通攻击会四舍五入成 0。
+    /// </summary>
+    private static float PercentToFactor(int percent)
+    {
+        if (percent <= 1) return 1f;
+        return percent / 100f;
     }
 
     /// <summary>给指定槽位敌人叠加护甲（敌人自护盾/给友军护盾），越界/死亡忽略。</summary>
@@ -2043,7 +2059,7 @@ public class BattleManager : MonoBehaviour
 
         // 应用伤害倍率：敌人对玩家的最终伤害 = (技能伤害 + 力量) * 敌人造成伤害倍率 * 玩家受击倍率
         int enemyDealtMult = inst != null && inst.Config != null ? inst.Config.damageDealtMultiplier : 100;
-        float mult = (enemyDealtMult / 100f) * (_playerDamageTakenMultiplier / 100f);
+        float mult = PercentToFactor(enemyDealtMult) * PercentToFactor(_playerDamageTakenMultiplier);
         damage = Mathf.RoundToInt(damage * mult);
         int actualDamage = damage;
         if (_playerArmor > 0)
