@@ -188,8 +188,7 @@ public class CardLibraryPanelUI : MonoBehaviour
             {
                 if (inst != null)
                 {
-                    inst.overrideData.keywords |= kw;
-                    inst.overrideData.hasKeywordsOverride = true;
+                    inst.AddKeyword(kw);
                     Debug.Log($"[CardLibraryPanel] 为「{inst.EffectiveName}」附加词条 {kw}");
                 }
             },
@@ -386,6 +385,9 @@ public class CardLibraryPanelUI : MonoBehaviour
             d.actionPointCost = inst.EffectiveCost;
             d.consumeType = inst.EffectiveConsume;
             d.keywords = inst.EffectiveKeywords;
+            d.SetKeywordDisplayOrder(inst.overrideData != null && inst.overrideData.hasKeywordsOverride
+                ? inst.overrideData.keywordOrder
+                : null);
             d.attackCount = inst.EffectiveAttackCount;
             d.attackValueType = inst.EffectiveAttackValType;
             d.attackValue = inst.EffectiveAttackValue;
@@ -413,6 +415,9 @@ public class CardLibraryPanelUI : MonoBehaviour
         d.actionPointCost = inst.EffectiveCost;
         d.consumeType = inst.EffectiveConsume;
         d.keywords = inst.EffectiveKeywords;
+        d.SetKeywordDisplayOrder(inst.overrideData != null && inst.overrideData.hasKeywordsOverride
+            ? inst.overrideData.keywordOrder
+            : null);
         d.attackCount = inst.EffectiveAttackCount;
         d.attackValueType = inst.EffectiveAttackValType;
         d.attackValue = inst.EffectiveAttackValue;

@@ -428,10 +428,11 @@ public class ChapterManager : MonoBehaviour
 
         foreach (var ch in gameConfig.characters)
         {
-            if (ch != null && ch.startingLibrary != null)
-                GlobalCardLibrary.Instance.BuildFromStartingLibrary(ch.startingLibrary);
-            else if (ch != null)
-                GlobalCardLibrary.Instance.RegisterCharacter(ch);   // 无初始牌组也登记角色，避免后续操作时报空
+            if (ch == null) continue;
+            var lib = GlobalCardLibrary.Instance.RegisterCharacter(ch);
+            lib.Clear();
+            if (ch.startingLibrary != null)
+                ch.startingLibrary.BuildInto(lib);
         }
 
         // 初始化按角色隔离的遗物库：为每个角色登记独立遗物库，并放入起始遗物

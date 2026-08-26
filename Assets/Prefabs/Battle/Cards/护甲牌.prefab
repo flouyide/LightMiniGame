@@ -416,6 +416,10 @@ MonoBehaviour:
   descBoxImage: {fileID: 2991668912456734666}
   typeBadgeImage: {fileID: 2576119790455918}
   costBadgeImage: {fileID: 1732008536072580863}
+  keywordIconContainer: {fileID: 0}
+  keywordIconLibrary: {fileID: 0}
+  keywordIconSprites: []
+  keywordIconSize: 16
   keywordTooltip: {fileID: 1116938153856470818}
   tooltipText: {fileID: 3832245785484981001}
   tooltipBgColor: {r: 0.15, g: 0.1, b: 0.2, a: 0.9}

@@ -86,6 +86,13 @@ public class CardDisplayEditor : Editor
         EditorGUILayout.PropertyField(costBadgeProp);
 
         EditorGUILayout.Space();
+        EditorGUILayout.LabelField("词条图标", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconContainer"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconLibrary"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconSprites"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconSize"));
+
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("词条悬浮提示", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordTooltip"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("tooltipText"));

@@ -43,6 +43,8 @@ public class CardData : ScriptableObject
     public ConsumeType consumeType = ConsumeType.None;
     [Tooltip("词条（不同词条具有不同效果）")]
     public KeywordType keywords = KeywordType.None;
+    /// <summary>词条加入顺序（卡面图标从上到下）。空则按枚举位顺序。</summary>
+    [HideInInspector] public List<KeywordType> keywordOrder;
 
     // === 攻击牌属性 ===
     [Header("攻击属性")]

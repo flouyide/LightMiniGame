@@ -1370,8 +1370,16 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    private CharBattleState ActiveChar => _chars[_activeCharIdx];
-    private CharBattleState InactiveChar => _chars[1 - _activeCharIdx];
+    private CharBattleState ActiveChar =>
+        _chars != null && _activeCharIdx >= 0 && _activeCharIdx < _chars.Length ? _chars[_activeCharIdx] : null;
+    private CharBattleState InactiveChar
+    {
+        get
+        {
+            if (_chars == null || _chars.Length < 2) return null;
+            return _chars[(_activeCharIdx + 1) % _chars.Length];
+        }
+    }
 
     /// <summary>当前激活角色的 CharacterData（供遗物效果判断"某角色是否激活"）。</summary>
     public CharacterData ActiveCharacterData => ActiveChar?.data;
@@ -1526,6 +1534,49 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 按 GameConfig.characters 建立出战角色（支持 2 人以上）。
+    /// 起始激活角色优先用局外传入的 StartActiveChar。
+    /// </summary>
+    private bool InitBattleParty()
+    {
+        var list = gameConfig.characters;
+        int n = 0;
+        for (int i = 0; i < list.Count; i++)
+            if (list[i] != null) n++;
+        if (n < 2)
+        {
+            Debug.LogError("[BattleManager] GameConfig 有效角色不足 2 个，无法开始战斗");
+            return false;
+        }
+
+        _chars = new CharBattleState[n];
+        int slot = 0;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i] == null) continue;
+            _chars[slot] = new CharBattleState { data = list[i] };
+            BuildStartingDeck(_chars[slot]);
+            ShuffleDrawPile(_chars[slot]);
+            slot++;
+        }
+
+        int startIdx = 0;
+        if (StartActiveChar != null)
+        {
+            for (int i = 0; i < _chars.Length; i++)
+            {
+                if (_chars[i] != null && _chars[i].data == StartActiveChar)
+                {
+                    startIdx = i;
+                    break;
+                }
+            }
+        }
+        _activeCharIdx = startIdx;
+        return true;
+    }
+
     public void StartBattle()
     {
         // 解析战斗背景 Image（Background GameObject 下，含自身与子物体）
@@ -1537,21 +1588,8 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < 2; i++)
-        {
-            _chars[i] = new CharBattleState { data = gameConfig.characters[i] };
-            BuildStartingDeck(_chars[i]);
-            ShuffleDrawPile(_chars[i]);
-        }
-
-        // 起始激活角色：优先用局外传入的 StartActiveChar，否则默认 characters[0]
-        int startIdx = 0;
-        if (StartActiveChar != null && gameConfig.characters != null)
-        {
-            int idx = gameConfig.characters.IndexOf(StartActiveChar);
-            if (idx >= 0) startIdx = idx;
-        }
-        _activeCharIdx = startIdx;
+        if (!InitBattleParty())
+            return;
         _hasSwitchedThisTurn = false;
         _turnCount = 1;
         _playerArmor = 0;
@@ -1576,7 +1614,9 @@ public class BattleManager : MonoBehaviour
             _playerCritDamage = cm.PlayerCritDamage;
             _playerDamageMultiplier = cm.PlayerDamageMultiplier;
             _playerDamageTakenMultiplier = cm.PlayerDamageTakenMultiplier;
-            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 福报:{_playerFortune} 力量:{_playerStrength} 敏捷:{_playerDexterity} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+            drawPerTurn = Mathf.Max(0, _baseDrawPerTurn);
+            maxActionPoints = cm.PlayerMaxActionPoints;
+            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{drawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 福报:{_playerFortune} 力量:{_playerStrength} 敏捷:{_playerDexterity} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
         }
         else if (playerConfig != null)
         {
@@ -1596,6 +1636,7 @@ public class BattleManager : MonoBehaviour
             _playerCritDamage = playerConfig.critDamage;
             _playerDamageMultiplier = playerConfig.playerDamageMultiplier;
             _playerDamageTakenMultiplier = playerConfig.playerDamageTakenMultiplier;
+            drawPerTurn = Mathf.Max(0, _baseDrawPerTurn);
             Debug.LogWarning("[BattleManager] 未找到 ChapterManager，回退读入 PlayerConfig 初始值（无跨战斗累积）");
         }
         else
@@ -1711,8 +1752,16 @@ public class BattleManager : MonoBehaviour
             var cards = globalLib.GetCards(charData);
             foreach (var inst in cards)
             {
-                if (inst != null && inst.template != null)
-                    state.drawPile.Add(inst.template);
+                if (inst == null || inst.template == null) continue;
+                var cd = inst.template;
+                if (inst.overrideData != null && inst.overrideData.hasKeywordsOverride)
+                {
+                    cd = Instantiate(inst.template);
+                    cd.keywords = inst.EffectiveKeywords;
+                    if (inst.overrideData.keywordOrder != null)
+                        cd.keywordOrder = new List<KeywordType>(inst.overrideData.keywordOrder);
+                }
+                state.drawPile.Add(cd);
             }
             if (state.drawPile.Count > 0)
             {
@@ -1845,8 +1894,6 @@ public class BattleManager : MonoBehaviour
         // 此时卡牌仍在手牌区，遗物可复用相同 CardData 重放其效果；随后才按原逻辑消耗原卡。
         if (!_battleEnded)
             OnPlayerCardPlayed?.Invoke(card);
-
-        HandleCardConsumption(card);
 
         TryAttachAccessoryToHost(card);
 
@@ -2612,7 +2659,7 @@ public class BattleManager : MonoBehaviour
             UpgradeSingleCard(card);
 
         // 双角色的牌堆
-        for (int ci = 0; ci < 2; ci++)
+        for (int ci = 0; ci < _chars.Length; ci++)
         {
             if (_chars[ci] == null) continue;
             foreach (var card in _chars[ci].drawPile)
@@ -2741,14 +2788,18 @@ public class BattleManager : MonoBehaviour
     private void SwitchCharacter()
     {
         var oldChar = ActiveChar;
-        foreach (var card in _hand)
-            oldChar.discardPile.Add(card);
+        if (oldChar != null)
+        {
+            foreach (var card in _hand)
+                oldChar.discardPile.Add(card);
+        }
         _hand.Clear();
 
         // 挂起当前角色的能力
         // 触发器系统角色切换
 
-        _activeCharIdx = 1 - _activeCharIdx;
+        if (_chars != null && _chars.Length > 0)
+            _activeCharIdx = (_activeCharIdx + 1) % _chars.Length;
         _hasSwitchedThisTurn = true;
 
         // 计数器：切换角色

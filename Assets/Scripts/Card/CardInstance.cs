@@ -63,6 +63,9 @@ namespace LightMiniGame.Card
                 hasGradeOverride = true,       grade = EffectiveGrade,
                 hasConsumeTypeOverride = true, consumeType = EffectiveConsume,
                 hasKeywordsOverride = true,    keywords = EffectiveKeywords,
+                keywordOrder = overrideData.keywordOrder != null
+                    ? new List<KeywordType>(overrideData.keywordOrder)
+                    : CardKeywords.GetOrderedFlags(EffectiveKeywords, null),
                 hasAttackCountOverride = true, attackCount = EffectiveAttackCount,
                 hasAttackValueOverride = true, attackValue = EffectiveAttackValue,
                 hasAttackValueTypeOverride = true, attackValueType = EffectiveAttackValType,
@@ -76,6 +79,21 @@ namespace LightMiniGame.Card
                 hasBuffStacksOverride = true,  buffStacks = EffectiveBuffStacks,
                 hasBuffEffectsOverride = true, buffEffects = EffectiveBuffEffects != null ? new List<BuffEffect>(EffectiveBuffEffects) : null,
             };
+        }
+
+        /// <summary>给本实例追加词条（保留已有词条，新词条排在后面）。</summary>
+        public void AddKeyword(KeywordType kw)
+        {
+            if (kw == KeywordType.None) return;
+            if (!overrideData.hasKeywordsOverride)
+            {
+                overrideData.keywords = EffectiveKeywords;
+                overrideData.keywordOrder = CardKeywords.GetOrderedFlags(overrideData.keywords, overrideData.keywordOrder);
+                overrideData.hasKeywordsOverride = true;
+            }
+            if (overrideData.keywordOrder == null)
+                overrideData.keywordOrder = CardKeywords.GetOrderedFlags(overrideData.keywords, null);
+            CardKeywords.AddFlags(ref overrideData.keywords, overrideData.keywordOrder, kw);
         }
 
         private static T Pick<T>(bool hasOverride, T overridden, T templateDefault)
@@ -96,6 +114,8 @@ namespace LightMiniGame.Card
         public bool hasGradeOverride;       public CardGrade grade;
         public bool hasConsumeTypeOverride; public ConsumeType consumeType;
         public bool hasKeywordsOverride;    public KeywordType keywords;
+        /// <summary>词条加入顺序（从上到下展示）。仅覆盖层生效时使用；空则按枚举位顺序。</summary>
+        public List<KeywordType> keywordOrder;
         public bool hasAttackCountOverride; public int  attackCount;
         public bool hasAttackValueOverride; public int  attackValue;
         public bool hasAttackValueTypeOverride; public ValueType attackValueType;

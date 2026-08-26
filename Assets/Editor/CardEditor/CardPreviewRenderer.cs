@@ -31,7 +31,7 @@ namespace LightMiniGame.CardEditor.Editor
             if (c == null) return null;
             return $"{c.cardName}|{c.cardType}|{c.grade}|{c.cardArt}|{c.descBoxSprite}|{c.typeBoxSprite}" +
                    $"|{c.descBoxOffsetX}|{c.descBoxOffsetY}|{c.descBoxHeight}|{c.descBoxInset}" +
-                   $"|{c.GetDescription(lowSanity)}|{lowSanity}";
+                   $"|{c.GetDescription(lowSanity)}|{lowSanity}|{c.keyword}";
         }
 
         /// <summary>渲染卡面为 Texture2D（带缓存：数据没变直接回缓存）。</summary>

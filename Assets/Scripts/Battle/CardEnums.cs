@@ -109,23 +109,81 @@ public static class CardKeywords
         "全部词条", "无", "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼", "监控目标"
     };
 
+    public static readonly KeywordType[] AllFlags =
+    {
+        KeywordType.StockGod, KeywordType.Leek, KeywordType.Recycle,
+        KeywordType.Accessory, KeywordType.Consult, KeywordType.InternalPrice,
+        KeywordType.Bribe, KeywordType.Slack, KeywordType.WatchTarget
+    };
+
     public static KeywordType FromEditor(LightMiniGame.CardEditor.CardKeyword k) =>
         (KeywordType)(int)k;
 
     public static bool Has(KeywordType flags, KeywordType k) => k != KeywordType.None && (flags & k) != 0;
 
-    public static List<string> GetNames(KeywordType keywords)
+    public static string GetName(KeywordType flag)
+    {
+        if (Has(flag, KeywordType.StockGod)) return "股神";
+        if (Has(flag, KeywordType.Leek)) return "韭菜";
+        if (Has(flag, KeywordType.Recycle)) return "回流";
+        if (Has(flag, KeywordType.Accessory)) return "配件";
+        if (Has(flag, KeywordType.Consult)) return "查阅";
+        if (Has(flag, KeywordType.InternalPrice)) return "内部价";
+        if (Has(flag, KeywordType.Bribe)) return "贿赂";
+        if (Has(flag, KeywordType.Slack)) return "摸鱼";
+        if (Has(flag, KeywordType.WatchTarget)) return "监控目标";
+        return "";
+    }
+
+    public static List<KeywordType> EnumerateFlags(KeywordType keywords)
+    {
+        var result = new List<KeywordType>();
+        foreach (var f in AllFlags)
+            if (Has(keywords, f)) result.Add(f);
+        return result;
+    }
+
+    /// <summary>按加入顺序排列；order 中没有的词条按枚举位顺序补在后面。</summary>
+    public static List<KeywordType> GetOrderedFlags(KeywordType keywords, IList<KeywordType> order)
+    {
+        var result = new List<KeywordType>();
+        var seen = KeywordType.None;
+        if (order != null)
+        {
+            for (int i = 0; i < order.Count; i++)
+            {
+                var k = order[i];
+                if (!Has(keywords, k) || Has(seen, k)) continue;
+                result.Add(k);
+                seen |= k;
+            }
+        }
+        foreach (var k in AllFlags)
+        {
+            if (!Has(keywords, k) || Has(seen, k)) continue;
+            result.Add(k);
+            seen |= k;
+        }
+        return result;
+    }
+
+    public static void AddFlags(ref KeywordType flags, List<KeywordType> order, KeywordType toAdd)
+    {
+        foreach (var k in EnumerateFlags(toAdd))
+        {
+            if (Has(flags, k)) continue;
+            flags |= k;
+            order?.Add(k);
+        }
+    }
+
+    public static List<string> GetNames(KeywordType keywords) => GetNames(keywords, null);
+
+    public static List<string> GetNames(KeywordType keywords, IList<KeywordType> order)
     {
         var result = new List<string>();
-        if (Has(keywords, KeywordType.StockGod)) result.Add("股神");
-        if (Has(keywords, KeywordType.Leek)) result.Add("韭菜");
-        if (Has(keywords, KeywordType.Recycle)) result.Add("回流");
-        if (Has(keywords, KeywordType.Accessory)) result.Add("配件");
-        if (Has(keywords, KeywordType.Consult)) result.Add("查阅");
-        if (Has(keywords, KeywordType.InternalPrice)) result.Add("内部价");
-        if (Has(keywords, KeywordType.Bribe)) result.Add("贿赂");
-        if (Has(keywords, KeywordType.Slack)) result.Add("摸鱼");
-        if (Has(keywords, KeywordType.WatchTarget)) result.Add("监控目标");
+        foreach (var k in GetOrderedFlags(keywords, order))
+            result.Add(GetName(k));
         return result;
     }
 

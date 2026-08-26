@@ -22,7 +22,7 @@ public class PlayerConfig : ScriptableObject
     [Tooltip("每回合能量回复")]
     public int maxActionPoints = 3;  // 每回合行动点
     [Tooltip("每回合基础抽牌数")]
-    public int drawPerTurn = 3;  // 每回合抽牌数
+    public int drawPerTurn = 5;  // 每回合抽牌数
     
     [Tooltip("力量：影响攻击牌伤害")]
     public int strength;          // 力量

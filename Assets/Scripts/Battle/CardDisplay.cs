@@ -73,6 +73,15 @@ public class CardDisplay : MonoBehaviour
     [SerializeField] private Image typeBadgeImage;
     [SerializeField] private Image costBadgeImage;
 
+    [Header("词条图标")]
+    [Tooltip("右侧签上的图标容器（VerticalLayoutGroup）。空则按名字 KeyWordsDeck/KeywordIcons 查找或运行时创建")]
+    [SerializeField] private RectTransform keywordIconContainer;
+    [Tooltip("词条图标库；空则尝试 Resources/CardEditor/KeywordIconLibrary")]
+    [SerializeField] private KeywordIconLibrary keywordIconLibrary;
+    [Tooltip("按位顺序备用图标：股神、韭菜、回流、配件、查阅、内部价、贿赂、摸鱼、监控目标")]
+    [SerializeField] private Sprite[] keywordIconSprites;
+    [SerializeField] private float keywordIconSize = 16f;
+
     [Header("词条悬浮提示")]
     [Tooltip("悬浮时显示的词条说明面板（Image + 子 TextMeshProUGUI），需挂在卡牌上方")]
     [SerializeField] private GameObject keywordTooltip;
@@ -120,6 +129,11 @@ public class CardDisplay : MonoBehaviour
     private LightMiniGame.CardEditor.CardEntry _entry;   // 源 CardEntry（融合感知描述用）
     private Sprite _descBoxSprite;  // 从 CardData/CardEntry 读入的中层描述框
     private Sprite _typeBoxSprite;  // 从 CardData/CardEntry 读入的顶层类型框
+    private List<KeywordType> _keywordDisplayOrder;
+    private RectTransform _resolvedKeywordIconContainer;
+    private Transform _resolvedKeywordTab;
+    private readonly List<GameObject> _keywordIconPool = new List<GameObject>();
+    private static Sprite _fallbackIconSprite;
 
     // ========================================================================
     // 公共方法
@@ -151,6 +165,8 @@ public class CardDisplay : MonoBehaviour
         cd.actionPointCost = actionPointCost;
         cd.consumeType = consumeType;
         cd.keywords = keywords;
+        if (_keywordDisplayOrder != null)
+            cd.keywordOrder = new List<KeywordType>(_keywordDisplayOrder);
         cd.attackCount = attackCount;
         cd.attackValueType = attackValueType;
         cd.attackValue = attackValue;
@@ -198,6 +214,324 @@ public class CardDisplay : MonoBehaviour
         return CardKeywords.GetTooltip(keywords);
     }
 
+    /// <summary>设置词条展示顺序（加入先后）。null 则按枚举位顺序。</summary>
+    public void SetKeywordDisplayOrder(IList<KeywordType> order)
+    {
+        if (order == null || order.Count == 0)
+        {
+            _keywordDisplayOrder = null;
+            return;
+        }
+        _keywordDisplayOrder = new List<KeywordType>(order);
+    }
+
+    private void RefreshKeywordIcons()
+    {
+        var container = EnsureKeywordIconContainer();
+        if (container == null) return;
+
+        if (!CanMutateHierarchy(this))
+            return;
+
+        if (_keywordIconPool.Count == 0)
+        {
+            for (int i = 0; i < container.childCount; i++)
+            {
+                var child = container.GetChild(i);
+                if (child != null && child.name.StartsWith("KeywordIcon"))
+                    _keywordIconPool.Add(child.gameObject);
+            }
+        }
+
+        var ordered = CardKeywords.GetOrderedFlags(keywords, _keywordDisplayOrder);
+        if (_resolvedKeywordTab != null)
+            _resolvedKeywordTab.gameObject.SetActive(true);
+
+        while (_keywordIconPool.Count > ordered.Count)
+        {
+            int last = _keywordIconPool.Count - 1;
+            var go = _keywordIconPool[last];
+            _keywordIconPool.RemoveAt(last);
+            if (go == null) continue;
+            if (Application.isPlaying) Destroy(go);
+            else DestroyImmediate(go);
+        }
+
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            var kw = ordered[i];
+            GameObject iconGo;
+            if (i < _keywordIconPool.Count)
+            {
+                iconGo = _keywordIconPool[i];
+                iconGo.SetActive(true);
+            }
+            else
+            {
+                iconGo = CreateKeywordIcon(container);
+                _keywordIconPool.Add(iconGo);
+            }
+            ApplyKeywordIcon(iconGo, kw);
+        }
+    }
+
+    private RectTransform EnsureKeywordIconContainer()
+    {
+        if (_resolvedKeywordIconContainer != null) return _resolvedKeywordIconContainer;
+        if (keywordIconContainer != null)
+        {
+            _resolvedKeywordIconContainer = keywordIconContainer;
+            _resolvedKeywordTab = keywordIconContainer.parent;
+            return _resolvedKeywordIconContainer;
+        }
+
+        var tab = transform.Find("KeyWordsDeck");
+        if (tab == null)
+        {
+            tab = CreateKeywordTab();
+            if (tab == null) return null;
+        }
+        else
+            UpgradeKeywordTabIfNeeded(tab);
+
+        var icons = tab.Find("KeywordIcons");
+        if (icons == null)
+        {
+            if (!CanMutateHierarchy(this)) return null;
+            icons = CreateKeywordIconsChild(tab);
+        }
+
+        _resolvedKeywordTab = tab;
+        _resolvedKeywordIconContainer = icons as RectTransform;
+        if (_resolvedKeywordIconContainer == null)
+            _resolvedKeywordIconContainer = icons.GetComponent<RectTransform>();
+        return _resolvedKeywordIconContainer;
+    }
+
+    private static bool CanMutateHierarchy(CardDisplay owner)
+    {
+        if (owner == null) return false;
+        var go = owner.gameObject;
+        if (go == null) return false;
+#if UNITY_EDITOR
+        // Play 模式也会对 Prefab 资源触发 OnValidate，绝不能因为 isPlaying 就放行 SetParent
+        if (UnityEditor.EditorUtility.IsPersistent(go))
+            return false;
+        if (UnityEditor.PrefabUtility.IsPartOfPrefabAsset(go))
+            return false;
+        if (!go.scene.IsValid() || !go.scene.isLoaded)
+            return false;
+
+        // Project 窗口里的 Prefab：有资产类型、但不是场景实例、也不在 Prefab Stage
+        var assetType = UnityEditor.PrefabUtility.GetPrefabAssetType(go);
+        var instanceStatus = UnityEditor.PrefabUtility.GetPrefabInstanceStatus(go);
+        if (assetType != UnityEditor.PrefabAssetType.NotAPrefab &&
+            instanceStatus == UnityEditor.PrefabInstanceStatus.NotAPrefab)
+        {
+            var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(go);
+            if (stage == null)
+                return false;
+        }
+        return true;
+#else
+        return Application.isPlaying;
+#endif
+    }
+
+    private Transform CreateKeywordTab()
+    {
+        if (!CanMutateHierarchy(this)) return null;
+        var tabGo = new GameObject("KeyWordsDeck", typeof(RectTransform));
+        tabGo.transform.SetParent(transform, false);
+        tabGo.transform.SetAsFirstSibling();
+        var tabRt = tabGo.GetComponent<RectTransform>();
+        tabRt.anchorMin = tabRt.anchorMax = new Vector2(0.5f, 0.5f);
+        tabRt.pivot = new Vector2(0.5f, 0.5f);
+        tabRt.anchoredPosition = new Vector2(102.5f, 74f);
+        tabRt.sizeDelta = new Vector2(24f, 86f);
+
+        var visualGo = new GameObject("TabVisual", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        visualGo.transform.SetParent(tabRt, false);
+        var visualRt = visualGo.GetComponent<RectTransform>();
+        visualRt.anchorMin = visualRt.anchorMax = new Vector2(0.5f, 0.5f);
+        visualRt.pivot = new Vector2(0.5f, 0.5f);
+        visualRt.anchoredPosition = Vector2.zero;
+        visualRt.sizeDelta = new Vector2(86f, 24f);
+        visualRt.localRotation = Quaternion.Euler(0f, 0f, -90f);
+        var visualImg = visualGo.GetComponent<Image>();
+        visualImg.raycastTarget = false;
+        visualImg.preserveAspect = true;
+        if (typeBadgeImage != null && typeBadgeImage.sprite != null)
+            visualImg.sprite = typeBadgeImage.sprite;
+        visualImg.color = Color.white;
+
+        CreateKeywordIconsChild(tabRt);
+        return tabRt;
+    }
+
+    private static Transform CreateKeywordIconsChild(Transform tab)
+    {
+        var go = new GameObject("KeywordIcons", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        go.transform.SetParent(tab, false);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        var vlg = go.GetComponent<VerticalLayoutGroup>();
+        vlg.padding = new RectOffset(2, 2, 8, 8);
+        vlg.spacing = 2f;
+        vlg.childAlignment = TextAnchor.UpperCenter;
+        vlg.childControlWidth = false;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = false;
+        vlg.childForceExpandHeight = false;
+        return rt;
+    }
+
+    private void UpgradeKeywordTabIfNeeded(Transform tab)
+    {
+        var sr = tab.GetComponent<SpriteRenderer>();
+        if (sr == null) return;
+        if (!CanMutateHierarchy(this)) return;
+
+        var sprite = sr.sprite;
+        if (Application.isPlaying) Destroy(sr);
+        else DestroyImmediate(sr);
+
+        var rt = tab as RectTransform;
+        if (rt == null) rt = tab.gameObject.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.localRotation = Quaternion.identity;
+        rt.localScale = Vector3.one;
+        rt.anchoredPosition = new Vector2(102.5f, 74f);
+        rt.sizeDelta = new Vector2(24f, 86f);
+
+        if (tab.Find("TabVisual") == null)
+        {
+            var visualGo = new GameObject("TabVisual", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            visualGo.transform.SetParent(rt, false);
+            visualGo.transform.SetAsFirstSibling();
+            var visualRt = visualGo.GetComponent<RectTransform>();
+            visualRt.anchorMin = visualRt.anchorMax = new Vector2(0.5f, 0.5f);
+            visualRt.pivot = new Vector2(0.5f, 0.5f);
+            visualRt.anchoredPosition = Vector2.zero;
+            visualRt.sizeDelta = new Vector2(86f, 24f);
+            visualRt.localRotation = Quaternion.Euler(0f, 0f, -90f);
+            var visualImg = visualGo.GetComponent<Image>();
+            visualImg.raycastTarget = false;
+            visualImg.preserveAspect = true;
+            visualImg.sprite = sprite;
+            visualImg.color = Color.white;
+        }
+    }
+
+    private GameObject CreateKeywordIcon(RectTransform parent)
+    {
+        float size = keywordIconSize > 0f ? keywordIconSize : 16f;
+        var go = new GameObject("KeywordIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+        go.transform.SetParent(parent, false);
+        var rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(size, size);
+        var le = go.GetComponent<LayoutElement>();
+        le.preferredWidth = size;
+        le.preferredHeight = size;
+        le.minWidth = size;
+        le.minHeight = size;
+        var img = go.GetComponent<Image>();
+        img.raycastTarget = false;
+        img.preserveAspect = true;
+
+        var labelGo = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        labelGo.transform.SetParent(go.transform, false);
+        var labelRt = labelGo.GetComponent<RectTransform>();
+        labelRt.anchorMin = Vector2.zero;
+        labelRt.anchorMax = Vector2.one;
+        labelRt.offsetMin = Vector2.zero;
+        labelRt.offsetMax = Vector2.zero;
+        var tmp = labelGo.GetComponent<TextMeshProUGUI>();
+        tmp.raycastTarget = false;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.fontSize = Mathf.Max(8f, size * 0.55f);
+        tmp.color = Color.white;
+        tmp.enableWordWrapping = false;
+        tmp.overflowMode = TextOverflowModes.Overflow;
+        if (nameText != null && nameText.font != null)
+            tmp.font = nameText.font;
+        else if (costText != null && costText.font != null)
+            tmp.font = costText.font;
+        return go;
+    }
+
+    private void ApplyKeywordIcon(GameObject iconGo, KeywordType kw)
+    {
+        if (iconGo == null) return;
+        var img = iconGo.GetComponent<Image>();
+        var label = iconGo.GetComponentInChildren<TextMeshProUGUI>(true);
+        var sprite = ResolveKeywordSprite(kw);
+        var name = CardKeywords.GetName(kw);
+
+        if (img != null)
+        {
+            if (sprite != null)
+            {
+                img.sprite = sprite;
+                img.color = Color.white;
+            }
+            else
+            {
+                img.sprite = FallbackIconSprite();
+                img.color = KeywordFallbackColor(kw);
+            }
+        }
+
+        if (label != null)
+        {
+            bool showLetter = sprite == null && !string.IsNullOrEmpty(name);
+            label.gameObject.SetActive(showLetter);
+            if (showLetter) label.text = name.Substring(0, 1);
+        }
+    }
+
+    private Sprite ResolveKeywordSprite(KeywordType kw)
+    {
+        var lib = keywordIconLibrary != null ? keywordIconLibrary : KeywordIconLibrary.Load();
+        var fromLib = lib != null ? lib.GetIcon(kw) : null;
+        if (fromLib != null) return fromLib;
+
+        int idx = -1;
+        for (int i = 0; i < CardKeywords.AllFlags.Length; i++)
+        {
+            if (CardKeywords.AllFlags[i] == kw) { idx = i; break; }
+        }
+        if (idx >= 0 && keywordIconSprites != null && idx < keywordIconSprites.Length)
+            return keywordIconSprites[idx];
+        return null;
+    }
+
+    private static Sprite FallbackIconSprite()
+    {
+        if (_fallbackIconSprite != null) return _fallbackIconSprite;
+        var tex = Texture2D.whiteTexture;
+        _fallbackIconSprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 4f);
+        return _fallbackIconSprite;
+    }
+
+    private static Color KeywordFallbackColor(KeywordType kw)
+    {
+        if (kw == KeywordType.StockGod) return new Color(0.85f, 0.65f, 0.15f, 1f);
+        if (kw == KeywordType.Leek) return new Color(0.35f, 0.72f, 0.32f, 1f);
+        if (kw == KeywordType.Recycle) return new Color(0.25f, 0.70f, 0.75f, 1f);
+        if (kw == KeywordType.Accessory) return new Color(0.55f, 0.55f, 0.60f, 1f);
+        if (kw == KeywordType.Consult) return new Color(0.30f, 0.50f, 0.85f, 1f);
+        if (kw == KeywordType.InternalPrice) return new Color(0.90f, 0.75f, 0.20f, 1f);
+        if (kw == KeywordType.Bribe) return new Color(0.65f, 0.35f, 0.80f, 1f);
+        if (kw == KeywordType.Slack) return new Color(0.90f, 0.50f, 0.20f, 1f);
+        if (kw == KeywordType.WatchTarget) return new Color(0.80f, 0.25f, 0.30f, 1f);
+        return new Color(0.45f, 0.45f, 0.50f, 1f);
+    }
+
     /// <summary>
     /// 全局标记：融合面板激活时避免 UpdateDisplay 清掉原位高亮（由 FusionController 置位/复位）。
     /// </summary>
@@ -221,13 +555,23 @@ public class CardDisplay : MonoBehaviour
         if (gradeText) gradeText.text = CardData.GetGradeName(grade);
         if (descText) descText.text = GetFusionAwareDescription();
 
-        // 词条文本
+        // 词条文本（有侧签图标时不再在卡面叠一层文字）
         if (keywordText)
         {
             var kwNames = CardData.GetKeywordNames(keywords);
-            keywordText.text = kwNames.Count > 0 ? string.Join("  ", kwNames) : "";
-            keywordText.gameObject.SetActive(kwNames.Count > 0);
+            bool useIcons = EnsureKeywordIconContainer() != null;
+            if (useIcons)
+            {
+                keywordText.gameObject.SetActive(false);
+            }
+            else
+            {
+                keywordText.text = kwNames.Count > 0 ? string.Join("  ", kwNames) : "";
+                keywordText.gameObject.SetActive(kwNames.Count > 0);
+            }
         }
+
+        RefreshKeywordIcons();
 
         Color typeColor = GetCardTypeColor();
         if (costBadgeImage) costBadgeImage.color = _playable ? typeColor : new Color(0.5f, 0.5f, 0.5f, 1f);
@@ -321,6 +665,7 @@ public class CardDisplay : MonoBehaviour
             // 运行时字段覆盖（费用可能被修改过，keywords 可能被理智转阶段改过）
             actionPointCost = data.GetEffectiveCost();
             keywords = data.keywords;
+            SetKeywordDisplayOrder(data.keywordOrder);
             UpdateDisplay();
 
             // CardData 自身的三层 sprite 优先；老数据字段为空时回退 sourceEntry。
@@ -342,6 +687,7 @@ public class CardDisplay : MonoBehaviour
         actionPointCost = data.actionPointCost;
         consumeType = data.consumeType;
         keywords = data.keywords;
+        SetKeywordDisplayOrder(data.keywordOrder);
         attackCount = data.attackCount;
         attackValueType = data.attackValueType;
         attackValue = data.attackValue;
@@ -402,8 +748,9 @@ public class CardDisplay : MonoBehaviour
         // 描述框位置（卡牌编辑器配置，导出预制体/运行时统一应用）
         ApplyDescBoxLayoutPosition(entry);
 
-        // 词条映射（默认无词条）
+        // 词条映射（默认无词条；编辑器一次勾选按枚举位顺序）
         keywords = CardKeywords.FromEditor(entry.keyword);
+        SetKeywordDisplayOrder(null);
         if (CardKeywords.Has(keywords, KeywordType.InternalPrice))
             actionPointCost = Mathf.Max(0, actionPointCost - 1);
 
@@ -1145,12 +1492,17 @@ public class CardDisplay : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        // 延迟调用，确保所有字段已更新
-        UnityEditor.EditorApplication.delayCall += () =>
-        {
-            if (this == null) return;
-            UpdateDisplay();
-        };
+        if (!CanMutateHierarchy(this)) return;
+        UnityEditor.EditorApplication.delayCall += OnValidateDelayed;
+    }
+
+    private void OnValidateDelayed()
+    {
+        if (this == null) return;
+        // Prefab 资源（含 Play 模式下被 Inspector/导入触发的资源）禁止改层级
+        if (!CanMutateHierarchy(this))
+            return;
+        UpdateDisplay();
     }
 #endif
 }
