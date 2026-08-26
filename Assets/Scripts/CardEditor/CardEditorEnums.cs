@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace LightMiniGame.CardEditor
 {
@@ -25,14 +26,22 @@ namespace LightMiniGame.CardEditor
     public enum CardKeyword
     {
         None          = 0,
-        StockGod      = 1 << 0,  // 股神
-        Leek          = 1 << 1,  // 韭菜
-        Recycle       = 1 << 2,  // 回流
-        Accessory     = 1 << 3,  // 配件
-        Consult       = 1 << 4,  // 查阅
-        InternalPrice = 1 << 5,  // 内部价
-        Bribe         = 1 << 6,  // 贿赂
-        Slack         = 1 << 7   // 摸鱼
+        [InspectorName("股神")]
+        StockGod      = 1 << 0,
+        [InspectorName("韭菜")]
+        Leek          = 1 << 1,
+        [InspectorName("回流")]
+        Recycle       = 1 << 2,
+        [InspectorName("配件")]
+        Accessory     = 1 << 3,
+        [InspectorName("查阅")]
+        Consult       = 1 << 4,
+        [InspectorName("内部价")]
+        InternalPrice = 1 << 5,
+        [InspectorName("贿赂")]
+        Bribe         = 1 << 6,
+        [InspectorName("摸鱼")]
+        Slack         = 1 << 7
     }
 
     // ========================================================================

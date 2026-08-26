@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// 卡牌类型
@@ -68,13 +69,21 @@ public enum BuffDurationType
 public enum KeywordType
 {
     None          = 0,
+    [InspectorName("股神")]
     StockGod      = 1 << 0,  // 股神：融合时该卡获得最大数值
+    [InspectorName("韭菜")]
     Leek          = 1 << 1,  // 韭菜：融合时该卡获得最小数值（0）
+    [InspectorName("回流")]
     Recycle       = 1 << 2,  // 回流：本回合第一次打出后回到手牌
+    [InspectorName("配件")]
     Accessory     = 1 << 3,  // 配件（词条）：打出时若手牌有卡牌「主机」，主机获得本卡效果
+    [InspectorName("查阅")]
     Consult       = 1 << 4,  // 查阅：打出时抽 1 张牌
+    [InspectorName("内部价")]
     InternalPrice = 1 << 5,  // 内部价：费用 -1
+    [InspectorName("贿赂")]
     Bribe         = 1 << 6,  // 贿赂：费用不足时可用 5 货币代替 1 点费用
+    [InspectorName("摸鱼")]
     Slack         = 1 << 7,  // 摸鱼：打出后立即结束回合，下回合多抽 1 张
 }
 
@@ -82,6 +91,11 @@ public enum KeywordType
 public static class CardKeywords
 {
     public const string HostCardName = "主机";
+
+    public static readonly string[] FlagMaskNames =
+    {
+        "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼"
+    };
 
     public static readonly string[] EditorPopupNames =
     {

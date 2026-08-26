@@ -31,7 +31,11 @@ public class CardDisplayEditor : Editor
         card.grade = (CardGrade)EditorGUILayout.EnumPopup("Grade (品级)", card.grade);
         card.actionPointCost = EditorGUILayout.IntField("Action Point Cost", card.actionPointCost);
         card.consumeType = (ConsumeType)EditorGUILayout.EnumPopup("Consume Type", card.consumeType);
-        card.keywords = (KeywordType)EditorGUILayout.EnumFlagsField("Keywords (词条)", card.keywords);
+        int kwMask = EditorGUILayout.MaskField("词条（可多选）", (int)card.keywords, CardKeywords.FlagMaskNames);
+        card.keywords = (KeywordType)kwMask;
+        var kwTip = CardKeywords.GetTooltip(card.keywords);
+        if (!string.IsNullOrEmpty(kwTip))
+            EditorGUILayout.HelpBox(kwTip, MessageType.None);
 
         EditorGUILayout.Space();
 

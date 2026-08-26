@@ -290,7 +290,11 @@ namespace LightMiniGame.CardEditor.Editor
             card.grade = (CardGrade)EditorGUILayout.Popup("品级", (int)card.grade, new[] { "铜", "银", "金" });
             card.cardType = (CardType)EditorGUILayout.Popup("卡牌类型", (int)card.cardType, new[] { "攻击", "技能", "能力" });
             card.existence = (CardExistence)EditorGUILayout.Popup("存在形式(普通)", (int)card.existence, new[] { "普通", "战斗内移除", "永久移除" });
-            card.keyword = (CardKeyword)EditorGUILayout.EnumFlagsField("词条（可多选）", card.keyword);
+            int kwMask = EditorGUILayout.MaskField("词条（可多选）", (int)card.keyword, CardKeywords.FlagMaskNames);
+            card.keyword = (CardKeyword)kwMask;
+            var kwTip = CardKeywords.GetTooltip(CardKeywords.FromEditor(card.keyword));
+            if (!string.IsNullOrEmpty(kwTip))
+                EditorGUILayout.HelpBox(kwTip, MessageType.None);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("费用", EditorStyles.boldLabel);
