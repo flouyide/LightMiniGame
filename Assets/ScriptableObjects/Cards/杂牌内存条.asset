@@ -30,7 +30,7 @@ MonoBehaviour:
   normalCost: 0
   lowSanityCost: 0
   price: 10
-  keyword: 0
+  keyword: 8
   keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
