@@ -680,8 +680,8 @@ public class BattleManager : MonoBehaviour
         var cm = GetChapterManager();
         if (cm == null) return;
         int val = Mathf.Max(0, value);
-        int diff = val - cm.PlayerGold;
-        if (diff != 0) cm.AddGold(diff);   // 复用 AddGold 以广播 UI（内部 clamp≥0）
+        //int diff = val - cm.PlayerGold;
+        if (val != 0) cm.AddGold(val);   // 复用 AddGold 以广播 UI（内部 clamp≥0）
     }
 
     private ChapterManager GetChapterManager()
@@ -1538,7 +1538,7 @@ public class BattleManager : MonoBehaviour
             Debug.Log($"[BattleManager] {charData?.Label} 初始牌组(CardEntry): {state.drawPile.Count} 张");
             return;
         }
-
+        
         // 回退：使用旧 CardData 初始牌库
         if (charData.startingLibrary == null) return;
 
