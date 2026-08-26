@@ -217,8 +217,8 @@ public class EffectExecutorV2
             case ValueNodeType.ReadAttribute:
                 return node.attributeRef switch
                 {
-                    LightMiniGame.CardEditor.PlayerAttributeType.Strength => _ctx.PlayerStrength,
-                    LightMiniGame.CardEditor.PlayerAttributeType.Dexterity => _ctx.PlayerDexterity,
+                    LightMiniGame.CardEditor.PlayerAttributeType.Strength => OwnerStrength,
+                    LightMiniGame.CardEditor.PlayerAttributeType.Dexterity => OwnerDexterity,
                     LightMiniGame.CardEditor.PlayerAttributeType.MaxHealth => _ctx.PlayerMaxHP,
                     LightMiniGame.CardEditor.PlayerAttributeType.CriticalChance => Mathf.RoundToInt(_ctx.PlayerCritRate * 100),
                     LightMiniGame.CardEditor.PlayerAttributeType.CriticalDamageMultiplier => Mathf.RoundToInt(_ctx.PlayerCritDamage * 100),
@@ -442,11 +442,11 @@ public class EffectExecutorV2
         // 融合覆盖：手牌攻击值被融合修改时，完全替换基础伤害（力量加成仍按后续叠加）
         if (_ctx.TryGetFusionAttack(out int fusionAtk))
             baseDamage = fusionAtk;
-        // 融合覆盖：敌人意图伤害被融合修改时，直接替换该敌人本次伤害（融合后的意图值生效）
+        // 融合覆盖：敌人意图伤害已含该敌人力量，直接替换、不再叠加
         if (IsEnemyInitiator && _ctx.TryGetEnemyIntentOverride(_initiatorEnemySlot, out int fusionIntent))
             baseDamage = fusionIntent;
-        // 力量加成：玩家出牌用玩家力量；敌人出牌时力量已由 DealDamageToPlayer（敌人生成语义）叠加，避免重复
-        if (node.scalingMode == ScalingMode.AddStrength && !IsEnemyInitiator)
+        else if ((node.scalingMode == ScalingMode.AddStrength || IsEnemyInitiator)
+            && !ValueNode.ReadsAttribute(node.value, LightMiniGame.CardEditor.PlayerAttributeType.Strength))
             baseDamage += OwnerStrength;
 
         int hitCount = Mathf.Max(1, EvaluateValue(node.repeatCount));
@@ -470,14 +470,18 @@ public class EffectExecutorV2
             }
             else
             {
-                isCrit = node.criticalCheckMode switch
+                // 烧水壶等遗物可为“融合攻击值已覆盖且单次伤害达到阈值”的攻击牌强制暴击。
+                // 规则优先级高于卡牌的普通随机判定；未命中规则时保留节点自身 Guaranteed / Disabled 语义。
+                bool forcedCritical = !IsEnemyInitiator &&
+                    _ctx.IsCurrentFusedAttackGuaranteedCritical(baseDamage);
+                isCrit = forcedCritical || (node.criticalCheckMode switch
                 {
                     CriticalCheckMode.PerHit => UnityEngine.Random.value < _ctx.PlayerCritRate,
                     CriticalCheckMode.PerAttack => hit == 0 && UnityEngine.Random.value < _ctx.PlayerCritRate,
                     CriticalCheckMode.Guaranteed => true,
                     CriticalCheckMode.Disabled => false,
                     _ => false
-                };
+                });
                 hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * _ctx.PlayerCritDamage) : baseDamage;
 
                 // 破甲
@@ -488,7 +492,7 @@ public class EffectExecutorV2
                 // 目标选择
                 if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
                 {
-                    _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock);
+                    _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock, isCrit);
                 }
                 else
                 {
@@ -501,7 +505,7 @@ public class EffectExecutorV2
                     };
                     if (targetIdx >= 0)
                     {
-                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock);
+                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock, isCrit);
                         if (armorBreak > 0)
                             _ctx.ApplyStatusToEnemy(targetIdx, StatusType.ArmorBreak, armorBreak);
                     }
@@ -539,7 +543,8 @@ public class EffectExecutorV2
         // 融合覆盖：护甲值被融合修改时替换基础格挡
         if (_ctx.TryGetFusionArmor(out int fusionArmor))
             block = fusionArmor;
-        if (node.scalingMode == ScalingMode.AddStrength)
+        else if (node.scalingMode == ScalingMode.AddStrength
+            && !ValueNode.ReadsAttribute(node.value, LightMiniGame.CardEditor.PlayerAttributeType.Dexterity))
             block += OwnerDexterity;
 
         // 敌人出牌：格挡一律加给敌人自己（敌人防御技能=自护盾，无“给玩家加盾”的敌人卡）

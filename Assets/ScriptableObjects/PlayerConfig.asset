@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerConfig
   m_EditorClassIdentifier: 
   maxHP: 65
-  startHP: 10
+  startHP: 1000
   startGold: 10000
   startSanity: 6
   maxSanity: 10
@@ -22,9 +22,9 @@ MonoBehaviour:
   maxActionPoints: 3
   drawPerTurn: 5
   strength: 0
-  agility: 0
+  dexterity: 0
   lifesteal: 0
   critRate: 0
-  critDamage: 0
+  critDamage: 200
   playerDamageMultiplier: 100
   playerDamageTakenMultiplier: 100

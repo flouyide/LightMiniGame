@@ -483,11 +483,11 @@ public class BookUIController : MonoBehaviour
     private void HandlePlayerStatsUpdated(int hp, int gold, int sanity)
     {
         if (hpText != null)
-            hpText.text = $"HP: {hp}";
+            hpText.text = $"{hp}/{chapterManager?.PlayerMaxHP ?? 0}";
         if (goldText != null)
-            goldText.text = $"金币: {gold}";
+            goldText.text = gold.ToString();
         if (sanText != null)
-            sanText.text = $"理智: {sanity}";
+            sanText.text = $"{sanity}/{chapterManager?.PlayerMaxSanity ?? 0}";
         RefreshFortune(chapterManager != null ? chapterManager.PlayerFortune : 0);
         // 玩家属性变化（含 Sanity）→ 背景图可能需切换
         UpdateBackground();
@@ -530,6 +530,15 @@ public class BookUIController : MonoBehaviour
                 if (img != null) img.raycastTarget = active;
                 continue;
             }
+
+            // ChapterCompletePanel 不能跟随局外界面恢复被自动打开。
+            // 它只能由 HandleChapterComplete 响应最终节点完成事件时显示。
+            if (child.gameObject == chapterCompletePanel)
+            {
+                child.gameObject.SetActive(false);
+                continue;
+            }
+
             child.gameObject.SetActive(active);
         }
     }
@@ -540,11 +549,11 @@ public class BookUIController : MonoBehaviour
     public void UpdateTopBarBattleStats(int hp, int maxHp, int gold, int sanity, int maxSanity, int fortune)
     {
         if (hpText != null)
-            hpText.text = $"HP: {hp}/{maxHp}";
+            hpText.text = $"{hp}/{maxHp}";
         if (goldText != null)
-            goldText.text = $"金币: {gold}";
+            goldText.text = gold.ToString();
         if (sanText != null)
-            sanText.text = $"理智: {sanity}/{maxSanity}";
+            sanText.text = $"{sanity}/{maxSanity}";
         RefreshFortune(fortune);
     }
 
@@ -658,5 +667,30 @@ public class BookUIController : MonoBehaviour
         }
         if (sprite != null)
             icon.sprite = sprite;
+    }
+
+    /// <summary>
+    /// 战斗结束回到局外时关闭所有可与局外书页重叠的临时面板，
+    /// 并重置章节完成面板，避免它被局外根节点恢复时误显示。
+    /// </summary>
+    public void CloseTransientPanelsAfterBattle()
+    {
+        // 即使 ChapterCompletePanel 不是 BookCanvas 的直接子物体，也必须在普通战斗结束后保持隐藏。
+        // 最终节点完成时，ChapterManager 随后触发 OnChapterComplete，由 HandleChapterComplete 再显式打开。
+        if (chapterCompletePanel != null)
+            chapterCompletePanel.SetActive(false);
+
+        if (shopPanel != null)
+            shopPanel.gameObject.SetActive(false);
+        if (optionPanel != null)
+            optionPanel.gameObject.SetActive(false);
+        if (cardLibraryPanel != null)
+            cardLibraryPanel.SetActive(false);
+        else if (_cardLibraryPanel != null)
+            _cardLibraryPanel.gameObject.SetActive(false);
+        if (relicInventoryPanel != null)
+            relicInventoryPanel.SetActive(false);
+        else if (_relicInventoryPanel != null)
+            _relicInventoryPanel.gameObject.SetActive(false);
     }
 }

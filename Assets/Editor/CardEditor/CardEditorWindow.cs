@@ -184,7 +184,7 @@ namespace LightMiniGame.CardEditor.Editor
             EditorGUILayout.BeginHorizontal();
             if (_filterEnabled)
             {
-                _filterKeywordIdx = EditorGUILayout.Popup(_filterKeywordIdx, CardKeywords.FilterPopupNames, GUILayout.Width(80));
+                _filterKeywordIdx = EditorGUILayout.Popup(_filterKeywordIdx, CardKeywords.FilterPopupNames, GUILayout.Width(96));
                 _filterCost = EditorGUILayout.IntField("费用", _filterCost, GUILayout.Width(80));
             }
             EditorGUILayout.EndHorizontal();

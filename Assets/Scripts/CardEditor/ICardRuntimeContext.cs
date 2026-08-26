@@ -60,6 +60,13 @@ namespace LightMiniGame.CardEditor
         void RemoveStatusFromEnemy(int enemyIndex, StatusType status, int stacks);
         void RemoveStatusFromPlayer(StatusType status, int stacks);
 
+        // === 融合攻击规则 ===
+        /// <summary>
+        /// 当前执行中的手牌若为融合攻击牌，且已结算的单次伤害满足活跃遗物规则则返回 true。
+        /// 由 EffectExecutorV2 在暴击判定前调用；实现方不得在此重复修改伤害。
+        /// </summary>
+        bool IsCurrentFusedAttackGuaranteedCritical(int singleHitDamage);
+
         // === 敌人侧修改（敌人作为效果发起者 / 对敌人自身结算时使用）===
         /// <summary>给指定槽位敌人叠加护甲（敌人自护盾/给友军护盾）。</summary>
         void AddEnemyArmor(int slotIndex, int amount);

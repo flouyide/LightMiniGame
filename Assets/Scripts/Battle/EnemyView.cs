@@ -168,7 +168,7 @@ public class EnemyView : MonoBehaviour
         if (nameText != null) nameText.text = _inst.Name;
         if (hpText != null) hpText.text = $"{_inst.HP}/{_inst.MaxHP}";
         if (hpBar != null) hpBar.value = _inst.MaxHP > 0 ? Mathf.Clamp01((float)_inst.HP / _inst.MaxHP) : 0f;
-        if (armorText != null) armorText.text = _inst.Armor > 0 ? $"护甲: {_inst.Armor}" : "";
+        if (armorText != null) armorText.text = _inst.Armor > 0 ? $"{_inst.Armor}" : "";
 
         if (portraitImage != null && cfg != null)
         {

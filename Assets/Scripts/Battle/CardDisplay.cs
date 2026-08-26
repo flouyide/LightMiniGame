@@ -110,6 +110,8 @@ public class CardDisplay : MonoBehaviour
     private int _enemyStrength;
     /// <summary>敌人敏捷（意图预览用）</summary>
     private int _enemyDexterity;
+    /// <summary>当前显示低理智形态（ApplyCardEntry 的 upgraded 参数）</summary>
+    private bool _displayLowSanity;
 
     /// <summary>实时融合覆盖层：优先读 CardData.fusion（融合可能新建覆盖层使旧引用失效），否则用缓存。</summary>
     private FusionCardDelta LiveFusion => _data != null && _data.fusion != null ? _data.fusion : _fusion;
@@ -368,6 +370,7 @@ public class CardDisplay : MonoBehaviour
     {
         if (entry == null) return;
         _entry = entry;
+        _displayLowSanity = upgraded;
 
         cardName = entry.cardName;
         description = entry.GetDescription(upgraded);
@@ -943,19 +946,8 @@ public class CardDisplay : MonoBehaviour
     private int ComputeResolvedEffectValue(LightMiniGame.CardEditor.EffectNode node, int str, int dex, bool isEnemy)
     {
         if (node == null || node.value == null) return 0;
-        int baseVal = LightMiniGame.CardEditor.ValueNode.ResolveValue(node.value, str, dex);
-        switch (node.operation)
-        {
-            case LightMiniGame.CardEditor.EffectOperation.DealDamage:
-                if (node.scalingMode == LightMiniGame.CardEditor.ScalingMode.AddStrength || isEnemy)
-                    baseVal += str;
-                break;
-            case LightMiniGame.CardEditor.EffectOperation.GainBlock:
-                if (node.scalingMode == LightMiniGame.CardEditor.ScalingMode.AddStrength)
-                    baseVal += dex;
-                break;
-        }
-        return baseVal;
+        return LightMiniGame.CardEditor.ValueNode.ResolveCombatValue(
+            node.value, node.operation, node.scalingMode, str, dex, isEnemy);
     }
 
     /// <summary>
@@ -1047,6 +1039,7 @@ public class CardDisplay : MonoBehaviour
         _isEnemyCard = true;
         _enemyStrength = strength;
         _enemyDexterity = dexterity;
+        if (_entry != null) UpdateDisplay();
     }
 
     /// <summary>当前描述上下文的力量值</summary>
@@ -1059,7 +1052,7 @@ public class CardDisplay : MonoBehaviour
         // 有 CardEntry 时优先使用属性解析描述
         if (_entry != null)
         {
-            bool low = _data != null && _data.isLowSanityForm;
+            bool low = _data != null ? _data.isLowSanityForm : _displayLowSanity;
             return _entry.GetResolvedDescription(low, ContextStrength, ContextDexterity, _isEnemyCard);
         }
         // 有 CardData 时尝试从 sourceEntry 解析

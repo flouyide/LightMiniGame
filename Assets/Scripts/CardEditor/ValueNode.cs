@@ -112,6 +112,41 @@ namespace LightMiniGame.CardEditor
             }
         }
 
+        /// <summary>表达式树是否读取了指定属性（如 6+力量）。已含该属性时不要再按 scalingMode 加一次。</summary>
+        public static bool ReadsAttribute(ValueNode node, PlayerAttributeType attr)
+        {
+            if (node == null) return false;
+            if (node.nodeType == ValueNodeType.ReadAttribute && node.attributeRef == attr)
+                return true;
+            if (node.operands == null) return false;
+            for (int i = 0; i < node.operands.Count; i++)
+            {
+                if (ReadsAttribute(node.operands[i], attr)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 效果数值：先求值，再按缩放叠加力量/敏捷。树里已经 ReadAttribute 的不再加，避免 {N+力量} 双算。
+        /// isEnemy 时 DealDamage 额外吃力量（与杀戮尖塔敌人攻击一致）。
+        /// </summary>
+        public static int ResolveCombatValue(ValueNode value, EffectOperation op, ScalingMode scaling, int strength, int dexterity, bool isEnemy)
+        {
+            int v = ResolveValue(value, strength, dexterity);
+            switch (op)
+            {
+                case EffectOperation.DealDamage:
+                    if ((scaling == ScalingMode.AddStrength || isEnemy) && !ReadsAttribute(value, PlayerAttributeType.Strength))
+                        v += strength;
+                    break;
+                case EffectOperation.GainBlock:
+                    if (scaling == ScalingMode.AddStrength && !ReadsAttribute(value, PlayerAttributeType.Dexterity))
+                        v += dexterity;
+                    break;
+            }
+            return v;
+        }
+
         /// <summary>取 ValueNode 的指定操作数子节点（越界返回 null）。</summary>
         private static ValueNode Operand(ValueNode node, int index)
             => (node != null && node.operands != null && index < node.operands.Count) ? node.operands[index] : null;
