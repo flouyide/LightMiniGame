@@ -1377,7 +1377,7 @@ public class BattleManager : MonoBehaviour
         get
         {
             if (_chars == null || _chars.Length < 2) return null;
-            return _chars[(_activeCharIdx + 1) % _chars.Length];
+            return _chars[1 - _activeCharIdx];
         }
     }
 
@@ -1535,46 +1535,48 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 按 GameConfig.characters 建立出战角色（支持 2 人以上）。
-    /// 起始激活角色优先用局外传入的 StartActiveChar。
+    /// 出战角色与局外一致：激活 + 未激活共两人。
+    /// GameConfig.characters 是全角色名册，战斗不把第三人拉进来。
     /// </summary>
     private bool InitBattleParty()
     {
-        var list = gameConfig.characters;
-        int n = 0;
-        for (int i = 0; i < list.Count; i++)
-            if (list[i] != null) n++;
-        if (n < 2)
+        var active = StartActiveChar;
+        var inactive = StartInactiveChar;
+        var roster = gameConfig != null ? gameConfig.characters : null;
+
+        if (active == null)
+            active = FirstRosterCharacter(roster, except: null);
+        if (inactive == null)
+            inactive = FirstRosterCharacter(roster, except: active);
+
+        if (active == null || inactive == null || active == inactive)
         {
-            Debug.LogError("[BattleManager] GameConfig 有效角色不足 2 个，无法开始战斗");
+            Debug.LogError("[BattleManager] 出战角色不足 2 个（需与局外激活/未激活一致），无法开始战斗");
             return false;
         }
 
-        _chars = new CharBattleState[n];
-        int slot = 0;
-        for (int i = 0; i < list.Count; i++)
+        _chars = new CharBattleState[2];
+        _chars[0] = new CharBattleState { data = active };
+        _chars[1] = new CharBattleState { data = inactive };
+        for (int i = 0; i < _chars.Length; i++)
         {
-            if (list[i] == null) continue;
-            _chars[slot] = new CharBattleState { data = list[i] };
-            BuildStartingDeck(_chars[slot]);
-            ShuffleDrawPile(_chars[slot]);
-            slot++;
+            BuildStartingDeck(_chars[i]);
+            ShuffleDrawPile(_chars[i]);
         }
-
-        int startIdx = 0;
-        if (StartActiveChar != null)
-        {
-            for (int i = 0; i < _chars.Length; i++)
-            {
-                if (_chars[i] != null && _chars[i].data == StartActiveChar)
-                {
-                    startIdx = i;
-                    break;
-                }
-            }
-        }
-        _activeCharIdx = startIdx;
+        _activeCharIdx = 0;
         return true;
+    }
+
+    private static CharacterData FirstRosterCharacter(List<CharacterData> roster, CharacterData except)
+    {
+        if (roster == null) return null;
+        for (int i = 0; i < roster.Count; i++)
+        {
+            var ch = roster[i];
+            if (ch != null && ch != except)
+                return ch;
+        }
+        return null;
     }
 
     public void StartBattle()
@@ -2798,8 +2800,8 @@ public class BattleManager : MonoBehaviour
         // 挂起当前角色的能力
         // 触发器系统角色切换
 
-        if (_chars != null && _chars.Length > 0)
-            _activeCharIdx = (_activeCharIdx + 1) % _chars.Length;
+        if (_chars != null && _chars.Length >= 2)
+            _activeCharIdx = 1 - _activeCharIdx;
         _hasSwitchedThisTurn = true;
 
         // 计数器：切换角色
