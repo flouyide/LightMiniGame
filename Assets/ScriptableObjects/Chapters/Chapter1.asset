@@ -86,13 +86,13 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_rest
     displayName: 
     description: 
     icon: {fileID: 0}
     eventType: 2
-    restHealingPercent: 30
     isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []
@@ -141,6 +141,7 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_shop
     displayName: 
@@ -195,6 +196,7 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 0}
     lowSanityBattleBackground: {fileID: 0}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_bgc
     displayName: 
@@ -241,6 +243,7 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_szm
     displayName: 000
@@ -291,7 +294,8 @@ MonoBehaviour:
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 4
+    restHealingPercent: 30
     defaultEffects: []
-  NormalBG: {fileID: 21300000, guid: d54e701318e4da34aa66d48e8f6551fa, type: 3}
-  AbnormalBG: {fileID: 21300000, guid: 93056e3be4826194baa5869fbdd82085, type: 3}
+  NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   sanityThreshold: 5
