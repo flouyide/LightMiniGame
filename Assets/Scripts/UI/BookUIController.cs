@@ -30,8 +30,6 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private TextMeshProUGUI goldText;
     [SerializeField] private TextMeshProUGUI sanText;       // 理智文本（显示玩家 Sanity）
-    [SerializeField] private TextMeshProUGUI fortuneText;   // 福报值文本（TopBar，图标旁）
-    [SerializeField] private Sprite fortuneIconSprite;      // 留空则运行时从 Assets/Art/局内/福报1.png 加载
 
     [Header("章节完成面板")]
     [SerializeField] private GameObject chapterCompletePanel;
@@ -111,8 +109,6 @@ public class BookUIController : MonoBehaviour
         if (background != null)
             _backgroundImage = background.GetComponent<Image>() ?? background.GetComponentInChildren<Image>();
         UpdateBackground();
-        EnsureFortuneUI();
-        RefreshFortune(chapterManager != null ? chapterManager.PlayerFortune : 0);
     }
 
     private void OnDisable()
@@ -483,12 +479,11 @@ public class BookUIController : MonoBehaviour
     private void HandlePlayerStatsUpdated(int hp, int gold, int sanity)
     {
         if (hpText != null)
-            hpText.text = $"HP: {hp}";
+            hpText.text = $"{hp}/{chapterManager?.PlayerMaxHP ?? 0}";
         if (goldText != null)
-            goldText.text = $"金币: {gold}";
+            goldText.text = gold.ToString();
         if (sanText != null)
-            sanText.text = $"理智: {sanity}";
-        RefreshFortune(chapterManager != null ? chapterManager.PlayerFortune : 0);
+            sanText.text = $"{sanity}/{chapterManager?.PlayerMaxSanity ?? 0}";
         // 玩家属性变化（含 Sanity）→ 背景图可能需切换
         UpdateBackground();
         // 战斗结束后 ChapterManager 写回的激活/未激活角色同步刷新到局外角色栏（头像+名字）
@@ -530,133 +525,54 @@ public class BookUIController : MonoBehaviour
                 if (img != null) img.raycastTarget = active;
                 continue;
             }
+
+            // ChapterCompletePanel 不能跟随局外界面恢复被自动打开。
+            // 它只能由 HandleChapterComplete 响应最终节点完成事件时显示。
+            if (child.gameObject == chapterCompletePanel)
+            {
+                child.gameObject.SetActive(false);
+                continue;
+            }
+
             child.gameObject.SetActive(active);
         }
     }
 
     /// <summary>
-    /// 战斗中由 BattleManager.UpdateUI 调用，同步更新 TopBar 上的 HP/Gold/Sanity/Fortune 文本。
+    /// 战斗中由 BattleManager.UpdateUI 调用，同步更新 TopBar 上的 HP、金币和理智文本。
     /// </summary>
-    public void UpdateTopBarBattleStats(int hp, int maxHp, int gold, int sanity, int maxSanity, int fortune)
+    public void UpdateTopBarBattleStats(int hp, int maxHp, int gold, int sanity, int maxSanity)
     {
         if (hpText != null)
-            hpText.text = $"HP: {hp}/{maxHp}";
+            hpText.text = $"{hp}/{maxHp}";
         if (goldText != null)
-            goldText.text = $"金币: {gold}";
+            goldText.text = gold.ToString();
         if (sanText != null)
-            sanText.text = $"理智: {sanity}/{maxSanity}";
-        RefreshFortune(fortune);
-    }
-
-    private const string FortuneIconPath = "Assets/Art/局内/福报1.png";
-
-    private void RefreshFortune(int fortune)
-    {
-        EnsureFortuneUI();
-        if (fortuneText != null)
-            fortuneText.text = $"福报：{Mathf.Max(0, fortune)}";
-        NudgeFortuneTextLeft();
+            sanText.text = $"{sanity}/{maxSanity}";
     }
 
     /// <summary>
-    /// 在 TopBar 金币图标右侧创建福报图标+数字（与 SanIcon / CoinIcon 同款布局）。
-    /// 已在 Inspector 指定 fortuneText 则只补图标精灵。
+    /// 战斗结束回到局外时关闭所有可与局外书页重叠的临时面板，
+    /// 并重置章节完成面板，避免它被局外根节点恢复时误显示。
     /// </summary>
-    private void EnsureFortuneUI()
+    public void CloseTransientPanelsAfterBattle()
     {
-        if (fortuneText != null)
-        {
-            ApplyFortuneIconSprite(fortuneText.transform.parent != null
-                ? fortuneText.transform.parent.GetComponent<Image>()
-                : null);
-            return;
-        }
+        // 即使 ChapterCompletePanel 不是 BookCanvas 的直接子物体，也必须在普通战斗结束后保持隐藏。
+        // 最终节点完成时，ChapterManager 随后触发 OnChapterComplete，由 HandleChapterComplete 再显式打开。
+        if (chapterCompletePanel != null)
+            chapterCompletePanel.SetActive(false);
 
-        var topBar = transform.Find("TopBar");
-        if (topBar == null) return;
-
-        var existing = topBar.Find("FortuneIcon");
-        if (existing != null)
-        {
-            fortuneText = existing.GetComponentInChildren<TextMeshProUGUI>(true);
-            ApplyFortuneIconSprite(existing.GetComponent<Image>());
-            return;
-        }
-
-        var coin = topBar.Find("CoinIcon") as RectTransform;
-        var san = topBar.Find("SanIcon") as RectTransform;
-        var template = coin != null ? coin : san;
-        if (template == null) return;
-
-        var iconGO = new GameObject("FortuneIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        iconGO.layer = topBar.gameObject.layer;
-        var iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.SetParent(topBar, false);
-        iconRT.anchorMin = template.anchorMin;
-        iconRT.anchorMax = template.anchorMax;
-        iconRT.pivot = template.pivot;
-        iconRT.sizeDelta = template.sizeDelta;
-        iconRT.localScale = template.localScale;
-        float spacing = 205f;
-        if (coin != null && san != null)
-            spacing = coin.anchoredPosition.x - san.anchoredPosition.x;
-        Vector2 origin = coin != null ? coin.anchoredPosition : template.anchoredPosition;
-        iconRT.anchoredPosition = origin + new Vector2(Mathf.Abs(spacing) > 1f ? spacing : 205f, 0f);
-
-        var iconImg = iconGO.GetComponent<Image>();
-        iconImg.preserveAspect = true;
-        iconImg.raycastTarget = false;
-        ApplyFortuneIconSprite(iconImg);
-
-        var textGO = new GameObject("FortuneText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-        textGO.layer = iconGO.layer;
-        var textRT = textGO.GetComponent<RectTransform>();
-        textRT.SetParent(iconRT, false);
-        textRT.anchorMin = textRT.anchorMax = new Vector2(0.5f, 0.5f);
-        textRT.pivot = new Vector2(0.5f, 0.5f);
-        textRT.anchoredPosition = Vector2.zero;
-        textRT.sizeDelta = new Vector2(200f, 50f);
-
-        fortuneText = textGO.GetComponent<TextMeshProUGUI>();
-        fortuneText.raycastTarget = false;
-        fortuneText.fontSize = 24;
-        fortuneText.color = Color.white;
-        fortuneText.alignment = TextAlignmentOptions.Center;
-        fortuneText.enableWordWrapping = false;
-        fortuneText.overflowMode = TextOverflowModes.Overflow;
-        fortuneText.margin = new Vector4(126f, 6f, -67f, 15f);
-        var styleSrc = sanText != null ? sanText : goldText;
-        if (styleSrc != null)
-        {
-            fortuneText.font = styleSrc.font;
-            if (styleSrc.fontSharedMaterial != null)
-                fortuneText.fontSharedMaterial = styleSrc.fontSharedMaterial;
-            fortuneText.fontSize = styleSrc.fontSize;
-            fortuneText.color = styleSrc.color;
-        }
-        fortuneText.text = "福报：0";
-        NudgeFortuneTextLeft();
-    }
-
-    /// <summary>福报文字相对图标略向左收，避免和金币拉开过大空隙。</summary>
-    private void NudgeFortuneTextLeft()
-    {
-        if (fortuneText == null) return;
-        fortuneText.rectTransform.anchoredPosition = new Vector2(-22f, 0f);
-    }
-
-    private void ApplyFortuneIconSprite(Image icon)
-    {
-        if (icon == null) return;
-        if (icon.sprite != null && fortuneIconSprite == null) return;
-        Sprite sprite = fortuneIconSprite;
-        if (sprite == null)
-        {
-#if UNITY_EDITOR
-            sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(FortuneIconPath);
-#endif
-        }
-        if (sprite != null)
-            icon.sprite = sprite;
+        if (shopPanel != null)
+            shopPanel.gameObject.SetActive(false);
+        if (optionPanel != null)
+            optionPanel.gameObject.SetActive(false);
+        if (cardLibraryPanel != null)
+            cardLibraryPanel.SetActive(false);
+        else if (_cardLibraryPanel != null)
+            _cardLibraryPanel.gameObject.SetActive(false);
+        if (relicInventoryPanel != null)
+            relicInventoryPanel.SetActive(false);
+        else if (_relicInventoryPanel != null)
+            _relicInventoryPanel.gameObject.SetActive(false);
     }
 }

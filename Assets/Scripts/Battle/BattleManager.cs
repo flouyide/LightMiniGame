@@ -157,14 +157,12 @@ public class BattleManager : MonoBehaviour
     // 基础值（从局外读入，不被 buff 修改）
     private int _playerBaseStrength;
     private int _playerBaseDexterity;
-    private int _playerBaseAgility;
     private int _playerBaseLifesteal;
     private int _playerBaseCritRate;
     private int _playerBaseCritDamage;
     // 旧字段保留作为运行时缓存（= 基础值，兼容旧路径直接修改）
     private int _playerStrength;
     private int _playerDexterity;
-    private int _playerAgility;
     private int _playerLifesteal;
     private int _playerCritRate;
     private int _playerCritDamage;
@@ -238,6 +236,17 @@ public class BattleManager : MonoBehaviour
     private BuffSystem _enemyBuffs;
     [Header("Buff 数据资产（每属性一个，Inspector 配置图标）")]
     [SerializeField] private BuffData[] buffDataAssets;
+
+    private sealed class DisplayOnlyBuff
+    {
+        public BuffAttributeType attributeType;
+        public int stacks;
+    }
+
+    // 仅用于 Buff UI 的外部属性来源（例如局外遗物提供的持久属性）。
+    // 它们不会写入 _playerBuffs，避免再次参与 PlayerDexterity 等实际属性计算而造成重复加成。
+    private readonly Dictionary<string, DisplayOnlyBuff> _playerDisplayOnlyBuffs = new();
+
     private readonly Dictionary<string, int> _customData = new();
     private readonly HashSet<string> _eventsThisTurn = new();
     private readonly HashSet<CardData> _recycleUsedThisTurn = new();
@@ -251,7 +260,34 @@ public class BattleManager : MonoBehaviour
     private int _actionPoints;
 
     // === 融合（Fusion）机制 ===
-    private bool _fusionUsedThisTurn;   // 本回合是否已进行过融合操作（每回合限一次）
+    private int _fusionUsesThisTurn;    // 本回合已进行的融合次数；基础上限为 1，可由遗物按角色追加。
+
+    private sealed class FusionUseBonus
+    {
+        public CharacterData owner;
+        public int extraUses;
+    }
+
+    private sealed class FusionPoolBonus
+    {
+        public CharacterData owner;
+        public int bonus;
+    }
+
+    private sealed class FusedAttackCriticalRule
+    {
+        public CharacterData owner;
+        public int minimumSingleHitDamage;
+    }
+
+    // key 为效果实例来源；同一角色的不同遗物可叠加，切换角色时只计入当前激活角色的来源。
+    private readonly Dictionary<string, FusionUseBonus> _fusionUseBonuses = new();
+
+    // 融合重分配总值加成：由幸运戒指等遗物按来源登记，仅在持有者激活时生效。
+    private readonly Dictionary<string, FusionPoolBonus> _fusionPoolBonuses = new();
+
+    // 融合攻击必暴规则：由烧水壶等遗物按来源登记，仅在持有者激活时检查当前融合攻击牌。
+    private readonly Dictionary<string, FusedAttackCriticalRule> _fusedAttackCriticalRules = new();
 
     [Header("融合（Fusion）进阶开关")]
     [Tooltip("进阶1：融合修改是否永久保留（跨战斗）。默认 false，可由事件/脚本开启。")]
@@ -691,11 +727,130 @@ public class BattleManager : MonoBehaviour
         return _cachedChapterManager;
     }
 
-    /// <summary>本回合是否已用过融合操作（每回合限一次）。</summary>
-    public bool FusionUsedThisTurn => _fusionUsedThisTurn;
+    /// <summary>本回合融合次数上限：基础 1 次，加上当前激活角色持有遗物提供的额外次数。</summary>
+    public int FusionUseLimitThisTurn => GetFusionUseLimitThisTurn();
 
-    /// <summary>标记融合已用（由 FusionController 在确认时调用）。</summary>
-    public void MarkFusionUsed() => _fusionUsedThisTurn = true;
+    /// <summary>本回合已经完成的融合次数。</summary>
+    public int FusionUsesThisTurn => _fusionUsesThisTurn;
+
+    /// <summary>当前激活角色是否已耗尽本回合可用的融合次数。</summary>
+    public bool FusionUsedThisTurn => _fusionUsesThisTurn >= FusionUseLimitThisTurn;
+
+    /// <summary>
+    /// 按来源登记某个角色额外可进行的融合次数。extraUses 小于等于 0 时移除该来源。
+    /// 同一来源会覆盖旧值，供遗物在战斗开始/结束或移除时对称登记和撤销。
+    /// </summary>
+    public void SetExtraFusionUses(string sourceId, CharacterData owner, int extraUses)
+    {
+        if (string.IsNullOrEmpty(sourceId)) return;
+
+        if (owner == null || extraUses <= 0)
+        {
+            _fusionUseBonuses.Remove(sourceId);
+        }
+        else
+        {
+            _fusionUseBonuses[sourceId] = new FusionUseBonus
+            {
+                owner = owner,
+                extraUses = extraUses
+            };
+        }
+
+        _fusionController?.UpdateEntryInteractable();
+    }
+
+    /// <summary>
+    /// 按来源登记某个角色的融合重分配总值加成。bonus 小于等于 0 时移除该来源。
+    /// 同一来源会覆盖旧值，供战斗遗物在战斗开始/结束或移除时对称登记和撤销。
+    /// </summary>
+    public void SetFusionPoolBonus(string sourceId, CharacterData owner, int bonus)
+    {
+        if (string.IsNullOrEmpty(sourceId)) return;
+
+        if (owner == null || bonus <= 0)
+        {
+            _fusionPoolBonuses.Remove(sourceId);
+        }
+        else
+        {
+            _fusionPoolBonuses[sourceId] = new FusionPoolBonus
+            {
+                owner = owner,
+                bonus = bonus
+            };
+        }
+    }
+
+    /// <summary>当前激活角色在本次融合中可获得的重分配总值加成。</summary>
+    public int GetActiveCharacterFusionPoolBonus()
+    {
+        int total = 0;
+        CharacterData activeOwner = ActiveCharacterData;
+        foreach (FusionPoolBonus entry in _fusionPoolBonuses.Values)
+        {
+            if (entry != null && entry.owner == activeOwner)
+                total += Mathf.Max(0, entry.bonus);
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// 按来源登记某个角色的融合攻击必暴阈值。minimumSingleHitDamage 小于等于 0 时移除该来源。
+    /// 命中规则仅影响当前带有 fusion.overrideAttack 的手牌，且持有者必须是当前激活角色。
+    /// </summary>
+    public void SetFusedAttackCriticalRule(string sourceId, CharacterData owner, int minimumSingleHitDamage)
+    {
+        if (string.IsNullOrEmpty(sourceId)) return;
+
+        if (owner == null || minimumSingleHitDamage <= 0)
+        {
+            _fusedAttackCriticalRules.Remove(sourceId);
+        }
+        else
+        {
+            _fusedAttackCriticalRules[sourceId] = new FusedAttackCriticalRule
+            {
+                owner = owner,
+                minimumSingleHitDamage = minimumSingleHitDamage
+            };
+        }
+    }
+
+    /// <summary>
+    /// 当前执行中的手牌若融合覆盖了攻击值，且其单次伤害达到任一当前激活角色规则的阈值，则该段伤害必定暴击。
+    /// singleHitDamage 是融合覆盖和力量缩放均已结算、但尚未乘暴伤和扣护甲的单次伤害。
+    /// </summary>
+    public bool IsCurrentFusedAttackGuaranteedCritical(int singleHitDamage)
+    {
+        if (singleHitDamage <= 0 || _currentFusionCard?.fusion?.overrideAttack != true)
+            return false;
+
+        CharacterData activeOwner = ActiveCharacterData;
+        foreach (FusedAttackCriticalRule rule in _fusedAttackCriticalRules.Values)
+        {
+            if (rule != null && rule.owner == activeOwner &&
+                singleHitDamage >= rule.minimumSingleHitDamage)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>标记一次融合完成（由 FusionController 在进入融合时调用）。</summary>
+    public void MarkFusionUsed() => _fusionUsesThisTurn++;
+
+    private int GetFusionUseLimitThisTurn()
+    {
+        int limit = 1;
+        CharacterData activeOwner = ActiveCharacterData;
+        foreach (FusionUseBonus bonus in _fusionUseBonuses.Values)
+        {
+            if (bonus != null && bonus.owner == activeOwner)
+                limit += Mathf.Max(0, bonus.extraUses);
+        }
+        return Mathf.Max(1, limit);
+    }
 
     /// <summary>注册/获取融合控制器（BattleManager.BeginBattle 自动创建并挂载）。</summary>
     public FusionController FusionController => _fusionController;
@@ -891,8 +1046,60 @@ public class BattleManager : MonoBehaviour
         _playerBuffs?.AddBuff(type, stacks, duration);
     }
 
-    /// <summary>获取玩家 buff 显示列表（供 UI 调用）</summary>
-    public List<DisplayedBuff> GetPlayerDisplayedBuffs() => _playerBuffs?.GetDisplayedBuffs() ?? new List<DisplayedBuff>();
+    /// <summary>
+    /// 设置一个仅用于玩家 Buff UI 的外部属性来源。stacks 为 0 时移除该来源。
+    /// 此接口不会写入 BuffSystem，因此不会重复影响 PlayerDexterity 等实际战斗属性。
+    /// </summary>
+    public void SetPlayerDisplayOnlyBuff(string sourceId, BuffAttributeType type, int stacks)
+    {
+        if (string.IsNullOrEmpty(sourceId)) return;
+
+        if (stacks == 0)
+        {
+            _playerDisplayOnlyBuffs.Remove(sourceId);
+            return;
+        }
+
+        _playerDisplayOnlyBuffs[sourceId] = new DisplayOnlyBuff
+        {
+            attributeType = type,
+            stacks = stacks
+        };
+    }
+
+    /// <summary>
+    /// 获取玩家 Buff 显示列表（供 UI 调用）。
+    /// 临时战斗 Buff 与局外持久属性的显示来源按属性类型合并，但仅前者参与实际属性计算。
+    /// </summary>
+    public List<DisplayedBuff> GetPlayerDisplayedBuffs()
+    {
+        var totals = new Dictionary<BuffAttributeType, int>();
+
+        foreach (DisplayedBuff buff in _playerBuffs?.GetDisplayedBuffs() ?? new List<DisplayedBuff>())
+            totals[buff.attributeType] = totals.TryGetValue(buff.attributeType, out int current)
+                ? current + buff.totalStacks
+                : buff.totalStacks;
+
+        foreach (DisplayOnlyBuff buff in _playerDisplayOnlyBuffs.Values)
+        {
+            if (buff == null || buff.stacks == 0) continue;
+            totals[buff.attributeType] = totals.TryGetValue(buff.attributeType, out int current)
+                ? current + buff.stacks
+                : buff.stacks;
+        }
+
+        var result = new List<DisplayedBuff>();
+        foreach (var pair in totals)
+        {
+            if (pair.Value == 0) continue;
+            result.Add(new DisplayedBuff
+            {
+                attributeType = pair.Key,
+                totalStacks = pair.Value
+            });
+        }
+        return result;
+    }
 
     /// <summary>获取 BuffData 资产（按属性类型）</summary>
     public BuffData GetBuffData(BuffAttributeType type)
@@ -1238,7 +1445,7 @@ public class BattleManager : MonoBehaviour
         if (_pilePanel == null)
             _pilePanel = gameObject.AddComponent<BattlePilePanel>();
         _pilePanel.Bind(this, attackCardPrefab, skillCardPrefab, abilityCardPrefab);
-        _fusionUsedThisTurn = false;   // 每场战斗重置
+        _fusionUsesThisTurn = 0;       // 每场战斗重置
         StartBattle();
     }
 
@@ -1364,13 +1571,13 @@ public class BattleManager : MonoBehaviour
             _sanityThreshold = cm.PlayerSanityThreshold;
             _playerFortune = cm.PlayerFortune;
             _playerStrength = cm.PlayerStrength;
-            _playerAgility = cm.PlayerAgility;
+            _playerDexterity = cm.PlayerDexterity;
             _playerLifesteal = cm.PlayerLifesteal;
             _playerCritRate = cm.PlayerCritRate;
             _playerCritDamage = cm.PlayerCritDamage;
             _playerDamageMultiplier = cm.PlayerDamageMultiplier;
             _playerDamageTakenMultiplier = cm.PlayerDamageTakenMultiplier;
-            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 福报:{_playerFortune} 力量:{_playerStrength} 敏捷:{_playerAgility} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
+            Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{_baseDrawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 福报:{_playerFortune} 力量:{_playerStrength} 敏捷:{_playerDexterity} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
         }
         else if (playerConfig != null)
         {
@@ -1384,13 +1591,12 @@ public class BattleManager : MonoBehaviour
             _sanityThreshold = playerConfig.sanityThreshold;
             _playerFortune = Mathf.Max(0, playerConfig.startFortune);
             _playerStrength = playerConfig.strength;
-            _playerAgility = playerConfig.agility;
+            _playerDexterity = playerConfig.dexterity;
             _playerLifesteal = playerConfig.lifesteal;
             _playerCritRate = playerConfig.critRate;
             _playerCritDamage = playerConfig.critDamage;
             _playerDamageMultiplier = playerConfig.playerDamageMultiplier;
             _playerDamageTakenMultiplier = playerConfig.playerDamageTakenMultiplier;
-            _playerDexterity = 0;
             Debug.LogWarning("[BattleManager] 未找到 ChapterManager，回退读入 PlayerConfig 初始值（无跨战斗累积）");
         }
         else
@@ -1412,7 +1618,6 @@ public class BattleManager : MonoBehaviour
         // 同步基础值到 base 字段
         _playerBaseStrength = _playerStrength;
         _playerBaseDexterity = _playerDexterity;
-        _playerBaseAgility = _playerAgility;
         _playerBaseLifesteal = _playerLifesteal;
         _playerBaseCritRate = _playerCritRate;
         _playerBaseCritDamage = _playerCritDamage;
@@ -1426,9 +1631,6 @@ public class BattleManager : MonoBehaviour
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalChance, 0);           // 暴击率最小0
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalDamage, 2);           // 暴伤最小2
         _enemyBuffs = new BuffSystem(); // 敌人使用相同约束（可后续扩展）
-
-        // 灵巧：每回合额外抽牌 = 基础值 + 敏捷（赋值式，避免多场战斗逐场累加）
-        drawPerTurn = _baseDrawPerTurn + _playerAgility;
 
         // 设置卡面描述属性解析提供者（力量/敏捷变化时卡面数值实时更新）
         CardDisplay.PlayerStrengthProvider = () => PlayerStrength;
@@ -1811,6 +2013,39 @@ public class BattleManager : MonoBehaviour
         }
 
         Debug.Log($"[BattleManager] 免费重放卡牌效果：{card.cardName}");
+        return true;
+    }
+
+    /// <summary>
+    /// 将指定卡牌的独立运行时副本加入当前手牌。
+    /// 复制发生在原牌的 OnPlayerCardPlayed 回调期间时，原牌仍暂留手牌区；若原牌不是“循环”牌，
+    /// 则允许临时超过手牌上限 1 张，因为原牌会在同一次 PlayCard 调用内立刻离开手牌。
+    /// </summary>
+    public bool CopyCardToHand(CardData source)
+    {
+        if (source == null || _battleEnded) return false;
+
+        bool sourceWillLeaveHand = _hand.Contains(source) && !source.HasKeyword(KeywordType.Recycle);
+        if (_hand.Count >= handLimit && !sourceWillLeaveHand)
+        {
+            Debug.Log($"[BattleManager] 手牌已满，无法复制卡牌：{source.cardName}");
+            return false;
+        }
+
+        CardData copy = Instantiate(source);
+        copy.name = $"{source.name}(Copy)";
+        copy.isLowSanityForm = source.isLowSanityForm;
+        copy.fusion = source.fusion;
+        copy.extraCost = _handCostBonus;
+        copy.relicCostReduction = 0;
+        copy.attachedEffectNodes = source.attachedEffectNodes != null
+            ? source.attachedEffectNodes.ConvertAll(node => node != null ? node.Clone() : null)
+            : null;
+
+        _hand.Add(copy);
+        OnHandCardsChanged?.Invoke();
+        RefreshHandUI();
+        Debug.Log($"[BattleManager] 复制卡牌到手牌：{source.cardName}");
         return true;
     }
 
@@ -2580,7 +2815,7 @@ public class BattleManager : MonoBehaviour
             cm.ApplyBattleResult(
                 _playerHP, playerMaxHP,
                 _playerSanity, _playerMaxSanity,
-                _playerStrength, _playerAgility, _playerLifesteal,
+                _playerStrength, _playerDexterity, _playerLifesteal,
                 _playerCritRate, _playerCritDamage,
                 maxActionPoints, drawPerTurn,
                 _playerDamageMultiplier, _playerDamageTakenMultiplier,
@@ -2968,7 +3203,7 @@ public class BattleManager : MonoBehaviour
         _actionPoints = maxActionPoints;
         _playerArmor = 0;
         _hasSwitchedThisTurn = false;
-        _fusionUsedThisTurn = false;   // 每回合重置融合使用
+        _fusionUsesThisTurn = 0;       // 每回合重置融合使用
         _eventsThisTurn.Clear(); // 清除本回合事件
 
         // 重置本回合计数器
@@ -3169,6 +3404,6 @@ public class BattleManager : MonoBehaviour
         if (_bookUI == null)
             _bookUI = FindObjectOfType<BookUIController>();
         if (_bookUI != null)
-            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity, _playerFortune);
+            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity);
     }
 }

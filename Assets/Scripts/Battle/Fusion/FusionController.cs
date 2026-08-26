@@ -12,7 +12,7 @@ using UnityEngine.UI;
 ///  3) 已选 ≥2 个数值时再点魔方 = 随机融合并回填，本回合禁用。
 ///  4) 未选满（0 或 1 个）时再点魔方 = 退出融合状态。
 /// 全部 UI 由代码在运行时创建，不依赖场景手工摆放。
-/// 重分配总值 = 选中数字之和 + 当前福报值。
+/// 重分配总值 = 选中数字之和 + 当前福报值 + 当前激活角色的遗物加成。
 /// </summary>
 public class FusionController : MonoBehaviour
 {
@@ -692,8 +692,9 @@ public class FusionController : MonoBehaviour
     /// <summary>当前福报值（未接入战斗时视为 0）。</summary>
     private int CurrentFortune => _battle != null ? Mathf.Max(0, _battle.PlayerFortune) : 0;
 
-    /// <summary>融合重分配总值 = 选中数字之和 + 当前福报值。</summary>
-    private int FusionPoolTotal() => SumSelected() + CurrentFortune;
+    /// <summary>融合重分配总值 = 选中数字之和 + 当前福报值 + 当前激活角色的遗物加成。</summary>
+    private int FusionPoolTotal()
+        => SumSelected() + CurrentFortune + (_battle != null ? _battle.GetActiveCharacterFusionPoolBonus() : 0);
 
     /// <summary>
     /// 股神：只要本次融合有股神参与，非股神槽为 0，股神拿走全部（多名均分）。

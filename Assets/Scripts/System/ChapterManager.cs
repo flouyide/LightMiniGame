@@ -68,6 +68,12 @@ public class ChapterManager : MonoBehaviour
     private readonly Dictionary<string, int> _chapterSelectionBonuses = new();
     // 遗物等局外效果登记的“休整生命恢复倍率”。key 为效果来源；多个来源的额外比例相加。
     private readonly Dictionary<string, float> _restHealingMultipliers = new();
+    // 遗物等局外效果登记的“理智上限加成”。key 为效果来源；多个来源数值相加。
+    private readonly Dictionary<string, int> _maxSanityBonuses = new();
+    // 遗物等局外效果登记的“力量/敏捷（Dexterity）加成”。key 为效果来源；多个来源数值相加。
+    // 加成写入单局持久属性，跨战斗有效；新开局时会基于 PlayerConfig 初始值重新汇总。
+    private readonly Dictionary<string, int> _strengthBonuses = new();
+    private readonly Dictionary<string, int> _dexterityBonuses = new();
     private List<PageEventData> _currentPages = new();  // 当前显示的3个页面事件列表
     private HashSet<string> _completedEvents = new();   // 已完成事件ID集合
     private HashSet<string> _unlockedEvents = new();    // 已解锁事件ID集合（后续事件解锁）
@@ -103,12 +109,12 @@ public class ChapterManager : MonoBehaviour
     public int PlayerMaxActionPoints { get; private set; }  // 每回合行动点
     public int PlayerDrawPerTurn { get; private set; }      // 每回合基础抽牌数
 
-    // 持久基础属性（力量/敏捷/吸血/暴击率/暴伤）的【运行时副本】：
+    // 持久基础属性（力量/敏捷（Dexterity）/吸血/暴击率/暴伤）的【运行时副本】：
     // 只在单局游戏内保留（跨战斗有效），开局时由 InitPlayerStats 从 PlayerConfig 读入初始值，
     // 事件 ModifyAttribute 修改它；重新开始游戏时再次从 PlayerConfig 读入即归零回到初始。
     // 资产 PlayerConfig 本身【只当初始值来源】，运行时不再被改写。
     public int PlayerStrength { get; private set; }
-    public int PlayerAgility { get; private set; }
+    public int PlayerDexterity { get; private set; }
     public int PlayerLifesteal { get; private set; }
     public int PlayerCritRate { get; private set; }
     public int PlayerCritDamage { get; private set; }
@@ -185,6 +191,96 @@ public class ChapterManager : MonoBehaviour
         foreach (float multiplier in _restHealingMultipliers.Values)
             bonus += Mathf.Max(0f, multiplier - 1f);
         return 1f + bonus;
+    }
+
+    /// <summary>
+    /// 设置指定局外效果提供的理智上限加成。获得后立即改变本局理智上限；失去时传入 0 精确移除。
+    /// 当前理智不会因提高上限而被额外回复；降低上限时会按新上限截断当前理智。
+    /// </summary>
+    public void SetMaxSanityBonus(string sourceKey, int amount)
+    {
+        if (string.IsNullOrEmpty(sourceKey))
+        {
+            Debug.LogWarning("[ChapterManager] 理智上限加成来源不能为空");
+            return;
+        }
+
+        int previous = _maxSanityBonuses.TryGetValue(sourceKey, out int value) ? value : 0;
+        int normalized = Mathf.Max(0, amount);
+        if (normalized == 0)
+            _maxSanityBonuses.Remove(sourceKey);
+        else
+            _maxSanityBonuses[sourceKey] = normalized;
+
+        int delta = normalized - previous;
+        if (delta == 0) return;
+
+        PlayerMaxSanity = Mathf.Max(1, PlayerMaxSanity + delta);
+        PlayerSanity = Mathf.Clamp(PlayerSanity, 0, PlayerMaxSanity);
+        UpdateLowSanityVolume();
+        OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
+        Debug.Log($"[ChapterManager] 理智上限加成变更：来源={sourceKey}，变化={delta:+#;-#;0}，当前理智={PlayerSanity}/{PlayerMaxSanity}");
+    }
+
+    private int GetMaxSanityBonus()
+    {
+        int total = 0;
+        foreach (int bonus in _maxSanityBonuses.Values)
+            total += bonus;
+        return total;
+    }
+
+    /// <summary>
+    /// 设置指定局外效果提供的力量加成。获得后立即影响本局力量并跨战斗保留；失去时传入 0 精确移除。
+    /// </summary>
+    public void SetStrengthBonus(string sourceKey, int amount)
+    {
+        SetPersistedAttributeBonus(_strengthBonuses, sourceKey, amount, "力量", delta =>
+            PlayerStrength = Mathf.Max(0, PlayerStrength + delta));
+    }
+
+    /// <summary>
+    /// 设置指定局外效果提供的敏捷（Dexterity）加成。获得后立即影响本局敏捷并跨战斗保留；失去时传入 0 精确移除。
+    /// </summary>
+    public void SetDexterityBonus(string sourceKey, int amount)
+    {
+        SetPersistedAttributeBonus(_dexterityBonuses, sourceKey, amount, "敏捷", delta =>
+            PlayerDexterity = Mathf.Max(0, PlayerDexterity + delta));
+    }
+
+    private static int GetPersistedAttributeBonus(Dictionary<string, int> bonuses)
+    {
+        int total = 0;
+        foreach (int bonus in bonuses.Values)
+            total += bonus;
+        return total;
+    }
+
+    private static void SetPersistedAttributeBonus(
+        Dictionary<string, int> bonuses,
+        string sourceKey,
+        int amount,
+        string attributeName,
+        Action<int> applyDelta)
+    {
+        if (string.IsNullOrEmpty(sourceKey))
+        {
+            Debug.LogWarning($"[ChapterManager] {attributeName}加成来源不能为空");
+            return;
+        }
+
+        int previous = bonuses.TryGetValue(sourceKey, out int value) ? value : 0;
+        int normalized = Mathf.Max(0, amount);
+        if (normalized == 0)
+            bonuses.Remove(sourceKey);
+        else
+            bonuses[sourceKey] = normalized;
+
+        int delta = normalized - previous;
+        if (delta == 0) return;
+
+        applyDelta?.Invoke(delta);
+        Debug.Log($"[ChapterManager] {attributeName}加成变更：来源={sourceKey}，变化={delta:+#;-#;0}");
     }
 
     /// <summary>
@@ -265,14 +361,14 @@ public class ChapterManager : MonoBehaviour
             PlayerHP = playerConfig.startHP;
             PlayerGold = playerConfig.startGold;
             PlayerSanity = playerConfig.startSanity;
-            PlayerMaxSanity = playerConfig.maxSanity;
+            PlayerMaxSanity = Mathf.Max(1, playerConfig.maxSanity + GetMaxSanityBonus());
             PlayerSanityThreshold = playerConfig.sanityThreshold;
             PlayerFortune = Mathf.Max(0, playerConfig.startFortune);
             PlayerMaxActionPoints = playerConfig.maxActionPoints;
             PlayerDrawPerTurn = playerConfig.drawPerTurn;
-            // 持久基础属性：每次开局从 PlayerConfig（仅作初始值来源）重新读入
-            PlayerStrength   = playerConfig.strength;
-            PlayerAgility    = playerConfig.agility;
+            // 持久基础属性：每次开局从 PlayerConfig（仅作初始值来源）重新读入，并叠加已拥有遗物的来源加成。
+            PlayerStrength   = Mathf.Max(0, playerConfig.strength + GetPersistedAttributeBonus(_strengthBonuses));
+            PlayerDexterity  = Mathf.Max(0, playerConfig.dexterity + GetPersistedAttributeBonus(_dexterityBonuses));
             PlayerLifesteal  = playerConfig.lifesteal;
             PlayerCritRate   = playerConfig.critRate;
             PlayerCritDamage = playerConfig.critDamage;
@@ -285,12 +381,14 @@ public class ChapterManager : MonoBehaviour
             PlayerHP = 64;
             PlayerGold = 50;
             PlayerSanity = 10;
-            PlayerMaxSanity = 10;
+            PlayerMaxSanity = Mathf.Max(1, 10 + GetMaxSanityBonus());
             PlayerSanityThreshold = 4;
             PlayerFortune = 0;
             PlayerMaxActionPoints = 3;
             PlayerDrawPerTurn = 3;
-            PlayerStrength = PlayerAgility = PlayerLifesteal = PlayerCritRate = PlayerCritDamage = 0;
+            PlayerStrength = Mathf.Max(0, GetPersistedAttributeBonus(_strengthBonuses));
+            PlayerDexterity = Mathf.Max(0, GetPersistedAttributeBonus(_dexterityBonuses));
+            PlayerLifesteal = PlayerCritRate = PlayerCritDamage = 0;
             PlayerDamageMultiplier = 100;
             PlayerDamageTakenMultiplier = 100;
             Debug.LogWarning("[ChapterManager] playerConfig 未配置，使用默认玩家属性");
@@ -769,7 +867,8 @@ public class ChapterManager : MonoBehaviour
         switch (attr)
         {
             case PlayerBaseAttribute.Strength:   PlayerStrength   = Mathf.Max(0, PlayerStrength + delta); break;
-            case PlayerBaseAttribute.Agility:    PlayerAgility    = Mathf.Max(0, PlayerAgility + delta); break;
+            // PlayerBaseAttribute.Agility 保留枚举值以兼容既有事件资产，运行时统一写入 Dexterity。
+            case PlayerBaseAttribute.Agility:    PlayerDexterity  = Mathf.Max(0, PlayerDexterity + delta); break;
             case PlayerBaseAttribute.Lifesteal:  PlayerLifesteal  = Mathf.Max(0, PlayerLifesteal + delta); break;
             case PlayerBaseAttribute.CritRate:   PlayerCritRate   = Mathf.Max(0, PlayerCritRate + delta); break;
             case PlayerBaseAttribute.CritDamage: PlayerCritDamage = Mathf.Max(0, PlayerCritDamage + delta); break;
@@ -1249,10 +1348,14 @@ public class ChapterManager : MonoBehaviour
         if (battleCanvas != null) battleCanvas.SetActive(false);
         if (bookCanvas != null)
         {
-            // 恢复 BookCanvas 下所有子物体（进入战斗时只禁用了非 TopBar 的子物体）
+            // 恢复 BookCanvas 下所有子物体（进入战斗时只禁用了非 TopBar 的子物体），
+            // 再关闭可能在进战前已打开的临时面板，避免与书页界面重叠。
             var bookUI = bookCanvas.GetComponent<BookUIController>();
             if (bookUI != null)
+            {
                 bookUI.SetNonTopBarChildrenActive(true);
+                bookUI.CloseTransientPanelsAfterBattle();
+            }
         }
 
         // 战斗后的玩家属性已由 BattleManager 在退出前通过 ApplyBattleResult 写回本管理器
@@ -1279,7 +1382,7 @@ public class ChapterManager : MonoBehaviour
     /// 其余为战斗内可能变化的持久基础属性与每回合数值。
     /// </summary>
     public void ApplyBattleResult(int hp, int maxHp, int sanity, int maxSanity,
-        int strength, int agility, int lifesteal, int critRate, int critDamage,
+        int strength, int dexterity, int lifesteal, int critRate, int critDamage,
         int maxActionPoints, int drawPerTurn,
         int playerDamageMultiplier, int playerDamageTakenMultiplier,
         int fortune,
@@ -1293,7 +1396,7 @@ public class ChapterManager : MonoBehaviour
         PlayerMaxActionPoints = maxActionPoints;
         PlayerDrawPerTurn      = drawPerTurn;
         PlayerStrength   = strength;
-        PlayerAgility    = agility;
+        PlayerDexterity  = dexterity;
         PlayerLifesteal  = lifesteal;
         PlayerCritRate   = critRate;
         PlayerCritDamage  = critDamage;

@@ -470,14 +470,18 @@ public class EffectExecutorV2
             }
             else
             {
-                isCrit = node.criticalCheckMode switch
+                // 烧水壶等遗物可为“融合攻击值已覆盖且单次伤害达到阈值”的攻击牌强制暴击。
+                // 规则优先级高于卡牌的普通随机判定；未命中规则时保留节点自身 Guaranteed / Disabled 语义。
+                bool forcedCritical = !IsEnemyInitiator &&
+                    _ctx.IsCurrentFusedAttackGuaranteedCritical(baseDamage);
+                isCrit = forcedCritical || (node.criticalCheckMode switch
                 {
                     CriticalCheckMode.PerHit => UnityEngine.Random.value < _ctx.PlayerCritRate,
                     CriticalCheckMode.PerAttack => hit == 0 && UnityEngine.Random.value < _ctx.PlayerCritRate,
                     CriticalCheckMode.Guaranteed => true,
                     CriticalCheckMode.Disabled => false,
                     _ => false
-                };
+                });
                 hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * _ctx.PlayerCritDamage) : baseDamage;
 
                 // 破甲
@@ -488,7 +492,7 @@ public class EffectExecutorV2
                 // 目标选择
                 if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
                 {
-                    _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock);
+                    _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock, isCrit);
                 }
                 else
                 {
@@ -501,7 +505,7 @@ public class EffectExecutorV2
                     };
                     if (targetIdx >= 0)
                     {
-                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock);
+                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock, isCrit);
                         if (armorBreak > 0)
                             _ctx.ApplyStatusToEnemy(targetIdx, StatusType.ArmorBreak, armorBreak);
                     }

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u6297\u538B\u9762\u5177"
+  m_EditorClassIdentifier: 
+  relicId: PressureResistanceMask
+  relicName: "\u6297\u538B\u9762\u5177"
+  description: "\u62FE\u8D77\u65F6\u7406\u667A\u4E0A\u9650 +2"
+  icon: {fileID: 0}
+  value: 100
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.PressureResistanceMaskEffect
+  effectParams:
+  - 2
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 11500000, guid: 9d24df7e4c262bf4c9aeaf5ea0c62549, type: 3}
