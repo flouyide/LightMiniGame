@@ -15,9 +15,9 @@ MonoBehaviour:
   cardId: Calibrate
   cardName: "\u5BF9\u9F50\u9897\u7C92\u5EA6"
   normalDescription: "\u672C\u573A\u6218\u6597\u66B4\u51FB\u7387\u589E\u52A0 15%\uFF0C\u62BD
-    1 \u5F20\u724C\u3002"
+    1 \u5F20\u724C"
   lowSanityDescription: "\u672C\u573A\u6218\u6597\u66B4\u51FB\u7387\u589E\u52A0 25%\uFF0C\u62BD
-    1 \u5F20\u724C\u3002"
+    1 \u5F20\u724C"
   cardArt: {fileID: 21300000, guid: 1798be3e7d7db694b8c7d7f6851d9339, type: 3}
   descBoxSprite: {fileID: 21300000, guid: abc73d5be74f6bd46bfd24240c55e3bc, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 04230013629c8bb4aaff77ad0a631680, type: 3}
@@ -33,6 +33,7 @@ MonoBehaviour:
   lowSanityCost: 1
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1

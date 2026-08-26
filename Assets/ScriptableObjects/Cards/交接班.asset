@@ -28,11 +28,12 @@ MonoBehaviour:
   grade: 1
   cardType: 1
   existence: 1
-  lowSanityExistence: 0
+  lowSanityExistence: 1
   normalCost: 2
   lowSanityCost: 1
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes: []
   lowSanityEffectNodes: []

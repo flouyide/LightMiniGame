@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_1069f407
   cardName: "\u7CBE\u795E\u900F\u652F"
-  normalDescription: "\u9020\u6210 5\u70B9\u4F24\u5BB33\u6B21\uFF1B\u7406\u667A\u6BCF\u4F4E\u4E8E\u9608\u503C\u4E00\u56DE\u5408\uFF0C\u6BB5\u6570
-    +1\u3002"
-  lowSanityDescription: "\u9020\u6210 7 \u70B9\u4F24\u5BB33\u6B21\uFF1B\u7406\u667A\u6BCF\u4F4E\u4E8E\u9608\u503C\u4E00\u56DE\u5408\uFF0C\u6BB5\u6570
-    +1\u3002"
+  normalDescription: "\u9020\u6210 {5+\u529B\u91CF} \u70B9\u4F24\u5BB33\u6B21\uFF1B\u672C\u56DE\u5408\u6BCF\u5931\u53BB\u4E00\u6B21\u7406\u667A\uFF0C\u6BB5\u6570
+    +1"
+  lowSanityDescription: "\u9020\u6210 {7+\u529B\u91CF} \u70B9\u4F24\u5BB33\u6B21\uFF1B\u672C\u56DE\u5408\u6BCF\u5931\u53BB\u4E00\u6B21\u7406\u667A\uFF0C\u6BB5\u6570
+    +1"
   cardArt: {fileID: 21300000, guid: 943a0766c3e433a4bab7daff31ddd63c, type: 3}
   descBoxSprite: {fileID: 21300000, guid: d68433df2ddc7e74eace8ccef9b24e7d, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
@@ -33,6 +33,7 @@ MonoBehaviour:
   lowSanityCost: 2
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1
@@ -130,7 +131,7 @@ MonoBehaviour:
     - rid: 1654833856827621384
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
-        nodeType: 0
+        nodeType: 17
         intValue: 3
         floatValue: 0
         attributeRef: 1
@@ -140,7 +141,9 @@ MonoBehaviour:
         flagRef: 7
         variableName: 
         resultRef: 1
-        operands: []
+        operands:
+        - rid: 3513299765630337054
+        - rid: 3513299765630337055
         everyN: 1
         convertToM: 1
     - rid: 1654833856827621385
@@ -217,6 +220,38 @@ MonoBehaviour:
         resourceRef: 1
         statusRef: 0
         counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337054
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 3
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337055
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 6
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 10
         flagRef: 7
         variableName: 
         resultRef: 1
