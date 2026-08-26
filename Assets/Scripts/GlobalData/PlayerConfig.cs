@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 玩家初始属性配置
@@ -25,8 +26,9 @@ public class PlayerConfig : ScriptableObject
     
     [Tooltip("力量：影响攻击牌伤害")]
     public int strength;          // 力量
-    [Tooltip("敏捷")]
-    public int agility;           // 敏捷
+    [FormerlySerializedAs("agility")]
+    [Tooltip("敏捷：影响护甲等 Dexterity 关联效果")]
+    public int dexterity;         // 敏捷（Dexterity）
     [Tooltip("吸血：提升吸血词条的治疗比例")]
     public int lifesteal;         // 吸血
     [Tooltip("暴击率（0-100，影响重击词条的暴击概率）")]
