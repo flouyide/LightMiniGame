@@ -50,12 +50,12 @@ MonoBehaviour:
         enterBattleEnemies: []
     - optionText: "\u83B7\u5F97\u9057\u7269"
       effects:
-      - type: 10
+      - type: 11
         amount: 50
         itemDesc: 
         attributeOp: 0
         targetAttribute: 5
-        relic: {fileID: 11400000, guid: e3faeb6258dc5ec4491c1271ded36289, type: 2}
+        relic: {fileID: 11400000, guid: 4df226ddee3a3f24f9adb31f0bec31c1, type: 2}
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0.5

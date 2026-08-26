@@ -348,6 +348,8 @@ MonoBehaviour:
   hpText: {fileID: 0}
   goldText: {fileID: 7484637177926840552}
   sanText: {fileID: 0}
+  fortuneText: {fileID: 0}
+  fortuneIconSprite: {fileID: 0}
   chapterCompletePanel: {fileID: 6034729792026568339}
   nextChapterButton: {fileID: 8245052871790277688}
   settingsButton: {fileID: 279797820379314626}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerConfig
   m_EditorClassIdentifier: 
   maxHP: 65
-  startHP: 1000
+  startHP: 50
   startGold: 10000
   startSanity: 6
   maxSanity: 10
