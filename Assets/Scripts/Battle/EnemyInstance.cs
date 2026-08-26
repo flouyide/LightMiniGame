@@ -24,15 +24,13 @@ public class EnemyInstance
     /// <summary>当前被破甲削减的护甲总量（用于 RemoveStatus 还原）</summary>
     public int ArmorBreakStacks;
 
-    /// <summary>运行时力量增益（叠加在 Config.strength 之上，战斗内临时）。</summary>
-    public int StrengthBuff;
-    /// <summary>运行时敏捷增益（叠加在 Config.dexterity 之上，战斗内临时）。</summary>
-    public int DexterityBuff;
+    /// <summary>运行时力量，开战从 EnemyConfig.strength 拷入，战斗内增减不写回资产。</summary>
+    public int Strength;
+    /// <summary>运行时敏捷，开战从 EnemyConfig.dexterity 拷入，战斗内增减不写回资产。</summary>
+    public int Dexterity;
 
-    /// <summary>有效力量 = 基础力量 + 运行时增益</summary>
-    public int EffectiveStrength => (Config != null ? Config.strength : 0) + StrengthBuff;
-    /// <summary>有效敏捷 = 基础敏捷 + 运行时增益</summary>
-    public int EffectiveDexterity => (Config != null ? Config.dexterity : 0) + DexterityBuff;
+    public int EffectiveStrength => Strength;
+    public int EffectiveDexterity => Dexterity;
 
     /// <summary>当前阶段（1=高理智形态，2=低理智形态）</summary>
     public int Phase = 1;

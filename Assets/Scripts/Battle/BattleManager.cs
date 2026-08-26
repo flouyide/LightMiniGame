@@ -653,14 +653,11 @@ public class BattleManager : MonoBehaviour
         foreach (var n in nodes)
         {
             if (n == null || !n.enabled) continue;
-            if (n.operation == EffectOperation.DealDamage &&
-                n.value != null && n.value.nodeType == ValueNodeType.IntegerConstant)
-            {
-                total += n.value.intValue;
-            }
+            if (n.operation != EffectOperation.DealDamage) continue;
+            int str = inst != null ? inst.EffectiveStrength : 0;
+            int dex = inst != null ? inst.EffectiveDexterity : 0;
+            total += ValueNode.ResolveCombatValue(n.value, n.operation, n.scalingMode, str, dex, isEnemy: true);
         }
-        // 叠加敌人力量（同旧逻辑：敌人伤害 += strength）
-        if (inst != null && inst.Config != null) total += inst.Config.strength;
         return total;
     }
 
@@ -1295,6 +1292,8 @@ public class BattleManager : MonoBehaviour
                 MaxHP = cfg.maxHP,
                 HP = cfg.maxHP,
                 Armor = cfg.armor,
+                Strength = cfg.strength,
+                Dexterity = cfg.dexterity,
                 Phase = 1,
                 TurnInCycle = 0,
                 LockedCharIdx = -1,
@@ -2151,11 +2150,18 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    /// <summary>监控目标：给场上所有存活敌人力量+1（战斗内永久，走 StrengthBuff）。</summary>
+    /// <summary>监控目标：给场上所有存活敌人运行时力量+1（开战从 EnemyConfig.strength 拷入，不写回资产）。</summary>
     private void ApplyWatchTargetToAllEnemies()
     {
         for (int i = 0; i < _enemies.Count; i++)
-            ApplyEnemyAttributeBuff(i, LightMiniGame.CardEditor.PlayerAttributeType.Strength, 1);
+        {
+            var e = _enemies[i];
+            if (e == null || e.IsDead) continue;
+            e.Strength += 1;
+            e.View?.Refresh();
+            RefreshEnemyIntentDeck(e);
+        }
+        UpdateUI();
     }
 
     /// <summary>
@@ -2170,14 +2176,14 @@ public class BattleManager : MonoBehaviour
         switch (attr)
         {
             case LightMiniGame.CardEditor.PlayerAttributeType.Strength:
-                e.StrengthBuff += delta;
+                e.Strength += delta;
                 e.View?.Refresh();
                 // 力量变化后立即刷新意图牌（不受 _isPlayerTurn 守卫限制，敌人回合 buff 也要实时反映到卡面数值）
                 RefreshEnemyIntentDeck(e);
                 UpdateUI();
                 return true;
             case LightMiniGame.CardEditor.PlayerAttributeType.Dexterity:
-                e.DexterityBuff += delta;
+                e.Dexterity += delta;
                 e.View?.Refresh();
                 RefreshEnemyIntentDeck(e);
                 UpdateUI();
@@ -2198,14 +2204,17 @@ public class BattleManager : MonoBehaviour
 
     private void DealDamageToPlayer(int damage, EnemyInstance inst)
     {
-        // 敌人力量加成：直接加到基础伤害上（同杀戮尖塔力量对攻击牌的影响）
+        // 伤害值在 EffectExecutor 里已按出牌者力量结算，这里不再叠加，避免 {N+力量} 双算。
         if (inst != null && inst.Config != null)
-            damage += inst.EffectiveStrength;
-
-        // 应用伤害倍率：敌人对玩家的最终伤害 = (技能伤害 + 力量) * 敌人造成伤害倍率 * 玩家受击倍率
-        int enemyDealtMult = inst != null && inst.Config != null ? inst.Config.damageDealtMultiplier : 100;
-        float mult = PercentToFactor(enemyDealtMult) * PercentToFactor(_playerDamageTakenMultiplier);
-        damage = Mathf.RoundToInt(damage * mult);
+        {
+            int enemyDealtMult = inst.Config.damageDealtMultiplier;
+            float mult = PercentToFactor(enemyDealtMult) * PercentToFactor(_playerDamageTakenMultiplier);
+            damage = Mathf.RoundToInt(damage * mult);
+        }
+        else
+        {
+            damage = Mathf.RoundToInt(damage * PercentToFactor(_playerDamageTakenMultiplier));
+        }
         int actualDamage = damage;
         if (_playerArmor > 0)
         {
@@ -2857,7 +2866,7 @@ public class BattleManager : MonoBehaviour
             // 传入敌人当前力量/敏捷，使卡面描述显示属性增幅后的实际数值
             if (inst != null)
                 display.SetEnemyAttributeContext(inst.EffectiveStrength, inst.EffectiveDexterity);
-            display.ApplyCardEntry(skill, false);
+            display.ApplyCardEntry(skill, _playerSanity <= _sanityThreshold);
         }
         else
         {
@@ -2900,7 +2909,7 @@ public class BattleManager : MonoBehaviour
     {
         if (inst == null || skill == null) return;
 
-        bool lowSanity = _playerSanity <= 4;   // 与卡面/理智形态一致
+        bool lowSanity = _playerSanity <= _sanityThreshold;
         var nodes = skill.GetEffectNodes(lowSanity);
         if (nodes == null || nodes.Count == 0)
         {

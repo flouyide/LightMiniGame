@@ -127,7 +127,13 @@ namespace LightMiniGame.CardEditor
         {
             string desc = lowSanity ? lowSanityDescription : normalDescription;
             if (!string.IsNullOrWhiteSpace(desc))
-                return ResolveDescriptionTemplate(desc, strength, dexterity);
+            {
+                var resolved = ResolveDescriptionTemplate(desc, strength, dexterity);
+                if (desc.IndexOf("力量", StringComparison.Ordinal) >= 0
+                    || desc.IndexOf("敏捷", StringComparison.Ordinal) >= 0)
+                    return resolved;
+                return OverlayResolvedEffectNumbers(resolved, GetEffectNodes(lowSanity), strength, dexterity, isEnemy);
+            }
 
             var sb = new StringBuilder();
             var effects = GetEffectNodes(lowSanity);
@@ -140,6 +146,46 @@ namespace LightMiniGame.CardEditor
             if (ex != CardExistence.Normal)
                 sb.AppendLine(ex == CardExistence.BattleRemove ? "（战斗内移除）" : "（永久移除）");
             return sb.ToString().TrimEnd();
+        }
+
+        private static string OverlayResolvedEffectNumbers(string desc, List<EffectNode> effects, int strength, int dexterity, bool isEnemy)
+        {
+            if (string.IsNullOrEmpty(desc) || effects == null || effects.Count == 0) return desc;
+            int searchFrom = 0;
+            foreach (var node in effects)
+            {
+                if (node == null || !node.enabled) continue;
+                if (node.operation != EffectOperation.DealDamage && node.operation != EffectOperation.GainBlock)
+                    continue;
+                int oldVal = ValueNode.ResolveValue(node.value, 0, 0);
+                int newVal = ValueNode.ResolveCombatValue(node.value, node.operation, node.scalingMode, strength, dexterity, isEnemy);
+                if (oldVal == newVal) continue;
+                int pos = IndexOfNumberToken(desc, oldVal, searchFrom);
+                if (pos < 0) continue;
+                int len = 0;
+                while (pos + len < desc.Length && char.IsDigit(desc[pos + len])) len++;
+                desc = desc.Substring(0, pos) + newVal.ToString() + desc.Substring(pos + len);
+                searchFrom = pos + newVal.ToString().Length;
+            }
+            return desc;
+        }
+
+        private static int IndexOfNumberToken(string desc, int val, int startIndex)
+        {
+            int i = Mathf.Max(0, startIndex);
+            while (i < desc.Length)
+            {
+                if (char.IsDigit(desc[i]))
+                {
+                    int e = i;
+                    while (e + 1 < desc.Length && char.IsDigit(desc[e + 1])) e++;
+                    if (int.TryParse(desc.Substring(i, e - i + 1), out int tokenVal) && tokenVal == val)
+                        return i;
+                    i = e + 1;
+                }
+                else i++;
+            }
+            return -1;
         }
 
         public List<EffectNode> GetEffectNodes(bool lowSanity)

@@ -437,9 +437,7 @@ namespace LightMiniGame.CardEditor
             {
                 case EffectOperation.DealDamage:
                 {
-                    int dmg = ValueNode.ResolveValue(value, strength, dexterity);
-                    if (scalingMode == ScalingMode.AddStrength || isEnemy)
-                        dmg += strength;
+                    int dmg = ValueNode.ResolveCombatValue(value, operation, scalingMode, strength, dexterity, isEnemy);
                     sb.Append($"对{target.GetDescription()}造成 {dmg} 点的伤害");
                     string repeat = repeatCount?.GetDescription() ?? "1";
                     if (repeat != "1") sb.Append($" ×{repeat}次");
@@ -452,9 +450,7 @@ namespace LightMiniGame.CardEditor
 
                 case EffectOperation.GainBlock:
                 {
-                    int block = ValueNode.ResolveValue(value, strength, dexterity);
-                    if (scalingMode == ScalingMode.AddStrength)
-                        block += dexterity;
+                    int block = ValueNode.ResolveCombatValue(value, operation, scalingMode, strength, dexterity, isEnemy);
                     sb.Append($"获得 {block} 格挡");
                     break;
                 }
