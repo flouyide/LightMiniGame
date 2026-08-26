@@ -3413,6 +3413,6 @@ public class BattleManager : MonoBehaviour
         if (_bookUI == null)
             _bookUI = FindObjectOfType<BookUIController>();
         if (_bookUI != null)
-            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity);
+            _bookUI.UpdateTopBarBattleStats(_playerHP, playerMaxHP, PlayerGold, _playerSanity, _playerMaxSanity, _playerFortune);
     }
 }

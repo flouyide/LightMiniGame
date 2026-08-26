@@ -30,6 +30,8 @@ public class BookUIController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private TextMeshProUGUI goldText;
     [SerializeField] private TextMeshProUGUI sanText;       // 理智文本（显示玩家 Sanity）
+    [SerializeField] private TextMeshProUGUI fortuneText;   // 福报值文本（TopBar，图标旁）
+    [SerializeField] private Sprite fortuneIconSprite;      // 留空则运行时从 Assets/Art/局内/福报1.png 加载
 
     [Header("章节完成面板")]
     [SerializeField] private GameObject chapterCompletePanel;
@@ -109,6 +111,8 @@ public class BookUIController : MonoBehaviour
         if (background != null)
             _backgroundImage = background.GetComponent<Image>() ?? background.GetComponentInChildren<Image>();
         UpdateBackground();
+        EnsureFortuneUI();
+        RefreshFortune(chapterManager != null ? chapterManager.PlayerFortune : 0);
     }
 
     private void OnDisable()
@@ -484,6 +488,7 @@ public class BookUIController : MonoBehaviour
             goldText.text = gold.ToString();
         if (sanText != null)
             sanText.text = $"{sanity}/{chapterManager?.PlayerMaxSanity ?? 0}";
+        RefreshFortune(chapterManager != null ? chapterManager.PlayerFortune : 0);
         // 玩家属性变化（含 Sanity）→ 背景图可能需切换
         UpdateBackground();
         // 战斗结束后 ChapterManager 写回的激活/未激活角色同步刷新到局外角色栏（头像+名字）
@@ -539,9 +544,9 @@ public class BookUIController : MonoBehaviour
     }
 
     /// <summary>
-    /// 战斗中由 BattleManager.UpdateUI 调用，同步更新 TopBar 上的 HP、金币和理智文本。
+    /// 战斗中由 BattleManager.UpdateUI 调用，同步更新 TopBar 上的 HP/Gold/Sanity/Fortune 文本。
     /// </summary>
-    public void UpdateTopBarBattleStats(int hp, int maxHp, int gold, int sanity, int maxSanity)
+    public void UpdateTopBarBattleStats(int hp, int maxHp, int gold, int sanity, int maxSanity, int fortune)
     {
         if (hpText != null)
             hpText.text = $"{hp}/{maxHp}";
@@ -549,6 +554,119 @@ public class BookUIController : MonoBehaviour
             goldText.text = gold.ToString();
         if (sanText != null)
             sanText.text = $"{sanity}/{maxSanity}";
+        RefreshFortune(fortune);
+    }
+
+    private const string FortuneIconPath = "Assets/Art/局内/福报1.png";
+
+    private void RefreshFortune(int fortune)
+    {
+        EnsureFortuneUI();
+        if (fortuneText != null)
+            fortuneText.text = $"福报：{Mathf.Max(0, fortune)}";
+        NudgeFortuneTextLeft();
+    }
+
+    /// <summary>
+    /// 在 TopBar 金币图标右侧创建福报图标+数字（与 SanIcon / CoinIcon 同款布局）。
+    /// 已在 Inspector 指定 fortuneText 则只补图标精灵。
+    /// </summary>
+    private void EnsureFortuneUI()
+    {
+        if (fortuneText != null)
+        {
+            ApplyFortuneIconSprite(fortuneText.transform.parent != null
+                ? fortuneText.transform.parent.GetComponent<Image>()
+                : null);
+            return;
+        }
+
+        var topBar = transform.Find("TopBar");
+        if (topBar == null) return;
+
+        var existing = topBar.Find("FortuneIcon");
+        if (existing != null)
+        {
+            fortuneText = existing.GetComponentInChildren<TextMeshProUGUI>(true);
+            ApplyFortuneIconSprite(existing.GetComponent<Image>());
+            return;
+        }
+
+        var coin = topBar.Find("CoinIcon") as RectTransform;
+        var san = topBar.Find("SanIcon") as RectTransform;
+        var template = coin != null ? coin : san;
+        if (template == null) return;
+
+        var iconGO = new GameObject("FortuneIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        iconGO.layer = topBar.gameObject.layer;
+        var iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.SetParent(topBar, false);
+        iconRT.anchorMin = template.anchorMin;
+        iconRT.anchorMax = template.anchorMax;
+        iconRT.pivot = template.pivot;
+        iconRT.sizeDelta = template.sizeDelta;
+        iconRT.localScale = template.localScale;
+        float spacing = 205f;
+        if (coin != null && san != null)
+            spacing = coin.anchoredPosition.x - san.anchoredPosition.x;
+        Vector2 origin = coin != null ? coin.anchoredPosition : template.anchoredPosition;
+        iconRT.anchoredPosition = origin + new Vector2(Mathf.Abs(spacing) > 1f ? spacing : 205f, 0f);
+
+        var iconImg = iconGO.GetComponent<Image>();
+        iconImg.preserveAspect = true;
+        iconImg.raycastTarget = false;
+        ApplyFortuneIconSprite(iconImg);
+
+        var textGO = new GameObject("FortuneText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        textGO.layer = iconGO.layer;
+        var textRT = textGO.GetComponent<RectTransform>();
+        textRT.SetParent(iconRT, false);
+        textRT.anchorMin = textRT.anchorMax = new Vector2(0.5f, 0.5f);
+        textRT.pivot = new Vector2(0.5f, 0.5f);
+        textRT.anchoredPosition = Vector2.zero;
+        textRT.sizeDelta = new Vector2(200f, 50f);
+
+        fortuneText = textGO.GetComponent<TextMeshProUGUI>();
+        fortuneText.raycastTarget = false;
+        fortuneText.fontSize = 24;
+        fortuneText.color = Color.white;
+        fortuneText.alignment = TextAlignmentOptions.Center;
+        fortuneText.enableWordWrapping = false;
+        fortuneText.overflowMode = TextOverflowModes.Overflow;
+        fortuneText.margin = new Vector4(126f, 6f, -67f, 15f);
+        var styleSrc = sanText != null ? sanText : goldText;
+        if (styleSrc != null)
+        {
+            fortuneText.font = styleSrc.font;
+            if (styleSrc.fontSharedMaterial != null)
+                fortuneText.fontSharedMaterial = styleSrc.fontSharedMaterial;
+            fortuneText.fontSize = styleSrc.fontSize;
+            fortuneText.color = styleSrc.color;
+        }
+        fortuneText.text = "福报：0";
+        NudgeFortuneTextLeft();
+    }
+
+    /// <summary>福报文字相对图标略向左收，避免和金币拉开过大空隙。</summary>
+    private void NudgeFortuneTextLeft()
+    {
+        if (fortuneText == null) return;
+        fortuneText.rectTransform.anchoredPosition = new Vector2(-22f, 0f);
+    }
+
+    private void ApplyFortuneIconSprite(Image icon)
+    {
+        if (icon == null) return;
+        if (icon.sprite != null && fortuneIconSprite == null) return;
+        Sprite sprite = fortuneIconSprite;
+        if (sprite == null)
+        {
+#if UNITY_EDITOR
+            sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(FortuneIconPath);
+#endif
+        }
+        if (sprite != null)
+            icon.sprite = sprite;
     }
 
     /// <summary>
