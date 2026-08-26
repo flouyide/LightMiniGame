@@ -85,6 +85,8 @@ public enum KeywordType
     Bribe         = 1 << 6,  // 贿赂：费用不足时可用 5 货币代替 1 点费用
     [InspectorName("摸鱼")]
     Slack         = 1 << 7,  // 摸鱼：打出后立即结束回合，下回合多抽 1 张
+    [InspectorName("监控目标")]
+    WatchTarget   = 1 << 8,  // 监控目标：打出后场上所有敌人力量+1（战斗内永久）
 }
 
 /// <summary>词条中文名、说明与编辑器枚举映射。</summary>
@@ -94,17 +96,17 @@ public static class CardKeywords
 
     public static readonly string[] FlagMaskNames =
     {
-        "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼"
+        "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼", "监控目标"
     };
 
     public static readonly string[] EditorPopupNames =
     {
-        "无", "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼"
+        "无", "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼", "监控目标"
     };
 
     public static readonly string[] FilterPopupNames =
     {
-        "全部词条", "无", "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼"
+        "全部词条", "无", "股神", "韭菜", "回流", "配件", "查阅", "内部价", "贿赂", "摸鱼", "监控目标"
     };
 
     public static KeywordType FromEditor(LightMiniGame.CardEditor.CardKeyword k) =>
@@ -123,6 +125,7 @@ public static class CardKeywords
         if (Has(keywords, KeywordType.InternalPrice)) result.Add("内部价");
         if (Has(keywords, KeywordType.Bribe)) result.Add("贿赂");
         if (Has(keywords, KeywordType.Slack)) result.Add("摸鱼");
+        if (Has(keywords, KeywordType.WatchTarget)) result.Add("监控目标");
         return result;
     }
 
@@ -137,6 +140,7 @@ public static class CardKeywords
         if (Has(keywords, KeywordType.InternalPrice)) parts.Add("内部价：费用减少 1");
         if (Has(keywords, KeywordType.Bribe)) parts.Add("贿赂：费用不足时可用 5 货币代替 1 点费用");
         if (Has(keywords, KeywordType.Slack)) parts.Add("摸鱼：打出后立即结束回合，下回合多抽 1 张");
+        if (Has(keywords, KeywordType.WatchTarget)) parts.Add("监控目标：打出后场上所有敌人力量+1（战斗内永久）");
         return string.Join("\n", parts);
     }
 }

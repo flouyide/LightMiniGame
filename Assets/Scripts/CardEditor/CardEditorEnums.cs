@@ -41,7 +41,9 @@ namespace LightMiniGame.CardEditor
         [InspectorName("贿赂")]
         Bribe         = 1 << 6,
         [InspectorName("摸鱼")]
-        Slack         = 1 << 7
+        Slack         = 1 << 7,
+        [InspectorName("监控目标")]
+        WatchTarget   = 1 << 8
     }
 
     // ========================================================================

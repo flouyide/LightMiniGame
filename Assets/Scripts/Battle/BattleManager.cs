@@ -1652,6 +1652,9 @@ public class BattleManager : MonoBehaviour
         if (card.HasKeyword(KeywordType.Consult))
             DrawCards(1);
 
+        if (card.HasKeyword(KeywordType.WatchTarget))
+            ApplyWatchTargetToAllEnemies();
+
         bool recycleToHand = card.HasKeyword(KeywordType.Recycle) && !_recycleUsedThisTurn.Contains(card);
         if (recycleToHand)
         {
@@ -2146,6 +2149,13 @@ public class BattleManager : MonoBehaviour
             Debug.LogError($"[BattleManager] 敌人能力 '{relic.relicName}' 的效果类实例化失败（需要无参构造）: {ex}");
             return null;
         }
+    }
+
+    /// <summary>监控目标：给场上所有存活敌人力量+1（战斗内永久，走 StrengthBuff）。</summary>
+    private void ApplyWatchTargetToAllEnemies()
+    {
+        for (int i = 0; i < _enemies.Count; i++)
+            ApplyEnemyAttributeBuff(i, LightMiniGame.CardEditor.PlayerAttributeType.Strength, 1);
     }
 
     /// <summary>

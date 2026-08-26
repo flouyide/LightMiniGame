@@ -30,7 +30,8 @@ namespace LightMiniGame.CardEditor
         Consult,
         InternalPrice,
         Bribe,
-        Slack
+        Slack,
+        WatchTarget
     }
 
     // ========================================================================

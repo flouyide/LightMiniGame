@@ -185,7 +185,7 @@ namespace LightMiniGame.CardEditor
             return names.Count == 0 ? "无" : string.Join("  ", names);
         }
 
-        /// <summary>旧版单选序号 → 位标。1=股神…8=摸鱼；其它值原样保留。</summary>
+        /// <summary>旧版单选序号 → 位标。1=股神…9=监控目标；其它值原样保留。</summary>
         public static CardKeyword SequentialToFlags(int old) => old switch
         {
             1 => CardKeyword.StockGod,
@@ -196,6 +196,7 @@ namespace LightMiniGame.CardEditor
             6 => CardKeyword.InternalPrice,
             7 => CardKeyword.Bribe,
             8 => CardKeyword.Slack,
+            9 => CardKeyword.WatchTarget,
             _ => (CardKeyword)old
         };
 
