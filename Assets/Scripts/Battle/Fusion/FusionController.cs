@@ -696,7 +696,8 @@ public class FusionController : MonoBehaviour
     private int FusionPoolTotal() => SumSelected() + CurrentFortune;
 
     /// <summary>
-    /// 股神拿拆分里的最大份，韭菜拿 0；剩余守恒分给其它槽。
+    /// 股神：只要本次融合有股神参与，非股神槽为 0，股神拿走全部（多名均分）。
+    /// 无股神时：韭菜为 0，剩余守恒分给其它槽。
     /// </summary>
     private void ApplyFusionKeywordBias(List<int> split)
     {
@@ -708,34 +709,36 @@ public class FusionController : MonoBehaviour
         for (int i = 0; i < _selected.Count; i++)
         {
             var kw = _selected[i].cardView != null ? _selected[i].cardView.keywords : KeywordType.None;
-            if (CardKeywords.Has(kw, KeywordType.Leek)) leek.Add(i);
             if (CardKeywords.Has(kw, KeywordType.StockGod)) god.Add(i);
-            if (!CardKeywords.Has(kw, KeywordType.Leek) && !CardKeywords.Has(kw, KeywordType.StockGod))
-                rest.Add(i);
+            else if (CardKeywords.Has(kw, KeywordType.Leek)) leek.Add(i);
+            else rest.Add(i);
         }
-        if (god.Count == 0 && leek.Count == 0) return;
 
         int total = 0;
         for (int i = 0; i < split.Count; i++) total += split[i];
 
-        foreach (int i in leek) split[i] = 0;
+        if (god.Count > 0)
+        {
+            for (int i = 0; i < split.Count; i++) split[i] = 0;
+            int share = total / god.Count;
+            int rem = total % god.Count;
+            for (int k = 0; k < god.Count; k++)
+                split[god[k]] = share + (k < rem ? 1 : 0);
+            return;
+        }
 
-        var freeIdx = new List<int>(god.Count + rest.Count);
-        freeIdx.AddRange(god);
-        freeIdx.AddRange(rest);
-        if (freeIdx.Count == 0)
+        if (leek.Count == 0) return;
+
+        foreach (int i in leek) split[i] = 0;
+        if (rest.Count == 0)
         {
             if (leek.Count > 0) split[leek[0]] = total;
             return;
         }
 
-        var sub = FusionSplitAlgorithm.Split(total, freeIdx.Count, minEach: total >= freeIdx.Count ? 1 : 0);
-        sub.Sort();
-        int p = 0;
-        foreach (int i in rest)
-            split[i] = sub[p++];
-        foreach (int i in god)
-            split[i] = sub[p++];
+        var sub = FusionSplitAlgorithm.Split(total, rest.Count, minEach: total >= rest.Count ? 1 : 0);
+        for (int p = 0; p < rest.Count; p++)
+            split[rest[p]] = sub[p];
     }
 
     // ========================================================================

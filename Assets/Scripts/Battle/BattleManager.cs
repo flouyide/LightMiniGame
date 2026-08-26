@@ -3113,7 +3113,7 @@ public class BattleManager : MonoBehaviour
     {
         if (hpText != null) hpText.text = $"{_playerHP}/{playerMaxHP}";
         if (actionPointText != null) actionPointText.text = _actionPoints.ToString();
-        if (armorText != null) armorText.text = _playerArmor > 0 ? $"护甲: {_playerArmor}" : "";
+        if (armorText != null) armorText.text = _playerArmor > 0 ? $"{_playerArmor}" : "";
 
         // 玩家回合：刷新每个存活敌人的意图预览（下一回合将打出的卡）
         if (_isPlayerTurn && !_battleEnded)

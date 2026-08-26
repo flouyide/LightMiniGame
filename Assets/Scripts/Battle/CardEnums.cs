@@ -70,7 +70,7 @@ public enum KeywordType
 {
     None          = 0,
     [InspectorName("股神")]
-    StockGod      = 1 << 0,  // 股神：融合时该卡获得最大数值
+    StockGod      = 1 << 0,  // 股神：融合中只要有股神，股神拿走全部（多名均分），其余为 0
     [InspectorName("韭菜")]
     Leek          = 1 << 1,  // 韭菜：融合时该卡获得最小数值（0）
     [InspectorName("回流")]
@@ -129,7 +129,7 @@ public static class CardKeywords
     public static string GetTooltip(KeywordType keywords)
     {
         var parts = new List<string>();
-        if (Has(keywords, KeywordType.StockGod)) parts.Add("股神：融合时该卡牌将获得最大数值");
+        if (Has(keywords, KeywordType.StockGod)) parts.Add("股神：融合中只要有股神，股神拿走全部数值（多名均分），其余为 0");
         if (Has(keywords, KeywordType.Leek)) parts.Add("韭菜：融合时该卡牌将获得最小数值（0）");
         if (Has(keywords, KeywordType.Recycle)) parts.Add("回流：本回合第一次打出后回到手牌");
         if (Has(keywords, KeywordType.Accessory)) parts.Add("配件：打出时若手牌有「主机」，主机获得本卡效果");
