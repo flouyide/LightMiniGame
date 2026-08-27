@@ -18,5 +18,5 @@ MonoBehaviour:
   startingLibrary: {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: eeff3d2b2e6ab754cb6dc4e99c563460, type: 2}
-  - {fileID: 11400000, guid: 3338cf4d3c8057040b1df094bc2999d0, type: 2}
+  - {fileID: 11400000, guid: 848a8fcae01c28a40a990206cedabb98, type: 2}
   maxLibrarySize: 100
