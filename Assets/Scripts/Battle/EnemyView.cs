@@ -21,6 +21,13 @@ public class EnemyView : MonoBehaviour
     [SerializeField] private Slider hpBar;
     [SerializeField] private TextMeshProUGUI armorText;
 
+    [Header("Buff 栏（血条正下方左侧）")]
+    [Tooltip("单个 buff 图标预制体（含 Image + TMP）。留空则运行时用色块+字生成")]
+    [SerializeField] private GameObject buffIconPrefab;
+    [SerializeField] private Sprite strengthIcon;
+    [SerializeField] private Sprite dexterityIcon;
+    [SerializeField] private Sprite fatigueIcon;
+
     [Header("伤害飘字")]
     [Tooltip("飘字出生点（空 RectTransform）。留空则绕本视图中心一圈随机")]
     [SerializeField] private RectTransform damageAnchor;
@@ -62,6 +69,10 @@ public class EnemyView : MonoBehaviour
     // 出牌牌库预览容器（首次展示时创建）
     private RectTransform _deckRoot;
     private readonly List<GameObject> _deckCards = new List<GameObject>();
+
+    // 血条下方 buff 栏
+    private RectTransform _buffDeckRoot;
+    private readonly List<GameObject> _buffIconPool = new List<GameObject>();
 
     /// <summary>绑定运行时实例并全量刷新显示</summary>
     public void Bind(EnemyInstance inst)
@@ -170,6 +181,8 @@ public class EnemyView : MonoBehaviour
         if (hpBar != null) hpBar.value = _inst.MaxHP > 0 ? Mathf.Clamp01((float)_inst.HP / _inst.MaxHP) : 0f;
         if (armorText != null) armorText.text = _inst.Armor > 0 ? $"{_inst.Armor}" : "";
 
+        RefreshBuffDeck();
+
         if (portraitImage != null && cfg != null)
         {
             var sprite = (_inst.Phase == 2 && cfg.phase2Portrait != null) ? cfg.phase2Portrait : cfg.phase1Portrait;
@@ -179,6 +192,198 @@ public class EnemyView : MonoBehaviour
         }
     }
 
+
+    /// <summary>血条正下方左侧：力量 / 敏捷 / 疲惫。0 层不显示。</summary>
+    private void RefreshBuffDeck()
+    {
+        EnsureBuffDeck();
+        if (_buffDeckRoot == null || _inst == null) return;
+
+        var buffs = _inst.GetDisplayedBuffs();
+        _buffDeckRoot.gameObject.SetActive(buffs.Count > 0);
+
+        for (int i = 0; i < buffs.Count; i++)
+        {
+            GameObject iconGo;
+            if (i < _buffIconPool.Count && _buffIconPool[i] != null)
+            {
+                iconGo = _buffIconPool[i];
+                iconGo.SetActive(true);
+            }
+            else
+            {
+                iconGo = CreateBuffIcon();
+                if (iconGo == null) return;
+                if (i < _buffIconPool.Count) _buffIconPool[i] = iconGo;
+                else _buffIconPool.Add(iconGo);
+            }
+            ApplyBuffIcon(iconGo, buffs[i]);
+        }
+        for (int i = buffs.Count; i < _buffIconPool.Count; i++)
+        {
+            if (_buffIconPool[i] != null) _buffIconPool[i].SetActive(false);
+        }
+    }
+
+    private void EnsureBuffDeck()
+    {
+        if (_buffDeckRoot != null) return;
+
+        var hpRt = hpBar != null ? hpBar.transform as RectTransform : transform.Find("HPBar") as RectTransform;
+        var go = new GameObject("BuffDeck", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        _buffDeckRoot = go.GetComponent<RectTransform>();
+        _buffDeckRoot.SetParent(transform, false);
+
+        var hlg = go.GetComponent<HorizontalLayoutGroup>();
+        hlg.padding = new RectOffset(0, 0, 0, 0);
+        hlg.spacing = 4f;
+        hlg.childAlignment = TextAnchor.UpperLeft;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = false;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+
+        _buffDeckRoot.pivot = new Vector2(0f, 1f);
+        if (hpRt != null)
+        {
+            _buffDeckRoot.anchorMin = hpRt.anchorMin;
+            _buffDeckRoot.anchorMax = hpRt.anchorMax;
+            float width = hpRt.rect.width > 1f ? hpRt.rect.width : hpRt.sizeDelta.x;
+            float height = hpRt.rect.height > 1f ? hpRt.rect.height : hpRt.sizeDelta.y;
+            float left = hpRt.anchoredPosition.x - width * hpRt.pivot.x;
+            float bottom = hpRt.anchoredPosition.y - height * hpRt.pivot.y;
+            _buffDeckRoot.anchoredPosition = new Vector2(left, bottom - 2f);
+            _buffDeckRoot.sizeDelta = new Vector2(width, 36f);
+        }
+        else
+        {
+            _buffDeckRoot.anchorMin = _buffDeckRoot.anchorMax = new Vector2(0.5f, 1f);
+            _buffDeckRoot.anchoredPosition = new Vector2(-213f, -82f);
+            _buffDeckRoot.sizeDelta = new Vector2(438f, 36f);
+        }
+
+        _buffDeckRoot.SetSiblingIndex(hpRt != null ? hpRt.GetSiblingIndex() + 1 : 0);
+    }
+
+    private GameObject CreateBuffIcon()
+    {
+        if (buffIconPrefab == null)
+        {
+#if UNITY_EDITOR
+            buffIconPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BuffIcon.prefab");
+#endif
+        }
+        if (buffIconPrefab != null)
+            return Instantiate(buffIconPrefab, _buffDeckRoot);
+
+        var go = new GameObject("BuffIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+        go.transform.SetParent(_buffDeckRoot, false);
+        var rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(32f, 32f);
+        var le = go.GetComponent<LayoutElement>();
+        le.preferredWidth = 32f;
+        le.preferredHeight = 32f;
+        le.minWidth = 32f;
+        le.minHeight = 32f;
+
+        var icon = go.GetComponent<Image>();
+        icon.raycastTarget = false;
+        icon.preserveAspect = true;
+
+        var labelGo = new GameObject("StackText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        labelGo.transform.SetParent(go.transform, false);
+        var labelRt = labelGo.GetComponent<RectTransform>();
+        labelRt.anchorMin = new Vector2(1f, 0f);
+        labelRt.anchorMax = new Vector2(1f, 0f);
+        labelRt.pivot = new Vector2(1f, 0f);
+        labelRt.anchoredPosition = Vector2.zero;
+        labelRt.sizeDelta = new Vector2(24f, 20f);
+        var tmp = labelGo.GetComponent<TextMeshProUGUI>();
+        if (hpText != null)
+        {
+            tmp.font = hpText.font;
+            if (hpText.fontSharedMaterial != null)
+                tmp.fontSharedMaterial = hpText.fontSharedMaterial;
+        }
+        tmp.fontSize = 14;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.BottomRight;
+        tmp.enableWordWrapping = false;
+        tmp.overflowMode = TextOverflowModes.Overflow;
+        tmp.raycastTarget = false;
+        return go;
+    }
+
+    private void ApplyBuffIcon(GameObject iconGo, DisplayedBuff buff)
+    {
+        if (iconGo == null) return;
+        var iconImage = iconGo.GetComponent<Image>();
+        if (iconImage == null) iconImage = iconGo.GetComponentInChildren<Image>();
+        var stackText = iconGo.GetComponentInChildren<TextMeshProUGUI>();
+
+        var sprite = ResolveBuffSprite(buff.attributeType);
+        if (iconImage != null)
+        {
+            if (sprite != null)
+            {
+                iconImage.sprite = sprite;
+                iconImage.color = Color.white;
+            }
+            else
+            {
+                iconImage.sprite = null;
+                iconImage.color = BuffFallbackColor(buff.attributeType);
+            }
+        }
+
+        if (stackText != null)
+        {
+            stackText.text = buff.totalStacks.ToString();
+            bool debuff = buff.attributeType == BuffAttributeType.Fatigue || buff.totalStacks < 0;
+            stackText.color = debuff
+                ? new Color(0.9f, 0.3f, 0.3f, 1f)
+                : new Color(0.3f, 0.9f, 0.3f, 1f);
+        }
+    }
+
+    private Sprite ResolveBuffSprite(BuffAttributeType type)
+    {
+        Sprite assigned = type switch
+        {
+            BuffAttributeType.Strength => strengthIcon,
+            BuffAttributeType.Dexterity => dexterityIcon,
+            BuffAttributeType.Fatigue => fatigueIcon,
+            _ => null
+        };
+        if (assigned != null) return assigned;
+        return LoadBuiltinBuffSprite(type);
+    }
+
+    private static readonly Dictionary<BuffAttributeType, Sprite> BuiltinBuffSprites = new();
+    private static bool _builtinBuffSpritesTried;
+
+    private static Sprite LoadBuiltinBuffSprite(BuffAttributeType type)
+    {
+        if (!_builtinBuffSpritesTried)
+        {
+            _builtinBuffSpritesTried = true;
+#if UNITY_EDITOR
+            BuiltinBuffSprites[BuffAttributeType.Strength] =
+                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/力量.png");
+            BuiltinBuffSprites[BuffAttributeType.Dexterity] =
+                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/敏捷.png");
+#endif
+        }
+        return BuiltinBuffSprites.TryGetValue(type, out var s) ? s : null;
+    }
+
+    private static Color BuffFallbackColor(BuffAttributeType type) => type switch
+    {
+        BuffAttributeType.Strength => new Color(0.85f, 0.25f, 0.2f, 1f),
+        BuffAttributeType.Dexterity => new Color(0.25f, 0.7f, 0.35f, 1f),
+        BuffAttributeType.Fatigue => new Color(0.55f, 0.4f, 0.15f, 1f),
+        _ => new Color(0.5f, 0.5f, 0.5f, 1f)
+    };
 
     /// <summary>注入玩家同款卡面预制体（出牌牌库预览用），由 BattleManager 生成敌人时调用。</summary>
     public void SetCardPrefabs(GameObject attack, GameObject skill, GameObject ability)

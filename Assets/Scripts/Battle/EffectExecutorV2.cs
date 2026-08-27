@@ -622,6 +622,10 @@ public class EffectExecutorV2
                     _lastResult[EffectResultType.ActualValue] = delta;
                     Log($"  [Buff] 暴伤 {delta}");
                     return;
+                case LightMiniGame.CardEditor.PlayerAttributeType.LifeSteal:
+                    _lastResult[EffectResultType.ActualValue] = 0;
+                    Log("  [Buff] 吸血已取消，忽略");
+                    return;
             }
         }
 
@@ -819,6 +823,7 @@ public class EffectExecutorV2
         StatusType2.Jammed => StatusType.Insane,
         StatusType2.Vulnerable => StatusType.Insane,
         StatusType2.Madness => StatusType.Insane,
+        StatusType2.Fatigue => StatusType.Fatigue,
         _ => StatusType.Bleed
     };
 

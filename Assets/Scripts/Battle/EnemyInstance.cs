@@ -29,6 +29,12 @@ public class EnemyInstance
     /// <summary>运行时敏捷，开战从 EnemyConfig.dexterity 拷入，战斗内增减不写回资产。</summary>
     public int Dexterity;
 
+    /// <summary>
+    /// 疲惫层数。开战从 EnemyConfig.fatigue 拷入。
+    /// 每轮（敌人回合开始）造成等于当前层数的直接扣血，然后层数 -1。
+    /// </summary>
+    public int Tiredness;
+
     public int EffectiveStrength => Strength;
     public int EffectiveDexterity => Dexterity;
 
@@ -188,26 +194,80 @@ public class EnemyInstance
         return actualDamage;
     }
 
-    /// <summary>施加状态（当前仅 ArmorBreak 减甲；敌人暂无流血/其他状态系统）</summary>
+    /// <summary>施加状态：破甲减甲；力量/敏捷改运行时属性；疲惫叠加层数。</summary>
     public void ApplyStatus(StatusType status, int stacks)
     {
-        if (status == StatusType.ArmorBreak)
+        if (stacks == 0) return;
+        switch (status)
         {
-            int actual = Mathf.Min(Armor, stacks);
-            Armor -= actual;
-            ArmorBreakStacks += actual;
+            case StatusType.ArmorBreak:
+            {
+                int actual = Mathf.Min(Armor, Mathf.Max(0, stacks));
+                Armor -= actual;
+                ArmorBreakStacks += actual;
+                break;
+            }
+            case StatusType.Strength:
+                Strength += stacks;
+                break;
+            case StatusType.Dexterity:
+                Dexterity += stacks;
+                break;
+            case StatusType.Fatigue:
+                Tiredness = Mathf.Max(0, Tiredness + stacks);
+                break;
         }
     }
 
-    /// <summary>移除状态（ArmorBreak：还原被削减的护甲，上限为 ArmorBreakStacks）</summary>
+    /// <summary>移除状态（ArmorBreak：还原被削减的护甲；力量/敏捷/疲惫按层数回退）。</summary>
     public void RemoveStatus(StatusType status, int stacks)
     {
-        if (status == StatusType.ArmorBreak)
+        if (stacks <= 0) return;
+        switch (status)
         {
-            int restore = Mathf.Min(ArmorBreakStacks, stacks);
-            Armor += restore;
-            ArmorBreakStacks -= restore;
+            case StatusType.ArmorBreak:
+            {
+                int restore = Mathf.Min(ArmorBreakStacks, stacks);
+                Armor += restore;
+                ArmorBreakStacks -= restore;
+                break;
+            }
+            case StatusType.Strength:
+                Strength -= stacks;
+                break;
+            case StatusType.Dexterity:
+                Dexterity -= stacks;
+                break;
+            case StatusType.Fatigue:
+                Tiredness = Mathf.Max(0, Tiredness - stacks);
+                break;
         }
+    }
+
+    /// <summary>
+    /// 疲惫结算：直接扣等于当前层数的血（无视护甲），然后层数 -1。
+    /// 返回本次扣血量；层数为 0 时不生效。
+    /// </summary>
+    public int TickFatigue()
+    {
+        if (IsDead || Tiredness <= 0) return 0;
+        int dmg = Tiredness;
+        HP = Mathf.Max(0, HP - dmg);
+        Tiredness = Mathf.Max(0, Tiredness - 1);
+        return dmg;
+    }
+
+    /// <summary>敌人 buff 栏：力量、敏捷、疲惫。0 层不显示。</summary>
+    public List<DisplayedBuff> GetDisplayedBuffs()
+    {
+        var list = new List<DisplayedBuff>();
+        if (Strength != 0)
+            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Strength, totalStacks = Strength });
+        if (Dexterity != 0)
+            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Dexterity, totalStacks = Dexterity });
+        if (Tiredness != 0)
+            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Fatigue, totalStacks = Tiredness });
+        return list;
     }
 
     /// <summary>获得护甲（加法累加）。由 BattleManager 在执行 gainBlock 技能时调用。</summary>

@@ -1039,6 +1039,10 @@ MonoBehaviour:
   hpText: {fileID: 6575776799863930510}
   hpBar: {fileID: 876905236068782483}
   armorText: {fileID: 2092861099016971916}
+  buffIconPrefab: {fileID: 0}
+  strengthIcon: {fileID: 21300000, guid: 9911dbd4f4c6505408d778419f0a8141, type: 3}
+  dexterityIcon: {fileID: 21300000, guid: 146544ea9f6dd934c84489d17b8ccb33, type: 3}
+  fatigueIcon: {fileID: 0}
   damageAnchor: {fileID: 6084429079432763145}
   damagePopupPrefab: {fileID: 8632132199425164748, guid: bcdbb62492eb341d6beee30238fc90dd, type: 3}
   damagePopupMinRadius: 110

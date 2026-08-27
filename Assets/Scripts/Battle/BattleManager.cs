@@ -421,6 +421,13 @@ public class BattleManager : MonoBehaviour
         return e != null && !e.IsDead ? e.EffectiveDexterity : 0;
     }
 
+    /// <summary>指定槽位敌人的疲惫层数（死亡/越界返回 0）。</summary>
+    public int GetEnemyFatigue(int index)
+    {
+        var e = GetEnemy(index);
+        return e != null && !e.IsDead ? e.Tiredness : 0;
+    }
+
     /// <summary>按槽位索引取敌人实例（越界返回 null）</summary>
     private EnemyInstance GetEnemy(int slotIndex)
         => (slotIndex >= 0 && slotIndex < _enemies.Count) ? _enemies[slotIndex] : null;
@@ -1037,9 +1044,10 @@ public class BattleManager : MonoBehaviour
         SetModAttrValue(attr, newVal);
     }
 
-    /// <summary>添加玩家 buff（供 EffectExecutorV2 调用）</summary>
+    /// <summary>添加玩家 buff（供 EffectExecutorV2 调用）。吸血已从玩家 buff 中移除。</summary>
     public void AddPlayerBuff(BuffAttributeType type, int stacks, int duration = 0)
     {
+        if (type == BuffAttributeType.LifeSteal) return;
         _playerBuffs?.AddBuff(type, stacks, duration);
     }
 
@@ -1050,6 +1058,7 @@ public class BattleManager : MonoBehaviour
     public void SetPlayerDisplayOnlyBuff(string sourceId, BuffAttributeType type, int stacks)
     {
         if (string.IsNullOrEmpty(sourceId)) return;
+        if (type == BuffAttributeType.LifeSteal) return;
 
         if (stacks == 0)
         {
@@ -1089,6 +1098,7 @@ public class BattleManager : MonoBehaviour
         foreach (var pair in totals)
         {
             if (pair.Value == 0) continue;
+            if (pair.Key == BuffAttributeType.LifeSteal) continue;
             result.Add(new DisplayedBuff
             {
                 attributeType = pair.Key,
@@ -1107,34 +1117,27 @@ public class BattleManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>对敌人施加状态效果（ArmorBreak 削减护甲）。index=-1 表示全体存活敌人；已死/越界则忽略。</summary>
+    /// <summary>对敌人施加状态（破甲/力量/敏捷/疲惫）。index=-1 表示全体存活敌人；已死/越界则忽略。</summary>
     public void ApplyStatusToEnemy(int index, StatusType status, int stacks)
     {
-        if (status != StatusType.ArmorBreak)
-        {
-            Debug.Log($"[状态] 对敌人施加 {status}（多敌人框架下暂未实现）");
-            return;
-        }
-
         if (index < 0)
         {
             foreach (var inst in _enemies)
-            {
-                if (inst == null || inst.IsDead) continue;
-                inst.ApplyStatus(status, stacks);
-                Debug.Log($"[状态] {inst.Name} 护甲 -{stacks}，剩余 {inst.Armor}");
-                inst.View?.Refresh();
-            }
+                ApplyStatusToOneEnemy(inst, status, stacks);
         }
         else
-        {
-            var inst = GetEnemy(index);
-            if (inst == null || inst.IsDead) return;
-            inst.ApplyStatus(status, stacks);
-            Debug.Log($"[状态] {inst.Name} 护甲 -{stacks}，剩余 {inst.Armor}");
-            inst.View?.Refresh();
-        }
+            ApplyStatusToOneEnemy(GetEnemy(index), status, stacks);
         UpdateUI();
+    }
+
+    private void ApplyStatusToOneEnemy(EnemyInstance inst, StatusType status, int stacks)
+    {
+        if (inst == null || inst.IsDead) return;
+        inst.ApplyStatus(status, stacks);
+        Debug.Log($"[状态] {inst.Name} 施加 {status} {stacks}，力量 {inst.Strength} 敏捷 {inst.Dexterity} 护甲 {inst.Armor} 疲惫 {inst.Tiredness}");
+        inst.View?.Refresh();
+        if (status == StatusType.Strength || status == StatusType.Dexterity)
+            RefreshEnemyIntentDeck(inst);
     }
 
     public void ApplyStatusToPlayer(StatusType status, int stacks)
@@ -1169,34 +1172,27 @@ public class BattleManager : MonoBehaviour
         }*/
     }
 
-    /// <summary>对敌人移除状态效果（ArmorBreak 还原护甲）。index=-1 表示全体存活敌人；已死/越界则忽略。</summary>
+    /// <summary>对敌人移除状态。index=-1 表示全体存活敌人。</summary>
     public void RemoveStatusFromEnemy(int index, StatusType status, int stacks)
     {
-        if (status != StatusType.ArmorBreak)
-        {
-            Debug.Log($"[状态] 对敌人移除 {status}（多敌人框架下暂未实现）");
-            return;
-        }
-
         if (index < 0)
         {
             foreach (var inst in _enemies)
-            {
-                if (inst == null || inst.IsDead) continue;
-                inst.RemoveStatus(status, stacks);
-                Debug.Log($"[状态] {inst.Name} 破甲移除{stacks}层，护甲恢复至 {inst.Armor}");
-                inst.View?.Refresh();
-            }
+                RemoveStatusFromOneEnemy(inst, status, stacks);
         }
         else
-        {
-            var inst = GetEnemy(index);
-            if (inst == null || inst.IsDead) return;
-            inst.RemoveStatus(status, stacks);
-            Debug.Log($"[状态] {inst.Name} 破甲移除{stacks}层，护甲恢复至 {inst.Armor}");
-            inst.View?.Refresh();
-        }
+            RemoveStatusFromOneEnemy(GetEnemy(index), status, stacks);
         UpdateUI();
+    }
+
+    private void RemoveStatusFromOneEnemy(EnemyInstance inst, StatusType status, int stacks)
+    {
+        if (inst == null || inst.IsDead) return;
+        inst.RemoveStatus(status, stacks);
+        Debug.Log($"[状态] {inst.Name} 移除 {status} {stacks}，力量 {inst.Strength} 敏捷 {inst.Dexterity} 护甲 {inst.Armor} 疲惫 {inst.Tiredness}");
+        inst.View?.Refresh();
+        if (status == StatusType.Strength || status == StatusType.Dexterity)
+            RefreshEnemyIntentDeck(inst);
     }
 
     /// <summary>对玩家移除状态效果（路由到 BuffSystem）。</summary>
@@ -1509,6 +1505,7 @@ public class BattleManager : MonoBehaviour
                 Armor = cfg.armor,
                 Strength = cfg.strength,
                 Dexterity = cfg.dexterity,
+                Tiredness = Mathf.Max(0, cfg.fatigue),
                 Phase = 1,
                 TurnInCycle = 0,
                 LockedCharIdx = -1,
@@ -1530,7 +1527,7 @@ public class BattleManager : MonoBehaviour
             }
 
             _enemies.Add(inst);
-            Debug.Log($"[BattleManager] 生成敌人[{inst.SlotIndex}] {cfg.enemyName}: {inst.HP}/{inst.MaxHP} HP, {inst.Armor} 护甲, 行动顺序 {inst.ActionOrder} @ {info.anchoredPosition}");
+            Debug.Log($"[BattleManager] 生成敌人[{inst.SlotIndex}] {cfg.enemyName}: {inst.HP}/{inst.MaxHP} HP, {inst.Armor} 护甲, 力量 {inst.Strength}, 敏捷 {inst.Dexterity}, 疲惫 {inst.Tiredness}, 行动顺序 {inst.ActionOrder} @ {info.anchoredPosition}");
         }
     }
 
@@ -1669,7 +1666,6 @@ public class BattleManager : MonoBehaviour
         _playerBuffs.SetMinValue(BuffAttributeType.Strength, int.MinValue);     // 力量可负
         _playerBuffs.SetMinValue(BuffAttributeType.Dexterity, int.MinValue);    // 敏捷可负
         _playerBuffs.SetMinValue(BuffAttributeType.Recovery, 0);                 // 回复最小0
-        _playerBuffs.SetMinValue(BuffAttributeType.LifeSteal, 0);                // 吸血最小0
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalChance, 0);           // 暴击率最小0
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalDamage, 2);           // 暴伤最小2
         _enemyBuffs = new BuffSystem(); // 敌人使用相同约束（可后续扩展）
@@ -2977,13 +2973,34 @@ public class BattleManager : MonoBehaviour
         _isPlayerTurn = false;
         if (phaseHintText != null)
             phaseHintText.text = "敌人回合";
-        // 敌人回合开始：重置每个存活敌人的护甲为 0（同玩家每回合清护甲），再刷新意图预览
+        // 敌人回合开始：清护甲 → 结算疲惫（扣等量血并 -1 层）→ 再行动
         foreach (var e in _enemies)
         {
             if (e == null || e.IsDead) continue;
             e.ResetArmorOnTurnStart();
+            e.View?.Refresh();
+        }
+
+        bool anyFatigue = false;
+        foreach (var e in _enemies)
+        {
+            if (e == null || e.IsDead) continue;
+            int dmg = e.TickFatigue();
+            if (dmg <= 0) continue;
+            anyFatigue = true;
+            Debug.Log($"[疲惫] {e.Name} 受到 {dmg} 点疲惫伤害，剩余层数 {e.Tiredness}，HP {e.HP}/{e.MaxHP}");
+            e.View?.ShowDamage(dmg);
+            if (e.HP <= 0) HandleEnemyFatalDamage(e);
+            e.View?.Refresh();
+            if (!e.IsDead) e.View?.PlayHitFeedback();
         }
         UpdateUI();
+        if (anyFatigue)
+        {
+            CheckBattleEnd();
+            if (_battleEnded) yield break;
+            yield return new WaitForSeconds(0.35f);
+        }
 
         foreach (int slot in GetEnemyActionOrder())
         {

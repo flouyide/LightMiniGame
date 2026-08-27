@@ -92,7 +92,8 @@ namespace LightMiniGame.CardEditor
         CriticalChanceModifier,
         CriticalDamageModifier,
         BlockRetention,
-        CustomStatus
+        CustomStatus,
+        Fatigue                 // 疲惫（层数，每轮扣等量血并 -1 层）
     }
 
     // ========================================================================

@@ -10,9 +10,10 @@ public enum BuffAttributeType
     Strength,       // 力量（可负）
     Dexterity,      // 敏捷（可负）
     Recovery,        // 回复（最小0）
-    LifeSteal,      // 吸血（最小0）
+    LifeSteal,      // 已取消：保留枚举序号，避免已有 BuffData 错位
     CriticalChance, // 暴击率（最小0）
     CriticalDamage, // 暴击伤害（最小2）
+    Fatigue,        // 疲惫（层数，每轮扣等量血并 -1 层）
 }
 
 // ========================================================================
@@ -70,6 +71,7 @@ public class BuffSystem
     public void AddBuff(BuffAttributeType type, int stacks, int duration = 0)
     {
         if (stacks == 0) return;
+        if (type == BuffAttributeType.LifeSteal) return;
 
         // 同属性、同持续类型（都永久或都有持续）的 buff 合并
         bool isPermanent = duration == 0;
@@ -161,6 +163,7 @@ public class BuffSystem
         foreach (var kv in result)
         {
             if (kv.Value == 0) continue; // 0 层不显示
+            if (kv.Key == BuffAttributeType.LifeSteal) continue;
             list.Add(new DisplayedBuff { attributeType = kv.Key, totalStacks = kv.Value });
         }
         return list;

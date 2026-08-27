@@ -187,7 +187,8 @@ namespace LightMiniGame.CardEditor
         NextAttackDamageBoost,  // 下次攻击增伤
         NextCardCostReduce,     // 下一张牌减费
         CritRateBoost,          // 暴击率提升
-        CritDamageBoost         // 暴击伤害提升
+        CritDamageBoost,        // 暴击伤害提升
+        Fatigue                 // 疲惫（层数，每轮扣等量血并 -1 层）
     }
 
     // ========================================================================

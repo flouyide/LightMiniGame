@@ -260,6 +260,7 @@ namespace LightMiniGame.CardEditor
             StatusType2.CriticalDamageModifier => "暴伤变化",
             StatusType2.BlockRetention => "格挡保留",
             StatusType2.CustomStatus => "自定义状态",
+            StatusType2.Fatigue => "疲惫",
             _ => s.ToString()
         };
 

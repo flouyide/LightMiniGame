@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LightMiniGame.CardEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 敌人配置 —— ScriptableObject，不同战斗只需更换此配置。
@@ -53,6 +54,9 @@ public class EnemyConfig : ScriptableObject
     public int damageDealtMultiplier = 100;
     [Tooltip("敌人受击倍率（百分比，100=1.0倍=正常）")]
     public int damageTakenMultiplier = 100;
+    [Tooltip("疲惫值（层数，每轮扣疲惫值层数的血量，同时层数-1）")]
+    [FormerlySerializedAs("tiredness")]
+    public int fatigue = 0;
 
     [Header("出牌库（高理智=phase1 / 低理智=phase2）")]
     [Tooltip("高理智出牌数（从 phase1Skills 中抽/轮转的数量；0=全部轮转）")]
