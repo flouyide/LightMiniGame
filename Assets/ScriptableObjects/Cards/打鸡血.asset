@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_80427e77
   cardName: "\u6253\u9E21\u8840"
-  normalDescription: "\u672C\u56DE\u5408\u66B4\u51FB\u7387 +50%\u3002\u6D88\u8017\u3002"
-  lowSanityDescription: "\u672C\u56DE\u5408\u66B4\u51FB\u7387 +50%\u3002"
+  normalDescription: "\u672C\u56DE\u5408\u66B4\u51FB\u7387+50%\u3002\u6D88\u8017"
+  lowSanityDescription: "\u672C\u56DE\u5408\u66B4\u51FB\u7387+50%"
   cardArt: {fileID: 21300000, guid: 70bb022ee66fc5247ad6d520a9c0c402, type: 3}
   descBoxSprite: {fileID: 21300000, guid: abc73d5be74f6bd46bfd24240c55e3bc, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
@@ -31,6 +31,7 @@ MonoBehaviour:
   lowSanityCost: 0
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1

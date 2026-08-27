@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_981b2bbf
   cardName: 'All in '
-  normalDescription: "\u5BF9\u6240\u6709\u654C\u4EBA\u9020\u62108\u70B9\u4F24\u5BB3X\u6B21\u3002\u6BCF5\u70B9\u70ED\u5EA6\u989D\u5916\u9020\u6210\u4E00\u6B21\u4F24\u5BB3\u3002"
-  lowSanityDescription: "\u5BF9\u6240\u6709\u654C\u4EBA\u9020\u62108\u70B9\u4F24\u5BB3X+1\u6B21\u3002\u6BCF5\u70B9\u70ED\u5EA6\u989D\u5916\u9020\u6210\u4E00\u6B21\u4F24\u5BB3\u3002"
+  normalDescription: "\u5BF9\u6240\u6709\u654C\u4EBA\u9020\u6210{8+\u529B\u91CF}\u70B9\u4F24\u5BB3X\u6B21\u3002\u6BCF5\u70B9\u70ED\u5EA6\u989D\u5916\u9020\u6210\u4E00\u6B21\u4F24\u5BB3"
+  lowSanityDescription: "\u5BF9\u6240\u6709\u654C\u4EBA\u9020\u6210{8+\u529B\u91CF}\u70B9\u4F24\u5BB3X+1\u6B21\u3002\u6BCF5\u70B9\u70ED\u5EA6\u989D\u5916\u9020\u6210\u4E00\u6B21\u4F24\u5BB3"
   cardArt: {fileID: 21300000, guid: 425b9aabf5e734d47a4d725f19262778, type: 3}
   descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
@@ -23,7 +23,7 @@ MonoBehaviour:
   descBoxOffsetY: 90
   descBoxHeight: 95
   descBoxInset: 10
-  grade: 0
+  grade: 2
   cardType: 0
   existence: 0
   lowSanityExistence: 0
@@ -31,6 +31,7 @@ MonoBehaviour:
   lowSanityCost: 1
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes: []
   lowSanityEffectNodes: []

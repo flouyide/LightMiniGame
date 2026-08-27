@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_5d6a839b
   cardName: "\u8FDE\u591C\u8D76\u5DE5"
-  normalDescription: "\u9020\u6210 {10+\u529B\u91CF} \u4F24\u5BB3\uFF1B\u7406\u667A-1\uFF0C\u672C\u56DE\u5408\u4E0B
-    1 \u5F20\u653B\u51FB\u724C -1 \u8D39"
+  normalDescription: "\u9020\u6210{10+\u529B\u91CF}\u4F24\u5BB3\uFF1B\u7406\u667A-1\uFF0C\u672C\u56DE\u5408\u4E0B1\u5F20\u653B\u51FB\u724C-1\u8D39"
   lowSanityDescription: "\u9020\u6210 {10+\u529B\u91CF} \u4F24\u5BB3\uFF1B\u7406\u667A-1\uFF0C\u672C\u56DE\u5408\u4E0B
     2 \u5F20\u653B\u51FB\u724C -1 \u8D39"
   cardArt: {fileID: 21300000, guid: 9e3532e219f8a364ab4cd6a65895a7bc, type: 3}

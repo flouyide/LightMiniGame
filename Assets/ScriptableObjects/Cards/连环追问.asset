@@ -14,11 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: ChainBurst
   cardName: "\u8FDE\u73AF\u8FFD\u95EE"
-  normalDescription: "\u5BF9\u6307\u5B9A\u654C\u4EBA\u9020\u6210 {6+\u529B\u91CF}
-    \u70B9\u4F24\u5BB3\uFF1B\u82E5\u6B64\u6B21\u653B\u51FB\u66B4\u51FB\uFF0C\u518D\u9020\u6210
-    {6+\u529B\u91CF} \u70B9\u4F24\u5BB3"
-  lowSanityDescription: "\u9020\u6210 {9+\u529B\u91CF} \u70B9\u4F24\u5BB3\uFF1B\u82E5\u66B4\u51FB\uFF0C\u518D\u9020\u6210
-    {9+\u529B\u91CF} \u70B9\u4F24\u5BB3"
+  normalDescription: "\u9020\u6210{6+\u529B\u91CF}\u70B9\u4F24\u5BB3\uFF1B\u82E5\u6B64\u6B21\u653B\u51FB\u66B4\u51FB\uFF0C\u518D\u9020\u6210{6+\u529B\u91CF}\u70B9\u4F24\u5BB3"
+  lowSanityDescription: "\u9020\u6210{9+\u529B\u91CF}\u70B9\u4F24\u5BB3\uFF1B\u82E5\u6B64\u6B21\u653B\u51FB\u66B4\u51FB\uFF0C\u518D\u9020\u6210{9+\u529B\u91CF}\u70B9\u4F24\u5BB3"
   cardArt: {fileID: 21300000, guid: 9b17c7befd96279408eb86e792beeba2, type: 3}
   descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
   typeBoxSprite: {fileID: 0}

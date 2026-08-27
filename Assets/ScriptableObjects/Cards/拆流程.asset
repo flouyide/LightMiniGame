@@ -14,10 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_9a9d8b4c
   cardName: "\u62C6\u6D41\u7A0B"
-  normalDescription: "\u7ED9\u76EE\u6807\u53E0 2 \u7834\u7532\uFF1B\u82E5\u76EE\u6807\u5DF2\u6709
-    \u22654 \u7834\u7532\uFF0C\u518D\u53E02\u7834\u7532"
-  lowSanityDescription: "\u7ED9\u76EE\u6807\u53E0 3 \u7834\u7532\uFF1B\u82E5\u76EE\u6807\u5DF2\u6709
-    \u22654 \u7834\u7532\uFF0C\u518D\u53E03\u7834\u7532"
+  normalDescription: "\u7ED9\u76EE\u6807\u65BD\u52A02\u7834\u7532\uFF1B\u82E5\u76EE\u6807\u5DF2\u6709\u81F3\u5C114\u5C42\u7834\u7532\uFF0C\u518D\u65BD\u52A02\u7834\u7532"
+  lowSanityDescription: "\u7ED9\u76EE\u6807\u65BD\u52A03\u7834\u7532\uFF1B\u82E5\u76EE\u6807\u5DF2\u6709\u81F3\u5C114\u5C42\u7834\u7532\uFF0C\u518D\u65BD\u52A03\u7834\u7532"
   cardArt: {fileID: 21300000, guid: d5cfee7429cd7694db8337f3fe2db05b, type: 3}
   descBoxSprite: {fileID: 21300000, guid: abc73d5be74f6bd46bfd24240c55e3bc, type: 3}
   typeBoxSprite: {fileID: 0}
@@ -33,6 +31,7 @@ MonoBehaviour:
   lowSanityCost: 1
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1

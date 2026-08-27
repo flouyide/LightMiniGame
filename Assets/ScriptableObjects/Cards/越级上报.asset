@@ -14,10 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: ArmorPiercing
   cardName: "\u8D8A\u7EA7\u4E0A\u62A5"
-  normalDescription: "\u9020\u6210 {6+\u529B\u91CF} \u70B9\u4F24\u5BB3\u5E76\u65BD\u52A0
-    2 \u70B9\u7834\u7532\u3002"
-  lowSanityDescription: "\u9020\u6210 {9+\u529B\u91CF} \u70B9\u4F24\u5BB3\u5E76\u65BD\u52A0
-    2 \u70B9\u7834\u7532\u3002"
+  normalDescription: "\u9020\u6210{6+\u529B\u91CF}\u70B9\u4F24\u5BB3\u5E76\u65BD\u52A02\u70B9\u7834\u7532\u3002"
+  lowSanityDescription: "\u9020\u6210{9+\u529B\u91CF}\u70B9\u4F24\u5BB3\u5E76\u65BD\u52A02\u70B9\u7834\u7532\u3002"
   cardArt: {fileID: 21300000, guid: ac7c5cdac0ee90241a35d8c0897a66c5, type: 3}
   descBoxSprite: {fileID: 21300000, guid: abc73d5be74f6bd46bfd24240c55e3bc, type: 3}
   typeBoxSprite: {fileID: 0}

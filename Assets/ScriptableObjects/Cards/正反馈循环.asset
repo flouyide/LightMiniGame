@@ -14,10 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: BulletChain
   cardName: "\u6B63\u53CD\u9988\u5FAA\u73AF"
-  normalDescription: "\u6B64\u540E\u6BCF\u6B21\u66B4\u51FB\uFF0C\u8FD4\u8FD8 1 \u70B9\u80FD\u91CF\u5E76\u589E\u52A0
-    1 \u70B9\u70ED\u5EA6"
-  lowSanityDescription: "\u6B64\u540E\u6BCF\u6B21\u66B4\u51FB\uFF0C\u8FD4\u8FD8 1
-    \u70B9\u80FD\u91CF\u5E76\u589E\u52A0 1 \u70B9\u70ED\u5EA6"
+  normalDescription: "\u6B64\u540E\u6BCF\u6B21\u66B4\u51FB\uFF0C\u8FD4\u8FD81\u70B9\u80FD\u91CF\u5E76\u589E\u52A01\u70B9\u70ED\u5EA6"
+  lowSanityDescription: "\u6B64\u540E\u6BCF\u6B21\u66B4\u51FB\uFF0C\u8FD4\u8FD81\u70B9\u80FD\u91CF\u5E76\u589E\u52A01\u70B9\u70ED\u5EA6"
   cardArt: {fileID: 21300000, guid: 1f81d00fa591ad34dab8dafdeb1ca8d8, type: 3}
   descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 4716f5aa6b69d1f45a3c7948ab309a4f, type: 3}

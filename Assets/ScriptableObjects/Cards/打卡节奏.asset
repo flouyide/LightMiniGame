@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: Metronome
   cardName: "\u6253\u5361\u8282\u594F"
-  normalDescription: "\u6BCF\u56DE\u5408\u7B2C 1 \u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB\u3002"
-  lowSanityDescription: "\u6BCF\u56DE\u5408\u7B2C 2 \u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB\u3002"
+  normalDescription: "\u6BCF\u56DE\u5408\u7B2C1\u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB\u3002"
+  lowSanityDescription: "\u6BCF\u56DE\u5408\u7B2C1\u6B21\u653B\u51FB\u5FC5\u5B9A\u66B4\u51FB\u3002"
   cardArt: {fileID: 21300000, guid: 3cdfc1460d061ca479f1bdbd4b1ccf1f, type: 3}
   descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}
@@ -27,7 +27,7 @@ MonoBehaviour:
   cardType: 2
   existence: 1
   lowSanityExistence: 1
-  normalCost: 1
+  normalCost: 2
   lowSanityCost: 1
   price: 10
   keyword: 0

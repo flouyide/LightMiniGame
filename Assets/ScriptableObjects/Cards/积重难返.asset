@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_b9771a76
   cardName: "\u79EF\u91CD\u96BE\u8FD4"
-  normalDescription: "\u5F53\u76EE\u6807\u7834\u7532 \u2265 8\uFF0C\u4F60\u5BF9\u5176\u9020\u6210\u7684\u4F24\u5BB3\u989D\u5916
+  normalDescription: "\u5F53\u76EE\u6807\u6709\u81F3\u5C118\u5C42\u7834\u7532\uFF0C\u4F60\u5BF9\u5176\u9020\u6210\u7684\u4F24\u5BB3\u989D\u5916
     +50%"
-  lowSanityDescription: "\u5F53\u76EE\u6807\u7834\u7532 \u2265 8\uFF0C\u4F60\u5BF9\u5176\u9020\u6210\u7684\u4F24\u5BB3\u989D\u5916
+  lowSanityDescription: "\u5F53\u76EE\u6807\u6709\u81F3\u5C118\u5C42\u7834\u7532\uFF0C\u4F60\u5BF9\u5176\u9020\u6210\u7684\u4F24\u5BB3\u989D\u5916
     +50%"
   cardArt: {fileID: 21300000, guid: ed4d43d8c3633bd4bacaad358d7095d1, type: 3}
   descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
@@ -27,12 +27,13 @@ MonoBehaviour:
   descBoxInset: 10
   grade: 1
   cardType: 2
-  existence: 0
-  lowSanityExistence: 0
+  existence: 1
+  lowSanityExistence: 1
   normalCost: 2
   lowSanityCost: 1
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1

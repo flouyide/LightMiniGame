@@ -14,10 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: DeepBreath
   cardName: "\u95ED\u773C\u8C03\u6574"
-  normalDescription: "\u4E0B 1 \u5F20\u653B\u51FB\u724C\u7684\u66B4\u51FB\u4F24\u5BB3\u589E\u52A0
-    40%"
-  lowSanityDescription: "\u63A5\u4E0B\u6765 2 \u5F20\u653B\u51FB\u724C\u7684\u66B4\u51FB\u4F24\u5BB3\u589E\u52A0
-    40%"
+  normalDescription: "\u4E0B1\u5F20\u653B\u51FB\u724C\u7684\u66B4\u51FB\u4F24\u5BB3\u589E\u52A040%"
+  lowSanityDescription: "\u63A5\u4E0B\u67652\u5F20\u653B\u51FB\u724C\u7684\u66B4\u51FB\u4F24\u5BB3\u589E\u52A040%"
   cardArt: {fileID: 21300000, guid: 524c7954bc3d24245bbfc850dfc7a055, type: 3}
   descBoxSprite: {fileID: 21300000, guid: f79be14e332e6ce48a41baa39a5cc140, type: 3}
   typeBoxSprite: {fileID: 0}
