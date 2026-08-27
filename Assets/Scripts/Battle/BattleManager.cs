@@ -2694,11 +2694,11 @@ public class BattleManager : MonoBehaviour
                 e.View?.Refresh();
                 Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）低理智牌库 {(low ? "启用(phase2)" : "关闭(phase1)")}");
             }
-            if (e.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
-            {
-                e.View?.Refresh();
-                Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）理智触发阶段切换 → 阶段{e.Phase}，HP保持 {e.HP}/{e.MaxHP}");
-            }
+            //if (e.CheckPhaseSwitch(_playerSanity, _sanityThreshold))
+            //{
+            //    e.View?.Refresh();
+            //    Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）理智触发阶段切换 → 阶段{e.Phase}，HP保持 {e.HP}/{e.MaxHP}");
+            //}
         }
 
         UpdateUI();
