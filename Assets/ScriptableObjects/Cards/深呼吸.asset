@@ -16,7 +16,7 @@ MonoBehaviour:
   cardName: "\u6DF1\u547C\u5438"
   normalDescription: "\u7406\u667A +1\uFF0C\u83B7\u5F97 5 \u683C\u6321\u3002"
   lowSanityDescription: "\u7406\u667A +1\uFF0C\u83B7\u5F97 9 \u683C\u6321\u3002"
-  cardArt: {fileID: 21300000, guid: 334f123b7586dc247948578bc6ed3a92, type: 3}
+  cardArt: {fileID: 21300000, guid: d4c93152c5c414b4eacc9bb64d830c8d, type: 3}
   descBoxSprite: {fileID: 21300000, guid: bb256b50cc3c77b4b8c36715da70fd43, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
@@ -31,6 +31,7 @@ MonoBehaviour:
   lowSanityCost: 1
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1
