@@ -62,23 +62,95 @@ public class EnemyInstance
     /// <summary>是否有阶段2（低理智形态）：配置了低理智牌库即视为有阶段2</summary>
     public bool HasPhase2 => Config != null && Config.phase2Skills != null && Config.phase2Skills.Count > 0;
 
+    /// <summary>
+    /// 战斗内由敌人能力临时覆盖的复制技能池。
+    /// 不写回 EnemyConfig.phase1Skills/phase2Skills，避免污染共享 ScriptableObject 配置资产。
+    /// 非 null 时会完全替换对应状态下的常规出牌池；null 时回退到 EnemyConfig 配置。
+    /// </summary>
+    private List<CardEntry> _runtimePhase1CopiedSkills;
+    private List<CardEntry> _runtimePhase2CopiedSkills;
+
+    /// <summary>
+    /// 仅在当前敌人回合生效的强制出牌列表。
+    /// 站队天平等能力用它覆盖本回合实际执行与意图展示，但不会改动抄袭专家的复制牌池，
+    /// 也不会写入 EnemyConfig 的共享配置资产。
+    /// </summary>
+    private List<CardEntry> _forcedSkillsThisTurn;
+
     /// <summary>当前应使用的技能牌库：低理智时用 phase2Skills（一进低理智即切换），否则按阶段。</summary>
     public List<CardEntry> CurrentSkillPool
     {
         get
         {
             if (Config == null) return null;
-            if (UseLowSanityPool) return Config.phase2Skills;
-            return Phase == 1 ? Config.phase1Skills : Config.phase2Skills;
+            if (UseLowSanityPool)
+                return _runtimePhase2CopiedSkills ?? Config.phase2Skills;
+
+            return Phase == 1
+                ? _runtimePhase1CopiedSkills ?? Config.phase1Skills
+                : _runtimePhase2CopiedSkills ?? Config.phase2Skills;
+        }
+    }
+
+    /// <summary>当前生效牌库是否为战斗内复制牌池。</summary>
+    public bool HasActiveRuntimeCopiedSkills
+    {
+        get
+        {
+            if (UseLowSanityPool || Phase != 1)
+                return _runtimePhase2CopiedSkills != null;
+            return _runtimePhase1CopiedSkills != null;
         }
     }
 
     /// <summary>
-    /// 本回合应打出的卡牌（列表，按当前形态出牌数抽取缓存）。
-    /// 每回合开始时调用 ResetDrawnSkill() 清空，使意图预览与实抽一致。
+    /// 写入指定理智状态的战斗内复制技能池，并失效当前已抽取的意图缓存。
+    /// 传 null 表示清除该状态的覆盖，恢复 EnemyConfig 中的常规技能池。
+    /// </summary>
+    public void SetRuntimeCopiedSkills(bool lowSanity, List<CardEntry> skills)
+    {
+        if (lowSanity)
+            _runtimePhase2CopiedSkills = skills;
+        else
+            _runtimePhase1CopiedSkills = skills;
+
+        ResetDrawnSkill();
+    }
+
+    /// <summary>清除高、低理智两套战斗内复制技能覆盖，并恢复常规技能池。</summary>
+    public void ClearRuntimeCopiedSkills()
+    {
+        _runtimePhase1CopiedSkills = null;
+        _runtimePhase2CopiedSkills = null;
+        ResetDrawnSkill();
+    }
+
+    /// <summary>
+    /// 设置当前敌人回合唯一允许执行的技能。传入列表会复制为独立列表，
+    /// 其优先级高于抄袭专家复制池与 EnemyConfig 常规牌库。
+    /// </summary>
+    public void SetForcedSkillsThisTurn(IList<CardEntry> skills)
+    {
+        _forcedSkillsThisTurn = skills != null ? new List<CardEntry>(skills) : null;
+        ResetDrawnSkill();
+    }
+
+    /// <summary>清除当前敌人回合的强制技能，恢复抄袭专家覆盖池或 EnemyConfig 常规牌库。</summary>
+    public void ClearForcedSkillsThisTurn()
+    {
+        if (_forcedSkillsThisTurn == null) return;
+        _forcedSkillsThisTurn = null;
+        ResetDrawnSkill();
+    }
+
+    /// <summary>
+    /// 本回合应打出的卡牌。若存在本回合强制技能，意图与实际执行均直接使用它；
+    /// 否则按当前形态从技能池随机抽取并缓存。
+    /// 每回合开始时调用 ResetDrawnSkill() 清空随机缓存，使意图预览与实抽一致。
     /// </summary>
     public List<CardEntry> GetCurrentSkills()
     {
+        if (_forcedSkillsThisTurn != null) return _forcedSkillsThisTurn;
         if (_drawnSkills != null) return _drawnSkills;
         _drawnSkills = RollRandomSkills(CardsThisTurn);
         return _drawnSkills;
@@ -96,6 +168,12 @@ public class EnemyInstance
     {
         get
         {
+            if (_forcedSkillsThisTurn != null)
+                return _forcedSkillsThisTurn.Count;
+
+            if (HasActiveRuntimeCopiedSkills)
+                return CurrentSkillPool != null ? CurrentSkillPool.Count : 0;
+
             if (Config == null) return 1;
             int c = UseLowSanityPool ? Config.lowSanityCardCount : (Phase == 1 ? Config.highSanityCardCount : Config.lowSanityCardCount);
             if (c <= 0) return CurrentSkillPool != null ? CurrentSkillPool.Count : 1;   // 0=全部轮转：出牌库全部牌

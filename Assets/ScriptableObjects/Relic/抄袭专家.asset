@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "抄袭专家"
+  m_EditorClassIdentifier: 
+  relicId: CopycatExpertAbility
+  relicName: "抄袭专家"
+  description: "拥有此能力的怪物会记住玩家本回合打出的前两张牌，并在敌人回合打出它们。"
+  icon: {fileID: 0}
+  value: 0
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.CopycatExpertEffect
+  effectParams: []
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 0}

@@ -103,6 +103,10 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI phaseHintText;
     [SerializeField] private Button endTurnButton;
 
+    // 站队天平选择界面已经作为 BattleCanvas 的常驻子节点存在。
+    // 不实例化额外预制体；首次使用时在场景中定位其 TeamBalanceChoicePanelUI，之后仅启用或禁用该节点。
+    private TeamBalanceChoicePanelUI _teamBalanceChoicePanel;
+
     [Header("UI引用 - 角色切换")]
     [SerializeField] private Button switchCharacterButton;
     [SerializeField] private TextMeshProUGUI activeCharNameText;
@@ -212,6 +216,12 @@ public class BattleManager : MonoBehaviour
     /// 供敌人能力效果（EnemyConfig.abilities）使用，如"该敌人死亡时玩家理智-1"。
     /// </summary>
     public event Action<EnemyInstance> OnEnemyDied;
+
+    /// <summary>
+    /// 敌人完成自身一整次行动后广播。仅对行动结束时仍存活的敌人触发；
+    /// 供敌人能力按具体宿主累计"存活回合"，例如画饼投影仪的赏金增长。
+    /// </summary>
+    public event Action<EnemyInstance> OnEnemyTurnCompleted;
 
     /// <summary>
     /// 玩家致命伤拦截事件：玩家生命归零、即将判负前广播。
@@ -341,8 +351,11 @@ public class BattleManager : MonoBehaviour
 
     private SettingsPanelUI _settingsPanel;
     private ChapterManager _cachedChapterManager;   // 懒缓存，供货币代理使用
+    private readonly HashSet<string> _playerInputLockSources = new();
 
     public bool IsPlayerTurn => _isPlayerTurn && !_battleEnded;
+    /// <summary>是否存在阻止出牌、结束回合和角色切换的临时玩家输入锁。</summary>
+    public bool IsPlayerInputLocked => _playerInputLockSources.Count > 0;
 
     /// <summary>战斗结束（点击 QuitButton）后通知 ChapterManager 切回局外。</summary>
     public event Action OnBattleEnded;
@@ -385,6 +398,11 @@ public class BattleManager : MonoBehaviour
 
     /// <summary>敌人槽位总数（含已死亡；索引 0..EnemySlotCount-1 稳定对应生成顺序，死亡不压缩）</summary>
     public int EnemySlotCount => _enemies.Count;
+
+    /// <summary>
+    /// 当前战斗的敌人实例只读视图。敌人能力可遍历此列表识别宿主，但不得改写 EnemyConfig 配置资产。
+    /// </summary>
+    public IReadOnlyList<EnemyInstance> EnemyInstances => _enemies;
 
     /// <summary>当前出牌目标敌人槽位（由拖拽释放时设置；无拖拽时保持上次值，默认 0）</summary>
     public int SelectedEnemyIndex => _selectedEnemyIndex;
@@ -552,6 +570,21 @@ public class BattleManager : MonoBehaviour
     /// 战斗胜利时据此显示 LootPanel 的奖励按钮；空则按钮全隐藏（面板与继续按钮仍显示）。
     /// </summary>
     public LootTable StartLootTable { get; set; }
+
+    /// <summary>
+    /// 本场战斗由敌人能力动态追加的货币赏金。
+    /// 该值绝不回写 StartLootTable / PageEventData，避免污染 ScriptableObject 配置资产。
+    /// </summary>
+    public int RuntimeLootCurrencyBonus => _runtimeLootCurrencyBonus;
+    private int _runtimeLootCurrencyBonus;
+
+    /// <summary>为本场胜利战利品追加货币。非正值忽略，奖励面板显示与实际领取共用该增量。</summary>
+    public void AddRuntimeLootCurrencyBonus(int amount)
+    {
+        if (amount <= 0) return;
+        _runtimeLootCurrencyBonus += amount;
+        Debug.Log($"[BattleManager] 本场动态货币赏金 +{amount}，累计 +{_runtimeLootCurrencyBonus}");
+    }
 
     /// <summary>战斗背景配置（由 Battle 事件的 PageEventData 注入）。
     /// StartNormalBattleBackground / StartLowSanityBattleBackground 分别为正常与低理智背景图，
@@ -1692,6 +1725,9 @@ public class BattleManager : MonoBehaviour
 
         if (!InitBattleParty())
             return;
+        _runtimeLootCurrencyBonus = 0;
+        ClearPlayerInputLocks();
+        HideTeamBalanceChoice();
         _hasSwitchedThisTurn = false;
         _turnCount = 1;
         _playerArmor = 0;
@@ -1940,7 +1976,7 @@ public class BattleManager : MonoBehaviour
 
     private void OnCardClicked(int handIndex)
     {
-        if (!_isPlayerTurn || _battleEnded) return;
+        if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return;
         PlayCard(handIndex);
     }
 
@@ -1953,7 +1989,7 @@ public class BattleManager : MonoBehaviour
     public bool PlayCard(int handIndex)
     {
         if (handIndex < 0 || handIndex >= _hand.Count) return false;
-        if (!_isPlayerTurn || _battleEnded) return false;
+        if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return false;
 
         var card = _hand[handIndex];
         int cost = ResolveCardPlayCost(card);
@@ -2050,7 +2086,7 @@ public class BattleManager : MonoBehaviour
     /// <summary>拖拽结束回调：攻击牌命中敌人区域出牌；增益/防御牌拖到中央出牌区释放即出牌（无需选敌）。由 CardDragHandler 调用。</summary>
     private void OnCardDropped(int handIndex, Vector2 screenPos)
     {
-        if (!_isPlayerTurn || _battleEnded) return;
+        if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return;
         if (handIndex < 0 || handIndex >= _hand.Count) return;
 
         var card = _hand[handIndex];
@@ -2081,6 +2117,12 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     public void SetCardDragOver(int handIndex, Vector2 screenPos)
     {
+        if (IsPlayerInputLocked)
+        {
+            ClearEnemyHover();
+            return;
+        }
+
         bool targeting = handIndex >= 0 && handIndex < _hand.Count && RequiresEnemyTarget(_hand[handIndex]);
         if (!targeting)
         {
@@ -2870,7 +2912,7 @@ public class BattleManager : MonoBehaviour
 
     private bool IsCardPlayable(CardData card)
     {
-        if (card == null) return false;
+        if (card == null || IsPlayerInputLocked) return false;
         int cost = ResolveCardPlayCost(card);
         if (_actionPoints >= cost) return true;
         int missing = cost - _actionPoints;
@@ -2883,7 +2925,7 @@ public class BattleManager : MonoBehaviour
 
     private void OnSwitchCharacterClicked()
     {
-        if (!_isPlayerTurn || _battleEnded) return;
+        if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return;
         if (_hasSwitchedThisTurn)
         {
             Debug.Log("[BattleManager] 本场战斗已切换过角色");
@@ -2947,13 +2989,84 @@ public class BattleManager : MonoBehaviour
                 inactiveCharPortrait.sprite = InactiveChar.data.avatar;
         }
 
-        bool canSwitch = _isPlayerTurn && !_battleEnded && !_hasSwitchedThisTurn;
+        bool canSwitch = _isPlayerTurn && !_battleEnded && !_hasSwitchedThisTurn && !IsPlayerInputLocked;
         if (switchCharacterButton != null)
             switchCharacterButton.interactable = canSwitch;
         if (switchAvailableIndicator != null)
             switchAvailableIndicator.SetActive(canSwitch);
         if (switchUsedIndicator != null)
             switchUsedIndicator.SetActive(_hasSwitchedThisTurn);
+    }
+
+    // ========================================================================
+    // 玩家输入锁与站队天平选择面板
+    // ========================================================================
+
+    /// <summary>
+    /// 设置指定来源的玩家输入锁。锁存在期间，手牌点击/拖拽、结束回合和角色切换都会被拒绝。
+    /// 使用来源键而非单一 bool，确保多个弹窗或演出可以独立加锁、独立解锁。
+    /// </summary>
+    public void SetPlayerInputLocked(string sourceKey, bool locked)
+    {
+        if (string.IsNullOrEmpty(sourceKey)) return;
+
+        if (locked)
+            _playerInputLockSources.Add(sourceKey);
+        else
+            _playerInputLockSources.Remove(sourceKey);
+
+        RefreshPlayerInputInteractable();
+    }
+
+    private void ClearPlayerInputLocks()
+    {
+        if (_playerInputLockSources.Count == 0) return;
+        _playerInputLockSources.Clear();
+        RefreshPlayerInputInteractable();
+    }
+
+    private void RefreshPlayerInputInteractable()
+    {
+        bool canEndTurn = _isPlayerTurn && !_battleEnded && !IsPlayerInputLocked;
+        if (endTurnButton != null)
+            endTurnButton.interactable = canEndTurn;
+
+        UpdateCharacterSwitchUI();
+        if (handLayout != null)
+            handLayout.RefreshPlayable(IsCardPlayable);
+    }
+
+    /// <summary>
+    /// 打开 BattleCanvas 下常驻的站队天平选择界面。
+    /// 面板不在运行时实例化，首次使用时仅定位其 TeamBalanceChoicePanelUI 组件。
+    /// </summary>
+    public bool ShowTeamBalanceChoice(EnemyInstance host, IList<CardEntry> candidates, Action<CardEntry> onSelected)
+    {
+        TeamBalanceChoicePanelUI panel = GetTeamBalanceChoicePanel();
+        return panel != null && panel.Show(host, candidates, IsLowSanityForFusion, onSelected);
+    }
+
+    public void HideTeamBalanceChoice()
+    {
+        if (_teamBalanceChoicePanel != null)
+            _teamBalanceChoicePanel.Hide();
+    }
+
+    private TeamBalanceChoicePanelUI GetTeamBalanceChoicePanel()
+    {
+        if (_teamBalanceChoicePanel != null)
+            return _teamBalanceChoicePanel;
+
+        // 面板初始为禁用状态，因此必须包含 inactive 对象一起检索。
+        _teamBalanceChoicePanel = FindObjectOfType<TeamBalanceChoicePanelUI>(true);
+        if (_teamBalanceChoicePanel == null)
+        {
+            Debug.LogError("[BattleManager] 未找到 BattleCanvas 下的 TeamBalanceChoicePanelUI。请确认“站队天平选择界面”节点已挂载该组件。");
+            return null;
+        }
+
+        _teamBalanceChoicePanel.Hide();
+        return _teamBalanceChoicePanel;
     }
 
     // ========================================================================
@@ -2998,7 +3111,7 @@ public class BattleManager : MonoBehaviour
 
     private void OnEndTurnClicked()
     {
-        if (!_isPlayerTurn || _battleEnded) return;
+        if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return;
         EndPlayerTurn();
     }
 
@@ -3142,7 +3255,12 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"[BattleManager] {inst.Name} 无可用技能，空过本回合");
             }
 
-            inst.TurnInCycle++;   // 技能轮转计数（每次行动 +1）
+            // 只有完成本次行动后仍存活的敌人，才算真正多存活一个自身回合。
+            if (!inst.IsDead)
+            {
+                inst.TurnInCycle++;   // 技能轮转计数（每次行动 +1）
+                OnEnemyTurnCompleted?.Invoke(inst);
+            }
             // 行动完毕：意图回写为下个技能的预览（轮转计数已推进，预览的是下回合动作）
 
             UpdateUI();
@@ -3432,7 +3550,7 @@ public class BattleManager : MonoBehaviour
         _recycleUsedThisTurn.Clear();
         _isPlayerTurn = true;
 
-        if (endTurnButton != null) endTurnButton.interactable = true;
+        if (endTurnButton != null) endTurnButton.interactable = !IsPlayerInputLocked;
         UpdateCharacterSwitchUI();
         UpdateUI();
 
@@ -3483,6 +3601,8 @@ public class BattleManager : MonoBehaviour
         _battleEnded = true;
         _isPlayerTurn = false;
         _waitingEnemyConfirm = false;
+        HideTeamBalanceChoice();
+        ClearPlayerInputLocks();
         _playerBuffs?.Clear();
         _enemyBuffs?.Clear();
         if (_pilePanel != null && _pilePanel.IsOpen)
@@ -3503,7 +3623,7 @@ public class BattleManager : MonoBehaviour
         if (victory && lootPanel != null)
         {
             lootPanel.gameObject.SetActive(true);
-            lootPanel.ShowForLootTable(StartLootTable);
+            lootPanel.ShowForLootTable(StartLootTable, RuntimeLootCurrencyBonus);
         }
         if (defeatPanel != null) defeatPanel.SetActive(!victory);
         if (endTurnButton != null) endTurnButton.interactable = false;
@@ -3544,6 +3664,15 @@ public class BattleManager : MonoBehaviour
     {
         if (e == null || e.IsDead || e.View == null) return;
         e.View.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity, e);
+    }
+
+    /// <summary>
+    /// 请求立即重建某个敌人的下一回合意图。敌人能力替换运行时技能池后调用，
+    /// 以保证意图 UI 与 EnemyInstance.GetCurrentSkills() 的实际执行缓存一致。
+    /// </summary>
+    public void RefreshEnemyIntent(EnemyInstance enemy)
+    {
+        RefreshEnemyIntentDeck(enemy);
     }
 
     /// <summary>取指定敌人的意图文本（预览本回合将出的所有技能卡名；无技能配置时空过）。</summary>

@@ -173,10 +173,16 @@ public class LootPanelUI : MonoBehaviour
     /// <summary>
     /// 按单个 LootTable 刷新按钮显示。
     /// </summary>
-    public void ShowForLootTable(LootTable table)
+    public void ShowForLootTable(LootTable table) => ShowForLootTable(table, 0);
+
+    /// <summary>
+    /// 按单个 LootTable 与本场运行时追加货币刷新按钮显示。
+    /// currencyBonus 仅用于本次结算缓存，不会修改传入的 LootTable 配置资产。
+    /// </summary>
+    public void ShowForLootTable(LootTable table, int currencyBonus)
     {
         var tables = table != null ? new List<LootTable> { table } : new List<LootTable>();
-        Refresh(tables);
+        Refresh(tables, currencyBonus);
     }
 
     /// <summary>
@@ -194,15 +200,17 @@ public class LootPanelUI : MonoBehaviour
                 tables.Add(evt.lootTable);
             }
         }
-        Refresh(tables);
+        Refresh(tables, 0);
     }
 
-    /// <summary>汇总多张掉落表，刷新按钮显示、货币文本与遗物图标。</summary>
-    private void Refresh(List<LootTable> tables)
+    /// <summary>汇总多张掉落表与运行时货币加成，刷新按钮显示、货币文本与遗物图标。</summary>
+    private void Refresh(List<LootTable> tables, int currencyBonus)
     {
         bool hasCurrency = false, hasCard = false, hasRelic = false;
         ScanAll(tables, ref hasCurrency, ref hasCard, ref hasRelic);
-        CacheClaimableLoot(tables);
+        currencyBonus = Mathf.Max(0, currencyBonus);
+        hasCurrency |= currencyBonus > 0;
+        CacheClaimableLoot(tables, currencyBonus);
         Apply(hasCurrency, hasCard, hasRelic);
     }
 
@@ -310,12 +318,12 @@ public class LootPanelUI : MonoBehaviour
     public void HideAll() => Apply(false, false, false);
 
     /// <summary>
-    /// 从掉落表列表缓存可领取内容：货币条目数量累加；所有 Relic 条目的可选品级合并去重；
+    /// 从掉落表列表缓存可领取内容：货币条目与本场运行时追加货币累加；所有 Relic 条目的可选品级合并去重；
     /// 并按角色预抽取将掉落的遗物（仅预览图标，不写入库存，点击领取时再真正写入）。
     /// </summary>
-    private void CacheClaimableLoot(List<LootTable> tables)
+    private void CacheClaimableLoot(List<LootTable> tables, int currencyBonus)
     {
-        _currencyAmount = 0;
+        _currencyAmount = Mathf.Max(0, currencyBonus);
         _relicGrades.Clear();
         _relicAData = null;
         _relicBData = null;

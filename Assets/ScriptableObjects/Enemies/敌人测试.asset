@@ -18,20 +18,19 @@ MonoBehaviour:
   phase1Portrait: {fileID: 21300000, guid: ed0beb3a1b0da1d4b9ba5d2306af202f, type: 3}
   phase2Portrait: {fileID: 21300000, guid: e0cf6fac4e7d6d9488f4da3635aaa8eb, type: 3}
   phase1Skills:
-  - {fileID: 11400000, guid: f964f2ab9998f4a42b0de00cef184da4, type: 2}
-  - {fileID: 11400000, guid: 52da2188ad1107742b6100a93fc0645f, type: 2}
-  - {fileID: 11400000, guid: 1e0141a91e7399a4fa23d97d37450e20, type: 2}
-  - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
-  phase2Skills:
-  - {fileID: 11400000, guid: e6150c05b98a31e4f9f678a8f2d83510, type: 2}
+  - {fileID: 11400000, guid: ee61c77e52e64304a964287b40335a2c, type: 2}
+  - {fileID: 11400000, guid: d3b592fb89dd204429215344cdee01eb, type: 2}
+  - {fileID: 11400000, guid: b2632905cd816194fb05818d9787e9b0, type: 2}
+  - {fileID: 11400000, guid: 783aa92d7e0e4ed4f87dab24d0f49875, type: 2}
+  phase2Skills: []
   difficulty: 0
   actionPriority: 1
   strength: 0
   dexterity: 0
   damageDealtMultiplier: 100
   damageTakenMultiplier: 100
+  fatigue: 0
   highSanityCardCount: 1
   lowSanityCardCount: 1
   abilities:
-  - relic: {fileID: 11400000, guid: 0f817696309136c4384a8f9a358734dd, type: 2}
-  - relic: {fileID: 11400000, guid: ec56406cb813c2e438424f1bc3f5592f, type: 2}
+  - relic: {fileID: 11400000, guid: cfc388ff2d64eb64181b252e01ab25eb, type: 2}

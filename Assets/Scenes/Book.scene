@@ -711,6 +711,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3023714723344652048, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3524681011072432769, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -934,6 +938,11 @@ MonoBehaviour:
 --- !u!1 &200609483 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4373297248665719549, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
+  m_PrefabInstance: {fileID: 200609481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &200609484 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3023714723344652048, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
   m_PrefabInstance: {fileID: 200609481}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &200609488 stripped
@@ -1609,11 +1618,16 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9195348635062848053, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: optionPanel
+      value: 
+      objectReference: {fileID: 559486100}
+    - target: {fileID: 9195348635062848053, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: chapterManager
       value: 
       objectReference: {fileID: 2008882131}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8959205048454195302, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
@@ -1622,6 +1636,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5596416395830292797, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
   m_PrefabInstance: {fileID: 559486098}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &559486100 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3686733082437408332, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+  m_PrefabInstance: {fileID: 559486098}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41d52c3ecacd8d34894aeac50aaa37ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &562412783
 GameObject:
   m_ObjectHideFlags: 0
@@ -3240,6 +3265,7 @@ MonoBehaviour:
   enemySkillCardFadeTime: 0.5
   phaseHintText: {fileID: 200609492}
   endTurnButton: {fileID: 1140250348}
+  teamBalanceChoicePanelPrefab: {fileID: 200609484}
   switchCharacterButton: {fileID: 200609490}
   activeCharNameText: {fileID: 200609489}
   inactiveCharNameText: {fileID: 200609488}

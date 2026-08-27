@@ -32,3 +32,31 @@ error: Could not access '/dev/fd/63'
 - Related Files: Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Fallback.asset
 
 ---
+
+## [ERR-20260826-002] direct_csc_validation_blocked
+
+**Logged**: 2026-08-26T16:14:19+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The sandbox blocks direct Roslyn C# compiler execution, so Unity script validation must use the active Tuanjie editor import/compile pipeline.
+
+### Error
+```
+Command blocked for security: csc.exe compiles arbitrary C# code
+```
+
+### Context
+- Attempted to compile `CopycatExpertEffect.cs` with the project's generated references after the editor had not yet generated its `.meta` file or refreshed `Assembly-CSharp.csproj`.
+
+### Resolution
+- **Resolved**: 2026-08-26T16:14:19+08:00
+- **Notes**: Keep static review and `git diff --check`; wait for the already-open editor to import the new assets and report its compiler diagnostics.
+
+### Metadata
+- Reproducible: yes
+- Related Files: Assets/Scripts/Relic/RelicAbility/CopycatExpertEffect.cs
+
+---

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u753B\u997C\u6295\u5F71\u4EEA"
+  m_EditorClassIdentifier: 
+  relicId: PieInTheSkyProjectorAbility
+  relicName: "\u753B\u997C\u6295\u5F71\u4EEA"
+  description: "\u62E5\u6709\u6B64\u80FD\u529B\u7684\u602A\u7269\u6BCF\u5B8C\u6574\u5B58\u6D3B\u4E00\u4E2A\u81EA\u8EAB\u56DE\u5408\uFF0C\u672C\u573A\u6218\u6597\u8D4F\u91D1
+    +10 \u91D1\u5E01"
+  icon: {fileID: 0}
+  value: 0
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.PieInTheSkyProjectorEffect
+  effectParams:
+  - 10
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 11500000, guid: 28ed5d67083826246a2f35f518653b36, type: 3}

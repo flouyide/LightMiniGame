@@ -17,7 +17,7 @@ MonoBehaviour:
   events:
   - eventId: event_test
     displayName: "\u968F\u673A\u4E8B\u4EF6\u6D4B\u8BD5"
-    description: 
+    description: "\u54FC\u54FC\u54FC"
     icon: {fileID: 21300000, guid: 37efb4b8255584d40b098d08d69a62e3, type: 3}
     eventType: 3
     isRepeatable: 0
@@ -80,7 +80,7 @@ MonoBehaviour:
         attributeOp: 0
         targetAttribute: 5
         relic: {fileID: 11400000, guid: c424a08b8d4faa24f8417a73231f6a8b, type: 2}
-        card: {fileID: 11400000, guid: 0b92964e663aa4e40b212f8351541332, type: 2}
+        card: {fileID: 0}
         keywordToAdd: 1
         discountRatio: 0.5
         enterBattleEnemies: []
