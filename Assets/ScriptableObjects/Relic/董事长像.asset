@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: ChairmanPortrait
   relicName: "\u8463\u4E8B\u957F\u50CF"
   description: "\u62FE\u8D77\u65F6\u83B7\u5F97 300 \u91D1\u5E01"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 33b06f9f213f3614a99970e201b26e5c, type: 3}
   value: 100
   grade: 0
   sortOrder: 0

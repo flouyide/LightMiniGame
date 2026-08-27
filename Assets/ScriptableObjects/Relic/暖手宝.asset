@@ -16,7 +16,7 @@ MonoBehaviour:
   relicName: "\u6696\u624B\u5B9D"
   description: "\u56DE\u5408\u7ED3\u675F\u65F6\u82E5\u6CA1\u6709\u683C\u6321\uFF0C\u83B7\u5F97
     4 \u683C\u6321"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 76b01f2e7ed3ac040b5c4bb1e5712afc, type: 3}
   value: 100
   grade: 0
   sortOrder: 0
