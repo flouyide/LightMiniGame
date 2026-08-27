@@ -212,6 +212,14 @@ public class BattleManager : MonoBehaviour
     public event Func<EnemyInstance, int, int> OnEnemyDamageModify;
 
     /// <summary>
+    /// 敌人受击拦截事件（已应用伤害倍率与受伤前修正、护甲结算前调用）。
+    /// 参数：(敌人实例, 常规攻击伤害, armorBreak 直接生命伤害)。
+    /// 任一监听者返回 true 时，整次受击会被拦截：敌人不损失护甲或生命，
+    /// 包括 armorBreak 造成的直接生命伤害。供“冒名”这类反弹并免疫本次攻击的能力使用。
+    /// </summary>
+    public event Func<EnemyInstance, int, int, bool> OnEnemyDamageIntercept;
+
+    /// <summary>
     /// 敌人死亡事件（HandleEnemyFatalDamage 标记 IsDead 后广播）。
     /// 供敌人能力效果（EnemyConfig.abilities）使用，如"该敌人死亡时玩家理智-1"。
     /// </summary>
@@ -2440,6 +2448,24 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // 敌人能力：拦截整次受击。拦截后不再进入护甲/生命结算，
+        // armorBreak 的直接生命伤害也一并取消。
+        if (OnEnemyDamageIntercept != null)
+        {
+            foreach (Func<EnemyInstance, int, int, bool> intercept in OnEnemyDamageIntercept.GetInvocationList())
+            {
+                try
+                {
+                    if (intercept(inst, damage, armorBreakScaled))
+                        return 0;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[BattleManager] OnEnemyDamageIntercept 监听者抛出异常: {ex}");
+                }
+            }
+        }
+
         return inst.TakeDamage(damage, ignoreArmor, armorBreakScaled);
     }
 
@@ -2624,6 +2650,17 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"[BattleManager] 敌人({e.Name}) 不支持属性 {attr} 的运行时增益，已忽略");
                 return false;
         }
+    }
+
+    /// <summary>
+    /// 将能力传入的反弹伤害原样结算给玩家。
+    /// 不叠加宿主敌人的 damageDealtMultiplier，避免“反弹本次攻击”被敌人攻击倍率二次放大；
+    /// 仍会按玩家承伤倍率、玩家护甲、受伤触发器和死亡判定的标准路径结算。
+    /// </summary>
+    public void DealReflectedDamageToPlayer(int damage)
+    {
+        if (damage <= 0 || _battleEnded) return;
+        DealDamageToPlayer(damage, (EnemyInstance)null);
     }
 
     /// <summary>公开包装：敌人攻击牌/效果调用，对玩家结算伤害（沿用原敌人伤害语义）。</summary>

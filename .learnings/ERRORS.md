@@ -60,3 +60,32 @@ Command blocked for security: csc.exe compiles arbitrary C# code
 - Related Files: Assets/Scripts/Relic/RelicAbility/CopycatExpertEffect.cs
 
 ---
+
+## [ERR-20260827-001] dotnet_build_unavailable
+
+**Logged**: 2026-08-27T11:23:29+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The current Git Bash environment has no `dotnet` executable, so generated Unity project files cannot be compiled through `dotnet build` here.
+
+### Error
+```
+dotnet: command not found
+```
+
+### Context
+- Attempted `dotnet build E:/LightMiniGame/Assembly-CSharp.csproj --no-restore` after implementing the Impostor enemy ability.
+- The project has a generated `Assembly-CSharp.csproj`, but the local command-line .NET SDK is unavailable.
+
+### Resolution
+- **Resolved**: 2026-08-27T11:23:29+08:00
+- **Notes**: Use `git diff --check` for static formatting validation and let the active Tuanjie editor import and compile the scripts. Do not rely on `dotnet build` unless the SDK becomes available.
+
+### Metadata
+- Reproducible: yes
+- Related Files: Assets/Scripts/Battle/BattleManager.cs, Assets/Scripts/Relic/RelicAbility/ImpostorEffect.cs
+
+---
