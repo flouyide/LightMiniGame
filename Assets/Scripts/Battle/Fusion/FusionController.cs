@@ -228,12 +228,12 @@ public class FusionController : MonoBehaviour
         _battle.DeductSanityAsCost(SanityCost);
         _battle.MarkFusionUsed();
 
-        _candidates = CollectCandidates();
+        _candidates.Clear();
         _selected.Clear();
         BuildPanel();
         RaiseEntryButton();
         UpdateEntryInteractable();
-        // 高亮定位依赖 TMP 文本网格（低理智切形态后需一帧重建），延迟一帧构建避免错位/fallback 大块
+        // 手牌描述数字必须等 TMP 网格重建后再收集，否则会因矩形为 0 被全部跳过
         StartCoroutine(BuildHighlightsNextFrame());
     }
 
@@ -243,6 +243,7 @@ public class FusionController : MonoBehaviour
         // 手牌强制摆到目标布局，避免读 lerp 动画中途坐标造成高亮错位
         _battle.SnapHandToTarget();
         yield return null;   // 再等一帧应用 layout 约束
+        _candidates = CollectCandidates();
         BuildHighlights();
         RefreshHighlights();
         RaiseEntryButton();
@@ -339,7 +340,7 @@ public class FusionController : MonoBehaviour
             }
         }
 
-        // —— 手牌：费用 + 数值（攻击/护甲/增益/抽牌/回费） ——
+        // —— 手牌：费用 + 描述内每个可融合数字（多段伤害/次数/破甲等） ——
         int handN = _battle.HandCount;
         for (int i = 0; i < handN; i++)
         {
@@ -351,38 +352,110 @@ public class FusionController : MonoBehaviour
                 v => _battle.SetHandCardCost(handIdx, v))
             { cardView = hview });
 
-            if (_battle.HandCardHasAttack(card) || card.attackValue > 0)
-                list.Add(new FusableValue($"hand:{i}:atk", $"手牌{i + 1}攻击",
-                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.DealDamage, card.EffectiveAttack) : card.EffectiveAttack, false,
-                    v => _battle.SetHandCardAttack(handIdx, v))
-                { cardView = hview });
-
-            if (_battle.HandCardHasArmor(card) || card.armorValue > 0)
-                list.Add(new FusableValue($"hand:{i}:armor", $"手牌{i + 1}护甲",
-                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.GainBlock, card.EffectiveArmor) : card.EffectiveArmor, false,
-                    v => _battle.SetHandCardArmor(handIdx, v))
-                { cardView = hview });
-
-            if (card.EffectiveBuffValue > 0)
-                list.Add(new FusableValue($"hand:{i}:buff", $"手牌{i + 1}增益",
-                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.ModifyAttribute, card.EffectiveBuffValue) : card.EffectiveBuffValue, false,
-                    v => _battle.SetHandCardBuff(handIdx, v))
-                { cardView = hview });
-
-            if (card.EffectiveDraw > 0)
-                list.Add(new FusableValue($"hand:{i}:draw", $"手牌{i + 1}抽牌",
-                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.DrawCards, card.EffectiveDraw) : card.EffectiveDraw, false,
-                    v => _battle.SetHandCardDraw(handIdx, v))
-                { cardView = hview });
-
-            if (card.EffectiveRestoreAP > 0)
-                list.Add(new FusableValue($"hand:{i}:restore", $"手牌{i + 1}回费",
-                    hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints, card.EffectiveRestoreAP) : card.EffectiveRestoreAP, false,
-                    v => _battle.SetHandCardRestore(handIdx, v))
-                { cardView = hview });
+            AddHandDescriptionSlots(list, card, hview, i, handIdx);
         }
 
         return list;
+    }
+
+    /// <summary>
+    /// 把手牌描述里的每个效果数字绑到卡面 token 上。
+    /// 先按数值匹配（同一张牌两个 9 会按出现顺序各占一个），对不上时按描述顺序占用下一个数字。
+    /// </summary>
+    private void AddHandDescriptionSlots(List<FusableValue> list, CardData card, CardDisplay hview, int handI, int handIdx)
+    {
+        var slots = hview != null
+            ? hview.EnumerateFusionSlots()
+            : CardFusionSlots.Collect(
+                card.sourceEntry != null ? card.sourceEntry.GetEffectNodes(card.isLowSanityForm) : null,
+                0, 0, false, card.fusion);
+
+        var tokens = hview != null ? hview.EnumerateNumberTokens() : null;
+        var used = tokens != null && tokens.Count > 0 ? new bool[tokens.Count] : null;
+
+        if (slots.Count == 0)
+        {
+            AddLegacyHandSlots(list, card, hview, handI, handIdx);
+            return;
+        }
+
+        for (int s = 0; s < slots.Count; s++)
+        {
+            var slot = slots[s];
+            int tok = -1;
+            if (tokens != null && used != null)
+            {
+                for (int k = 0; k < tokens.Count; k++)
+                {
+                    if (used[k] || tokens[k].size == Vector2.zero) continue;
+                    if (tokens[k].value == slot.displayValue) { tok = k; break; }
+                }
+                if (tok < 0)
+                {
+                    for (int k = 0; k < tokens.Count; k++)
+                    {
+                        if (used[k] || tokens[k].size == Vector2.zero) continue;
+                        tok = k;
+                        break;
+                    }
+                }
+            }
+
+            int nodeIdx = slot.nodeIndex;
+            var kind = slot.kind;
+            int shown = slot.displayValue;
+            var fv = new FusableValue(
+                $"hand:{handI}:slot:{s}",
+                $"手牌{handI + 1}·{slot.label}",
+                shown, false,
+                v => _battle.SetHandCardFusionSlot(handIdx, nodeIdx, kind, v))
+            { cardView = hview };
+
+            if (tok >= 0)
+            {
+                used[tok] = true;
+                shown = tokens[tok].value;
+                fv.current = shown;
+                fv.hasExactRect = true;
+                fv.exactCenter = tokens[tok].center;
+                fv.exactSize = tokens[tok].size;
+            }
+            list.Add(fv);
+        }
+    }
+
+    /// <summary>效果槽枚举失败时，退回按类型各高亮一个数字（保证卡面数字仍可融合）。</summary>
+    private void AddLegacyHandSlots(List<FusableValue> list, CardData card, CardDisplay hview, int handI, int handIdx)
+    {
+        if (_battle.HandCardHasAttack(card) || card.attackValue > 0)
+            list.Add(new FusableValue($"hand:{handI}:atk", $"手牌{handI + 1}攻击",
+                hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.DealDamage, card.EffectiveAttack) : card.EffectiveAttack, false,
+                v => _battle.SetHandCardAttack(handIdx, v))
+            { cardView = hview });
+
+        if (_battle.HandCardHasArmor(card) || card.armorValue > 0)
+            list.Add(new FusableValue($"hand:{handI}:armor", $"手牌{handI + 1}护甲",
+                hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.GainBlock, card.EffectiveArmor) : card.EffectiveArmor, false,
+                v => _battle.SetHandCardArmor(handIdx, v))
+            { cardView = hview });
+
+        if (card.EffectiveBuffValue > 0)
+            list.Add(new FusableValue($"hand:{handI}:buff", $"手牌{handI + 1}增益",
+                hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.ModifyAttribute, card.EffectiveBuffValue) : card.EffectiveBuffValue, false,
+                v => _battle.SetHandCardBuff(handIdx, v))
+            { cardView = hview });
+
+        if (card.EffectiveDraw > 0)
+            list.Add(new FusableValue($"hand:{handI}:draw", $"手牌{handI + 1}抽牌",
+                hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.DrawCards, card.EffectiveDraw) : card.EffectiveDraw, false,
+                v => _battle.SetHandCardDraw(handIdx, v))
+            { cardView = hview });
+
+        if (card.EffectiveRestoreAP > 0)
+            list.Add(new FusableValue($"hand:{handI}:restore", $"手牌{handI + 1}回费",
+                hview != null ? hview.GetDisplayNumberForField(LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints, card.EffectiveRestoreAP) : card.EffectiveRestoreAP, false,
+                v => _battle.SetHandCardRestore(handIdx, v))
+            { cardView = hview });
     }
 
     // ========================================================================

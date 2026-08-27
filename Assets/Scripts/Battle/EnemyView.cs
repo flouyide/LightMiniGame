@@ -24,9 +24,9 @@ public class EnemyView : MonoBehaviour
     [Header("Buff 栏（血条正下方左侧）")]
     [Tooltip("单个 buff 图标预制体（含 Image + TMP）。留空则运行时用色块+字生成")]
     [SerializeField] private GameObject buffIconPrefab;
-    [SerializeField] private Sprite strengthIcon;
-    [SerializeField] private Sprite dexterityIcon;
     [SerializeField] private Sprite fatigueIcon;
+    [SerializeField] private Sprite armorBreakIcon;
+    [SerializeField] private Sprite strengthIcon;
 
     [Header("伤害飘字")]
     [Tooltip("飘字出生点（空 RectTransform）。留空则绕本视图中心一圈随机")]
@@ -193,7 +193,7 @@ public class EnemyView : MonoBehaviour
     }
 
 
-    /// <summary>血条正下方左侧：力量 / 敏捷 / 疲惫。0 层不显示。</summary>
+    /// <summary>血条正下方左侧：疲惫 / 破甲 / 力量。0 层不显示。</summary>
     private void RefreshBuffDeck()
     {
         EnsureBuffDeck();
@@ -321,7 +321,7 @@ public class EnemyView : MonoBehaviour
         if (iconImage == null) iconImage = iconGo.GetComponentInChildren<Image>();
         var stackText = iconGo.GetComponentInChildren<TextMeshProUGUI>();
 
-        var sprite = ResolveBuffSprite(buff.attributeType);
+        var sprite = buff.customIcon != null ? buff.customIcon : ResolveBuffSprite(buff.attributeType);
         if (iconImage != null)
         {
             if (sprite != null)
@@ -332,17 +332,28 @@ public class EnemyView : MonoBehaviour
             else
             {
                 iconImage.sprite = null;
-                iconImage.color = BuffFallbackColor(buff.attributeType);
+                iconImage.color = buff.hideStacks
+                    ? new Color(0.7f, 0.55f, 0.2f, 1f)
+                    : BuffFallbackColor(buff.attributeType);
             }
         }
 
         if (stackText != null)
         {
-            stackText.text = buff.totalStacks.ToString();
-            bool debuff = buff.attributeType == BuffAttributeType.Fatigue || buff.totalStacks < 0;
-            stackText.color = debuff
-                ? new Color(0.9f, 0.3f, 0.3f, 1f)
-                : new Color(0.3f, 0.9f, 0.3f, 1f);
+            if (buff.hideStacks)
+            {
+                stackText.text = "";
+            }
+            else
+            {
+                stackText.text = buff.totalStacks.ToString();
+                bool debuff = buff.attributeType == BuffAttributeType.Fatigue
+                    || buff.attributeType == BuffAttributeType.ArmorBreak
+                    || buff.totalStacks < 0;
+                stackText.color = debuff
+                    ? new Color(0.9f, 0.3f, 0.3f, 1f)
+                    : new Color(0.3f, 0.9f, 0.3f, 1f);
+            }
         }
     }
 
@@ -350,9 +361,9 @@ public class EnemyView : MonoBehaviour
     {
         Sprite assigned = type switch
         {
-            BuffAttributeType.Strength => strengthIcon,
-            BuffAttributeType.Dexterity => dexterityIcon,
             BuffAttributeType.Fatigue => fatigueIcon,
+            BuffAttributeType.ArmorBreak => armorBreakIcon,
+            BuffAttributeType.Strength => strengthIcon,
             _ => null
         };
         if (assigned != null) return assigned;
@@ -368,10 +379,12 @@ public class EnemyView : MonoBehaviour
         {
             _builtinBuffSpritesTried = true;
 #if UNITY_EDITOR
+            BuiltinBuffSprites[BuffAttributeType.Fatigue] =
+                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/疲惫.png");
+            BuiltinBuffSprites[BuffAttributeType.ArmorBreak] =
+                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/破甲.png");
             BuiltinBuffSprites[BuffAttributeType.Strength] =
                 UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/力量.png");
-            BuiltinBuffSprites[BuffAttributeType.Dexterity] =
-                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/敏捷.png");
 #endif
         }
         return BuiltinBuffSprites.TryGetValue(type, out var s) ? s : null;
@@ -379,9 +392,9 @@ public class EnemyView : MonoBehaviour
 
     private static Color BuffFallbackColor(BuffAttributeType type) => type switch
     {
-        BuffAttributeType.Strength => new Color(0.85f, 0.25f, 0.2f, 1f),
-        BuffAttributeType.Dexterity => new Color(0.25f, 0.7f, 0.35f, 1f),
         BuffAttributeType.Fatigue => new Color(0.55f, 0.4f, 0.15f, 1f),
+        BuffAttributeType.ArmorBreak => new Color(0.75f, 0.45f, 0.15f, 1f),
+        BuffAttributeType.Strength => new Color(0.85f, 0.25f, 0.2f, 1f),
         _ => new Color(0.5f, 0.5f, 0.5f, 1f)
     };
 
