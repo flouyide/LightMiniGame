@@ -420,7 +420,7 @@ public class EnemyView : MonoBehaviour
     /// 自动按牌数缩放/限高，避免多张重叠拥挤；多敌人各自在各自立绘旁，互不重叠。
     /// lowSanity=true 时卡面用低理智（升级）形态显示（费用/描述随 lowSanity 变）。
     /// </summary>
-    public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false, int enemyStrength = 0, int enemyDexterity = 0)
+    public void ShowIntentDeck(List<CardEntry> deck, bool lowSanity = false, int enemyStrength = 0, int enemyDexterity = 0, EnemyInstance fusionSource = null)
     {
         // 清空上一批
         foreach (var c in _deckCards)
@@ -467,7 +467,11 @@ public class EnemyView : MonoBehaviour
             {
                 // 先设置敌人属性上下文，再应用卡牌数据（ApplyCardEntry 内部会调用 UpdateDisplay 生成描述）
                 display.SetEnemyAttributeContext(enemyStrength, enemyDexterity);
+                display.SetIntentSkillIndex(i);
                 display.ApplyCardEntry(entry, lowSanity);
+                var fusion = fusionSource != null ? fusionSource.GetSkillFusion(i) : null;
+                if (fusion != null && fusion.HasAny)
+                    display.ApplyFusionOverlay(fusion);
             }
 
             // 禁用交互仅展示

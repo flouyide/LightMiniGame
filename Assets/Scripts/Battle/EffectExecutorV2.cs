@@ -509,14 +509,26 @@ public class EffectExecutorV2
     {
         int baseDamage = EvaluateValue(node.value);
         // 融合覆盖：优先用该伤害节点自己的槽；无逐槽覆盖时才套整牌攻击覆盖（旧存档）
+        bool replacedByFusion = false;
         if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Damage, out int fusedDmg))
+        {
             baseDamage = fusedDmg;
+            replacedByFusion = true;
+        }
         else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Damage) && _ctx.TryGetFusionAttack(out int fusionAtk))
+        {
             baseDamage = fusionAtk;
-        // 融合覆盖：敌人意图伤害已含该敌人力量，直接替换、不再叠加
-        if (IsEnemyInitiator && _ctx.TryGetEnemyIntentOverride(_initiatorEnemySlot, out int fusionIntent))
+            replacedByFusion = true;
+        }
+        else if (IsEnemyInitiator && !_ctx.HasFusionSlotKind(FusionSlotKind.Damage)
+                 && _ctx.TryGetEnemyIntentOverride(_initiatorEnemySlot, out int fusionIntent))
+        {
             baseDamage = fusionIntent;
-        else if ((node.scalingMode == ScalingMode.AddStrength || IsEnemyInitiator)
+            replacedByFusion = true;
+        }
+
+        if (!replacedByFusion
+            && (node.scalingMode == ScalingMode.AddStrength || IsEnemyInitiator)
             && !ValueNode.ReadsAttribute(node.value, LightMiniGame.CardEditor.PlayerAttributeType.Strength))
             baseDamage += OwnerStrength;
 

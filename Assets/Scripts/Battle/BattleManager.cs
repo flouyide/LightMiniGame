@@ -722,13 +722,33 @@ public class BattleManager : MonoBehaviour
         e.View?.Refresh();
     }
 
-    /// <summary>回填：设定指定槽位敌人当前意图卡牌伤害覆盖值（防负）。写入 EnemyInstance 的覆盖字段，不改动共享卡牌资源。</summary>
+    /// <summary>回填：设定指定槽位敌人当前意图卡牌伤害覆盖值（防负）。写入该敌人第一张意图卡的伤害槽，不改动共享卡牌资源。</summary>
     public void FusionSetEnemyIntentDamage(int slot, int value)
+    {
+        SetEnemyIntentCardFusionSlot(slot, 0, 0, FusionSlotKind.Damage, value);
+    }
+
+    /// <summary>回填：重设敌人某张意图卡的费用（仅卡面显示；敌人不支付费用）。</summary>
+    public void SetEnemyIntentCardCost(int slot, int skillIndex, int value)
     {
         var e = GetEnemy(slot);
         if (e == null || e.IsDead) return;
-        e.IntentDamageOverride = Mathf.Max(0, value);
-        e.View?.Refresh();
+        var f = e.EnsureSkillFusion(skillIndex);
+        f.overrideCost = true;
+        f.cost = Mathf.Max(0, value);
+        RefreshEnemyIntentDeck(e);
+    }
+
+    /// <summary>回填：重设敌人某张意图卡某个效果数字槽，并刷新该敌人意图牌。</summary>
+    public void SetEnemyIntentCardFusionSlot(int slot, int skillIndex, int nodeIndex, FusionSlotKind kind, int value)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead) return;
+        var f = e.EnsureSkillFusion(skillIndex);
+        f.SetSlot(nodeIndex, kind, Mathf.Max(0, value));
+        if (kind == FusionSlotKind.Damage && skillIndex == 0)
+            e.IntentDamageOverride = Mathf.Max(0, value);
+        RefreshEnemyIntentDeck(e);
     }
 
     /// <summary>读取指定槽位敌人意图伤害覆盖值（供效果执行器把融合数值应用到实际出招；无覆盖返回 false）。</summary>
@@ -2717,9 +2737,9 @@ public class BattleManager : MonoBehaviour
         // 1. 升级所有卡牌效果
         UpgradeAllCardsForDarkMode();
 
-        // 2. 全屏暗色遮罩淡入
-        if (darkOverlay != null)
-            StartCoroutine(DarkOverlayFadeRoutine());
+        //// 2. 全屏暗色遮罩淡入
+        //if (darkOverlay != null)
+        //    StartCoroutine(DarkOverlayFadeRoutine());
 
         // 3. 理智条颤抖效果
         if (sanityBar != null)
@@ -3104,11 +3124,12 @@ public class BattleManager : MonoBehaviour
             var skills = inst.GetCurrentSkills();
             if (skills != null && skills.Count > 0)
             {
-                foreach (var skill in skills)
+                for (int si = 0; si < skills.Count; si++)
                 {
                     if (_battleEnded || inst == null || inst.IsDead) break;
+                    var skill = skills[si];
                     if (skill == null) continue;
-                    yield return StartCoroutine(ExecuteEnemySkillCoroutine(inst, skill));
+                    yield return StartCoroutine(ExecuteEnemySkillCoroutine(inst, skill, si));
                 }
             }
             else
@@ -3173,10 +3194,10 @@ public class BattleManager : MonoBehaviour
 
     /// <summary>敌人技能执行协程：显示卡面 → 等待 → 执行效果 → 隐藏卡面。
     /// 回合推进由外层 RunEnemyTurnCoroutine 统一负责（本协程不再调 StartPlayerTurn）。</summary>
-    private IEnumerator ExecuteEnemySkillCoroutine(EnemyInstance inst, CardEntry skill)
+    private IEnumerator ExecuteEnemySkillCoroutine(EnemyInstance inst, CardEntry skill, int skillIndex = 0)
     {
         // 用玩家同款卡面（BattleCard 预制体 + CardRequest）展示敌人出牌，尽量贴近玩家视角。
-        GameObject shownCard = ShowEnemyPlayedCard(skill, inst);
+        GameObject shownCard = ShowEnemyPlayedCard(skill, inst, skillIndex);
         bool showFallbackPanel = shownCard == null && enemySkillCard != null;
 
         if (shownCard != null)
@@ -3222,14 +3243,14 @@ public class BattleManager : MonoBehaviour
         }
 
         // 执行卡牌效果（对玩家结算）
-        ExecuteEnemySkill(inst, skill);
+        ExecuteEnemySkill(inst, skill, skillIndex);
     }
 
     /// <summary>
     /// 用玩家同款卡面预制体 + 卡牌编辑器 CardEntry 生成一张“敌人出牌展示卡”，
     /// 挂在敌人技能卡面板同父节点下并居中。返回该卡 GameObject；若无可用预制体返回 null。
     /// </summary>
-    private GameObject ShowEnemyPlayedCard(CardEntry skill, EnemyInstance inst = null)
+    private GameObject ShowEnemyPlayedCard(CardEntry skill, EnemyInstance inst = null, int skillIndex = 0)
     {
         if (skill == null) return null;
 
@@ -3257,6 +3278,9 @@ public class BattleManager : MonoBehaviour
             if (inst != null)
                 display.SetEnemyAttributeContext(inst.EffectiveStrength, inst.EffectiveDexterity);
             display.ApplyCardEntry(skill, _playerSanity <= _sanityThreshold);
+            var fusion = inst != null ? inst.GetSkillFusion(skillIndex) : null;
+            if (fusion != null && fusion.HasAny)
+                display.ApplyFusionOverlay(fusion);
         }
         else
         {
@@ -3295,7 +3319,7 @@ public class BattleManager : MonoBehaviour
     /// 把「发起者（出牌者）= 该敌人」传给 EffectExecutorV2，效果节点按相对目标解析：
     /// 当前角色/所有角色 → 玩家；效果发起者 → 该敌人自己。
     /// </summary>
-    private void ExecuteEnemySkill(EnemyInstance inst, CardEntry skill)
+    private void ExecuteEnemySkill(EnemyInstance inst, CardEntry skill, int skillIndex = 0)
     {
         if (inst == null || skill == null) return;
 
@@ -3309,7 +3333,21 @@ public class BattleManager : MonoBehaviour
         }
 
         Debug.Log($"[BattleManager] {inst.Name} 出牌：{skill.cardName}（发起者=槽位{inst.SlotIndex}，{nodes.Count}个效果）");
-        _effectExecutorV2.ExecuteEffectListAsEnemy(inst.SlotIndex, nodes);
+        var playCard = CardEntryAdapter.ConvertSingle(skill);
+        if (playCard != null)
+        {
+            playCard.isLowSanityForm = lowSanity;
+            playCard.fusion = inst.GetSkillFusion(skillIndex);
+        }
+        _currentFusionCard = playCard;
+        try
+        {
+            _effectExecutorV2.ExecuteEffectListAsEnemy(inst.SlotIndex, nodes);
+        }
+        finally
+        {
+            _currentFusionCard = null;
+        }
 
         inst.View?.Refresh();
         UpdateUI();
@@ -3501,7 +3539,7 @@ public class BattleManager : MonoBehaviour
     private void RefreshEnemyIntentDeck(EnemyInstance e)
     {
         if (e == null || e.IsDead || e.View == null) return;
-        e.View.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity);
+        e.View.ShowIntentDeck(e.GetCurrentSkills(), _playerSanity <= _sanityThreshold, e.EffectiveStrength, e.EffectiveDexterity, e);
     }
 
     /// <summary>取指定敌人的意图文本（预览本回合将出的所有技能卡名；无技能配置时空过）。</summary>

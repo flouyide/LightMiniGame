@@ -293,15 +293,13 @@ public class FusionController : MonoBehaviour
                     v => _battle.FusionSetEnemyMaxHP(enemySlot, v)));
             }
 
-            // 意图牌库：敌人下方列出的小卡，其中的数值（含费用）也参与融合高亮（把敌人意图伤害覆盖为融合值）
-            int deckCard = 0;
+            // 意图牌库：敌人下方列出的小卡，按效果槽回写到该卡自己的融合覆盖（与手牌一致）
             foreach (var deckView in _battle.GetEnemyIntentDeckDisplays(i))
             {
                 if (deckView == null) continue;
                 int slot = enemySlot;
-                int cardN = deckCard;
+                int cardN = deckView.IntentSkillIndex >= 0 ? deckView.IntentSkillIndex : 0;
 
-                // —— 卡牌费用：在卡面费用气泡处高亮（可选中，融合后作为该意图卡的费用/伤害显示）——
                 var costRT = deckView.GetCostRectTransform();
                 if (costRT != null)
                 {
@@ -310,7 +308,7 @@ public class FusionController : MonoBehaviour
                         $"enemy:{i}:ideck:{cardN}:cost",
                         $"敌人{i + 1}意图牌{cardN + 1}费用",
                         costVal, false,
-                        v => _battle.FusionSetEnemyIntentDamage(slot, v))
+                        v => _battle.SetEnemyIntentCardCost(slot, cardN, v))
                     {
                         cardView = deckView,
                         hasExactRect = true,
@@ -319,24 +317,7 @@ public class FusionController : MonoBehaviour
                     });
                 }
 
-                int tokenN = 0;
-                foreach (var tok in deckView.EnumerateNumberTokens())
-                {
-                    int tIdx = tokenN;
-                    list.Add(new FusableValue(
-                        $"enemy:{i}:ideck:{cardN}:t{tIdx}",
-                        $"敌人{i + 1}意图牌{cardN + 1}·{tok.value}",
-                        tok.value, false,
-                        v => _battle.FusionSetEnemyIntentDamage(slot, v))
-                    {
-                        cardView = deckView,
-                        hasExactRect = true,
-                        exactCenter = tok.center,
-                        exactSize = tok.size,
-                    });
-                    tokenN++;
-                }
-                deckCard++;
+                AddEnemyDescriptionSlots(list, deckView, i, slot, cardN);
             }
         }
 
@@ -410,6 +391,79 @@ public class FusionController : MonoBehaviour
                 shown, false,
                 v => _battle.SetHandCardFusionSlot(handIdx, nodeIdx, kind, v))
             { cardView = hview };
+
+            if (tok >= 0)
+            {
+                used[tok] = true;
+                shown = tokens[tok].value;
+                fv.current = shown;
+                fv.hasExactRect = true;
+                fv.exactCenter = tokens[tok].center;
+                fv.exactSize = tokens[tok].size;
+            }
+            list.Add(fv);
+        }
+    }
+
+    /// <summary>敌人意图卡描述数字：按效果槽绑定，融合后写回该卡 FusionCardDelta。</summary>
+    private void AddEnemyDescriptionSlots(List<FusableValue> list, CardDisplay deckView, int enemyI, int enemySlot, int skillIndex)
+    {
+        var slots = deckView.EnumerateFusionSlots();
+        var tokens = deckView.EnumerateNumberTokens();
+        var used = tokens != null && tokens.Count > 0 ? new bool[tokens.Count] : null;
+
+        if (slots == null || slots.Count == 0)
+        {
+            if (tokens == null) return;
+            for (int tIdx = 0; tIdx < tokens.Count; tIdx++)
+            {
+                int captured = tIdx;
+                list.Add(new FusableValue(
+                    $"enemy:{enemyI}:ideck:{skillIndex}:t{tIdx}",
+                    $"敌人{enemyI + 1}意图牌{skillIndex + 1}·{tokens[tIdx].value}",
+                    tokens[tIdx].value, false,
+                    v => _battle.SetEnemyIntentCardFusionSlot(enemySlot, skillIndex, 0, FusionSlotKind.Damage, v))
+                {
+                    cardView = deckView,
+                    hasExactRect = true,
+                    exactCenter = tokens[captured].center,
+                    exactSize = tokens[captured].size,
+                });
+            }
+            return;
+        }
+
+        for (int s = 0; s < slots.Count; s++)
+        {
+            var slot = slots[s];
+            int tok = -1;
+            if (tokens != null && used != null)
+            {
+                for (int k = 0; k < tokens.Count; k++)
+                {
+                    if (used[k] || tokens[k].size == Vector2.zero) continue;
+                    if (tokens[k].value == slot.displayValue) { tok = k; break; }
+                }
+                if (tok < 0)
+                {
+                    for (int k = 0; k < tokens.Count; k++)
+                    {
+                        if (used[k] || tokens[k].size == Vector2.zero) continue;
+                        tok = k;
+                        break;
+                    }
+                }
+            }
+
+            int nodeIdx = slot.nodeIndex;
+            var kind = slot.kind;
+            int shown = slot.displayValue;
+            var fv = new FusableValue(
+                $"enemy:{enemyI}:ideck:{skillIndex}:slot:{s}",
+                $"敌人{enemyI + 1}意图牌{skillIndex + 1}·{slot.label}",
+                shown, false,
+                v => _battle.SetEnemyIntentCardFusionSlot(enemySlot, skillIndex, nodeIdx, kind, v))
+            { cardView = deckView };
 
             if (tok >= 0)
             {

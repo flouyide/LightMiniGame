@@ -49,8 +49,11 @@ public class EnemyInstance
     /// <summary>是否已死亡（HP≤0；阶段切换不重置生命值，血条唯一）</summary>
     public bool IsDead;
 
-    /// <summary>融合回填：意图伤害覆盖值（-1 表示未覆盖，按当前卡牌效果节点计算）</summary>
+    /// <summary>融合回填：意图伤害覆盖值（-1 表示未覆盖，按当前卡牌效果节点计算）。兼容旧读取；新路径写入 _skillFusions。</summary>
     public int IntentDamageOverride = -1;
+
+    /// <summary>本回合已抽意图卡上的融合覆盖，与 _drawnSkills 下标对齐。</summary>
+    private List<FusionCardDelta> _skillFusions;
 
     /// <summary>对应视图，由 BattleManager 生成后注入</summary>
     public EnemyView View;
@@ -121,10 +124,32 @@ public class EnemyInstance
 
     private List<CardEntry> _drawnSkills;
 
+    /// <summary>取指定意图卡的融合覆盖（无则 null）。</summary>
+    public FusionCardDelta GetSkillFusion(int skillIndex)
+    {
+        if (_skillFusions == null || skillIndex < 0 || skillIndex >= _skillFusions.Count)
+            return null;
+        return _skillFusions[skillIndex];
+    }
+
+    /// <summary>保证指定意图卡有融合覆盖层并返回。</summary>
+    public FusionCardDelta EnsureSkillFusion(int skillIndex)
+    {
+        if (skillIndex < 0) skillIndex = 0;
+        if (_skillFusions == null) _skillFusions = new List<FusionCardDelta>();
+        while (_skillFusions.Count <= skillIndex)
+            _skillFusions.Add(null);
+        if (_skillFusions[skillIndex] == null)
+            _skillFusions[skillIndex] = new FusionCardDelta();
+        return _skillFusions[skillIndex];
+    }
+
     /// <summary>清空本回合已抽卡牌（玩家回合开始时调用，使下个敌人回合重新随机）。</summary>
     public void ResetDrawnSkill()
     {
         _drawnSkills = null;
+        _skillFusions = null;
+        IntentDamageOverride = -1;
     }
 
     /// <summary>

@@ -113,6 +113,19 @@ public class CardDisplay : MonoBehaviour
     public static System.Func<int> PlayerStrengthProvider;
     /// <summary>玩家敏捷提供者（由 BattleManager 在战斗初始化时设置）</summary>
     public static System.Func<int> PlayerDexterityProvider;
+    /// <summary>意图牌在敌人本回合技能列表中的下标（融合回写用；非意图卡为 -1）</summary>
+    public int IntentSkillIndex { get; private set; } = -1;
+
+    public void SetIntentSkillIndex(int index) => IntentSkillIndex = index;
+
+    /// <summary>把融合覆盖套到当前卡面（敌人意图卡没有 CardData 时走这条）。</summary>
+    public void ApplyFusionOverlay(FusionCardDelta fusion)
+    {
+        _fusion = fusion;
+        if (_data != null) _data.fusion = fusion;
+        UpdateDisplay();
+    }
+
     /// <summary>是否为敌人卡牌（意图预览用）</summary>
     private bool _isEnemyCard;
     /// <summary>敌人力量（意图预览用）</summary>
@@ -548,9 +561,7 @@ public class CardDisplay : MonoBehaviour
         if (nameText) nameText.text = cardName;
         // 费用：融合覆盖优先于原始费用
         if (costText)
-            costText.text = _data != null
-                ? _data.GetEffectiveCost().ToString()
-                : actionPointCost.ToString();
+            costText.text = GetDisplayCost().ToString();
         if (typeText) typeText.text = CardData.GetCardTypeName(cardType);
         if (gradeText) gradeText.text = CardData.GetGradeName(grade);
         if (descText) descText.text = GetFusionAwareDescription();
@@ -1197,7 +1208,7 @@ public class CardDisplay : MonoBehaviour
     /// </summary>
     public List<CardFusionSlotInfo> EnumerateFusionSlots()
     {
-        bool low = _data != null && _data.isLowSanityForm;
+        bool low = _data != null ? _data.isLowSanityForm : _displayLowSanity;
         var entry = _entry != null ? _entry : (_data != null ? _data.sourceEntry : null);
         var nodes = entry != null ? entry.GetEffectNodes(low) : null;
         return CardFusionSlots.Collect(nodes, ContextStrength, ContextDexterity, _isEnemyCard, LiveFusion);
@@ -1216,7 +1227,7 @@ public class CardDisplay : MonoBehaviour
         var desc = GetDisplayDescription();
         if (string.IsNullOrEmpty(desc)) return desc;
 
-        bool low = _data != null && _data.isLowSanityForm;
+        bool low = _data != null ? _data.isLowSanityForm : _displayLowSanity;
         var slots = CardFusionSlots.Collect(
             _entry.GetEffectNodes(low), ContextStrength, ContextDexterity, _isEnemyCard, LiveFusion);
         if (slots.Count == 0) return desc;
