@@ -102,6 +102,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: "\u6BCF\u56DE\u5408\u8FC7\u70ED\u9608\u503C+1\u3002"
