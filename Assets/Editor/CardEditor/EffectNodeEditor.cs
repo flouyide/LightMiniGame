@@ -180,6 +180,12 @@ namespace LightMiniGame.CardEditor.Editor
                 case EffectOperation.MoveCards:
                     DrawMoveCardsFields(node);
                     break;
+                case EffectOperation.CreateCard:
+                    DrawCreateCardFields(node);
+                    break;
+                case EffectOperation.ModifyCardProperty:
+                    DrawModifyCardPropertyFields(node);
+                    break;
                 case EffectOperation.RegisterTrigger:
                     DrawRegisterTriggerFields(node);
                     break;
@@ -296,6 +302,22 @@ namespace LightMiniGame.CardEditor.Editor
             DrawValueNodeField("数量", node.zoneCount);
         }
 
+        private static void DrawCreateCardFields(EffectNode node)
+        {
+            EditorGUILayout.LabelField("创建卡牌", EditorStyles.boldLabel);
+            node.createdCard = (CardEntry)EditorGUILayout.ObjectField("卡牌", node.createdCard, typeof(CardEntry), false);
+            DrawValueNodeField("张数", node.value);
+            node.destinationZone = (CardZoneType)EditorGUILayout.Popup("放入", (int)node.destinationZone, GetZoneNames());
+        }
+
+        private static void DrawModifyCardPropertyFields(EffectNode node)
+        {
+            EditorGUILayout.LabelField("本场覆盖卡牌数值", EditorStyles.boldLabel);
+            node.createdCard = (CardEntry)EditorGUILayout.ObjectField("卡牌", node.createdCard, typeof(CardEntry), false);
+            node.statusType = (StatusType2)EditorGUILayout.Popup("状态字段", (int)node.statusType, GetStatusNames());
+            DrawValueNodeField("覆盖值", node.statusValue);
+        }
+
         // ========================================================================
         // 注册触发器字段
         // ========================================================================
@@ -307,6 +329,7 @@ namespace LightMiniGame.CardEditor.Editor
             node.maxTriggersPerTurn = EditorGUILayout.IntField("每回合限制(0=无限)", node.maxTriggersPerTurn);
             node.activeOnlyWhenOwnerIsActive = EditorGUILayout.Toggle("仅持有角色激活时", node.activeOnlyWhenOwnerIsActive);
             DrawDurationField(node);
+            EditorGUILayout.HelpBox("下方「条件」在触发时检查，打出本牌时不会拦截注册。能力类请把持续时间设为「直到战斗结束」。", MessageType.Info);
 
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField($"子效果 ({node.childEffects.Count})", EditorStyles.boldLabel);
@@ -372,7 +395,7 @@ namespace LightMiniGame.CardEditor.Editor
                 EditorGUILayout.EndHorizontal();
 
                 cond.conditionType = (ConditionType2)EditorGUILayout.Popup("类型", (int)cond.conditionType,
-                    new[] { "比较值", "有状态", "无状态", "事件检查", "标志检查", "卡牌属性", "目标存在", "概率", "自定义" });
+                    new[] { "比较值", "有状态", "无状态", "事件检查", "标志检查", "卡牌属性", "目标存在", "概率", "自定义", "打出的卡是" });
 
                 switch (cond.conditionType)
                 {
@@ -385,6 +408,13 @@ namespace LightMiniGame.CardEditor.Editor
                     case ConditionType2.HasStatus:
                     case ConditionType2.DoesNotHaveStatus:
                         cond.statusType = (StatusType2)EditorGUILayout.Popup("状态", (int)cond.statusType, GetStatusNames());
+                        if (cond.statusTarget == null)
+                            cond.statusTarget = new TargetSelector { category = TargetCategory.Enemy, unitTarget = CombatUnitTarget.SelectedEnemy };
+                        EditorGUILayout.LabelField("检查目标", EditorStyles.miniBoldLabel);
+                        DrawTargetSelector(cond.statusTarget);
+                        break;
+                    case ConditionType2.PlayedCardMatches:
+                        cond.cardRef = (CardEntry)EditorGUILayout.ObjectField("卡牌", cond.cardRef, typeof(CardEntry), false);
                         break;
                     case ConditionType2.EventContextCheck:
                         cond.eventName = EditorGUILayout.TextField("事件名", cond.eventName);
@@ -441,6 +471,9 @@ namespace LightMiniGame.CardEditor.Editor
                 case ValueNodeType.ReadStatusStacks:
                     node.statusRef = (StatusType2)EditorGUILayout.Popup((int)node.statusRef, GetStatusNames());
                     break;
+                case ValueNodeType.ReadAllEnemiesStatusStacks:
+                    node.statusRef = (StatusType2)EditorGUILayout.Popup((int)node.statusRef, GetStatusNames());
+                    break;
                 case ValueNodeType.ReadCounter:
                     node.counterRef = (CombatCounterType)EditorGUILayout.Popup((int)node.counterRef, GetCounterNames());
                     break;
@@ -466,6 +499,9 @@ namespace LightMiniGame.CardEditor.Editor
                     node.everyN = EditorGUILayout.IntField("N", node.everyN);
                     node.convertToM = EditorGUILayout.IntField("M", node.convertToM);
                     break;
+                case ValueNodeType.Modulo:
+                    EditorGUILayout.LabelField("子节点:", GUILayout.Width(50));
+                    break;
             }
             EditorGUILayout.EndHorizontal();
 
@@ -473,7 +509,8 @@ namespace LightMiniGame.CardEditor.Editor
             bool isOpNode = node.nodeType is ValueNodeType.Add or ValueNodeType.Subtract or ValueNodeType.Multiply
                 or ValueNodeType.Divide or ValueNodeType.Min or ValueNodeType.Max or ValueNodeType.Clamp
                 or ValueNodeType.Floor or ValueNodeType.Ceil or ValueNodeType.Round or ValueNodeType.Absolute
-                or ValueNodeType.Negate or ValueNodeType.Percentage or ValueNodeType.EveryNConvertToM;
+                or ValueNodeType.Negate or ValueNodeType.Percentage or ValueNodeType.EveryNConvertToM
+                or ValueNodeType.Modulo;
 
             if (isOpNode)
             {
@@ -482,7 +519,7 @@ namespace LightMiniGame.CardEditor.Editor
                 int requiredCount = node.nodeType switch
                 {
                     ValueNodeType.Add or ValueNodeType.Subtract or ValueNodeType.Multiply or ValueNodeType.Divide
-                        or ValueNodeType.Min or ValueNodeType.Max or ValueNodeType.Percentage => 2,
+                        or ValueNodeType.Min or ValueNodeType.Max or ValueNodeType.Percentage or ValueNodeType.Modulo => 2,
                     ValueNodeType.Clamp => 3,
                     ValueNodeType.Floor or ValueNodeType.Ceil or ValueNodeType.Round
                         or ValueNodeType.Absolute or ValueNodeType.Negate or ValueNodeType.EveryNConvertToM => 1,
@@ -555,7 +592,7 @@ namespace LightMiniGame.CardEditor.Editor
         {
             "破甲", "流血", "卡壳", "疯狂", "易伤", "临时力量", "临时敏捷",
             "下次攻击增伤", "下次暴伤提升", "下次必暴", "下张牌减费", "下张攻击牌减费",
-            "手牌减费", "暴击率变化", "暴伤变化", "格挡保留", "自定义状态"
+            "手牌减费", "暴击率变化", "暴伤变化", "格挡保留", "自定义状态", "疲惫"
         };
 
         private static string[] GetCounterNames() => new[]
@@ -627,7 +664,8 @@ namespace LightMiniGame.CardEditor.Editor
             "读取计数器", "读取标志", "读取卡牌费用", "读取实际支付费用", "手牌数", "抽牌堆数",
             "弃牌堆数", "敌人数", "目标数", "读取局部变量", "读取效果结果",
             "加", "减", "乘", "除", "向下取整", "向上取整", "四舍五入", "最小", "最大",
-            "限制", "绝对值", "取反", "百分比", "每N转M"
+            "限制", "绝对值", "取反", "百分比", "每N转M",
+            "全体状态层数", "手牌上限", "手牌空位", "取模"
         };
     }
 }

@@ -313,6 +313,7 @@ public class BattleManager : MonoBehaviour
     private BattlePilePanel _pilePanel;
     private BookUIController _bookUI;   // 缓存局外 UI 控制器（战斗中更新 TopBar 文本用）
     private CardData _currentFusionCard;   // 当前正在执行效果的手牌（供 effect 读取 fusion 覆盖）
+    private readonly Dictionary<string, int> _cardStatusValueOverrides = new Dictionary<string, int>();
 
     /// <summary>开启进阶效果1：融合修改跨战斗持久化。</summary>
     public void EnableFusionPersistence() => persistFusion = true;
@@ -387,6 +388,7 @@ public class BattleManager : MonoBehaviour
     /// <summary>当前出牌目标敌人槽位（由拖拽释放时设置；无拖拽时保持上次值，默认 0）</summary>
     public int SelectedEnemyIndex => _selectedEnemyIndex;
     public int HandCount => _hand.Count;
+    public int HandLimit => handLimit;
     public int DrawPileCount => ActiveChar?.drawPile.Count ?? 0;
     public int DiscardPileCount => ActiveChar?.discardPile.Count ?? 0;
     public bool IsBattleEnded => _battleEnded;
@@ -427,6 +429,76 @@ public class BattleManager : MonoBehaviour
         var e = GetEnemy(index);
         return e != null && !e.IsDead ? e.Tiredness : 0;
     }
+
+    public int GetEnemyStatusStacks(int index, StatusType status)
+    {
+        var e = GetEnemy(index);
+        if (e == null || e.IsDead) return 0;
+        switch (status)
+        {
+            case StatusType.Fatigue: return e.Tiredness;
+            case StatusType.ArmorBreak: return e.ArmorBreakStacks;
+            case StatusType.Strength: return e.Strength;
+            case StatusType.Dexterity: return e.Dexterity;
+            default: return 0;
+        }
+    }
+
+    public int GetAllEnemiesStatusStacks(StatusType status)
+    {
+        int total = 0;
+        for (int i = 0; i < _enemies.Count; i++)
+            total += GetEnemyStatusStacks(i, status);
+        return total;
+    }
+
+    public int AddGeneratedCards(CardEntry entry, int count, CardZoneType zone)
+    {
+        if (entry == null || count <= 0 || _battleEnded) return 0;
+        int added = 0;
+        for (int i = 0; i < count; i++)
+        {
+            var cd = CardEntryAdapter.ConvertSingle(entry);
+            if (cd == null) break;
+            cd.extraCost = _handCostBonus;
+            if (zone == CardZoneType.DrawPile)
+            {
+                ActiveChar.drawPile.Add(cd);
+                added++;
+                continue;
+            }
+            if (zone == CardZoneType.DiscardPile)
+            {
+                ActiveChar.discardPile.Add(cd);
+                added++;
+                continue;
+            }
+            if (_hand.Count >= handLimit) break;
+            _hand.Add(cd);
+            added++;
+        }
+        if (added > 0)
+        {
+            OnHandCardsChanged?.Invoke();
+            RefreshHandUI();
+        }
+        return added;
+    }
+
+    public void SetCardStatusValueOverride(string cardId, StatusType status, int value)
+    {
+        if (string.IsNullOrEmpty(cardId)) return;
+        _cardStatusValueOverrides[OverrideKey(cardId, status)] = Mathf.Max(0, value);
+    }
+
+    public bool TryGetCardStatusValueOverride(string cardId, StatusType status, out int value)
+    {
+        value = 0;
+        if (string.IsNullOrEmpty(cardId)) return false;
+        return _cardStatusValueOverrides.TryGetValue(OverrideKey(cardId, status), out value);
+    }
+
+    private static string OverrideKey(string cardId, StatusType status) => cardId + ":" + (int)status;
 
     /// <summary>按槽位索引取敌人实例（越界返回 null）</summary>
     private EnemyInstance GetEnemy(int slotIndex)
@@ -1696,6 +1768,7 @@ public class BattleManager : MonoBehaviour
         if (switchCharacterButton != null) switchCharacterButton.interactable = true;
 
         _hand.Clear();
+        _cardStatusValueOverrides.Clear();
         _actionPoints = maxActionPoints;
 
         // 初始化效果系统
@@ -2116,6 +2189,8 @@ public class BattleManager : MonoBehaviour
             {
                 var nodes = card.GetEffectNodes(card.isLowSanityForm);
                 _triggerSystem?.FireEvent(TriggerEvent.OnCardPlayed);
+                if (entry.cardType == LightMiniGame.CardEditor.CardType.Attack)
+                    _triggerSystem?.FireEvent(TriggerEvent.OnAttackCardPlayed);
                 _effectExecutorV2.ExecuteEffectList(nodes);
                 UpdateUI();
                 CheckBattleEnd();

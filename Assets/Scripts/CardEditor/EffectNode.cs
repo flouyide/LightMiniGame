@@ -119,7 +119,7 @@ namespace LightMiniGame.CardEditor
         [Tooltip("检查的状态类型")]
         public StatusType2 statusType = StatusType2.ArmorBreak;
         [Tooltip("检查的目标")]
-        public TargetSelector statusTarget = new TargetSelector { category = TargetCategory.CombatUnit, unitTarget = CombatUnitTarget.CurrentCharacter };
+        public TargetSelector statusTarget = new TargetSelector { category = TargetCategory.Enemy, unitTarget = CombatUnitTarget.SelectedEnemy };
 
         // EventContextCheck 参数
         [Tooltip("事件名称")]
@@ -140,6 +140,9 @@ namespace LightMiniGame.CardEditor
         // CustomCondition 参数
         [Tooltip("自定义条件脚本")]
         public CustomConditionScript customConditionScript;
+
+        [Tooltip("匹配的卡牌（PlayedCardMatches）")]
+        public CardEntry cardRef;
 
         // 嵌套条件组
         [Tooltip("嵌套条件组（条件类型为 Not 时使用单个子组）")]
@@ -178,6 +181,9 @@ namespace LightMiniGame.CardEditor
 
                 case ConditionType2.CustomCondition:
                     return customConditionScript != null ? $"自定义: {customConditionScript.GetDisplayName()}" : "自定义(未绑定)";
+
+                case ConditionType2.PlayedCardMatches:
+                    return cardRef != null ? $"打出的是「{cardRef.cardName}」" : "打出的是指定卡";
 
                 default:
                     return conditionType.ToString();
@@ -422,6 +428,9 @@ namespace LightMiniGame.CardEditor
         [TextArea(1, 3)]
         public string customParams = "";
 
+        [Tooltip("生成/覆盖的目标卡（CreateCard、ModifyCardProperty）")]
+        public CardEntry createdCard;
+
         // === 描述生成 ===
 
         /// <summary>
@@ -483,6 +492,14 @@ namespace LightMiniGame.CardEditor
 
                 case EffectOperation.MoveCards:
                     sb.Append($"{zoneOperation} {ValueNode.ResolveValue(zoneCount, strength, dexterity)}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
+                    break;
+
+                case EffectOperation.CreateCard:
+                    sb.Append($"生成 {ValueNode.ResolveValue(value, strength, dexterity)} 张「{createdCard?.cardName ?? "?"}」到{GetZoneName(destinationZone)}");
+                    break;
+
+                case EffectOperation.ModifyCardProperty:
+                    sb.Append($"本场将「{createdCard?.cardName ?? "?"}」的{ValueNode.GetStatusName(statusType)}改为 {ValueNode.ResolveValue(statusValue, strength, dexterity)}");
                     break;
 
                 case EffectOperation.SwitchCharacter:
@@ -578,6 +595,14 @@ namespace LightMiniGame.CardEditor
                     sb.Append($"{zoneOperation} {zoneCount?.GetDescription() ?? "1"}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
                     break;
 
+                case EffectOperation.CreateCard:
+                    sb.Append($"生成 {value?.GetDescription() ?? "1"} 张「{createdCard?.cardName ?? "?"}」到{GetZoneName(destinationZone)}");
+                    break;
+
+                case EffectOperation.ModifyCardProperty:
+                    sb.Append($"覆盖「{createdCard?.cardName ?? "?"}」{ValueNode.GetStatusName(statusType)}={statusValue?.GetDescription() ?? "?"}");
+                    break;
+
                 case EffectOperation.SwitchCharacter:
                     sb.Append("切换角色");
                     break;
@@ -662,7 +687,8 @@ namespace LightMiniGame.CardEditor
                 stackMode = stackMode, sourceZone = sourceZone, destinationZone = destinationZone,
                 zoneOperation = zoneOperation, zoneCount = zoneCount != null ? CloneValueNode(zoneCount) : ValueNode.Constant(1),
                 triggerEvent = triggerEvent, maxTriggers = maxTriggers, maxTriggersPerTurn = maxTriggersPerTurn,
-                activeOnlyWhenOwnerIsActive = activeOnlyWhenOwnerIsActive, customOperation = customOperation, customParams = customParams
+                activeOnlyWhenOwnerIsActive = activeOnlyWhenOwnerIsActive, customOperation = customOperation, customParams = customParams,
+                createdCard = createdCard
             };
         }
 
@@ -738,6 +764,7 @@ namespace LightMiniGame.CardEditor
             EffectOperation.PlayCardAutomatically => "自动打牌",
             EffectOperation.ReplayCurrentCard => "重新释放本牌",
             EffectOperation.ModifyCardCost => "修改费用",
+            EffectOperation.ModifyCardProperty => "覆盖卡牌数值",
             EffectOperation.SwitchCharacter => "切换角色",
             EffectOperation.RegisterTrigger => "注册触发器",
             EffectOperation.RemoveTrigger => "移除触发器",

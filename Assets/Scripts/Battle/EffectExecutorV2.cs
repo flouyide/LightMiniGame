@@ -25,6 +25,9 @@ public class EffectExecutorV2
     // 当前正在执行的效果在列表中的索引（与融合槽 nodeIndex 对齐）。
     private int _currentNodeIndex = -1;
 
+    // >0 表示正在执行触发器子效果（此时不要套「打出卡」的状态覆盖，避免见血封喉改掉手起刀落的额外疲惫）。
+    private int _triggerExecDepth;
+
     // 执行日志
     public List<string> ExecutionLog { get; private set; } = new List<string>();
 
@@ -50,8 +53,9 @@ public class EffectExecutorV2
 
             Log($"--- 效果[{i + 1}] {node.displayName}: {node.GetDescription()} ---");
 
-            // 条件检查
-            if (node.conditions != null && node.conditions.conditions != null && node.conditions.conditions.Count > 0)
+            // 注册触发器：节点上的条件是「触发时」检查，打出时不拦截注册。
+            bool skipPlayConditions = node.operation == EffectOperation.RegisterTrigger;
+            if (!skipPlayConditions && node.conditions != null && node.conditions.conditions != null && node.conditions.conditions.Count > 0)
             {
                 if (!EvaluateConditions(node.conditions))
                 {
@@ -172,8 +176,16 @@ public class EffectExecutorV2
                 };
 
             case ConditionType2.HasStatus:
-                // 暂时通过资源值近似判断（正式实现需要状态系统）
-                return false;
+                return EvaluateHasStatus(c, expectPresent: true);
+
+            case ConditionType2.DoesNotHaveStatus:
+                return EvaluateHasStatus(c, expectPresent: false);
+
+            case ConditionType2.PlayedCardMatches:
+            {
+                var want = c.cardRef != null ? c.cardRef.cardId : "";
+                return !string.IsNullOrEmpty(want) && want == _ctx.CurrentPlayedCardId;
+            }
 
             case ConditionType2.RuntimeFlagCheck:
                 return c.flagRef switch
@@ -202,6 +214,42 @@ public class EffectExecutorV2
             default:
                 return true;
         }
+    }
+
+    private bool EvaluateHasStatus(ConditionEntry c, bool expectPresent)
+    {
+        var status = MapStatus(c.statusType);
+        var unit = c.statusTarget != null ? c.statusTarget.unitTarget : CombatUnitTarget.SelectedEnemy;
+        bool present;
+        if (unit == CombatUnitTarget.AllEnemies)
+        {
+            present = false;
+            for (int i = 0; i < _ctx.EnemySlotCount; i++)
+            {
+                if (_ctx.IsEnemyAlive(i) && _ctx.GetEnemyStatusStacks(i, status) > 0)
+                {
+                    present = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            int idx = ResolveConditionEnemyIndex(unit);
+            present = idx >= 0 && _ctx.GetEnemyStatusStacks(idx, status) > 0;
+        }
+        return expectPresent ? present : !present;
+    }
+
+    private int ResolveConditionEnemyIndex(CombatUnitTarget unit)
+    {
+        return unit switch
+        {
+            CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
+            CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
+            CombatUnitTarget.AllEnemies => -1,
+            _ => _ctx.SelectedEnemyIndex
+        };
     }
 
     // ========================================================================
@@ -254,10 +302,15 @@ public class EffectExecutorV2
                     _ => 0
                 };
 
-            // 读取状态层数
+            // 读取状态层数（选定敌人）
             case ValueNodeType.ReadStatusStacks:
-                // 需要 BattleManager 状态系统支持，暂返回 0
-                return 0;
+                return _ctx.GetEnemyStatusStacks(_ctx.SelectedEnemyIndex, MapStatus(node.statusRef));
+            case ValueNodeType.ReadAllEnemiesStatusStacks:
+                return _ctx.GetAllEnemiesStatusStacks(MapStatus(node.statusRef));
+            case ValueNodeType.ReadMaxHandCount:
+                return _ctx.MaxHandCount;
+            case ValueNodeType.ReadHandVacancies:
+                return Mathf.Max(0, _ctx.MaxHandCount - _ctx.HandCount);
 
             // 读取计数器
             case ValueNodeType.ReadCounter:
@@ -344,8 +397,14 @@ public class EffectExecutorV2
             case ValueNodeType.Percentage:
                 return Mathf.RoundToInt(EvaluateChild(node, 0) * EvaluateChild(node, 1) / 100f);
             case ValueNodeType.EveryNConvertToM:
+                int n = node.everyN;
                 int source = EvaluateChild(node, 0);
-                return (source / node.everyN) * node.convertToM;
+                return n > 0 ? (source / n) * node.convertToM : 0;
+            case ValueNodeType.Modulo:
+            {
+                int b = EvaluateChild(node, 1);
+                return b != 0 ? EvaluateChild(node, 0) % b : 0;
+            }
 
             default:
                 return 0;
@@ -394,6 +453,12 @@ public class EffectExecutorV2
                 break;
             case EffectOperation.MoveCards:
                 ExecuteMoveCards(node);
+                break;
+            case EffectOperation.CreateCard:
+                ExecuteCreateCard(node);
+                break;
+            case EffectOperation.ModifyCardProperty:
+                ExecuteModifyCardProperty(node);
                 break;
             case EffectOperation.SwitchCharacter:
                 Log("  [切换角色] 需要外部系统处理");
@@ -769,6 +834,9 @@ public class EffectExecutorV2
         int stacks = EvaluateValue(node.statusValue);
         if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Status, out int fusedStatus))
             stacks = fusedStatus;
+        else if (_triggerExecDepth == 0 &&
+                 _ctx.TryGetCardStatusValueOverride(_ctx.CurrentPlayedCardId, MapStatus(node.statusType), out int ov))
+            stacks = ov;
 
         // 玩家侧目标：玩家出牌时当前角色/效果发起者指玩家；敌人出牌时当前角色指玩家。
         // 敌人出牌时 EffectSource（对敌人自己施加）走敌人分支。
@@ -785,11 +853,8 @@ public class EffectExecutorV2
         }
         else
         {
-            // AllEnemies 传 -1（全体存活敌人），由 BattleManager 展开；其余按槽位索引
-            if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
-                _ctx.ApplyStatusToEnemy(-1, MapStatus(node.statusType), stacks);
-            else
-                _ctx.ApplyStatusToEnemy(_ctx.SelectedEnemyIndex, MapStatus(node.statusType), stacks);
+            int targetIdx = ResolveStatusEnemyIndex(node.target.unitTarget);
+            _ctx.ApplyStatusToEnemy(targetIdx, MapStatus(node.statusType), stacks);
             Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 敌人");
         }
         _lastResult[EffectResultType.StatusStacksAdded] = stacks;
@@ -851,6 +916,7 @@ public class EffectExecutorV2
     private void ExecuteRemoveStatus(EffectNode node)
     {
         int stacks = EvaluateValue(node.statusValue);
+        if (stacks <= 0) stacks = 9999;
 
         bool toPlayer = TargetIsPlayerSide(node.target.unitTarget);
         if (toPlayer)
@@ -865,10 +931,8 @@ public class EffectExecutorV2
         }
         else
         {
-            if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
-                _ctx.RemoveStatusFromEnemy(-1, MapStatus(node.statusType), stacks);
-            else
-                _ctx.RemoveStatusFromEnemy(_ctx.SelectedEnemyIndex, MapStatus(node.statusType), stacks);
+            int targetIdx = ResolveStatusEnemyIndex(node.target.unitTarget);
+            _ctx.RemoveStatusFromEnemy(targetIdx, MapStatus(node.statusType), stacks);
             Log($"  [移除状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 敌人");
         }
         _lastResult[EffectResultType.StatusStacksRemoved] = stacks;
@@ -939,6 +1003,42 @@ public class EffectExecutorV2
         Log($"  [卡牌区域] {opName} {count}张: {EffectNode.GetZoneName(node.sourceZone)}→{EffectNode.GetZoneName(node.destinationZone)}");
     }
 
+    private int ResolveStatusEnemyIndex(CombatUnitTarget unit)
+    {
+        return unit switch
+        {
+            CombatUnitTarget.AllEnemies => -1,
+            CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
+            CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
+            _ => _ctx.SelectedEnemyIndex
+        };
+    }
+
+    private void ExecuteCreateCard(EffectNode node)
+    {
+        int count = Mathf.Max(0, EvaluateValue(node.value));
+        int added = _ctx.AddGeneratedCards(node.createdCard, count, node.destinationZone);
+        _lastResult[EffectResultType.ActualValue] = added;
+        Log($"  [创建卡牌] {added}张「{node.createdCard?.cardName ?? "?"}」→ {EffectNode.GetZoneName(node.destinationZone)}");
+    }
+
+    private void ExecuteModifyCardProperty(EffectNode node)
+    {
+        string id = node.createdCard != null ? node.createdCard.cardId : "";
+        int v = EvaluateValue(node.statusValue);
+        _ctx.SetCardStatusValueOverride(id, MapStatus(node.statusType), v);
+        _lastResult[EffectResultType.ActualValue] = v;
+        Log($"  [覆盖卡牌] {node.createdCard?.cardName ?? "?"} {ValueNode.GetStatusName(node.statusType)} = {v}");
+    }
+
+    /// <summary>触发器子效果入口：标记深度，避免套用当前打出卡的数值覆盖。</summary>
+    public void ExecuteTriggerEffects(List<EffectNode> effects, Dictionary<string, int> externalVars = null)
+    {
+        _triggerExecDepth++;
+        try { ExecuteEffectList(effects, externalVars); }
+        finally { _triggerExecDepth--; }
+    }
+
     // ========================================================================
     // 注册触发器
     // ========================================================================
@@ -956,7 +1056,9 @@ public class EffectExecutorV2
             node.conditions,
             node.childEffects,
             node.duration,
-            localVarSnapshot: varSnapshot
+            localVarSnapshot: varSnapshot,
+            maxTriggers: node.maxTriggers,
+            maxPerTurn: node.maxTriggersPerTurn
         );
 
         Log($"  [注册触发器] {EffectNode.GetTriggerName(node.triggerEvent)} → {node.childEffects.Count}个子效果 ({node.duration.GetDescription()})");

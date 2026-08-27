@@ -87,5 +87,13 @@ namespace LightMiniGame.CardEditor
         int RequestSelectCardFromHand(string prompt);
         /// <summary>从手牌中弃掉指定索引的牌</summary>
         void DiscardHandCard(int index);
+
+        int MaxHandCount { get; }
+        string CurrentPlayedCardId { get; }
+        int GetEnemyStatusStacks(int index, StatusType status);
+        int GetAllEnemiesStatusStacks(StatusType status);
+        int AddGeneratedCards(CardEntry entry, int count, CardZoneType zone);
+        void SetCardStatusValueOverride(string cardId, StatusType status, int value);
+        bool TryGetCardStatusValueOverride(string cardId, StatusType status, out int value);
     }
 }

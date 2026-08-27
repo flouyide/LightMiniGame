@@ -153,4 +153,15 @@ public class BattleCardContext : ICardRuntimeContext
     // === 手牌操作 ===
     public int RequestSelectCardFromHand(string prompt) => _battle.RequestSelectCardFromHand(prompt);
     public void DiscardHandCard(int index) => _battle.DiscardHandCard(index);
+
+    public int MaxHandCount => _battle.HandLimit;
+    public string CurrentPlayedCardId => _battle.CurrentFusionCard?.sourceEntry?.cardId ?? "";
+    public int GetEnemyStatusStacks(int index, StatusType status) => _battle.GetEnemyStatusStacks(index, status);
+    public int GetAllEnemiesStatusStacks(StatusType status) => _battle.GetAllEnemiesStatusStacks(status);
+    public int AddGeneratedCards(CardEntry entry, int count, CardZoneType zone)
+        => _battle.AddGeneratedCards(entry, count, zone);
+    public void SetCardStatusValueOverride(string cardId, StatusType status, int value)
+        => _battle.SetCardStatusValueOverride(cardId, status, value);
+    public bool TryGetCardStatusValueOverride(string cardId, StatusType status, out int value)
+        => _battle.TryGetCardStatusValueOverride(cardId, status, out value);
 }

@@ -86,7 +86,9 @@ public class TriggerSystem
         List<EffectNode> effects,
         EffectDuration duration,
         int ownerCharacterIndex = -1,
-        Dictionary<string, int> localVarSnapshot = null)
+        Dictionary<string, int> localVarSnapshot = null,
+        int maxTriggers = 0,
+        int maxPerTurn = 0)
     {
         var inst = new TriggerInstance
         {
@@ -95,6 +97,8 @@ public class TriggerSystem
             conditions = conditions,
             effects = effects ?? new List<EffectNode>(),
             duration = duration ?? new EffectDuration { type = DurationType.NextTrigger },
+            maxTriggers = maxTriggers,
+            maxPerTurn = maxPerTurn,
             isAbility = false,
             activeOnlyWhenOwnerIsActive = false,
             ownerCharacterIndex = ownerCharacterIndex,
@@ -143,7 +147,7 @@ public class TriggerSystem
 
             // 执行子效果（传入局部变量快照）
             Debug.Log($"[TriggerSystem] 触发 {evt} → {(t.isAbility ? "能力" : "临时")}触发器(id={t.id})");
-            _executor.ExecuteEffectList(t.effects, t.localVars);
+            _executor.ExecuteTriggerEffects(t.effects, t.localVars);
 
             t.triggersUsed++;
             t.triggersThisTurn++;

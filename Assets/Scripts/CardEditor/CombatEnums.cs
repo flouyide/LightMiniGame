@@ -491,7 +491,11 @@ namespace LightMiniGame.CardEditor
         Absolute,
         Negate,
         Percentage,
-        EveryNConvertToM
+        EveryNConvertToM,
+        ReadAllEnemiesStatusStacks,
+        ReadMaxHandCount,
+        ReadHandVacancies,
+        Modulo
     }
 
     // ========================================================================
@@ -507,7 +511,8 @@ namespace LightMiniGame.CardEditor
         CardPropertyCheck,
         TargetExists,
         ChanceCheck,
-        CustomCondition
+        CustomCondition,
+        PlayedCardMatches
     }
 
     // ========================================================================

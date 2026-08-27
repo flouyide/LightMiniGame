@@ -108,6 +108,11 @@ namespace LightMiniGame.CardEditor
                         int v = ResolveValue(Operand(node, 0), strength, dexterity);
                         return node.everyN > 0 ? (v / node.everyN) * node.convertToM : 0;
                     }
+                case ValueNodeType.Modulo:
+                    {
+                        int b = ResolveValue(Operand(node, 1), strength, dexterity);
+                        return b != 0 ? ResolveValue(Operand(node, 0), strength, dexterity) % b : 0;
+                    }
                 default: return 0;
             }
         }
@@ -188,6 +193,9 @@ namespace LightMiniGame.CardEditor
                 case ValueNodeType.ReadTargetCount: return "目标数";
                 case ValueNodeType.ReadLocalVariable: return variableName;
                 case ValueNodeType.ReadLastEffectResult: return GetResultName(resultRef);
+                case ValueNodeType.ReadAllEnemiesStatusStacks: return "全场" + GetStatusName(statusRef) + "层数";
+                case ValueNodeType.ReadMaxHandCount: return "手牌上限";
+                case ValueNodeType.ReadHandVacancies: return "手牌空位";
 
                 // 运算
                 case ValueNodeType.Add: return Join(" + ");
@@ -204,6 +212,7 @@ namespace LightMiniGame.CardEditor
                 case ValueNodeType.Negate: return $"-{Child(0)}";
                 case ValueNodeType.Percentage: return $"{Child(0)}%";
                 case ValueNodeType.EveryNConvertToM: return $"Floor({Child(0)} ÷ {everyN}) × {convertToM}";
+                case ValueNodeType.Modulo: return $"{Child(0)} % {Child(1)}";
 
                 default: return "?";
             }

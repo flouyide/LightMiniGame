@@ -34,6 +34,11 @@ namespace LightMiniGame.CardEditor.Editor
             "随机消耗手牌",
             "自动打牌堆顶",
             "注册能力",
+            "生成指定卡到手牌",
+            "施加疲惫",
+            "按目标疲惫造成伤害",
+            "出指定卡后触发",
+            "本场覆盖卡牌状态",
         };
 
         public static EffectNode CreateFromTemplate(string name)
@@ -63,6 +68,11 @@ namespace LightMiniGame.CardEditor.Editor
                 "随机消耗手牌" => RandomExhaust(),
                 "自动打牌堆顶" => AutoPlayTopCard(),
                 "注册能力" => RegisterAbility(),
+                "生成指定卡到手牌" => CreateCardToHand(),
+                "施加疲惫" => ApplyFatigue(),
+                "按目标疲惫造成伤害" => DamageFromFatigue(),
+                "出指定卡后触发" => OnPlayedCardTrigger(),
+                "本场覆盖卡牌状态" => OverrideCardStatus(),
                 _ => new EffectNode { displayName = name }
             };
         }
@@ -383,6 +393,67 @@ namespace LightMiniGame.CardEditor.Editor
                     value = ValueNode.Constant(1)
                 }
             }
+        };
+
+        private static EffectNode CreateCardToHand() => new EffectNode
+        {
+            displayName = "生成指定卡",
+            operation = EffectOperation.CreateCard,
+            destinationZone = CardZoneType.Hand,
+            value = ValueNode.Constant(1)
+        };
+
+        private static EffectNode ApplyFatigue() => new EffectNode
+        {
+            displayName = "施加疲惫",
+            operation = EffectOperation.ApplyStatus,
+            statusType = StatusType2.Fatigue,
+            statusValue = ValueNode.Constant(2),
+            target = new TargetSelector { category = TargetCategory.Enemy, unitTarget = CombatUnitTarget.SelectedEnemy }
+        };
+
+        private static EffectNode DamageFromFatigue() => new EffectNode
+        {
+            displayName = "按疲惫伤害",
+            operation = EffectOperation.DealDamage,
+            target = new TargetSelector { category = TargetCategory.Enemy, unitTarget = CombatUnitTarget.SelectedEnemy },
+            value = new ValueNode { nodeType = ValueNodeType.ReadStatusStacks, statusRef = StatusType2.Fatigue },
+            repeatCount = ValueNode.Constant(1)
+        };
+
+        private static EffectNode OnPlayedCardTrigger() => new EffectNode
+        {
+            displayName = "出指定卡后",
+            operation = EffectOperation.RegisterTrigger,
+            triggerEvent = TriggerEvent.OnCardPlayed,
+            duration = new EffectDuration { type = DurationType.UntilCombatEnd },
+            conditions = new ConditionGroup
+            {
+                logic = ConditionLogic2.All,
+                conditions = new List<ConditionEntry>
+                {
+                    new ConditionEntry { conditionType = ConditionType2.PlayedCardMatches }
+                }
+            },
+            childEffects = new List<EffectNode>
+            {
+                new EffectNode
+                {
+                    displayName = "触发效果",
+                    operation = EffectOperation.ApplyStatus,
+                    statusType = StatusType2.Fatigue,
+                    statusValue = ValueNode.Constant(2),
+                    target = new TargetSelector { category = TargetCategory.Enemy, unitTarget = CombatUnitTarget.RandomEnemy }
+                }
+            }
+        };
+
+        private static EffectNode OverrideCardStatus() => new EffectNode
+        {
+            displayName = "覆盖卡牌状态",
+            operation = EffectOperation.ModifyCardProperty,
+            statusType = StatusType2.Fatigue,
+            statusValue = ValueNode.Constant(3)
         };
     }
 }
