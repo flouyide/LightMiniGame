@@ -108,6 +108,7 @@ public class ChapterManager : MonoBehaviour
     public int PlayerFortune { get; private set; }   // 福报值（融合重分配总值加成，无上限）
     public int PlayerMaxActionPoints { get; private set; }  // 每回合行动点
     public int PlayerDrawPerTurn { get; private set; }      // 每回合基础抽牌数
+    public int PlayerFusionUsesPerTurn { get; private set; } // 每回合融合次数（遗物追加另计）
 
     // 持久基础属性（力量/敏捷（Dexterity）/吸血/暴击率/暴伤）的【运行时副本】：
     // 只在单局游戏内保留（跨战斗有效），开局时由 InitPlayerStats 从 PlayerConfig 读入初始值，
@@ -366,6 +367,7 @@ public class ChapterManager : MonoBehaviour
             PlayerFortune = Mathf.Max(0, playerConfig.startFortune);
             PlayerMaxActionPoints = playerConfig.maxActionPoints;
             PlayerDrawPerTurn = playerConfig.drawPerTurn;
+            PlayerFusionUsesPerTurn = Mathf.Max(0, playerConfig.fusionUsesPerTurn);
             // 持久基础属性：每次开局从 PlayerConfig（仅作初始值来源）重新读入，并叠加已拥有遗物的来源加成。
             PlayerStrength   = Mathf.Max(0, playerConfig.strength + GetPersistedAttributeBonus(_strengthBonuses));
             PlayerDexterity  = Mathf.Max(0, playerConfig.dexterity + GetPersistedAttributeBonus(_dexterityBonuses));
@@ -386,6 +388,7 @@ public class ChapterManager : MonoBehaviour
             PlayerFortune = 0;
             PlayerMaxActionPoints = 3;
             PlayerDrawPerTurn = 3;
+            PlayerFusionUsesPerTurn = 1;
             PlayerStrength = Mathf.Max(0, GetPersistedAttributeBonus(_strengthBonuses));
             PlayerDexterity = Mathf.Max(0, GetPersistedAttributeBonus(_dexterityBonuses));
             PlayerLifesteal = PlayerCritRate = PlayerCritDamage = 0;

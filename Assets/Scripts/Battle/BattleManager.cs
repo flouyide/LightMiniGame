@@ -260,7 +260,8 @@ public class BattleManager : MonoBehaviour
     private int _actionPoints;
 
     // === 融合（Fusion）机制 ===
-    private int _fusionUsesThisTurn;    // 本回合已进行的融合次数；基础上限为 1，可由遗物按角色追加。
+    private int _fusionUsesThisTurn;    // 本回合已进行的融合次数
+    private int _fusionUsesPerTurn = 1; // 每回合基础上限，来自 PlayerConfig.fusionUsesPerTurn
 
     private sealed class FusionUseBonus
     {
@@ -823,7 +824,7 @@ public class BattleManager : MonoBehaviour
         return _cachedChapterManager;
     }
 
-    /// <summary>本回合融合次数上限：基础 1 次，加上当前激活角色持有遗物提供的额外次数。</summary>
+    /// <summary>本回合融合次数上限：PlayerConfig 配置的每回合次数，加上当前激活角色遗物提供的额外次数。</summary>
     public int FusionUseLimitThisTurn => GetFusionUseLimitThisTurn();
 
     /// <summary>本回合已经完成的融合次数。</summary>
@@ -938,14 +939,14 @@ public class BattleManager : MonoBehaviour
 
     private int GetFusionUseLimitThisTurn()
     {
-        int limit = 1;
+        int limit = Mathf.Max(0, _fusionUsesPerTurn);
         CharacterData activeOwner = ActiveCharacterData;
         foreach (FusionUseBonus bonus in _fusionUseBonuses.Values)
         {
             if (bonus != null && bonus.owner == activeOwner)
                 limit += Mathf.Max(0, bonus.extraUses);
         }
-        return Mathf.Max(1, limit);
+        return Mathf.Max(0, limit);
     }
 
     /// <summary>注册/获取融合控制器（BattleManager.BeginBattle 自动创建并挂载）。</summary>
@@ -1717,6 +1718,7 @@ public class BattleManager : MonoBehaviour
             _playerDamageTakenMultiplier = cm.PlayerDamageTakenMultiplier;
             drawPerTurn = Mathf.Max(0, _baseDrawPerTurn);
             maxActionPoints = cm.PlayerMaxActionPoints;
+            _fusionUsesPerTurn = Mathf.Max(0, cm.PlayerFusionUsesPerTurn);
             Debug.Log($"[BattleManager] 读入持久属性(来自ChapterManager) HP:{_playerHP}/{playerMaxHP} AP:{maxActionPoints} 抽牌:{drawPerTurn} 理智:{_playerSanity}/{_playerMaxSanity} 福报:{_playerFortune} 力量:{_playerStrength} 敏捷:{_playerDexterity} 吸血:{_playerLifesteal} 暴击率:{_playerCritRate} 暴伤:{_playerCritDamage}");
         }
         else if (playerConfig != null)
@@ -1738,6 +1740,7 @@ public class BattleManager : MonoBehaviour
             _playerDamageMultiplier = playerConfig.playerDamageMultiplier;
             _playerDamageTakenMultiplier = playerConfig.playerDamageTakenMultiplier;
             drawPerTurn = Mathf.Max(0, _baseDrawPerTurn);
+            _fusionUsesPerTurn = Mathf.Max(0, playerConfig.fusionUsesPerTurn);
             Debug.LogWarning("[BattleManager] 未找到 ChapterManager，回退读入 PlayerConfig 初始值（无跨战斗累积）");
         }
         else
@@ -1750,6 +1753,7 @@ public class BattleManager : MonoBehaviour
             _playerDamageMultiplier = 100;
             _playerDamageTakenMultiplier = 100;
             _playerDexterity = 0;
+            _fusionUsesPerTurn = 1;
             Debug.LogWarning("[BattleManager] 未配置 ChapterManager / PlayerConfig，持久属性为 0");
         }
 

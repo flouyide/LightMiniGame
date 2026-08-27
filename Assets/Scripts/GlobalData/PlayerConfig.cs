@@ -23,6 +23,8 @@ public class PlayerConfig : ScriptableObject
     public int maxActionPoints = 3;  // 每回合行动点
     [Tooltip("每回合基础抽牌数")]
     public int drawPerTurn = 5;  // 每回合抽牌数
+    [Tooltip("每回合可进入融合的次数（遗物追加的次数叠在这之上）。默认 1")]
+    public int fusionUsesPerTurn = 1;
     
     [Tooltip("力量：影响攻击牌伤害")]
     public int strength;          // 力量

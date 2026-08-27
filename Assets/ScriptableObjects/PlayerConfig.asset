@@ -21,6 +21,7 @@ MonoBehaviour:
   startFortune: 0
   maxActionPoints: 3
   drawPerTurn: 5
+  fusionUsesPerTurn: 2
   strength: 0
   dexterity: 0
   lifesteal: 0
