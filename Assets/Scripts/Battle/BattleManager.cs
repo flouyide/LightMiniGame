@@ -1309,6 +1309,16 @@ public class BattleManager : MonoBehaviour
         RefreshHandUI();
     }
 
+    /// <summary>回填：重设手牌某个效果数字槽（第二段伤害、次数、破甲等）并刷新。</summary>
+    public void SetHandCardFusionSlot(int index, int nodeIndex, FusionSlotKind kind, int value)
+    {
+        var card = GetHandCardData(index);
+        if (card == null) return;
+        var f = EnsureFusion(card);
+        f.SetSlot(nodeIndex, kind, Mathf.Max(0, value));
+        RefreshHandUI();
+    }
+
     /// <summary>手牌每张是否可融合地面（保底避免无意义。当前所有手牌均可参与费用/攻击/护甲）。</summary>
     public bool HandCardHasAttack(CardData card)
     {

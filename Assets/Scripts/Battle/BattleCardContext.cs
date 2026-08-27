@@ -129,6 +129,21 @@ public class BattleCardContext : ICardRuntimeContext
         if (f != null && f.overrideBuff) { value = f.buffValue; return true; }
         value = 0; return false;
     }
+
+    /// <summary>若当前手牌对该效果节点的指定数字槽有融合覆盖则返回 true。</summary>
+    public bool TryGetFusionSlot(int nodeIndex, FusionSlotKind kind, out int value)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        if (f != null && f.TryGetSlot(nodeIndex, kind, out value)) return true;
+        value = 0; return false;
+    }
+
+    /// <summary>当前手牌是否已有该类型的逐槽融合（有则不要再用类型级覆盖套到所有同类节点）。</summary>
+    public bool HasFusionSlotKind(FusionSlotKind kind)
+    {
+        var f = _battle.CurrentFusionCard?.fusion;
+        return f != null && f.HasSlotKind(kind);
+    }
     public void AddBuff(BuffAttributeType type, int stacks, int duration = 0) => _battle.AddPlayerBuff(type, stacks, duration);
 
     // === 事件记录 ===
