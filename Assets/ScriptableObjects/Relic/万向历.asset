@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: UniversalCalendar
   relicName: "\u4E07\u5411\u5386"
   description: "\u6BCF\u56DE\u5408\u6253\u51FA\u7684\u7B2C\u4E00\u5F20\u6280\u80FD\u724C\u590D\u5236\u4E00\u5F20\u5230\u624B\u724C"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a797b413b5d20cb4cb106fa9910d94b7, type: 3}
   value: 100
   grade: 0
   sortOrder: 0

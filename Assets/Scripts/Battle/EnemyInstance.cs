@@ -257,16 +257,33 @@ public class EnemyInstance
         return dmg;
     }
 
-    /// <summary>敌人 buff 栏：力量、敏捷、疲惫。0 层不显示。</summary>
+    /// <summary>敌人 buff 栏：疲惫、破甲、力量，以及 Config.abilities 里的能力（用 RelicData.icon）。0 层不显示。</summary>
     public List<DisplayedBuff> GetDisplayedBuffs()
     {
         var list = new List<DisplayedBuff>();
-        if (Strength != 0)
-            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Strength, totalStacks = Strength });
-        if (Dexterity != 0)
-            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Dexterity, totalStacks = Dexterity });
         if (Tiredness != 0)
             list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Fatigue, totalStacks = Tiredness });
+        if (ArmorBreakStacks != 0)
+            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.ArmorBreak, totalStacks = ArmorBreakStacks });
+        if (Strength != 0)
+            list.Add(new DisplayedBuff { attributeType = BuffAttributeType.Strength, totalStacks = Strength });
+
+        var abilities = Config != null ? Config.abilities : null;
+        if (abilities != null)
+        {
+            var seen = new HashSet<LightMiniGame.Shop.RelicData>();
+            for (int i = 0; i < abilities.Count; i++)
+            {
+                var relic = abilities[i] != null ? abilities[i].relic : null;
+                if (relic == null || !seen.Add(relic)) continue;
+                list.Add(new DisplayedBuff
+                {
+                    customIcon = relic.icon,
+                    hideStacks = true,
+                    totalStacks = 0
+                });
+            }
+        }
         return list;
     }
 

@@ -1193,7 +1193,18 @@ public class CardDisplay : MonoBehaviour
     // ========================================================================
 
     /// <summary>
-    /// 融合感知描述：若存在融合覆盖，按效果节点顺序把文案中对应数字替换为融合后的值。
+    /// 按效果节点顺序列出当前卡面可融合的数字槽（伤害/次数/破甲/护甲/增益等），含已有融合覆盖后的显示值。
+    /// </summary>
+    public List<CardFusionSlotInfo> EnumerateFusionSlots()
+    {
+        bool low = _data != null && _data.isLowSanityForm;
+        var entry = _entry != null ? _entry : (_data != null ? _data.sourceEntry : null);
+        var nodes = entry != null ? entry.GetEffectNodes(low) : null;
+        return CardFusionSlots.Collect(nodes, ContextStrength, ContextDexterity, _isEnemyCard, LiveFusion);
+    }
+
+    /// <summary>
+    /// 融合感知描述：若存在融合覆盖，按效果数字槽顺序把文案中对应数字替换为融合后的值。
     /// 无融合覆盖或无法解析时回退原文案。
     /// </summary>
     public string GetFusionAwareDescription()
@@ -1206,54 +1217,25 @@ public class CardDisplay : MonoBehaviour
         if (string.IsNullOrEmpty(desc)) return desc;
 
         bool low = _data != null && _data.isLowSanityForm;
-        var nodes = _entry.GetEffectNodes(low);
-        if (nodes == null || nodes.Count == 0) return desc;
-
-        int str = ContextStrength;
-        int dex = ContextDexterity;
+        var slots = CardFusionSlots.Collect(
+            _entry.GetEffectNodes(low), ContextStrength, ContextDexterity, _isEnemyCard, LiveFusion);
+        if (slots.Count == 0) return desc;
 
         var replacements = new List<(int start, int len, string newVal)>();
         int searchFrom = 0;
-        foreach (var node in nodes)
+        for (int i = 0; i < slots.Count; i++)
         {
-            if (node == null || !node.enabled) continue;
-            int oldVal;
-            bool fuseSet = false;
-            int newVal = 0;
-            switch (node.operation)
-            {
-                case LightMiniGame.CardEditor.EffectOperation.DealDamage:
-                    if (LiveFusion.overrideAttack) { fuseSet = true; newVal = LiveFusion.attackValue; }
-                    break;
-                case LightMiniGame.CardEditor.EffectOperation.GainBlock:
-                    if (LiveFusion.overrideArmor) { fuseSet = true; newVal = LiveFusion.armorValue; }
-                    break;
-                case LightMiniGame.CardEditor.EffectOperation.ModifyAttribute:
-                    if (LiveFusion.overrideBuff) { fuseSet = true; newVal = LiveFusion.buffValue; }
-                    break;
-                case LightMiniGame.CardEditor.EffectOperation.DrawCards:
-                    if (LiveFusion.overrideDraw) { fuseSet = true; newVal = LiveFusion.drawCount; }
-                    break;
-                case LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints:
-                    if (LiveFusion.overrideRestore) { fuseSet = true; newVal = LiveFusion.restoreAP; }
-                    break;
-            }
-            if (!fuseSet) continue;
-
-            // 取节点属性解析后的值（与描述文本中显示的数值一致，用于定位替换）
-            oldVal = ComputeResolvedEffectValue(node, str, dex, _isEnemyCard);
-
-            // 从上次位置向后找值为 oldVal 的数字 token
-            int pos = FindNumberToken(desc, oldVal, searchFrom);
-            if (pos < 0) continue;   // 找不到匹配位置，跳过该替换
+            var slot = slots[i];
+            int pos = FindNumberToken(desc, slot.baseValue, searchFrom);
+            if (pos < 0) continue;
             int start = pos;
             int len = 0;
-            if (start > 0 && desc[start - 1] == '-') { start--; len++; }   // 吸收负号（一般不会，防御）
+            if (start > 0 && desc[start - 1] == '-') { start--; len++; }
             while (start + len < desc.Length && char.IsDigit(desc[start + len])) len++;
-            replacements.Add((start, len, newVal.ToString()));
             searchFrom = start + len;
+            if (slot.displayValue == slot.baseValue) continue;
+            replacements.Add((start, len, slot.displayValue.ToString()));
         }
-        // 从后往前替换，避免索引错乱
         for (int i = replacements.Count - 1; i >= 0; i--)
         {
             var (start, len, nv) = replacements[i];
@@ -1284,17 +1266,6 @@ public class CardDisplay : MonoBehaviour
             else i++;
         }
         return -1;
-    }
-
-    /// <summary>
-    /// 计算效果节点的属性解析后数值（与描述文本中显示的数值一致）。
-    /// DealDamage 叠加力量（scalingMode==AddStrength 或敌人牌），GainBlock 叠加敏捷。
-    /// </summary>
-    private int ComputeResolvedEffectValue(LightMiniGame.CardEditor.EffectNode node, int str, int dex, bool isEnemy)
-    {
-        if (node == null || node.value == null) return 0;
-        return LightMiniGame.CardEditor.ValueNode.ResolveCombatValue(
-            node.value, node.operation, node.scalingMode, str, dex, isEnemy);
     }
 
     /// <summary>

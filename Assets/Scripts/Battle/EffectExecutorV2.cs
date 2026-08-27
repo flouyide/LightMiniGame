@@ -22,6 +22,9 @@ public class EffectExecutorV2
     // 决定 “相对目标”（当前角色/效果发起者）和属性缩放（力量/敏捷/暴击）解析到哪一边。
     private int _initiatorEnemySlot = -1;
 
+    // 当前正在执行的效果在列表中的索引（与融合槽 nodeIndex 对齐）。
+    private int _currentNodeIndex = -1;
+
     // 执行日志
     public List<string> ExecutionLog { get; private set; } = new List<string>();
 
@@ -59,6 +62,7 @@ public class EffectExecutorV2
             }
 
             // 执行
+            _currentNodeIndex = i;
             ExecuteNode(node);
 
             // 保存输出变量
@@ -439,8 +443,10 @@ public class EffectExecutorV2
     private void ExecuteDamage(EffectNode node)
     {
         int baseDamage = EvaluateValue(node.value);
-        // 融合覆盖：手牌攻击值被融合修改时，完全替换基础伤害（力量加成仍按后续叠加）
-        if (_ctx.TryGetFusionAttack(out int fusionAtk))
+        // 融合覆盖：优先用该伤害节点自己的槽；无逐槽覆盖时才套整牌攻击覆盖（旧存档）
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Damage, out int fusedDmg))
+            baseDamage = fusedDmg;
+        else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Damage) && _ctx.TryGetFusionAttack(out int fusionAtk))
             baseDamage = fusionAtk;
         // 融合覆盖：敌人意图伤害已含该敌人力量，直接替换、不再叠加
         if (IsEnemyInitiator && _ctx.TryGetEnemyIntentOverride(_initiatorEnemySlot, out int fusionIntent))
@@ -450,6 +456,8 @@ public class EffectExecutorV2
             baseDamage += OwnerStrength;
 
         int hitCount = Mathf.Max(1, EvaluateValue(node.repeatCount));
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Repeat, out int fusedRepeat))
+            hitCount = Mathf.Max(1, fusedRepeat);
         int totalDamage = 0;
         int critCount = 0;
         bool anyCrit = false;
@@ -487,7 +495,11 @@ public class EffectExecutorV2
                 // 破甲
                 int armorBreak = 0;
                 if (node.useArmorBreak)
+                {
                     armorBreak = EvaluateValue(node.armorBreakValue);
+                    if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.ArmorBreak, out int fusedAB))
+                        armorBreak = fusedAB;
+                }
 
                 // 目标选择
                 if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
@@ -540,8 +552,10 @@ public class EffectExecutorV2
     private void ExecuteGainBlock(EffectNode node)
     {
         int block = EvaluateValue(node.value);
-        // 融合覆盖：护甲值被融合修改时替换基础格挡
-        if (_ctx.TryGetFusionArmor(out int fusionArmor))
+        // 融合覆盖：优先该格挡节点自己的槽
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Block, out int fusedBlock))
+            block = fusedBlock;
+        else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Block) && _ctx.TryGetFusionArmor(out int fusionArmor))
             block = fusionArmor;
         else if (node.scalingMode == ScalingMode.AddStrength
             && !ValueNode.ReadsAttribute(node.value, LightMiniGame.CardEditor.PlayerAttributeType.Dexterity))
@@ -572,8 +586,10 @@ public class EffectExecutorV2
         var attr = node.attributeType;
         var op = node.resourceOp;
 
-        // 融合覆盖：增益值被融合修改时替换基础值（与伤害/格挡/抽牌/回费一致）
-        if (_ctx.TryGetFusionBuff(out int fusionBuff))
+        // 融合覆盖：优先该增益节点自己的槽
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Buff, out int fusedBuff))
+            amount = fusedBuff;
+        else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Buff) && _ctx.TryGetFusionBuff(out int fusionBuff))
             amount = fusionBuff;
 
         // 敌人作为发起者且目标为「自己（效果发起者）」时 → 敌人自buff，走带能力检测的敌人增益
@@ -751,6 +767,8 @@ public class EffectExecutorV2
     private void ExecuteApplyStatus(EffectNode node)
     {
         int stacks = EvaluateValue(node.statusValue);
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Status, out int fusedStatus))
+            stacks = fusedStatus;
 
         // 玩家侧目标：玩家出牌时当前角色/效果发起者指玩家；敌人出牌时当前角色指玩家。
         // 敌人出牌时 EffectSource（对敌人自己施加）走敌人分支。
@@ -863,8 +881,10 @@ public class EffectExecutorV2
     private void ExecuteDrawCards(EffectNode node)
     {
         int count = EvaluateValue(node.value);
-        // 融合覆盖：抽牌数被融合修改时替换
-        if (_ctx.TryGetFusionDraw(out int fusionDraw))
+        // 融合覆盖：优先该抽牌节点自己的槽
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Draw, out int fusedDraw))
+            count = fusedDraw;
+        else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Draw) && _ctx.TryGetFusionDraw(out int fusionDraw))
             count = fusionDraw;
         _ctx.DrawCards(count);
         _lastResult[EffectResultType.CardsDrawn] = count;
@@ -878,8 +898,10 @@ public class EffectExecutorV2
     private void ExecuteRestoreAP(EffectNode node)
     {
         int amount = EvaluateValue(node.value);
-        // 融合覆盖：回费数被融合修改时替换
-        if (_ctx.TryGetFusionRestore(out int fusionRestore))
+        // 融合覆盖：优先该回费节点自己的槽
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Restore, out int fusedRestore))
+            amount = fusedRestore;
+        else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Restore) && _ctx.TryGetFusionRestore(out int fusionRestore))
             amount = fusionRestore;
         _ctx.AddPlayerEnergy(amount);
         _lastResult[EffectResultType.ActualValue] = amount;

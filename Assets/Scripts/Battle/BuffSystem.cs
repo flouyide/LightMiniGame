@@ -14,6 +14,7 @@ public enum BuffAttributeType
     CriticalChance, // 暴击率（最小0）
     CriticalDamage, // 暴击伤害（最小2）
     Fatigue,        // 疲惫（层数，每轮扣等量血并 -1 层）
+    ArmorBreak,     // 破甲（敌人 buff 栏）
 }
 
 // ========================================================================
@@ -175,4 +176,6 @@ public struct DisplayedBuff
 {
     public BuffAttributeType attributeType;
     public int totalStacks;  // 正=增益，负=减益
+    public Sprite customIcon; // 敌人能力等：直接用遗物图标
+    public bool hideStacks;   // true 时不显示层数（能力图标）
 }

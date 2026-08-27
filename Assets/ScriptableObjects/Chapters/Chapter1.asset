@@ -199,7 +199,7 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_bgc
-    displayName: 
+    displayName: "\u80CC\u9505\u866B"
     description: 
     icon: {fileID: 0}
     eventType: 0
@@ -246,7 +246,7 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_szm
-    displayName: 000
+    displayName: "\u56DB\u4F17\u76EE"
     description: 
     icon: {fileID: 0}
     eventType: 0
@@ -270,13 +270,416 @@ MonoBehaviour:
         enterBattleEnemies: []
     enemies:
     - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -100}
+      anchoredPosition: {x: -600, y: -50}
     - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -100}
+      anchoredPosition: {x: -300, y: -150}
     - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -100}
+      anchoredPosition: {x: 300, y: -50}
     - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -100}
+      anchoredPosition: {x: 600, y: -150}
+    lootTable:
+      entries:
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000001000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_mflsq
+    displayName: "\u514D\u8D39\u96F6\u98DF\u5899"
+    description: "\u8336\u6C34\u95F4\u7684\u67DC\u5B50\u5806\u6EE1\u4E86\u4E0D\u77E5\u9053\u54EA\u4E2A\u90E8\u95E8\u8D5E\u52A9\u7684\u96F6\u98DF\uFF0C\u591A\u5F97\u50CF\u8981\u6EA2\u51FA\u6765\u3002\u4F60\u73AF\u987E\u56DB\u5468\u60F3\u627E\u627E\u6709\u6CA1\u6709\u76D1\u63A7\u2014\u2014\u679C\u7136\uFF0C\u89D2\u843D\u90A3\u9897\u6444\u50CF\u5934\u6B63\u5BF9\u7740\u8FD9\u91CC\u3002"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u987A\u624B\u62FF\u4E00\u6837\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u91CC\u5965\u91CC\uFF09"
+      effects:
+      - type: 11
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 11400000, guid: 8334974ed165ee84da8b9fd4b28ca788, type: 2}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u6B7B\u78D5\u76D1\u63A7\u4E0B\u90A3\u888B\uFF08\u5931\u53BB14\u751F\u547D\uFF0C\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u7EED\u547D\u5976\u8336\uFF09"
+      effects:
+      - type: 10
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 11400000, guid: 91c727c739579504e94b1f2b523c3552, type: 2}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
+      anchoredPosition: {x: -600, y: -50}
+    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
+      anchoredPosition: {x: -300, y: -150}
+    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
+      anchoredPosition: {x: 300, y: -50}
+    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
+      anchoredPosition: {x: 600, y: -150}
+    lootTable:
+      entries:
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000001000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_ths
+    displayName: "\u540C\u82B1\u987A"
+    description: "\u4E00\u53F0\u7535\u8111\u8FD8\u4EAE\u7740\uFF0C\u5C4F\u5E55\u4E0A\u662F\u4E00\u652F\u80A1\u7968\u7684\u8D70\u52BF\uFF0C\u770B\u4E0D\u6E05\u5177\u4F53\u7684\u6570\u5B57\uFF0C\u4F60\u89C9\u5F97\u6570\u5B57\u7684\u989C\u8272\u5E94\u8BE5\u662F"
+    icon: {fileID: 21300000, guid: 59d2e669d37672e40a9d1a4687587716, type: 3}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u7EFF\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u97ED\u83DC\uFF09"
+      effects:
+      - type: 14
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 2
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u7EA2\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u80A1\u795E\uFF09"
+      effects:
+      - type: 14
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 1
+        discountRatio: 0
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
+      anchoredPosition: {x: -600, y: -50}
+    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
+      anchoredPosition: {x: -300, y: -150}
+    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
+      anchoredPosition: {x: 300, y: -50}
+    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
+      anchoredPosition: {x: 600, y: -150}
+    lootTable:
+      entries:
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000001000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_jxsb
+    displayName: "\u5409\u7965\u4E09\u5B9D"
+    description: "\u4F60\u6253\u5F00\u4E00\u4E2A\u5C18\u5C01\u7684\u7EB8\u7BB1\uFF0C\u91CC\u9762\u662F\u4E09\u4E2A\u90E8\u95E8\u5409\u7965\u7269\u6446\u4EF6\uFF1A\u4E00\u53EA\u62FF\u526A\u5200\u7684\u7AE0\u9C7C\u3001\u4E00\u53EA\u6234\u5E3D\u5B50\u7684\u7AE0\u9C7C\u3001\u8FD8\u6709\u2026\u2026\u4E00\u53EA\u5728\u5403\u751C\u751C\u5708\u7684\u7AE0\u9C7C\uFF1F\u57FA\u5EA7\u4E0A\u7684\u51F9\u9677\u548C\u5B83\u4EEC\u5B8C\u5168\u543B\u5408\u3002"
+    icon: {fileID: 21300000, guid: 78dd0d6d0af81f24babbceeee7e8aa05, type: 3}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u62FF\u8D70\u526A\u5200\u7AE0\u9C7C\uFF08\u5220\u9664\u4E00\u5F20\u5361\u724C\uFF09"
+      effects:
+      - type: 13
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u62FF\u8D70\u6234\u5E3D\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u51A0\u5195\uFF09"
+      effects:
+      - type: 10
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 11400000, guid: 25b543ffa11e3fc42a63e28653c7ca6c, type: 2}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u62FF\u8D70\u751C\u751C\u5708\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u751C\u751C\u5708\uFF09"
+      effects:
+      - type: 11
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 11400000, guid: b1673af2465640c43af53e3426096a13, type: 2}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
+      anchoredPosition: {x: -600, y: -50}
+    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
+      anchoredPosition: {x: -300, y: -150}
+    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
+      anchoredPosition: {x: 300, y: -50}
+    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
+      anchoredPosition: {x: 600, y: -150}
+    lootTable:
+      entries:
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000001000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_ldyl
+    displayName: "\u9886\u5BFC\u8BED\u5F55"
+    description: "\u5899\u4E0A\u5BC6\u5BC6\u9EBB\u9EBB\u523B\u7740\u524D\u4EBA\u7559\u4E0B\u7684\u8BED\u5F55\uFF0C\u4F60\u7684\u76F4\u89C9\u544A\u8BC9\u4F60\u53EF\u4EE5\u8F7B\u6613\u8BFB\u61C2\u2014\u2014\u53EF\u4E00\u65E6\u5F00\u59CB\uFF0C\u5C31\u5FC5\u987B\u5168\u795E\u8D2F\u6CE8\u3002"
+    icon: {fileID: 21300000, guid: 5373496108c53ef4985371e132919c13, type: 3}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u89E3\u8BFB\u5230\u7B2C\u4E00\u53E5\u201C\u65B9\u6CD5\u8BBA\u201D\uFF08-1\u7406\u667A\uFF0C\u83B7\u5F9710\u8D27\u5E01\uFF09"
+      effects:
+      - type: 9
+        amount: 1
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u89E3\u8BFB\u5230\u7B2C\u4E8C\u53E5\u201C\u9897\u7C92\u5EA6\u201D\uFF08-2\u7406\u667A\uFF0C\u83B7\u5F9725\u8D27\u5E01\uFF09"
+      effects:
+      - type: 9
+        amount: 2
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 25
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u89E3\u8BFB\u5230\u7B2C\u4E09\u53E5\u201C\u95ED\u73AF\u201D\uFF08-3\u7406\u667A\uFF0C\u83B7\u5F9745\u8D27\u5E01\uFF09"
+      effects:
+      - type: 9
+        amount: 3
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 45
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u89E3\u8BFB\u5230\u7B2C\u56DB\u53E5\u201C\u8D4B\u80FD\u201D\uFF08-4\u7406\u667A\uFF0C\u83B7\u5F97100\u8D27\u5E01\uFF09"
+      effects:
+      - type: 9
+        amount: 4
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 100
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u6495\u6389\u523B\u5B57\uFF08\u56DE\u590D2\u7406\u667A\uFF09"
+      effects:
+      - type: 9
+        amount: 2
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 7
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
+      anchoredPosition: {x: -600, y: -50}
+    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
+      anchoredPosition: {x: -300, y: -150}
+    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
+      anchoredPosition: {x: 300, y: -50}
+    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
+      anchoredPosition: {x: 600, y: -150}
+    lootTable:
+      entries:
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000001000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_cczg
+    displayName: "\u6B8B\u5B58\u4E4B\u5149"
+    description: "\u4E00\u4E2A\u5E9F\u65E7\u7684\u6587\u5370\u5BA4\uFF0C\u91CC\u9762\u53EA\u6709\u4E00\u53F0\u7834\u65E7\u7684\u6253\u5370\u673A\uFF0C\u706F\u6CE1\u597D\u50CF\u6709\u95EE\u9898\uFF0C\u65F6\u5E38\u95EA\u70C1\uFF0C\u4F60\u611F\u5230\u5FC3\u70E6\u610F\u4E71"
+    icon: {fileID: 0}
+    eventType: 3
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u7ED9\u5F00\u5173\u4E00\u62F3\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\u201C\u6076\u610F\u4E0D\u606F\u201D\uFF09"
+      effects:
+      - type: 11
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 11400000, guid: 1c593927656f2264db66aba1ef873064, type: 2}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u4FEE\u590D\u706F\u6CE1\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\u201C\u6B8B\u5B58\u4E4B\u5149\u201D\uFF09"
+      effects:
+      - type: 10
+        amount: 0
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 11400000, guid: a97bc92ee45145b498a0e6d1243f42d2, type: 2}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
+      anchoredPosition: {x: -600, y: -50}
+    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
+      anchoredPosition: {x: -300, y: -150}
+    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
+      anchoredPosition: {x: 300, y: -50}
+    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
+      anchoredPosition: {x: 600, y: -150}
     lootTable:
       entries:
       - kind: 0
