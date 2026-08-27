@@ -102,6 +102,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u4F24\u5BB3"
     timing: 0
@@ -170,6 +171,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 3"
     timing: 0
@@ -185,9 +187,9 @@ MonoBehaviour:
       filterIsLowSanityForm: 0
       filterTag: 
     target:
-      category: 2
+      category: 1
       unitTarget: 5
-      cardTarget: 7
+      cardTarget: 0
       selectionMode: 0
       selectionCount: 1
       cardFilterType: 0
@@ -226,6 +228,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 0
@@ -262,6 +265,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u7406\u667A\u51CF\u5C11"
@@ -331,6 +335,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u4F24\u5BB3"
     timing: 0
@@ -399,6 +404,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 3"
     timing: 0
@@ -455,6 +461,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 0
@@ -491,6 +498,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
