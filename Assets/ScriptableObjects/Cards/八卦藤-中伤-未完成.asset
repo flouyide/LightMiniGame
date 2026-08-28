@@ -16,7 +16,7 @@ MonoBehaviour:
   cardName: "\u516B\u5366\u85E4-\u4E2D\u4F24-\u672A\u5B8C\u6210"
   normalDescription: "\u9020\u6210{8+\u529B\u91CF}\u4F24\u5BB3\uFF0C\u5E76\u65BD\u52A01\u5C42\u7F20\u7ED3"
   lowSanityDescription: "\u9020\u6210{9+\u529B\u91CF}\u4F24\u5BB3\uFF0C\u5E76\u65BD\u52A01\u5C42\u7F20\u7ED3"
-  cardArt: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: 4040cb9c634fe534981af5b7f2417a1b, type: 3}
   descBoxSprite: {fileID: 21300000, guid: b32ccd1bf9e9dee40943fe73816b1c38, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
@@ -310,7 +310,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: fe9bcfbd1fcbf45b484f0a1df3183d18, type: 2}
+    customOperation: {fileID: 0}
     customParams: '{"stacks":1}'
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -591,7 +591,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: fe9bcfbd1fcbf45b484f0a1df3183d18, type: 2}
+    customOperation: {fileID: 0}
     customParams: '{"stacks":2}'
     createdCard: {fileID: 0}
     keywordToApply: 0

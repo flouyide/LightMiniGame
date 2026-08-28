@@ -16,7 +16,7 @@ MonoBehaviour:
   cardName: "\u80CC\u9505\u866B-\u6297\u538B"
   normalDescription: "\u83B7\u5F97{10+\u654F\u6377}\u683C\u6321"
   lowSanityDescription: "\u83B7\u5F97{12+\u654F\u6377}\u683C\u6321"
-  cardArt: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: 257fd70a685cafc49bef9d4fb557fcbd, type: 3}
   descBoxSprite: {fileID: 21300000, guid: b32ccd1bf9e9dee40943fe73816b1c38, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -173,6 +174,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

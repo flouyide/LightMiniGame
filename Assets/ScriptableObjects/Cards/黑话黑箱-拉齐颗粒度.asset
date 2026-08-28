@@ -16,7 +16,7 @@ MonoBehaviour:
   cardName: "\u9ED1\u8BDD\u9ED1\u7BB1-\u62C9\u9F50\u9897\u7C92\u5EA6"
   normalDescription: "\u9020\u6210{7+\u529B\u91CF}\u70B9\u4F24\u5BB3\uFF0C\u5E76\u65BD\u52A0\u865A\u5F31\uFF08\u529B\u91CF-1\uFF09"
   lowSanityDescription: "\u9020\u6210{8+\u529B\u91CF}\u70B9\u4F24\u5BB3\uFF0C\u5E76\u65BD\u52A0\u865A\u5F31\uFF08\u529B\u91CF-1\uFF09"
-  cardArt: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: fc8193b0cb303d4448cc6528f504d23e, type: 3}
   descBoxSprite: {fileID: 21300000, guid: b32ccd1bf9e9dee40943fe73816b1c38, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -172,6 +173,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -242,6 +244,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -311,6 +314,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

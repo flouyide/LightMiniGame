@@ -16,7 +16,7 @@ MonoBehaviour:
   cardName: "\u53CC\u5934\u9F20-\u62C9\u5C0F\u56E2\u4F53-\u672A\u5B8C\u6210"
   normalDescription: "\u53EC\u55241\u53EA\u53CC\u5934\u9F20\u540C\u4F19"
   lowSanityDescription: "\u53EC\u55241\u53EA\u53CC\u5934\u9F20\u540C\u4F19"
-  cardArt: {fileID: 0}
+  cardArt: {fileID: 21300000, guid: d347455773166b14095806a32a0fcede, type: 3}
   descBoxSprite: {fileID: 21300000, guid: b32ccd1bf9e9dee40943fe73816b1c38, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
@@ -240,7 +240,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
+    customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -451,7 +451,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
+    customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
