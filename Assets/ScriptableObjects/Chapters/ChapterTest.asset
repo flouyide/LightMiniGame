@@ -80,7 +80,7 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
-  - eventId: BattleTest
+  - eventId: BattleTest111
     displayName: "\u6218\u6597\u6D4B\u8BD5111"
     description: Monster Debug only
     icon: {fileID: 0}
@@ -167,7 +167,7 @@ MonoBehaviour:
     displayName: "\u6218\u6597\u6D4B\u8BD5"
     description: Monster Debug only
     icon: {fileID: 0}
-    eventType: 1
+    eventType: 0
     isRepeatable: 0
     isFinalNode: 0
     mutuallyExclusiveIds: []

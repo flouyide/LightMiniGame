@@ -341,10 +341,6 @@ public class BattleManager : MonoBehaviour
     private BookUIController _bookUI;   // 缓存局外 UI 控制器（战斗中更新 TopBar 文本用）
     private CardData _currentFusionCard;   // 当前正在执行效果的手牌（供 effect 读取 fusion 覆盖）
 
-    // 玩家卡牌每次结算分配一个独立临时令牌。它覆盖同一张卡内的全部 EffectNode、攻击段数与触发器子效果，
-    // 用于“冒名”这类需要按单次出牌而非按单段伤害限次的敌人能力。
-    // 使用独立对象而非可重置的整数序号，避免跨回合或战斗初始化时旧状态与新卡牌结算发生碰撞。
-    private object _activePlayerCardExecutionToken;
     private readonly Dictionary<string, int> _cardStatusValueOverrides = new Dictionary<string, int>();
     private readonly List<TempKeywordGrant> _tempKeywordGrants = new();
     private EffectNode _pendingNextPlayKeywordNode;
@@ -1411,13 +1407,6 @@ public class BattleManager : MonoBehaviour
 
     /// <summary>当前正在执行效果的手牌；EffectExecutor 借此读取 fusion 覆盖。</summary>
     public CardData CurrentFusionCard => _currentFusionCard;
-
-    /// <summary>
-    /// 当前玩家卡牌结算的临时令牌。仅在玩家卡牌效果执行期间非空；
-    /// 同一张卡的多段伤害、多个 EffectNode 与触发器子效果共享同一令牌。
-    /// 每次出牌或重放都会生成新对象，不能与上一回合或上一场战斗的结算混淆。
-    /// </summary>
-    public object ActivePlayerCardExecutionToken => _activePlayerCardExecutionToken;
 
     // ========================================================================
     // 融合：场上数值的“原位锚点”（供 FusionController 生成高亮徽章）
@@ -2557,7 +2546,7 @@ public class BattleManager : MonoBehaviour
             Debug.Log($"[BattleManager] 卡牌={card.sourceEntry.cardName} 理智={_playerSanity} 阈值={sanityThreshold} isLowSanityForm={card.isLowSanityForm} 存在形式={card.sourceEntry.GetExistence(card.isLowSanityForm)}");
         }
 
-        // 保留本次原始出牌的上下文；结算范围由 helper 统一维护，确保融合覆盖和执行令牌在异常或嵌套重放后恢复。
+        // 保留本次原始出牌的上下文；结算范围由 helper 统一维护，确保融合覆盖在异常或嵌套重放后恢复。
         LastPlayedCard = card;
         CurrentAttackKilledEnemy = false;
         ExecutePlayerCardEffects(card);
@@ -2718,23 +2707,18 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 在单独的玩家卡牌结算范围内执行效果。
-    /// 同一范围内的所有多段伤害共享执行令牌；每次出牌和重放均创建独立令牌。
+    /// 在单独的玩家卡牌结算范围内执行效果，并在结束后恢复融合卡上下文。
     /// </summary>
     private void ExecutePlayerCardEffects(CardData card)
     {
         CardData previousCard = _currentFusionCard;
-        object previousExecutionToken = _activePlayerCardExecutionToken;
-
         _currentFusionCard = card;
-        _activePlayerCardExecutionToken = new object();
         try
         {
             ApplyCardEffects(card);
         }
         finally
         {
-            _activePlayerCardExecutionToken = previousExecutionToken;
             _currentFusionCard = previousCard;
         }
     }
@@ -2748,7 +2732,7 @@ public class BattleManager : MonoBehaviour
     {
         if (card == null || _battleEnded) return false;
 
-        // 重放也应作为独立的一次卡牌结算：保留击杀判定复位，同时生成新的执行令牌。
+        // 重放同样复位击杀判定，但不重复支付、消耗或派发原始出牌事件。
         CurrentAttackKilledEnemy = false;
         ExecutePlayerCardEffects(card);
 

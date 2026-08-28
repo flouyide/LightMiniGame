@@ -9,11 +9,10 @@ namespace LightMiniGame.RelicEffects
     /// 敌人能力：冒名。
     ///
     /// 每名拥有本能力的敌人在战斗开始时获得若干层“冒名”。
-    /// 玩家卡牌攻击该敌人时，若其剩余层数大于 0：
-    ///   1. 同一张卡的多段伤害仅拦截第一段：反弹该段结算伤害给玩家；
-    ///   2. 完整取消敌人的第一段受击，敌人不损失护甲或生命；
-    ///   3. 后续同卡伤害正常结算到敌人；
-    ///   4. 仅在第一段消耗 1 层“冒名”。
+    /// 玩家卡牌攻击该敌人时，每个独立伤害段都会单独结算：
+    ///   1. 若仍有“冒名”层数，则反弹该段结算伤害给玩家并消耗 1 层；
+    ///   2. 该段受击被完整取消，敌人不损失护甲或生命；
+    ///   3. 层数耗尽后，后续伤害段恢复对敌人的正常结算。
     ///
     /// 参数约定：
     ///   Effect Params[0] = 初始冒名层数，默认 3，向最近整数取整，最小为 0。
@@ -36,12 +35,6 @@ namespace LightMiniGame.RelicEffects
         private int _initialStacks = DefaultInitialStacks;
         private readonly Dictionary<EnemyInstance, int> _remainingStacksByHost =
             new Dictionary<EnemyInstance, int>();
-
-        // 每名宿主最后一次已被冒名拦截的玩家卡牌结算令牌。
-        // 不记录 CardData 引用，避免同一张卡从弃牌堆再次打出时被误判为同一次出牌；
-        // 令牌由 BattleManager 为每次执行新建，跨回合也不会与旧卡牌结算冲突。
-        private readonly Dictionary<EnemyInstance, object> _lastInterceptedCardExecutionByHost =
-            new Dictionary<EnemyInstance, object>();
 
         public override void OnBattleStart(RelicEffectContext ctx)
         {
@@ -91,19 +84,9 @@ namespace LightMiniGame.RelicEffects
             if (remainingStacks <= 0)
                 return false;
 
-            object cardExecutionToken = _battle.ActivePlayerCardExecutionToken;
-            if (cardExecutionToken != null
-                && _lastInterceptedCardExecutionByHost.TryGetValue(inst, out object lastExecutionToken)
-                && object.ReferenceEquals(lastExecutionToken, cardExecutionToken))
-            {
-                // 同一张卡的后续伤害段不再消耗冒名，直接继续原始敌人受击结算。
-                return false;
-            }
-
+            // 每次敌人受击均代表一个独立伤害段；多段攻击会逐段消耗冒名。
             remainingStacks--;
             _remainingStacksByHost[inst] = remainingStacks;
-            if (cardExecutionToken != null)
-                _lastInterceptedCardExecutionByHost[inst] = cardExecutionToken;
 
             _battle.DealReflectedDamageToPlayer(reflectedDamage);
 
@@ -133,7 +116,6 @@ namespace LightMiniGame.RelicEffects
                 battle.OnEnemyDamageIntercept -= OnEnemyDamageIntercept;
 
             _remainingStacksByHost.Clear();
-            _lastInterceptedCardExecutionByHost.Clear();
             _battle = null;
             _relic = null;
             _initialStacks = DefaultInitialStacks;

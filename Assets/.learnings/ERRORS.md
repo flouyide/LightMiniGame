@@ -81,3 +81,30 @@ bash: /c/Program Files/Tuanjie/Hub/Editor/2022.3.62t11/Editor/Unity.exe: No such
 - Related Files: Assets/Scripts/UI/CharacterSelectionCardUI.cs, Assets/Scripts/UI/CharacterSelectionPanelUI.cs
 
 ---
+
+## [ERR-20260828-001] dotnet-build-unavailable
+
+**Logged**: 2026-08-28T15:56:00+08:00
+**Priority**: low
+**Status**: pending
+**Area**: config
+
+### Summary
+当前 Bash 环境未提供 `dotnet` 命令，无法通过 `Assembly-CSharp.csproj` 做命令行 C# 编译验证。
+
+### Error
+```text
+dotnet: command not found
+```
+
+### Context
+修改“冒名”多段伤害反弹后，已确认 `Assembly-CSharp.csproj` 包含 `BattleManager.cs` 与 `ImpostorEffect.cs`，但 `dotnet build --no-restore` 因运行时缺失无法启动。
+
+### Suggested Fix
+在当前已打开的团结编辑器中等待脚本编译，并通过 Play Mode 验证；若需要命令行编译，配置可用的 .NET SDK 或 MSBuild 路径。
+
+### Metadata
+- Reproducible: yes
+- Related Files: Assets/Scripts/Battle/BattleManager.cs, Assets/Scripts/Relic/RelicAbility/ImpostorEffect.cs
+
+---
