@@ -385,11 +385,11 @@ public class EnemyView : MonoBehaviour
             _builtinBuffSpritesTried = true;
 #if UNITY_EDITOR
             BuiltinBuffSprites[BuffAttributeType.Fatigue] =
-                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/疲惫.png");
+                BuffData.LoadBuiltinIcon(BuffAttributeType.Fatigue);
             BuiltinBuffSprites[BuffAttributeType.ArmorBreak] =
-                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/破甲.png");
+                BuffData.LoadBuiltinIcon(BuffAttributeType.ArmorBreak);
             BuiltinBuffSprites[BuffAttributeType.Strength] =
-                UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局内/力量.png");
+                BuffData.LoadBuiltinIcon(BuffAttributeType.Strength);
 #endif
         }
         return BuiltinBuffSprites.TryGetValue(type, out var s) ? s : null;

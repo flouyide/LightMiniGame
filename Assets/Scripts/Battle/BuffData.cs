@@ -57,7 +57,30 @@ public class BuffData : ScriptableObject
         BuffAttributeType.CriticalChance => "提高攻击打出暴击的概率。",
         BuffAttributeType.CriticalDamage => "提高暴击时的伤害倍率。",
         BuffAttributeType.Fatigue => "回合开始时受到等同层数的伤害（无视护甲），然后层数 -1。",
-        BuffAttributeType.ArmorBreak => "已被剥离的护甲层数。部分效果可以按层数把护甲还回去。",
+        BuffAttributeType.ArmorBreak => "每层破甲使受到的攻击伤害绕过 1 点护甲。没有护甲时也能叠加。",
         _ => ""
     };
+
+    /// <summary>未配置 BuffData.icon 时的内置图标（编辑器下从工程路径加载）。</summary>
+    public static Sprite LoadBuiltinIcon(BuffAttributeType type)
+    {
+#if UNITY_EDITOR
+        string[] paths = type switch
+        {
+            BuffAttributeType.ArmorBreak => new[] { "Assets/Art/词条标/破甲.png", "Assets/Art/局内/破甲.png" },
+            BuffAttributeType.Fatigue => new[] { "Assets/Art/局内/疲惫.png" },
+            BuffAttributeType.Strength => new[] { "Assets/Art/局内/力量.png" },
+            _ => System.Array.Empty<string>()
+        };
+        foreach (string path in paths)
+        {
+            var sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite != null) return sprite;
+        }
+#endif
+        return null;
+    }
+
+    public static bool IsDebuff(BuffAttributeType type)
+        => type == BuffAttributeType.Fatigue || type == BuffAttributeType.ArmorBreak;
 }

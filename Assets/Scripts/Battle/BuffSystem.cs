@@ -14,7 +14,7 @@ public enum BuffAttributeType
     CriticalChance, // 暴击率（最小0）
     CriticalDamage, // 暴击伤害（最小2）
     Fatigue,        // 疲惫（层数，每轮扣等量血并 -1 层）
-    ArmorBreak,     // 破甲（敌人 buff 栏）
+    ArmorBreak,     // 破甲（玩家 / 敌人 buff 栏）
 }
 
 // ========================================================================

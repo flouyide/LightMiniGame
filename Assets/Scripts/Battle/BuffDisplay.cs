@@ -67,9 +67,11 @@ public class BuffDisplay : MonoBehaviour
             var buffData = _battle.GetBuffData(buff.attributeType);
             if (iconImage != null)
             {
-                if (buffData != null && buffData.icon != null)
+                Sprite icon = buffData != null ? buffData.icon : null;
+                if (icon == null) icon = BuffData.LoadBuiltinIcon(buff.attributeType);
+                if (icon != null)
                 {
-                    iconImage.sprite = buffData.icon;
+                    iconImage.sprite = icon;
                     iconImage.color = Color.white;
                 }
                 else
@@ -81,10 +83,10 @@ public class BuffDisplay : MonoBehaviour
             if (stackText != null)
             {
                 stackText.text = buff.totalStacks.ToString();
-                // 正数绿色，负数红色
-                stackText.color = buff.totalStacks > 0
-                    ? new Color(0.3f, 0.9f, 0.3f, 1f)
-                    : new Color(0.9f, 0.3f, 0.3f, 1f);
+                bool debuff = BuffData.IsDebuff(buff.attributeType) || buff.totalStacks < 0;
+                stackText.color = debuff
+                    ? new Color(0.9f, 0.3f, 0.3f, 1f)
+                    : new Color(0.3f, 0.9f, 0.3f, 1f);
                 stackText.raycastTarget = false;
             }
 

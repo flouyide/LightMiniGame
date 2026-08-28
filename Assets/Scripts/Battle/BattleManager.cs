@@ -156,6 +156,8 @@ public class BattleManager : MonoBehaviour
     private readonly List<CardData> _hand = new();
     private int _playerHP;
     private int _playerArmor;
+    /// <summary>玩家破甲实际剥掉的护甲量，RemoveStatus 时按层还原；回合开始清护甲时一并清零。</summary>
+    private int _playerArmorBreakStripped;
     // 基础值（从局外读入，不被 buff 修改）
     private int _playerBaseStrength;
     private int _playerBaseDexterity;
@@ -1254,7 +1256,27 @@ public class BattleManager : MonoBehaviour
     public void AddPlayerBuff(BuffAttributeType type, int stacks, int duration = 0)
     {
         if (type == BuffAttributeType.LifeSteal) return;
+        if (type == BuffAttributeType.ArmorBreak)
+        {
+            ApplyPlayerArmorBreak(stacks, duration);
+            return;
+        }
         _playerBuffs?.AddBuff(type, stacks, duration);
+    }
+
+    /// <summary>
+    /// 玩家破甲：层数总会加上（没有护甲也能挂上，出现在角色 buff 栏），
+    /// 若当前有护甲则额外剥离等量护甲，供 RemoveStatus 还原。
+    /// </summary>
+    private void ApplyPlayerArmorBreak(int stacks, int duration = 0)
+    {
+        int add = Mathf.Max(0, stacks);
+        if (add == 0 || _playerBuffs == null) return;
+        int stripped = Mathf.Min(_playerArmor, add);
+        _playerArmor -= stripped;
+        _playerArmorBreakStripped += stripped;
+        _playerBuffs.AddBuff(BuffAttributeType.ArmorBreak, add, duration);
+        UpdateUI();
     }
 
     public void AddPendingNextAttackDamageBonus(int amount) => _pendingNextAttackDamageBonus += amount;
@@ -1352,9 +1374,25 @@ public class BattleManager : MonoBehaviour
     /// <summary>获取 BuffData 资产（按属性类型）</summary>
     public BuffData GetBuffData(BuffAttributeType type)
     {
-        if (buffDataAssets == null) return null;
-        foreach (var bd in buffDataAssets)
-            if (bd != null && bd.attributeType == type) return bd;
+        if (buffDataAssets != null)
+        {
+            foreach (var bd in buffDataAssets)
+                if (bd != null && bd.attributeType == type) return bd;
+        }
+#if UNITY_EDITOR
+        string path = type switch
+        {
+            BuffAttributeType.ArmorBreak => "Assets/ScriptableObjects/Buffs/破甲Buff.asset",
+            BuffAttributeType.Strength => "Assets/ScriptableObjects/Buffs/力量Buff.asset",
+            BuffAttributeType.Dexterity => "Assets/ScriptableObjects/Buffs/敏捷Buff.asset",
+            BuffAttributeType.Recovery => "Assets/ScriptableObjects/Buffs/回复Buff.asset",
+            BuffAttributeType.CriticalChance => "Assets/ScriptableObjects/Buffs/暴击率Buff.asset",
+            BuffAttributeType.CriticalDamage => "Assets/ScriptableObjects/Buffs/暴击伤害Buff.asset",
+            _ => null
+        };
+        if (path != null)
+            return UnityEditor.AssetDatabase.LoadAssetAtPath<BuffData>(path);
+#endif
         return null;
     }
 
@@ -1375,7 +1413,7 @@ public class BattleManager : MonoBehaviour
     {
         if (inst == null || inst.IsDead) return;
         inst.ApplyStatus(status, stacks);
-        Debug.Log($"[状态] {inst.Name} 施加 {status} {stacks}，力量 {inst.Strength} 敏捷 {inst.Dexterity} 护甲 {inst.Armor} 疲惫 {inst.Tiredness}");
+        Debug.Log($"[状态] {inst.Name} 施加 {status} {stacks}，力量 {inst.Strength} 敏捷 {inst.Dexterity} 护甲 {inst.Armor} 破甲 {inst.ArmorBreakStacks} 疲惫 {inst.Tiredness}");
         inst.View?.Refresh();
         if (status == StatusType.Strength || status == StatusType.Dexterity)
             RefreshEnemyIntentDeck(inst);
@@ -1390,27 +1428,22 @@ public class BattleManager : MonoBehaviour
             {
                 case StatusType.Strength:
                     _playerBuffs.AddBuff(BuffAttributeType.Strength, stacks);
-                    return;
+                    break;
                 case StatusType.Dexterity:
                     _playerBuffs.AddBuff(BuffAttributeType.Dexterity, stacks);
-                    return;
+                    break;
                 case StatusType.CritRateBoost:
                     _playerBuffs.AddBuff(BuffAttributeType.CriticalChance, stacks);
-                    return;
+                    break;
                 case StatusType.CritDamageBoost:
                     _playerBuffs.AddBuff(BuffAttributeType.CriticalDamage, stacks);
-                    return;
+                    break;
+                case StatusType.ArmorBreak:
+                    AddPlayerBuff(BuffAttributeType.ArmorBreak, stacks);
+                    break;
             }
         }
-
-        // 旧路径回退
-        /*switch (status)
-        {
-            case StatusType.Strength: _playerStrength += stacks; break;
-            case StatusType.Dexterity: _playerDexterity += stacks; break;
-            case StatusType.CritRateBoost: _playerCritRate += stacks; break;
-            case StatusType.CritDamageBoost: _playerCritDamage += stacks; break;
-        }*/
+        UpdateUI();
     }
 
     /// <summary>对敌人移除状态。index=-1 表示全体存活敌人。</summary>
@@ -1454,10 +1487,21 @@ public class BattleManager : MonoBehaviour
             case StatusType.CritDamageBoost:
                 _playerBuffs.RemoveBuff(BuffAttributeType.CriticalDamage, stacks);
                 break;
+            case StatusType.ArmorBreak:
+            {
+                int current = Mathf.Max(0, _playerBuffs.GetTempValue(BuffAttributeType.ArmorBreak));
+                int remove = Mathf.Min(current, stacks);
+                _playerBuffs.RemoveBuff(BuffAttributeType.ArmorBreak, remove);
+                int restore = Mathf.Min(_playerArmorBreakStripped, remove);
+                _playerArmor += restore;
+                _playerArmorBreakStripped -= restore;
+                break;
+            }
             default:
                 Debug.Log($"[状态] 对玩家移除 {status}（暂未实现）");
                 break;
         }
+        UpdateUI();
     }
 
     public int RequestSelectCardFromHand(string prompt) => -1; // 简化：暂不支持运行时选牌
@@ -1851,6 +1895,7 @@ public class BattleManager : MonoBehaviour
         _hasSwitchedThisTurn = false;
         _turnCount = 1;
         _playerArmor = 0;
+        _playerArmorBreakStripped = 0;
         _sanityPhaseTriggered = false;
 
         // 读入持久基础属性（单局内跨战斗保留，存于 ChapterManager 运行时副本；资产 PlayerConfig 仅作初始值）
@@ -1930,6 +1975,7 @@ public class BattleManager : MonoBehaviour
         _playerBuffs.SetMinValue(BuffAttributeType.Recovery, 0);                 // 回复最小0
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalChance, 0);           // 暴击率最小0
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalDamage, 2);           // 暴伤最小2
+        _playerBuffs.SetMinValue(BuffAttributeType.ArmorBreak, 0);               // 破甲最小0
         _enemyBuffs = new BuffSystem(); // 敌人使用相同约束（可后续扩展）
 
         _pendingNextAttackDamageBonus = 0;
@@ -2944,13 +2990,17 @@ public class BattleManager : MonoBehaviour
         {
             damage = Mathf.RoundToInt(damage * PercentToFactor(_playerDamageTakenMultiplier));
         }
-        int actualDamage = damage;
-        if (_playerArmor > 0)
+        int remaining = damage;
+        int armorBreak = Mathf.Max(0, _playerBuffs?.GetTempValue(BuffAttributeType.ArmorBreak) ?? 0);
+        int bypass = Mathf.Min(armorBreak, remaining);
+        remaining -= bypass;
+        if (_playerArmor > 0 && remaining > 0)
         {
-            int absorbed = Mathf.Min(_playerArmor, damage);
+            int absorbed = Mathf.Min(_playerArmor, remaining);
             _playerArmor -= absorbed;
-            actualDamage -= absorbed;
+            remaining -= absorbed;
         }
+        int actualDamage = bypass + remaining;
         _playerHP -= actualDamage;
         if (_playerHP < 0) _playerHP = 0;
 
@@ -3852,6 +3902,7 @@ public class BattleManager : MonoBehaviour
         _turnCount++;
         _actionPoints = maxActionPoints;
         _playerArmor = 0;
+        _playerArmorBreakStripped = 0;
         _hasSwitchedThisTurn = false;
         _fusionUsesThisTurn = 0;       // 每回合重置融合使用
         _eventsThisTurn.Clear(); // 清除本回合事件
