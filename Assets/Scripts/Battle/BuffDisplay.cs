@@ -67,7 +67,8 @@ public class BuffDisplay : MonoBehaviour
             var buffData = _battle.GetBuffData(buff.attributeType);
             if (iconImage != null)
             {
-                Sprite icon = buffData != null ? buffData.icon : null;
+                Sprite icon = buff.customIcon;
+                if (icon == null) icon = buffData != null ? buffData.icon : null;
                 if (icon == null) icon = BuffData.LoadBuiltinIcon(buff.attributeType);
                 if (icon != null)
                 {
@@ -82,11 +83,18 @@ public class BuffDisplay : MonoBehaviour
 
             if (stackText != null)
             {
-                stackText.text = buff.totalStacks.ToString();
-                bool debuff = BuffData.IsDebuff(buff.attributeType) || buff.totalStacks < 0;
-                stackText.color = debuff
-                    ? new Color(0.9f, 0.3f, 0.3f, 1f)
-                    : new Color(0.3f, 0.9f, 0.3f, 1f);
+                if (buff.hideStacks)
+                {
+                    stackText.text = "";
+                }
+                else
+                {
+                    stackText.text = buff.totalStacks.ToString();
+                    bool debuff = BuffData.IsDebuff(buff.attributeType) || buff.totalStacks < 0;
+                    stackText.color = debuff
+                        ? new Color(0.9f, 0.3f, 0.3f, 1f)
+                        : new Color(0.3f, 0.9f, 0.3f, 1f);
+                }
                 stackText.raycastTarget = false;
             }
 

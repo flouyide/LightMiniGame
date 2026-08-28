@@ -15,6 +15,7 @@ public enum BuffAttributeType
     CriticalDamage, // 暴击伤害（最小2）
     Fatigue,        // 疲惫（层数，每轮扣等量血并 -1 层）
     ArmorBreak,     // 破甲（玩家 / 敌人 buff 栏）
+    DirtyWork,      // 脏活（玩家减益：受伤额外 3×层数；仅 UI + UnfinishedCardRuntime）
 }
 
 // ========================================================================
@@ -54,6 +55,7 @@ public class BuffSystem
     {
         if (stacks == 0) return;
         if (type == BuffAttributeType.LifeSteal) return;
+        if (type == BuffAttributeType.DirtyWork) return;
 
         // 同属性、同持续类型（都永久或都有持续）的 buff 合并
         bool isPermanent = duration == 0;
@@ -146,6 +148,7 @@ public class BuffSystem
         {
             if (kv.Value == 0) continue; // 0 层不显示
             if (kv.Key == BuffAttributeType.LifeSteal) continue;
+            if (kv.Key == BuffAttributeType.DirtyWork) continue;
             list.Add(new DisplayedBuff { attributeType = kv.Key, totalStacks = kv.Value });
         }
         return list;

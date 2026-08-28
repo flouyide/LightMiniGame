@@ -1604,6 +1604,7 @@ public class BattleManager : MonoBehaviour
     public void AddPlayerBuff(BuffAttributeType type, int stacks, int duration = 0)
     {
         if (type == BuffAttributeType.LifeSteal) return;
+        if (type == BuffAttributeType.DirtyWork) return;
         if (type == BuffAttributeType.ArmorBreak)
         {
             ApplyPlayerArmorBreak(stacks, duration);
@@ -1670,6 +1671,7 @@ public class BattleManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(sourceId)) return;
         if (type == BuffAttributeType.LifeSteal) return;
+        if (type == BuffAttributeType.DirtyWork) return;
 
         if (stacks == 0)
         {
@@ -1710,12 +1712,30 @@ public class BattleManager : MonoBehaviour
         {
             if (pair.Value == 0) continue;
             if (pair.Key == BuffAttributeType.LifeSteal) continue;
+            if (pair.Key == BuffAttributeType.DirtyWork) continue;
             result.Add(new DisplayedBuff
             {
                 attributeType = pair.Key,
                 totalStacks = pair.Value
             });
         }
+
+        int dirtyWork = _unfinished != null ? _unfinished.DirtyWorkStacks : 0;
+        if (dirtyWork > 0)
+        {
+            var data = GetBuffData(BuffAttributeType.DirtyWork);
+            Sprite icon = data != null ? data.icon : null;
+            if (icon == null) icon = BuffData.LoadBuiltinIcon(BuffAttributeType.DirtyWork);
+            result.Add(new DisplayedBuff
+            {
+                attributeType = BuffAttributeType.DirtyWork,
+                totalStacks = dirtyWork,
+                customIcon = icon,
+                tooltipTitle = data != null ? data.GetDisplayName() : BuffData.DefaultName(BuffAttributeType.DirtyWork),
+                tooltipBody = data != null ? data.GetDescription() : BuffData.DefaultDescription(BuffAttributeType.DirtyWork)
+            });
+        }
+
         return result;
     }
 
@@ -1736,6 +1756,7 @@ public class BattleManager : MonoBehaviour
             BuffAttributeType.Recovery => "Assets/ScriptableObjects/Buffs/回复Buff.asset",
             BuffAttributeType.CriticalChance => "Assets/ScriptableObjects/Buffs/暴击率Buff.asset",
             BuffAttributeType.CriticalDamage => "Assets/ScriptableObjects/Buffs/暴击伤害Buff.asset",
+            BuffAttributeType.DirtyWork => "Assets/ScriptableObjects/Buffs/脏活Buff.asset",
             _ => null
         };
         if (path != null)
