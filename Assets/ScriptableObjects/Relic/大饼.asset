@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "\u753B\u997C\u6295\u5F71\u4EEA"
+  m_Name: "\u5927\u997C"
   m_EditorClassIdentifier: 
   relicId: PieInTheSkyProjectorAbility
-  relicName: "\u753B\u997C\u6295\u5F71\u4EEA"
+  relicName: "\u5927\u997C"
   description: "\u62E5\u6709\u6B64\u80FD\u529B\u7684\u602A\u7269\u6BCF\u5B8C\u6574\u5B58\u6D3B\u4E00\u4E2A\u81EA\u8EAB\u56DE\u5408\uFF0C\u672C\u573A\u6218\u6597\u8D4F\u91D1
     +10 \u91D1\u5E01"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d2003f7e9b4d1d74aadb8b257bb43a3c, type: 3}
   value: 0
   grade: 0
   sortOrder: 0

@@ -995,28 +995,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &200609502 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4996969749077805003, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
-  m_PrefabInstance: {fileID: 200609481}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &200609503 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3749290637132302653, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
-  m_PrefabInstance: {fileID: 200609481}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &200609504 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5090380749303305366, guid: 6d2f195fbcac1b842afe90f4219ecbd1, type: 3}
@@ -1454,7 +1432,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2774100782667415446, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -12.389893
+      value: -12.389648
       objectReference: {fileID: 0}
     - target: {fileID: 3033174594531579949, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -1730,7 +1708,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7426535636171232395, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -2.5723877
+      value: -2.5722656
       objectReference: {fileID: 0}
     - target: {fileID: 7494088862950248313, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -1755,6 +1733,14 @@ PrefabInstance:
     - target: {fileID: 8028750437916600090, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028750437916600090, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -4.3999023
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028750437916600090, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 49.800003
       objectReference: {fileID: 0}
     - target: {fileID: 8959205048454195302, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_IsActive
@@ -3497,8 +3483,6 @@ MonoBehaviour:
   hpText: {fileID: 200609506}
   actionPointText: {fileID: 200609505}
   armorText: {fileID: 200609504}
-  strengthText: {fileID: 200609503}
-  dexterityText: {fileID: 200609502}
   playerHPBar: {fileID: 1842713035}
   sanityText: {fileID: 200609500}
   sanityBar: {fileID: 1842713034}

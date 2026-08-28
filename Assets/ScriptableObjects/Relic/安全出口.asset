@@ -10,16 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "\u9996\u6B21\u989D\u5916\u53D7\u4F24\u80FD\u529B"
+  m_Name: "\u5B89\u5168\u51FA\u53E3"
   m_EditorClassIdentifier: 
   relicId: FirstHitVulnerableAbility
-  relicName: "\u9996\u6B21\u989D\u5916\u53D7\u4F24\u80FD\u529B"
-  description: "\u9996\u6B21\u989D\u5916\u53D7\u4F24\u80FD\u529B"
-  icon: {fileID: 21300000, guid: 3ac39ab2332cbbe4abada3f400b12d5d, type: 3}
+  relicName: "\u5B89\u5168\u51FA\u53E3"
+  description: "\u6BCF\u56DE\u5408\u53D7\u5230\u7684\u7B2C\u4E00\u6B21\u4F24\u5BB3\u589E\u52A050%"
+  icon: {fileID: 21300000, guid: a37683e1308edf940936223138924c85, type: 3}
   value: 0
   grade: 0
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.FirstHitVulnerableEffect
   effectParams:
   - 0.25
+  effectStringParams: []
+  effectObjectParams: []
   effectScript: {fileID: 11500000, guid: 05fbd30e6fbee9242b9f2666587bed90, type: 3}
