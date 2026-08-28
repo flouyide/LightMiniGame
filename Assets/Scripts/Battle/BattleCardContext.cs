@@ -57,6 +57,11 @@ public class BattleCardContext : ICardRuntimeContext
 
     public void HealPlayer(int amount) => _battle.HealPlayer(amount);
     public void LosePlayerHP(int amount) => _battle.LosePlayerHP(amount);
+    public void ModifyEnemyHP(int slot, int delta) => _battle.ModifyEnemyHP(slot, delta);
+    public void ModifyAllEnemiesHP(int delta) => _battle.ModifyAllEnemiesHP(delta);
+    public int PlayerGold => _battle.PlayerGold;
+    public void ModifyPlayerGold(int delta) => _battle.ModifyPlayerGold(delta);
+    public void SetPlayerGold(int value) => _battle.SetPlayerGold(value);
     public void AddPlayerArmor(int amount) => _battle.AddPlayerArmor(amount);
     public void AddPlayerEnergy(int amount) => _battle.AddActionPoints(amount);
     public void DrawCards(int amount) => _battle.DrawCards(amount);

@@ -352,7 +352,7 @@ public class EffectExecutorV2
                     LightMiniGame.CardEditor.PlayerResourceType.ActionPoints => _ctx.PlayerEnergy,
                     LightMiniGame.CardEditor.PlayerResourceType.Heat => _ctx.GetCustomData("Heat"),
                     LightMiniGame.CardEditor.PlayerResourceType.Block => _ctx.PlayerArmor,
-                    LightMiniGame.CardEditor.PlayerResourceType.Currency => _ctx.GetCustomData("Currency"),
+                    LightMiniGame.CardEditor.PlayerResourceType.Currency => _ctx.PlayerGold,
                     LightMiniGame.CardEditor.PlayerResourceType.Fortune => _ctx.PlayerFortune,
                     _ => 0
                 };
@@ -807,6 +807,17 @@ public class EffectExecutorV2
         else if (!_ctx.HasFusionSlotKind(FusionSlotKind.Buff) && _ctx.TryGetFusionBuff(out int fusionBuff))
             amount = fusionBuff;
 
+        // 「回复」在卡牌编辑器里表示立即治疗/扣血（里奥里、猛吸一口），按目标结算，不当成力量。
+        if (attr == LightMiniGame.CardEditor.PlayerAttributeType.Recovery
+            && (op == ResourceOperation.Add || op == ResourceOperation.Subtract || op == ResourceOperation.Set))
+        {
+            if (op == ResourceOperation.Set)
+                ApplyHealthSet(node, amount);
+            else
+                ApplyHealthDelta(node, op == ResourceOperation.Subtract ? -amount : amount);
+            return;
+        }
+
         // 敌人作为发起者且目标为「自己（效果发起者）」时 → 敌人自buff，走带能力检测的敌人增益
         if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
         {
@@ -873,6 +884,109 @@ public class EffectExecutorV2
         _ctx.ModifyPlayerAttribute(MapAttr(attr), MapMethod(op), amount);
         _lastResult[EffectResultType.ActualValue] = amount;
         Log($"  [修改属性] {ValueNode.GetAttrName(attr)} {op} {amount}");
+    }
+
+    /// <summary>
+    /// 生命增减按效果配置的目标结算。
+    /// 「全体敌人/选定敌人」始终打到怪物身上，不走攻击用的敌人视角反转
+    /// （否则敌人出「全体怪物回血」会错误地给玩家回血）。
+    /// </summary>
+    private void ApplyHealthDelta(EffectNode node, int delta)
+    {
+        if (delta == 0)
+        {
+            _lastResult[EffectResultType.ActualValue] = 0;
+            return;
+        }
+
+        var unit = node.target != null ? node.target.unitTarget : CombatUnitTarget.CurrentCharacter;
+
+        if (IsEnemyInitiator && unit == CombatUnitTarget.EffectSource)
+        {
+            _ctx.ModifyEnemyHP(_initiatorEnemySlot, delta);
+            _lastResult[EffectResultType.ActualValue] = delta;
+            Log($"  [生命] {_initiatorEnemySlot}号敌人 {(delta > 0 ? "+" : "")}{delta}");
+            return;
+        }
+
+        if (IsExplicitEnemyHealthTarget(unit))
+        {
+            if (unit == CombatUnitTarget.AllEnemies)
+            {
+                _ctx.ModifyAllEnemiesHP(delta);
+                Log($"  [生命] 全体敌人 {(delta > 0 ? "+" : "")}{delta}");
+            }
+            else
+            {
+                int idx = ResolveStatusEnemyIndex(unit);
+                if (idx >= 0)
+                {
+                    _ctx.ModifyEnemyHP(idx, delta);
+                    Log($"  [生命] 敌人{idx + 1} {(delta > 0 ? "+" : "")}{delta}");
+                }
+            }
+            _lastResult[EffectResultType.ActualValue] = delta;
+            return;
+        }
+
+        if (delta > 0) _ctx.HealPlayer(delta);
+        else _ctx.LosePlayerHP(-delta);
+        _lastResult[EffectResultType.ActualValue] = delta;
+        Log($"  [生命] 玩家 {(delta > 0 ? "+" : "")}{delta}");
+    }
+
+    private void ApplyHealthSet(EffectNode node, int value)
+    {
+        var unit = node.target != null ? node.target.unitTarget : CombatUnitTarget.CurrentCharacter;
+        int current;
+        if (IsEnemyInitiator && unit == CombatUnitTarget.EffectSource)
+            current = _ctx.GetEnemyHP(_initiatorEnemySlot);
+        else if (IsExplicitEnemyHealthTarget(unit))
+        {
+            if (unit == CombatUnitTarget.AllEnemies)
+            {
+                for (int i = 0; i < _ctx.EnemySlotCount; i++)
+                {
+                    if (!_ctx.IsEnemyAlive(i)) continue;
+                    _ctx.ModifyEnemyHP(i, value - _ctx.GetEnemyHP(i));
+                }
+                _lastResult[EffectResultType.ActualValue] = value;
+                Log($"  [生命] 全体敌人 设置为 {value}");
+                return;
+            }
+            int idx = ResolveStatusEnemyIndex(unit);
+            if (idx < 0)
+            {
+                _lastResult[EffectResultType.ActualValue] = 0;
+                return;
+            }
+            current = _ctx.GetEnemyHP(idx);
+            ApplyHealthDelta(node, value - current);
+            return;
+        }
+        else
+            current = _ctx.PlayerHP;
+
+        ApplyHealthDelta(node, value - current);
+    }
+
+    private static bool IsExplicitEnemyHealthTarget(CombatUnitTarget unit)
+    {
+        switch (unit)
+        {
+            case CombatUnitTarget.SelectedEnemy:
+            case CombatUnitTarget.RandomEnemy:
+            case CombatUnitTarget.AllEnemies:
+            case CombatUnitTarget.LowestHPEnemy:
+            case CombatUnitTarget.HighestHPEnemy:
+            case CombatUnitTarget.HighestArmorBreakEnemy:
+            case CombatUnitTarget.RandomNEnemies:
+            case CombatUnitTarget.CurrentAttackTarget:
+            case CombatUnitTarget.EnemyKilledByCurrentEffect:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private ModifiableAttribute MapAttr(LightMiniGame.CardEditor.PlayerAttributeType a) => a switch
@@ -950,12 +1064,34 @@ public class EffectExecutorV2
                 break;
 
             case LightMiniGame.CardEditor.PlayerResourceType.CurrentHealth:
-                if (node.resourceOp == ResourceOperation.Add)
-                    _ctx.HealPlayer(amount);
-                else if (node.resourceOp == ResourceOperation.Subtract)
-                    _ctx.LosePlayerHP(amount);
-                _lastResult[EffectResultType.ActualValue] = amount;
-                Log($"  [生命] {node.resourceOp} {amount}");
+                if (node.resourceOp == ResourceOperation.Set)
+                {
+                    ApplyHealthSet(node, amount);
+                    break;
+                }
+                if (node.resourceOp == ResourceOperation.Add || node.resourceOp == ResourceOperation.Subtract)
+                {
+                    int hpDelta = node.resourceOp == ResourceOperation.Subtract ? -amount : amount;
+                    ApplyHealthDelta(node, hpDelta);
+                }
+                break;
+
+            case LightMiniGame.CardEditor.PlayerResourceType.Currency:
+                if (node.resourceOp == ResourceOperation.Add || node.resourceOp == ResourceOperation.Subtract)
+                {
+                    int goldDelta = node.resourceOp == ResourceOperation.Subtract ? -amount : amount;
+                    int beforeGold = _ctx.PlayerGold;
+                    _ctx.ModifyPlayerGold(goldDelta);
+                    int actualGold = _ctx.PlayerGold - beforeGold;
+                    _lastResult[EffectResultType.ActualValue] = actualGold;
+                    Log($"  [货币] {beforeGold} → {_ctx.PlayerGold} (变化{actualGold})");
+                }
+                else if (node.resourceOp == ResourceOperation.Set)
+                {
+                    _ctx.SetPlayerGold(amount);
+                    _lastResult[EffectResultType.ActualValue] = amount;
+                    Log($"  [货币] 设置为 {amount}");
+                }
                 break;
 
             case LightMiniGame.CardEditor.PlayerResourceType.Block:

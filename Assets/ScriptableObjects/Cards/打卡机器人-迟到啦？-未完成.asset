@@ -85,7 +85,7 @@ MonoBehaviour:
       rid: 6563294483680329873
     countAsAttack: 1
     resourceType: 3
-    resourceOp: 0
+    resourceOp: 1
     attributeType: 1
     statusType: 0
     statusValue:
@@ -224,7 +224,7 @@ MonoBehaviour:
       rid: 6563294483680329893
     countAsAttack: 1
     resourceType: 3
-    resourceOp: 0
+    resourceOp: 1
     attributeType: 1
     statusType: 0
     statusValue:
@@ -320,7 +320,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: -1000
+        intValue: 10
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -480,7 +480,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: -1000
+        intValue: 10
         floatValue: 0
         attributeRef: 1
         resourceRef: 1

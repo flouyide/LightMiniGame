@@ -237,6 +237,7 @@ public class EnemyInstance
     /// 生命值不变：敌人只有一条血（maxHP），HP/MaxHP 不随阶段切换重置。
     /// HP≤0 不再触发转阶段（由 BattleManager 直接判定死亡）。
     /// 两个方向都会重置技能轮转计数。
+    /// 不重置本回合已抽技能：意图预览与融合覆盖必须沿用到实际出招，牌库切换改在理智变化时或下个玩家回合处理。
     /// </summary>
     public bool CheckPhaseSwitch(int playerSanity, int sanityThreshold)
     {
@@ -244,13 +245,14 @@ public class EnemyInstance
 
         bool sanityLow = playerSanity < sanityThreshold;
 
-        // 阶段1→2：理智低于阈值
+        // 阶段1→2：理智低于阈值。
+        // 本回合意图可能已经被融合改过；这里只切形态/清护甲，不清已抽技能。
+        // 牌库切换由 ModifySanity / 下个玩家回合 ResetDrawnSkill 负责。
         if (Phase == 1 && sanityLow)
         {
             Phase = 2;
             TurnInCycle = 0;
             Armor = 0;          // 形态切换清空护甲；HP/MaxHP 保持不变
-            ResetDrawnSkill();  // 切换阶段 → 牌库变化，清空以重新随机
             return true;
         }
         // 阶段2→1：理智恢复
@@ -258,7 +260,6 @@ public class EnemyInstance
         {
             Phase = 1;
             TurnInCycle = 0;
-            ResetDrawnSkill();  // 切换阶段 → 牌库变化，清空以重新随机；HP/MaxHP 保持不变
             return true;
         }
         return false;

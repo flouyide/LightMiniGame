@@ -556,6 +556,18 @@ public class EnemyView : MonoBehaviour
             rt.pivot = new Vector2(0.5f, 0.5f);
         }
 
+        if (FusionController.IsOpen && FusionController.PanelTransform != null
+            && FusionController.PanelTransform.parent == canvasParent)
+        {
+            int afterPanel = FusionController.PanelTransform.GetSiblingIndex() + 1;
+            if (overlay.GetSiblingIndex() != afterPanel)
+                overlay.SetSiblingIndex(afterPanel);
+            var entry = canvasParent.Find("FusionEntryButton");
+            if (entry != null)
+                entry.SetAsLastSibling();
+            return overlay;
+        }
+
         int afterContainer = container.GetSiblingIndex() + 1;
         if (overlay.GetSiblingIndex() != afterContainer)
             overlay.SetSiblingIndex(afterContainer);
@@ -793,30 +805,56 @@ public class EnemyView : MonoBehaviour
 
     /// <summary>
     /// 敌人意图牌库小卡的悬停放大查看：
-    /// 鼠标移入时放大并置顶（保持原位，鼠标不脱离卡面 → 不触发 Exit 频闪），移出后恢复。
-    /// 放大倍数基于当前缩放（deckBaseScale），确保预览时足够清晰。
+    /// 鼠标移入时放大并置顶（保持原位），移出后恢复。
+    /// 用射线命中判断（含子物体上的融合高亮），避免点到数字时卡牌缩回去。
     /// </summary>
-    private class IntentCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    private class IntentCardHover : MonoBehaviour
     {
         private Vector3 _origScale;
         private int _origSibling;
+        private bool _enlarged;
         private const float EnlargeScale = 2.6f;
+        private static readonly List<RaycastResult> Hits = new List<RaycastResult>(16);
 
-        public void OnPointerEnter(PointerEventData eventData)
+        private void LateUpdate()
         {
-            var rt = transform as RectTransform;
-            if (rt == null) return;
-            _origSibling = transform.GetSiblingIndex();
-            _origScale = transform.localScale;
-
-            transform.SetAsLastSibling();   // 同级内置顶
-            transform.localScale = _origScale * EnlargeScale;   // 原位放大，鼠标仍在卡上
+            if (IsPointerOverThisCard())
+                Enlarge();
+            else
+                Shrink();
         }
 
-        public void OnPointerExit(PointerEventData eventData)
+        private bool IsPointerOverThisCard()
         {
+            if (EventSystem.current == null) return false;
+            var ped = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+            Hits.Clear();
+            EventSystem.current.RaycastAll(ped, Hits);
+            for (int i = 0; i < Hits.Count; i++)
+            {
+                var hover = Hits[i].gameObject.GetComponentInParent<IntentCardHover>();
+                if (hover == null) continue;
+                return hover == this;
+            }
+            return false;
+        }
+
+        private void Enlarge()
+        {
+            if (_enlarged) return;
             var rt = transform as RectTransform;
             if (rt == null) return;
+            _enlarged = true;
+            _origSibling = transform.GetSiblingIndex();
+            _origScale = transform.localScale;
+            transform.SetAsLastSibling();
+            transform.localScale = _origScale * EnlargeScale;
+        }
+
+        private void Shrink()
+        {
+            if (!_enlarged) return;
+            _enlarged = false;
             transform.SetSiblingIndex(_origSibling);
             transform.localScale = _origScale;
         }

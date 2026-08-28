@@ -49,8 +49,23 @@ public class FusionController : MonoBehaviour
 
     private bool PanelActive => _panelRoot != null;
 
+    /// <summary>融合面板是否打开（供意图牌层在融合期间保持在蒙层之上）。</summary>
+    public static bool IsOpen { get; private set; }
+
+    /// <summary>当前融合蒙层面板（供意图牌层锚定兄弟顺序）。</summary>
+    public static RectTransform PanelTransform { get; private set; }
+
     private void OnDestroy()
     {
+        IsOpen = false;
+        PanelTransform = null;
+        CardDisplay.FusionHighlightActive = false;
+        for (int i = 0; i < _highlights.Count; i++)
+        {
+            if (_highlights[i] != null)
+                Destroy(_highlights[i]);
+        }
+        _highlights.Clear();
         if (_entryButtonGO != null) Destroy(_entryButtonGO);
         if (_panelRoot != null) Destroy(_panelRoot);
     }
@@ -96,6 +111,12 @@ public class FusionController : MonoBehaviour
         _entryButtonImage.raycastTarget = true;
         _entryButtonImage.sprite = EnsureCubeSprite(false);
         FitEntryButtonToSprite();
+
+        // 独立排序，避免意图牌全屏层盖住魔方导致点不进去
+        var hudCanvas = _entryButtonGO.AddComponent<Canvas>();
+        hudCanvas.overrideSorting = true;
+        hudCanvas.sortingOrder = 500;
+        _entryButtonGO.AddComponent<GraphicRaycaster>();
 
         var btn = _entryButtonGO.AddComponent<Button>();
         btn.targetGraphic = _entryButtonImage;
@@ -231,6 +252,7 @@ public class FusionController : MonoBehaviour
         _candidates.Clear();
         _selected.Clear();
         BuildPanel();
+        CardDisplay.FusionHighlightActive = true;
         RaiseEntryButton();
         UpdateEntryInteractable();
         // 手牌描述数字必须等 TMP 网格重建后再收集，否则会因矩形为 0 被全部跳过
@@ -240,12 +262,22 @@ public class FusionController : MonoBehaviour
     private System.Collections.IEnumerator BuildHighlightsNextFrame()
     {
         yield return null;   // 等一帧：TMP mesh 重建（低理智切形态后文本已变）
+        if (_panelRoot == null) yield break;
         // 手牌强制摆到目标布局，避免读 lerp 动画中途坐标造成高亮错位
         _battle.SnapHandToTarget();
         yield return null;   // 再等一帧应用 layout 约束
-        _candidates = CollectCandidates();
-        BuildHighlights();
-        RefreshHighlights();
+        if (_panelRoot == null) yield break;
+        try
+        {
+            _candidates = CollectCandidates();
+            BuildHighlights();
+            RefreshHighlights();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[FusionController] 构建融合高亮失败: {e}");
+        }
+        SyncIntentDeckAbovePanel();
         RaiseEntryButton();
     }
 
@@ -539,6 +571,42 @@ public class FusionController : MonoBehaviour
         blocker.transition = Selectable.Transition.None;
         blocker.image = maskImg;
         blocker.image.raycastTarget = true;
+
+        IsOpen = true;
+        PanelTransform = rootRT;
+        SyncIntentDeckAbovePanel();
+    }
+
+    /// <summary>
+    /// 把敌人意图牌层抬到融合蒙层之上：卡牌可悬停放大，空白处仍点到蒙层（不能误出牌）。
+    /// </summary>
+    private void SyncIntentDeckAbovePanel()
+    {
+        if (_panelRoot == null) return;
+        var canvas = FindParentCanvas();
+        if (canvas == null) return;
+        var overlay = canvas.transform.Find("IntentDeckOverlay");
+        if (overlay == null) return;
+        int want = _panelRoot.transform.GetSiblingIndex() + 1;
+        if (overlay.GetSiblingIndex() != want)
+            overlay.SetSiblingIndex(want);
+        RaiseEntryButton();
+    }
+
+    private void RestoreIntentDeckOverlay()
+    {
+        var canvas = FindParentCanvas();
+        if (canvas == null) return;
+        var overlay = canvas.transform.Find("IntentDeckOverlay");
+        if (overlay == null) return;
+        var container = canvas.transform.Find("EnemyContainer");
+        if (container != null)
+        {
+            int afterContainer = container.GetSiblingIndex() + 1;
+            if (overlay.GetSiblingIndex() != afterContainer)
+                overlay.SetSiblingIndex(afterContainer);
+        }
+        RaiseEntryButton();
     }
 
     /// <summary>为每个候选在原位生成一个半透明高亮片（蒙层之上，不遮字，可点击）。</summary>
@@ -550,23 +618,50 @@ public class FusionController : MonoBehaviour
         var rootCanvas = _panelRoot.GetComponentInParent<Canvas>()?.rootCanvas;
         Camera cam = rootCanvas != null ? rootCanvas.worldCamera : null;
 
+        Camera eventCam = rootCanvas != null && rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cam;
+
         for (int i = 0; i < _candidates.Count; i++)
         {
             var fv = _candidates[i];
             var (center, size) = ResolveCandidateLayout(fv);
             var go = new GameObject($"FusionHL_{i}");
-            go.transform.SetParent(_panelRoot.transform, false);
+            bool onIntentCard = IsEnemyIntentCard(fv);
+            RectTransform spaceRT = onIntentCard ? fv.cardView.transform as RectTransform : panelRT;
+            if (spaceRT == null) spaceRT = panelRT;
+            go.transform.SetParent(spaceRT, false);
+            if (onIntentCard)
+                go.transform.SetAsLastSibling();
+
             var rt = go.AddComponent<RectTransform>();
             Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, center);
-            Vector2 local;
-            // 屏幕→面板局部（Overlay 用 null，World 用相机，取决于 Canvas renderMode）
-            bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(panelRT, screen, rootCanvas != null && rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cam, out local);
+            bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(spaceRT, screen, eventCam, out Vector2 local);
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = ok ? local : new Vector2(120, 140);
-            // 半透明深紫高亮片：贴合数字（限最大尺寸，避免整槽/整卡被盖），不遮字、可点
-            float w = Mathf.Clamp(size.x + 10f, 30f, 72f);
-            float h = Mathf.Clamp(size.y + 6f, 24f, 48f);
+
+            float w;
+            float h;
+            float fontSize;
+            if (onIntentCard)
+            {
+                // 卡面本地尺寸：随卡牌 localScale 一起变，放大倍率与卡牌相同，位置钉在数字上。
+                // 不要按世界像素把字撑大，否则未悬停就很大，悬停后其它高亮也会显得被放大。
+                float lsx = Mathf.Abs(spaceRT.lossyScale.x);
+                float lsy = Mathf.Abs(spaceRT.lossyScale.y);
+                if (lsx < 0.0001f) lsx = 1f;
+                if (lsy < 0.0001f) lsy = 1f;
+                Vector2 worldSize = IntentWorldSize(fv, size, lsx, lsy);
+                w = Mathf.Max(worldSize.x / lsx + 6f, 12f);
+                h = Mathf.Max(worldSize.y / lsy + 4f, 12f);
+                bool isCost = fv.id != null && fv.id.EndsWith(":cost");
+                fontSize = isCost ? fv.cardView.GetCostFontSize() : fv.cardView.GetDescFontSize();
+            }
+            else
+            {
+                w = Mathf.Clamp(size.x + 10f, 30f, 72f);
+                h = Mathf.Clamp(size.y + 6f, 24f, 48f);
+                fontSize = 20f;
+            }
             rt.sizeDelta = new Vector2(w, h);
 
             var img = go.AddComponent<Image>();
@@ -585,8 +680,9 @@ public class FusionController : MonoBehaviour
             numRT.anchorMin = numRT.anchorMax = new Vector2(0.5f, 0.5f);
             numRT.sizeDelta = new Vector2(w - 4f, h - 4f);
             var num = numGo.AddComponent<TextMeshProUGUI>();
+            ApplyHighlightFont(num, onIntentCard ? fv.cardView : null);
             num.text = fv.lockedBySanity ? "" : fv.current.ToString();
-            num.fontSize = 20;
+            num.fontSize = fontSize;
             num.fontStyle = TMPro.FontStyles.Bold;
             num.alignment = TextAlignmentOptions.Center;
             num.color = FusionPurpleBright;   // 高饱和紫
@@ -597,6 +693,67 @@ public class FusionController : MonoBehaviour
 
             _highlights.Add(go);
         }
+    }
+
+    private static bool IsEnemyIntentCard(FusableValue fv)
+    {
+        return fv != null && fv.cardView != null && fv.id != null && fv.id.IndexOf(":ideck:") >= 0;
+    }
+
+    /// <summary>
+    /// 意图牌数字的世界尺寸。描述 token 已是世界坐标；费用 exactSize 是文本本地尺寸，需乘 lossyScale。
+    /// </summary>
+    private static Vector2 IntentWorldSize(FusableValue fv, Vector2 resolvedSize, float cardLsX, float cardLsY)
+    {
+        if (fv != null && fv.hasExactRect && fv.id != null && fv.id.EndsWith(":cost"))
+        {
+            var costRT = fv.cardView != null ? fv.cardView.GetCostRectTransform() : null;
+            if (costRT != null)
+            {
+                float cx = Mathf.Abs(costRT.lossyScale.x);
+                float cy = Mathf.Abs(costRT.lossyScale.y);
+                if (cx < 0.0001f) cx = cardLsX;
+                if (cy < 0.0001f) cy = cardLsY;
+                return new Vector2(resolvedSize.x * cx, resolvedSize.y * cy);
+            }
+        }
+        return resolvedSize;
+    }
+
+    private static TMP_FontAsset _highlightFont;
+
+    /// <summary>
+    /// 运行时 TMP 必须用场上已有字体。默认 TMP_Settings 字体常缺 atlas，会抛 m_AtlasTextures 未赋值并中断融合。
+    /// </summary>
+    private static void ApplyHighlightFont(TextMeshProUGUI tmp, CardDisplay card)
+    {
+        if (tmp == null) return;
+        TMP_FontAsset font = null;
+        if (card != null)
+        {
+            var existing = card.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (int i = 0; i < existing.Length; i++)
+            {
+                if (existing[i] != null && existing[i] != tmp && existing[i].font != null)
+                {
+                    font = existing[i].font;
+                    break;
+                }
+            }
+        }
+        if (font == null)
+        {
+            if (_highlightFont == null)
+            {
+                var any = Object.FindObjectOfType<TextMeshProUGUI>();
+                if (any != null) _highlightFont = any.font;
+            }
+            font = _highlightFont;
+        }
+        else
+            _highlightFont = font;
+        if (font != null)
+            tmp.font = font;
     }
 
     /// <summary>计算候选“原位数字”的世界中心/尺寸。
@@ -784,11 +941,12 @@ public class FusionController : MonoBehaviour
         if (frames == null || frames.Length == 0) return null;
 
         var go = new GameObject("SelectAnim");
-        go.transform.SetParent(_panelRoot.transform, false);
+        // 挂到高亮块上：意图卡悬停放大时选中动画一起缩放
+        go.transform.SetParent(blockRT, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = blockRT.anchoredPosition + new Vector2(-blockRT.sizeDelta.x * 0.5f, 0f);   // 居中于数字，略左移贴合数字
+        rt.anchoredPosition = new Vector2(-blockRT.sizeDelta.x * 0.5f, 0f);   // 居中于数字，略左移贴合数字
         rt.sizeDelta = blockRT.sizeDelta * 5f;            // 5 倍于高亮块
         var img = go.AddComponent<Image>();
         img.sprite = frames[0];
@@ -951,16 +1109,25 @@ public class FusionController : MonoBehaviour
         }
 
         Debug.Log($"[Fusion] 融合 {total} → [{string.Join(",", split)}]");
-        _battle.SetDirtyUI();
         ExitFusion();
+        _battle.SetDirtyUI();
     }
 
     private void ExitFusion()
     {
         ClearSelectAnims();   // 清除选中动画层
+        for (int i = 0; i < _highlights.Count; i++)
+        {
+            if (_highlights[i] != null)
+                Destroy(_highlights[i]);
+        }
+        _highlights.Clear();
         if (_panelRoot != null) Destroy(_panelRoot);
         _panelRoot = null;
-        _highlights.Clear();
+        IsOpen = false;
+        PanelTransform = null;
+        CardDisplay.FusionHighlightActive = false;
+        RestoreIntentDeckOverlay();
         _selected.Clear();
         _candidates.Clear();
         UpdateEntryInteractable();
