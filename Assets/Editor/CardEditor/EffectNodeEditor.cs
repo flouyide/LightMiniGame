@@ -305,7 +305,8 @@ namespace LightMiniGame.CardEditor.Editor
                 {
                     if (node.target == null) node.target = new TargetSelector();
                     node.target.category = TargetCategory.Card;
-                    node.target.cardTarget = CardTarget.AllCardsInHand;
+                    node.target.cardTarget = CardTarget.RandomCardsInDrawPile;
+                    node.target.selectionMode = CardSelectionMode.RandomCount;
                     if (node.duration == null) node.duration = new EffectDuration();
                     if (node.duration.type == DurationType.Instant)
                         node.duration.type = DurationType.UntilCombatEnd;
@@ -315,13 +316,45 @@ namespace LightMiniGame.CardEditor.Editor
             if (node.zoneOperation == CardZoneOperation.AddTemporaryKeyword
                 || node.zoneOperation == CardZoneOperation.RemoveTemporaryKeyword)
             {
+                if (node.target == null) node.target = new TargetSelector();
+                node.target.category = TargetCategory.Card;
+
                 EditorGUILayout.HelpBox(
-                    "给目标卡牌添加/移除词条。上方「目标」选卡牌（全部手牌 / 手牌随机 / 当前卡等）。也可指定一张卡，则本场该卡的所有副本都会改。",
+                    "给范围内的卡加固定词条。选「抽牌堆随机」会从即将抽出的牌里随机挑若干张；抽到后词条会显示在卡面上。",
                     MessageType.Info);
                 int kwMask = EditorGUILayout.MaskField("词条（可多选）", (int)node.keywordToApply, CardKeywords.FlagMaskNames);
                 node.keywordToApply = (CardKeyword)kwMask;
-                node.createdCard = (CardEntry)EditorGUILayout.ObjectField("指定卡牌（可选）", node.createdCard, typeof(CardEntry), false);
-                DrawValueNodeField("随机数量", node.zoneCount);
+
+                var ranges = new[]
+                {
+                    CardTarget.AllCardsInHand,
+                    CardTarget.RandomCardInHand,
+                    CardTarget.RandomCardsInDrawPile,
+                    CardTarget.TopCardsOfDrawPile,
+                    CardTarget.CardsInDiscardPile,
+                    CardTarget.CurrentCard,
+                    CardTarget.NextPlayedCard,
+                    CardTarget.AllCombatCards
+                };
+                var rangeNames = new[]
+                {
+                    "全部手牌", "手牌随机", "抽牌堆随机", "抽牌堆顶",
+                    "弃牌堆", "当前卡", "下一张打出", "指定卡本场全部"
+                };
+                int rangeIdx = System.Array.IndexOf(ranges, node.target.cardTarget);
+                if (rangeIdx < 0) rangeIdx = 0;
+                rangeIdx = EditorGUILayout.Popup("范围", rangeIdx, rangeNames);
+                node.target.cardTarget = ranges[rangeIdx];
+                bool needCount = node.target.cardTarget == CardTarget.RandomCardInHand
+                    || node.target.cardTarget == CardTarget.RandomCardsInDrawPile
+                    || node.target.cardTarget == CardTarget.TopCardsOfDrawPile;
+                node.target.selectionMode = needCount ? CardSelectionMode.RandomCount : CardSelectionMode.All;
+                if (needCount)
+                    DrawValueNodeField("张数", node.zoneCount);
+
+                node.createdCard = (CardEntry)EditorGUILayout.ObjectField(
+                    node.target.cardTarget == CardTarget.AllCombatCards ? "指定卡牌" : "仅筛选此卡（可空）",
+                    node.createdCard, typeof(CardEntry), false);
                 DrawDurationField(node);
                 return;
             }
@@ -661,7 +694,7 @@ namespace LightMiniGame.CardEditor.Editor
         {
             "当前卡牌", "下一张打出", "下一张攻击牌", "下一张技能牌", "下一张能力牌",
             "手牌选中", "手牌随机", "全部手牌", "抽牌堆顶", "弃牌堆", "消耗堆",
-            "本回合打出", "最后打出"
+            "本回合打出", "最后打出", "抽牌堆随机", "本场全部卡牌"
         };
 
         private static string[] GetZoneNames() => new[]

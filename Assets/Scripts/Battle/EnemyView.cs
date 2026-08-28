@@ -279,12 +279,12 @@ public class EnemyView : MonoBehaviour
         var go = new GameObject("BuffIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
         go.transform.SetParent(_buffDeckRoot, false);
         var rt = go.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(32f, 32f);
+        rt.sizeDelta = new Vector2(36f, 36f);
         var le = go.GetComponent<LayoutElement>();
-        le.preferredWidth = 32f;
-        le.preferredHeight = 32f;
-        le.minWidth = 32f;
-        le.minHeight = 32f;
+        le.preferredWidth = 36f;
+        le.preferredHeight = 36f;
+        le.minWidth = 36f;
+        le.minHeight =36f;
 
         var icon = go.GetComponent<Image>();
         icon.raycastTarget = true;
@@ -297,7 +297,7 @@ public class EnemyView : MonoBehaviour
         labelRt.anchorMax = new Vector2(1f, 0f);
         labelRt.pivot = new Vector2(1f, 0f);
         labelRt.anchoredPosition = Vector2.zero;
-        labelRt.sizeDelta = new Vector2(24f, 20f);
+        labelRt.sizeDelta = new Vector2(30f, 0f);
         var tmp = labelGo.GetComponent<TextMeshProUGUI>();
         if (hpText != null)
         {

@@ -697,36 +697,49 @@ public class BattleManager : MonoBehaviour
     private List<CardData> CollectKeywordTargetCards(EffectNode node, int count)
     {
         var result = new List<CardData>();
-        if (node.createdCard != null)
-        {
-            foreach (var card in EnumerateCombatCards(CardZoneType.PermanentDeck))
-            {
-                if (CardMatchesEntry(card, node.createdCard))
-                    result.Add(card);
-            }
-            return result;
-        }
-
         var sel = node.target;
         var cardTarget = sel != null && sel.category == TargetCategory.Card
             ? sel.cardTarget
             : CardTarget.AllCardsInHand;
         var mode = sel != null ? sel.selectionMode : CardSelectionMode.All;
 
-        List<CardData> pool = cardTarget switch
+        List<CardData> pool;
+        if (cardTarget == CardTarget.AllCombatCards || (node.createdCard != null && sel != null && sel.category != TargetCategory.Card))
         {
-            CardTarget.CurrentCard => WrapCard(_currentFusionCard),
-            CardTarget.LastPlayedCard => WrapCard(LastPlayedCard),
-            CardTarget.TopCardsOfDrawPile => CopyList(ActiveChar?.drawPile),
-            CardTarget.CardsInDiscardPile => CopyList(ActiveChar?.discardPile),
-            CardTarget.CardsInExhaustPile => CopyList(ActiveChar?.consumedPile),
-            CardTarget.RandomCardInHand => CopyList(_hand),
-            CardTarget.SelectedCardInHand => CopyList(_hand),
-            _ => CopyList(_hand)
-        };
+            pool = new List<CardData>();
+            foreach (var card in EnumerateCombatCards(CardZoneType.PermanentDeck))
+                pool.Add(card);
+        }
+        else
+        {
+            pool = cardTarget switch
+            {
+                CardTarget.CurrentCard => WrapCard(_currentFusionCard),
+                CardTarget.LastPlayedCard => WrapCard(LastPlayedCard),
+                CardTarget.TopCardsOfDrawPile => CopyList(ActiveChar?.drawPile),
+                CardTarget.RandomCardsInDrawPile => CopyList(ActiveChar?.drawPile),
+                CardTarget.CardsInDiscardPile => CopyList(ActiveChar?.discardPile),
+                CardTarget.CardsInExhaustPile => CopyList(ActiveChar?.consumedPile),
+                CardTarget.RandomCardInHand => CopyList(_hand),
+                CardTarget.SelectedCardInHand => CopyList(_hand),
+                _ => CopyList(_hand)
+            };
+        }
+
+        if (node.createdCard != null)
+        {
+            for (int i = pool.Count - 1; i >= 0; i--)
+            {
+                if (!CardMatchesEntry(pool[i], node.createdCard))
+                    pool.RemoveAt(i);
+            }
+        }
 
         if (pool.Count == 0) return result;
-        if (mode == CardSelectionMode.RandomCount || cardTarget == CardTarget.RandomCardInHand)
+        bool randomPick = mode == CardSelectionMode.RandomCount
+            || cardTarget == CardTarget.RandomCardInHand
+            || cardTarget == CardTarget.RandomCardsInDrawPile;
+        if (randomPick)
         {
             int n = Mathf.Clamp(count, 1, pool.Count);
             ShuffleInPlace(pool);
