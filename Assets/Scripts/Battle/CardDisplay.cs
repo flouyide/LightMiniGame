@@ -253,13 +253,24 @@ public class CardDisplay : MonoBehaviour
 
         ApplyKeywordIconLayout(container);
 
+        for (int i = _keywordIconPool.Count - 1; i >= 0; i--)
+        {
+            if (_keywordIconPool[i] == null)
+                _keywordIconPool.RemoveAt(i);
+        }
+
         if (_keywordIconPool.Count == 0)
         {
             for (int i = 0; i < container.childCount; i++)
             {
                 var child = container.GetChild(i);
-                if (child != null && child.name.StartsWith("KeywordIcon"))
-                    _keywordIconPool.Add(child.gameObject);
+                if (child == null) continue;
+                // KeywordIcons 容器本身也以 KeywordIcon 开头，不能当图标回收。
+                if (child.name == "KeywordIcons") continue;
+                if (!child.name.StartsWith("KeywordIcon")) continue;
+                var childGo = child.gameObject;
+                if (childGo == null) continue;
+                _keywordIconPool.Add(childGo);
             }
         }
 
@@ -267,33 +278,21 @@ public class CardDisplay : MonoBehaviour
         if (_resolvedKeywordTab != null)
             _resolvedKeywordTab.gameObject.SetActive(ordered.Count > 0);
 
-        while (_keywordIconPool.Count > ordered.Count)
+        while (_keywordIconPool.Count < ordered.Count)
         {
-            int last = _keywordIconPool.Count - 1;
-            var go = _keywordIconPool[last];
-            _keywordIconPool.RemoveAt(last);
-            if (go == null) continue;
-            if (Application.isPlaying) Destroy(go);
-            else DestroyImmediate(go);
+            var created = CreateKeywordIcon(container);
+            if (created == null) break;
+            _keywordIconPool.Add(created);
         }
 
-        if (ordered.Count == 0) return;
-
-        for (int i = 0; i < ordered.Count; i++)
+        for (int i = 0; i < _keywordIconPool.Count; i++)
         {
-            var kw = ordered[i];
-            GameObject iconGo;
-            if (i < _keywordIconPool.Count)
-            {
-                iconGo = _keywordIconPool[i];
-                iconGo.SetActive(true);
-            }
-            else
-            {
-                iconGo = CreateKeywordIcon(container);
-                _keywordIconPool.Add(iconGo);
-            }
-            ApplyKeywordIcon(iconGo, kw);
+            var iconGo = _keywordIconPool[i];
+            if (iconGo == null) continue;
+            bool on = i < ordered.Count;
+            iconGo.SetActive(on);
+            if (!on) continue;
+            ApplyKeywordIcon(iconGo, ordered[i]);
             ApplyKeywordIconSize(iconGo);
         }
     }
