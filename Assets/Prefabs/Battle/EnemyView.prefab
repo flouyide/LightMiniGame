@@ -1040,8 +1040,8 @@ MonoBehaviour:
   hpBar: {fileID: 876905236068782483}
   armorText: {fileID: 2092861099016971916}
   buffIconPrefab: {fileID: 0}
-  fatigueIcon: {fileID: 0}
-  armorBreakIcon: {fileID: 0}
+  fatigueIcon: {fileID: 21300000, guid: a6cfc538ccb90e2449a1da9e212a3428, type: 3}
+  armorBreakIcon: {fileID: 21300000, guid: 089236dcf60437e46b96fb2b47f843ea, type: 3}
   strengthIcon: {fileID: 21300000, guid: 9911dbd4f4c6505408d778419f0a8141, type: 3}
   damageAnchor: {fileID: 6084429079432763145}
   damagePopupPrefab: {fileID: 8632132199425164748, guid: bcdbb62492eb341d6beee30238fc90dd, type: 3}
