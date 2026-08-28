@@ -341,7 +341,7 @@ MonoBehaviour:
   chapterManager: {fileID: 0}
   cardContainer: {fileID: 4425947012668196541}
   cardPrefab: {fileID: 4897224552576100807, guid: dcb37079834b1e949b9b2d25a78cc4c7, type: 3}
-  optionPanel: {fileID: 3477027216700883823}
+  optionPanel: {fileID: 0}
   shopPanel: {fileID: 3739715552094396080, guid: 543f610608e1ea54b8099b62fc0b58aa, type: 3}
   chapterNameText: {fileID: 1531083452907252473}
   remainingPagesText: {fileID: 529626920433736674}
@@ -2934,17 +2934,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 67ee940a7aa843541b852e9e58ddc420, type: 3}
---- !u!114 &3477027216700883823 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 9071390264448364220, guid: 67ee940a7aa843541b852e9e58ddc420, type: 3}
-  m_PrefabInstance: {fileID: 5594856906862882259}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41d52c3ecacd8d34894aeac50aaa37ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!224 &9117817804864184111 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3687342308226413308, guid: 67ee940a7aa843541b852e9e58ddc420, type: 3}

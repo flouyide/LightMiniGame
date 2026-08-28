@@ -80,7 +80,10 @@ public class CardDisplay : MonoBehaviour
     [SerializeField] private KeywordIconLibrary keywordIconLibrary;
     [Tooltip("按位顺序备用图标：股神、韭菜、回流、配件、查阅、内部价、贿赂、摸鱼、监控目标")]
     [SerializeField] private Sprite[] keywordIconSprites;
+    [Tooltip("单个词条图标宽高（像素）")]
     [SerializeField] private float keywordIconSize = 16f;
+    [Tooltip("词条图标之间的垂直间距（像素）")]
+    [SerializeField] private float keywordIconSpacing = 2f;
 
     [Header("词条悬浮提示")]
     [Tooltip("悬浮时显示的词条说明面板（Image + 子 TextMeshProUGUI），需挂在卡牌上方")]
@@ -248,6 +251,8 @@ public class CardDisplay : MonoBehaviour
         if (!CanMutateHierarchy(this))
             return;
 
+        ApplyKeywordIconLayout(container);
+
         if (_keywordIconPool.Count == 0)
         {
             for (int i = 0; i < container.childCount; i++)
@@ -287,7 +292,38 @@ public class CardDisplay : MonoBehaviour
                 _keywordIconPool.Add(iconGo);
             }
             ApplyKeywordIcon(iconGo, kw);
+            ApplyKeywordIconSize(iconGo);
         }
+    }
+
+    private float ResolvedKeywordIconSize => keywordIconSize > 0f ? keywordIconSize : 16f;
+
+    private void ApplyKeywordIconLayout(RectTransform container)
+    {
+        if (container == null) return;
+        var vlg = container.GetComponent<VerticalLayoutGroup>();
+        if (vlg != null)
+            vlg.spacing = keywordIconSpacing;
+    }
+
+    private void ApplyKeywordIconSize(GameObject iconGo)
+    {
+        if (iconGo == null) return;
+        float size = ResolvedKeywordIconSize;
+        var rt = iconGo.GetComponent<RectTransform>();
+        if (rt != null)
+            rt.sizeDelta = new Vector2(size, size);
+        var le = iconGo.GetComponent<LayoutElement>();
+        if (le != null)
+        {
+            le.preferredWidth = size;
+            le.preferredHeight = size;
+            le.minWidth = size;
+            le.minHeight = size;
+        }
+        var label = iconGo.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (label != null)
+            label.fontSize = Mathf.Max(8f, size * 0.55f);
     }
 
     private RectTransform EnsureKeywordIconContainer()
@@ -384,7 +420,7 @@ public class CardDisplay : MonoBehaviour
         return tabRt;
     }
 
-    private static Transform CreateKeywordIconsChild(Transform tab)
+    private Transform CreateKeywordIconsChild(Transform tab)
     {
         var go = new GameObject("KeywordIcons", typeof(RectTransform), typeof(VerticalLayoutGroup));
         go.transform.SetParent(tab, false);
@@ -395,7 +431,7 @@ public class CardDisplay : MonoBehaviour
         rt.offsetMax = Vector2.zero;
         var vlg = go.GetComponent<VerticalLayoutGroup>();
         vlg.padding = new RectOffset(2, 2, 8, 8);
-        vlg.spacing = 2f;
+        vlg.spacing = keywordIconSpacing;
         vlg.childAlignment = TextAnchor.UpperCenter;
         vlg.childControlWidth = false;
         vlg.childControlHeight = false;
@@ -444,7 +480,7 @@ public class CardDisplay : MonoBehaviour
 
     private GameObject CreateKeywordIcon(RectTransform parent)
     {
-        float size = keywordIconSize > 0f ? keywordIconSize : 16f;
+        float size = ResolvedKeywordIconSize;
         var go = new GameObject("KeywordIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
         go.transform.SetParent(parent, false);
         var rt = go.GetComponent<RectTransform>();

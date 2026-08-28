@@ -90,7 +90,8 @@ public class CardDisplayEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconContainer"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconLibrary"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconSprites"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconSize"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconSize"), new GUIContent("图标大小"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("keywordIconSpacing"), new GUIContent("图标间距"));
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("词条悬浮提示", EditorStyles.boldLabel);

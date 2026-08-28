@@ -311,7 +311,8 @@ MonoBehaviour:
   keywordIconContainer: {fileID: 2856627574512661402}
   keywordIconLibrary: {fileID: 0}
   keywordIconSprites: []
-  keywordIconSize: 16
+  keywordIconSize: 10
+  keywordIconSpacing: 2
   keywordTooltip: {fileID: 0}
   tooltipText: {fileID: 0}
   tooltipBgColor: {r: 0.15, g: 0.1, b: 0.2, a: 0.9}
@@ -552,7 +553,7 @@ MonoBehaviour:
   m_text: "\u653B\u51FB\u724C\u6A21\u677F"
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  m_fontAsset: {fileID: 0}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -986,7 +987,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4281874495
-  m_fontColor: {r: 0.24528301, g: 0.21867211, b: 0.21867211, a: 1}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

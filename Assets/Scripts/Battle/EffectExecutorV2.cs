@@ -703,7 +703,9 @@ public class EffectExecutorV2
             {
                 isCrit = false;
                 hitDamage = baseDamage;
-                _ctx.DealDamageToPlayer(hitDamage, _initiatorEnemySlot);
+                // 对玩家结算时暂时清发起者：OnDamageTaken 等嵌套触发器必须按玩家视角解析目标。
+                // 否则「命中后对选定敌人造成伤害」会因为敌人出牌中的目标反转，再次打到玩家。
+                DealDamageToPlayerFromEnemy(hitDamage);
             }
             else
             {
@@ -737,18 +739,23 @@ public class EffectExecutorV2
             totalDamage += hitDamage;
             if (isCrit) { critCount++; anyCrit = true; }
 
-            // 触发攻击事件
-            if (isCrit)
+            // 敌人打玩家：不广播命中/攻击后。这些事件属于「出牌者打出攻击」，
+            // 在敌人发起期间会把玩家的命中后效果按敌人视角结算，多扣一次血。
+            if (!toPlayer)
             {
-                _ctx.RecordEvent("OnCrit");
-                _triggerSystem?.FireEvent(TriggerEvent.OnCriticalHit);
+                if (isCrit)
+                {
+                    _ctx.RecordEvent("OnCrit");
+                    _triggerSystem?.FireEvent(TriggerEvent.OnCriticalHit);
+                }
+                _triggerSystem?.FireEvent(TriggerEvent.OnHit);
             }
-            _triggerSystem?.FireEvent(TriggerEvent.OnHit);
 
             Log($"  第{hit + 1}击: {hitDamage}{(isCrit ? " 暴击" : "")}");
         }
 
-        _triggerSystem?.FireEvent(TriggerEvent.AfterAttack);
+        if (!toPlayer)
+            _triggerSystem?.FireEvent(TriggerEvent.AfterAttack);
 
         if (!toPlayer && node.countAsAttack)
         {
@@ -761,6 +768,24 @@ public class EffectExecutorV2
         _lastResult[EffectResultType.CriticalHitCount] = critCount;
         _lastResult[EffectResultType.AnyCriticalHit] = anyCrit ? 1 : 0;
         _lastResult[EffectResultType.ActualValue] = totalDamage;
+    }
+
+    /// <summary>
+    /// 敌人攻击打到玩家：伤害仍按该敌人的倍率结算，但嵌套触发器按玩家视角解析目标。
+    /// </summary>
+    private void DealDamageToPlayerFromEnemy(int damage)
+    {
+        int slot = _initiatorEnemySlot;
+        int prev = _initiatorEnemySlot;
+        _initiatorEnemySlot = -1;
+        try
+        {
+            _ctx.DealDamageToPlayer(damage, slot);
+        }
+        finally
+        {
+            _initiatorEnemySlot = prev;
+        }
     }
 
     // ========================================================================
