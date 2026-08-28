@@ -187,7 +187,7 @@ public class EnemyView : MonoBehaviour
         {
             var sprite = (_inst.Phase == 2 && cfg.phase2Portrait != null) ? cfg.phase2Portrait : cfg.phase1Portrait;
             if (sprite != null) portraitImage.sprite = sprite;
-            if (_shakeRoutine == null)
+            //if (_shakeRoutine == null)
                 //portraitImage.color = PortraitRestColor();
         }
     }
