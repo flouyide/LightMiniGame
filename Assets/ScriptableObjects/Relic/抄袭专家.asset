@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "抄袭专家"
+  m_Name: "\u6284\u88AD\u4E13\u5BB6"
   m_EditorClassIdentifier: 
   relicId: CopycatExpertAbility
-  relicName: "抄袭专家"
-  description: "拥有此能力的怪物会记住玩家本回合打出的前两张牌，并在敌人回合打出它们。"
-  icon: {fileID: 0}
+  relicName: "\u6284\u88AD\u4E13\u5BB6"
+  description: "\u62E5\u6709\u6B64\u80FD\u529B\u7684\u602A\u7269\u4F1A\u8BB0\u4F4F\u73A9\u5BB6\u672C\u56DE\u5408\u6253\u51FA\u7684\u524D\u4E24\u5F20\u724C\uFF0C\u5E76\u5728\u654C\u4EBA\u56DE\u5408\u6253\u51FA\u5B83\u4EEC\u3002"
+  icon: {fileID: 21300000, guid: 6d12cfdb63037644db3aa7f69deb5924, type: 3}
   value: 0
   grade: 0
   sortOrder: 0
