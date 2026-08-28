@@ -50,6 +50,25 @@ public class ChapterManager : MonoBehaviour
     private CharacterData _inactiveCharacter;
     public CharacterData ActiveCharacter => _activeCharacter;
     public CharacterData InactiveCharacter => _inactiveCharacter;
+    /// <summary>当前单局读取的角色与章节配置。</summary>
+    public GameConfig GameConfig => gameConfig;
+    /// <summary>局外主画布（BookCanvas2）。</summary>
+    public GameObject BookCanvas => bookCanvas;
+
+    /// <summary>
+    /// 由选人界面在 Awake 阶段调用，阻止 Start() 用默认 GameConfig.characters 自动开局。
+    /// 确认两名角色后直接调用 StartGame() 即可继续流程。
+    /// </summary>
+    public void DeferStartUntilCharacterSelection()
+    {
+        if (_isStarted)
+        {
+            Debug.LogWarning("[ChapterManager] 游戏已开始，无法再进入选人等待状态。");
+            return;
+        }
+
+        _startDeferredForCharacterSelection = true;
+    }
 
     /// <summary>按开局索引获取角色（0=角色1，1=角色2）；未配置或越界返回 null。</summary>
     public CharacterData GetCharacter(int index)
@@ -80,6 +99,8 @@ public class ChapterManager : MonoBehaviour
     private HashSet<string> _excludedEvents = new();    // 已排斥事件ID集合（互斥事件排除）
     private bool _finalNodeCompleted;
     private bool _isStarted; // 游戏是否已启动
+    // 选人界面在 Awake 阶段设置该标记，确保 ChapterManager.Start 不会抢先按默认角色开局。
+    private bool _startDeferredForCharacterSelection;
     private int _lastSelectedIndex = -1; // 最后选中的页面索引（供 OnOptionResolved 使用）
     private int _remainingBeforeSelection; // 本次选择/删除「之前」的剩余次数（区分"刷新"还是"消耗"）
 
@@ -344,7 +365,7 @@ public class ChapterManager : MonoBehaviour
 
     private void Start()
     {
-        if (!_isStarted)
+        if (!_isStarted && !_startDeferredForCharacterSelection)
             StartGame();
     }
 
