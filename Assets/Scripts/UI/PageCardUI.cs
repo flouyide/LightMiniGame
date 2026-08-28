@@ -13,7 +13,6 @@ public class PageCardUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI descText;
     [SerializeField] private Button cardButton;            // 点击整张卡片直接进入事件
-    [SerializeField] private GameObject finalNodeIndicator;
 
     [Header("右上角删除按钮")]
     [SerializeField] private Button deleteButton;          // 右上角删除按钮
@@ -92,9 +91,6 @@ public class PageCardUI : MonoBehaviour
         {
             iconImage.color = new Color(1, 1, 1, 0.1f);
         }
-
-        if (finalNodeIndicator != null)
-            finalNodeIndicator.SetActive(data.isFinalNode);
 
         // 根据事件类型决定是否显示删除按钮
         if (deleteButton != null)
