@@ -20,6 +20,7 @@ public class BattleCardContext : ICardRuntimeContext
     public float PlayerCritRate => _battle.PlayerCritRate;
     public float PlayerCritDamage => _battle.PlayerCritDamage;
     public int PlayerSanity => _battle.PlayerSanity;
+    public int PlayerMaxSanity => _battle.PlayerMaxSanity;
     public int PlayerFortune => _battle.PlayerFortune;
     public int PlayerEnergy => _battle.ActionPoints;
     public int PlayerArmor => _battle.PlayerArmor;
@@ -55,6 +56,7 @@ public class BattleCardContext : ICardRuntimeContext
         => _battle.DealDamageToAllEnemies(amount, ignoreArmor, isCrit, armorBreak);
 
     public void HealPlayer(int amount) => _battle.HealPlayer(amount);
+    public void LosePlayerHP(int amount) => _battle.LosePlayerHP(amount);
     public void AddPlayerArmor(int amount) => _battle.AddPlayerArmor(amount);
     public void AddPlayerEnergy(int amount) => _battle.AddActionPoints(amount);
     public void DrawCards(int amount) => _battle.DrawCards(amount);
@@ -145,6 +147,33 @@ public class BattleCardContext : ICardRuntimeContext
         return f != null && f.HasSlotKind(kind);
     }
     public void AddBuff(BuffAttributeType type, int stacks, int duration = 0) => _battle.AddPlayerBuff(type, stacks, duration);
+
+    public bool CurrentAttackKilledEnemy => _battle.CurrentAttackKilledEnemy;
+    public CardData LastPlayedCard => _battle.LastPlayedCard ?? _battle.CurrentFusionCard;
+
+    public void AddTurnCounter(string name, int delta) => _battle.AddTurnCounter(name, delta);
+    public void AddBattleCounter(string name, int delta) => _battle.AddBattleCounter(name, delta);
+
+    public void AddPendingNextAttackDamageBonus(int amount) => _battle.AddPendingNextAttackDamageBonus(amount);
+    public void AddPendingNextAttackCritDamageBonus(int percent) => _battle.AddPendingNextAttackCritDamageBonus(percent);
+    public void AddPendingNextAttackGuaranteedCrit(int uses = 1) => _battle.AddPendingNextAttackGuaranteedCrit(uses);
+    public void EnableFirstAttackEachTurnGuaranteedCrit() => _battle.EnableFirstAttackEachTurnGuaranteedCrit();
+    public int ConsumePendingNextAttackDamageBonus() => _battle.ConsumePendingNextAttackDamageBonus();
+    public int ConsumePendingNextAttackCritDamageBonus() => _battle.ConsumePendingNextAttackCritDamageBonus();
+    public bool ConsumePendingNextAttackGuaranteedCrit() => _battle.ConsumePendingNextAttackGuaranteedCrit();
+    public bool IsFirstAttackThisTurnGuaranteedCrit => _battle.IsFirstAttackThisTurnGuaranteedCrit;
+
+    public int ExhaustRandomHandCards(int count) => _battle.ExhaustRandomHandCards(count);
+    public int DiscardRandomHandCards(int count) => _battle.DiscardRandomHandCards(count);
+    public int AutoPlayTopDrawPile(int count) => _battle.AutoPlayTopDrawPile(count);
+
+    public bool ReplayCardEffects(CardData card, bool skipTriggers)
+    {
+        bool prev = _battle.SkipRegisterTriggersOnReplay;
+        _battle.SkipRegisterTriggersOnReplay = skipTriggers;
+        try { return _battle.ReplayCardEffects(card); }
+        finally { _battle.SkipRegisterTriggersOnReplay = prev; }
+    }
 
     // === 事件记录 ===
     public bool HasEventOccurred(string eventName) => _battle.HasEventOccurred(eventName);

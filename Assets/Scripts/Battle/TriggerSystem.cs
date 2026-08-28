@@ -180,6 +180,7 @@ public class TriggerSystem
     /// <summary>每回合结束时检查过期</summary>
     public void OnTurnEnd()
     {
+        FireEvent(TriggerEvent.OnTurnEnd);
         foreach (var t in _triggers)
         {
             if (t.duration.expireAtTurnEnd)
@@ -193,7 +194,6 @@ public class TriggerSystem
                     t.expired = true;
             }
         }
-        FireEvent(TriggerEvent.OnTurnEnd);
         _triggers.RemoveAll(t => t.expired);
     }
 

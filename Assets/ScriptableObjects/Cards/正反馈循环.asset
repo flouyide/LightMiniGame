@@ -96,7 +96,7 @@ MonoBehaviour:
     zoneOperation: 0
     zoneCount:
       rid: 1654833856827621774
-    triggerEvent: 27
+    triggerEvent: 12
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
@@ -164,7 +164,7 @@ MonoBehaviour:
     zoneOperation: 0
     zoneCount:
       rid: 1654833856827621779
-    triggerEvent: 27
+    triggerEvent: 12
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1

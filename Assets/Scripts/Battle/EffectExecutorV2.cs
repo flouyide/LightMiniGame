@@ -51,7 +51,32 @@ public class EffectExecutorV2
             var node = effects[i];
             if (node == null || !node.enabled) continue;
 
+            // 编辑器常把触发后效果配成后续兄弟节点。空 childEffects 的 RegisterTrigger 把后面的节点收作子效果。
+            if (node.operation == EffectOperation.RegisterTrigger
+                && (node.childEffects == null || node.childEffects.Count == 0))
+            {
+                var stolen = new List<EffectNode>();
+                while (i + 1 < effects.Count)
+                {
+                    var next = effects[i + 1];
+                    if (next == null || next.operation == EffectOperation.RegisterTrigger) break;
+                    stolen.Add(next);
+                    i++;
+                }
+                if (stolen.Count > 0)
+                {
+                    var wrapped = node.Clone();
+                    wrapped.childEffects = stolen;
+                    Log($"--- 效果 RegisterTrigger 回收后续 {stolen.Count} 个兄弟节点为子效果 ---");
+                    ExecuteRegisterTrigger(wrapped);
+                    continue;
+                }
+            }
+
             Log($"--- 效果[{i + 1}] {node.displayName}: {node.GetDescription()} ---");
+
+            if (TryDeferToCharacterSwitch(node))
+                continue;
 
             // 注册触发器：节点上的条件是「触发时」检查，打出时不拦截注册。
             bool skipPlayConditions = node.operation == EffectOperation.RegisterTrigger;
@@ -77,6 +102,40 @@ public class EffectExecutorV2
                 Log($"  → 保存变量 {node.outputVariableName} = {resultVal}");
             }
         }
+    }
+
+    /// <summary>「登场角色/退场角色」目标在打出时还不存在，改成切换后触发一次。</summary>
+    private bool TryDeferToCharacterSwitch(EffectNode node)
+    {
+        if (_triggerExecDepth > 0 || node == null) return false;
+        if (node.operation == EffectOperation.RegisterTrigger) return false;
+        var unit = node.target != null ? node.target.unitTarget : CombatUnitTarget.SelectedEnemy;
+        if (unit != CombatUnitTarget.SwitchedInCharacter && unit != CombatUnitTarget.SwitchedOutCharacter)
+            return false;
+        if (node.operation != EffectOperation.ModifyAttribute
+            && node.operation != EffectOperation.ApplyStatus
+            && node.operation != EffectOperation.ModifyResource
+            && node.operation != EffectOperation.GainBlock)
+            return false;
+
+        var child = node.Clone();
+        child.target = new TargetSelector
+        {
+            category = TargetCategory.Character,
+            unitTarget = CombatUnitTarget.CurrentCharacter
+        };
+        var trigger = new EffectNode
+        {
+            enabled = true,
+            displayName = node.displayName + "(切换时)",
+            operation = EffectOperation.RegisterTrigger,
+            triggerEvent = TriggerEvent.AfterCharacterSwitch,
+            duration = new EffectDuration { type = DurationType.NextTrigger },
+            childEffects = new List<EffectNode> { child }
+        };
+        ExecuteRegisterTrigger(trigger);
+        Log("  [延迟] 登场/退场目标改为「下次切换角色后」触发");
+        return true;
     }
 
     /// <summary>供敌人技能调用：设置发起者为指定槽位敌人后再执行效果列表。执行完发起者恢复为玩家。</summary>
@@ -196,6 +255,11 @@ public class EffectExecutorV2
                     CombatFlagType.PlayedCardThisTurn => _ctx.GetTurnCounter("CardsPlayed") > 0,
                     CombatFlagType.SwitchedCharacterThisTurn => _ctx.GetTurnCounter("CharactersSwitched") > 0,
                     CombatFlagType.IsOverheated => _ctx.GetCustomData("Heat") >= 25,
+                    CombatFlagType.CurrentAttackKilledEnemy => _ctx.CurrentAttackKilledEnemy,
+                    CombatFlagType.CurrentHitWasCritical => _ctx.GetTurnCounter("CriticalHits") > 0,
+                    CombatFlagType.CurrentAttackHadAnyCriticalHit => _ctx.GetTurnCounter("CriticalHits") > 0,
+                    CombatFlagType.IsFirstAttackThisTurn => _ctx.GetTurnCounter("AttacksPerformed") <= 0,
+                    CombatFlagType.IsFirstAttackCardThisTurn => _ctx.GetTurnCounter("AttackCardsPlayed") <= 1,
                     _ => false
                 };
 
@@ -298,7 +362,7 @@ public class EffectExecutorV2
                 return node.resourceRef switch
                 {
                     LightMiniGame.CardEditor.PlayerResourceType.CurrentHealth => _ctx.PlayerMaxHP - _ctx.PlayerHP,
-                    LightMiniGame.CardEditor.PlayerResourceType.Sanity => _ctx.GetBattleCounter("TotalSanityLost"),
+                    LightMiniGame.CardEditor.PlayerResourceType.Sanity => Mathf.Max(0, _ctx.PlayerMaxSanity - _ctx.PlayerSanity),
                     _ => 0
                 };
 
@@ -328,7 +392,9 @@ public class EffectExecutorV2
                     CombatCounterType.HeatGainedThisTurn => _ctx.GetTurnCounter("HeatGained"),
                     CombatCounterType.HeatLostThisTurn => _ctx.GetTurnCounter("HeatLost"),
                     CombatCounterType.CharactersSwitchedThisTurn => _ctx.GetTurnCounter("CharactersSwitched"),
+                    CombatCounterType.CharactersSwitchedThisCombat => _ctx.GetBattleCounter("CharactersSwitched"),
                     CombatCounterType.EnemiesKilledThisTurn => _ctx.GetTurnCounter("EnemiesKilled"),
+                    CombatCounterType.EnemiesKilledThisCombat => _ctx.GetBattleCounter("EnemiesKilled"),
                     CombatCounterType.BlockGainedThisTurn => _ctx.GetTurnCounter("BlockGained"),
                     CombatCounterType.CardsDrawnThisTurn => _ctx.GetTurnCounter("CardsDrawn"),
                     CombatCounterType.CardsDiscardedThisTurn => _ctx.GetTurnCounter("CardsDiscarded"),
@@ -449,6 +515,7 @@ public class EffectExecutorV2
                 ExecuteDrawCards(node);
                 break;
             case EffectOperation.RestoreActionPoints:
+                if (TryWrapNonInstantAsTrigger(node)) break;
                 ExecuteRestoreAP(node);
                 break;
             case EffectOperation.MoveCards:
@@ -456,6 +523,12 @@ public class EffectExecutorV2
                 break;
             case EffectOperation.CreateCard:
                 ExecuteCreateCard(node);
+                break;
+            case EffectOperation.PlayCardAutomatically:
+                ExecutePlayAutomatically(node);
+                break;
+            case EffectOperation.ReplayCurrentCard:
+                ExecuteReplayCurrentCard(node);
                 break;
             case EffectOperation.ModifyCardProperty:
                 ExecuteModifyCardProperty(node);
@@ -488,6 +561,7 @@ public class EffectExecutorV2
                 Log($"  [修改变量] {node.outputVariableName}: {current} → {newVal}");
                 break;
             case EffectOperation.CustomOperation:
+                if (TryWrapNonInstantAsTrigger(node)) break;
                 if (node.customOperation != null)
                 {
                     node.customOperation.Execute(_ctx, node.customParams);
@@ -505,6 +579,39 @@ public class EffectExecutorV2
     // ========================================================================
     // 伤害
     // ========================================================================
+    private bool TryWrapNonInstantAsTrigger(EffectNode node)
+    {
+        if (_triggerExecDepth > 0 || node == null || node.duration == null) return false;
+        if (node.duration.type == DurationType.Instant) return false;
+        var child = node.Clone();
+        child.duration = new EffectDuration { type = DurationType.Instant };
+        var trigger = new EffectNode
+        {
+            enabled = true,
+            displayName = node.displayName,
+            operation = EffectOperation.RegisterTrigger,
+            triggerEvent = node.triggerEvent,
+            duration = node.duration.type == DurationType.NextTrigger
+                ? new EffectDuration { type = DurationType.UntilCombatEnd }
+                : node.duration,
+            childEffects = new List<EffectNode> { child }
+        };
+        ExecuteRegisterTrigger(trigger);
+        Log($"  [延迟] {node.operation} 注册为触发器 {EffectNode.GetTriggerName(node.triggerEvent)}");
+        return true;
+    }
+
+    private int ResolveBuffTurns(EffectDuration duration)
+    {
+        if (duration == null) return 0;
+        return duration.type switch
+        {
+            DurationType.CurrentTurn => 1,
+            DurationType.Turns => Mathf.Max(1, duration.turns),
+            _ => 0
+        };
+    }
+
     private void ExecuteDamage(EffectNode node)
     {
         int baseDamage = EvaluateValue(node.value);
@@ -532,6 +639,20 @@ public class EffectExecutorV2
             && !ValueNode.ReadsAttribute(node.value, LightMiniGame.CardEditor.PlayerAttributeType.Strength))
             baseDamage += OwnerStrength;
 
+        int nextAtkBonus = 0;
+        if (!IsEnemyInitiator && node.countAsAttack)
+            nextAtkBonus = _ctx.ConsumePendingNextAttackDamageBonus();
+        baseDamage += nextAtkBonus;
+
+        int extraCritDamagePercent = 0;
+        bool pendingGuaranteedCrit = false;
+        if (!IsEnemyInitiator && node.countAsAttack)
+        {
+            extraCritDamagePercent = _ctx.ConsumePendingNextAttackCritDamageBonus();
+            pendingGuaranteedCrit = _ctx.ConsumePendingNextAttackGuaranteedCrit()
+                || _ctx.IsFirstAttackThisTurnGuaranteedCrit;
+        }
+
         int hitCount = Mathf.Max(1, EvaluateValue(node.repeatCount));
         if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Repeat, out int fusedRepeat))
             hitCount = Mathf.Max(1, fusedRepeat);
@@ -541,6 +662,13 @@ public class EffectExecutorV2
 
         // 敌人出牌：命中玩家侧目标时对玩家结算，且敌人不参与暴击
         bool toPlayer = IsEnemyInitiator && TargetIsPlayerSide(node.target.unitTarget);
+
+        if (!toPlayer && node.countAsAttack)
+        {
+            if (_ctx.GetTurnCounter("AttacksPerformed") <= 0)
+                _triggerSystem?.FireEvent(TriggerEvent.OnFirstAttackThisTurn);
+            _triggerSystem?.FireEvent(TriggerEvent.BeforeAttack);
+        }
 
         for (int hit = 0; hit < hitCount; hit++)
         {
@@ -558,7 +686,7 @@ public class EffectExecutorV2
                 // 烧水壶等遗物可为“融合攻击值已覆盖且单次伤害达到阈值”的攻击牌强制暴击。
                 // 规则优先级高于卡牌的普通随机判定；未命中规则时保留节点自身 Guaranteed / Disabled 语义。
                 bool forcedCritical = !IsEnemyInitiator &&
-                    _ctx.IsCurrentFusedAttackGuaranteedCritical(baseDamage);
+                    (_ctx.IsCurrentFusedAttackGuaranteedCritical(baseDamage) || pendingGuaranteedCrit);
                 isCrit = forcedCritical || (node.criticalCheckMode switch
                 {
                     CriticalCheckMode.PerHit => UnityEngine.Random.value < _ctx.PlayerCritRate,
@@ -567,7 +695,10 @@ public class EffectExecutorV2
                     CriticalCheckMode.Disabled => false,
                     _ => false
                 });
-                hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * _ctx.PlayerCritDamage) : baseDamage;
+                float critMult = _ctx.PlayerCritDamage;
+                if (extraCritDamagePercent != 0)
+                    critMult += extraCritDamagePercent / 100f;
+                hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * critMult) : baseDamage;
 
                 // 破甲
                 int armorBreak = 0;
@@ -616,6 +747,13 @@ public class EffectExecutorV2
         }
 
         _triggerSystem?.FireEvent(TriggerEvent.AfterAttack);
+
+        if (!toPlayer && node.countAsAttack)
+        {
+            _ctx.AddTurnCounter("AttacksPerformed", 1);
+            _ctx.AddTurnCounter("DamageDealt", totalDamage);
+            if (critCount > 0) _ctx.AddTurnCounter("CriticalHits", critCount);
+        }
 
         _lastResult[EffectResultType.ActualDamage] = totalDamage;
         _lastResult[EffectResultType.CriticalHitCount] = critCount;
@@ -693,25 +831,34 @@ public class EffectExecutorV2
         if (op == ResourceOperation.Add || op == ResourceOperation.Subtract)
         {
             int delta = op == ResourceOperation.Subtract ? -amount : amount;
+            bool nextTrigger = node.duration != null && node.duration.type == DurationType.NextTrigger;
+            int turns = ResolveBuffTurns(node.duration);
             switch (attr)
             {
                 case LightMiniGame.CardEditor.PlayerAttributeType.Strength:
-                    _ctx.AddBuff(BuffAttributeType.Strength, delta);
+                    _ctx.AddBuff(BuffAttributeType.Strength, delta, turns);
                     _lastResult[EffectResultType.ActualValue] = delta;
-                    Log($"  [Buff] 力量 {delta}");
+                    Log($"  [Buff] 力量 {delta} ({(turns > 0 ? turns + "回合" : "本场")})");
                     return;
                 case LightMiniGame.CardEditor.PlayerAttributeType.Dexterity:
-                    _ctx.AddBuff(BuffAttributeType.Dexterity, delta);
+                    _ctx.AddBuff(BuffAttributeType.Dexterity, delta, turns);
                     _lastResult[EffectResultType.ActualValue] = delta;
-                    Log($"  [Buff] 敏捷 {delta}");
+                    Log($"  [Buff] 敏捷 {delta} ({(turns > 0 ? turns + "回合" : "本场")})");
                     return;
                 case LightMiniGame.CardEditor.PlayerAttributeType.CriticalChance:
-                    _ctx.AddBuff(BuffAttributeType.CriticalChance, delta);
+                    _ctx.AddBuff(BuffAttributeType.CriticalChance, delta, nextTrigger ? 1 : turns);
                     _lastResult[EffectResultType.ActualValue] = delta;
                     Log($"  [Buff] 暴击率 {delta}");
                     return;
                 case LightMiniGame.CardEditor.PlayerAttributeType.CriticalDamageMultiplier:
-                    _ctx.AddBuff(BuffAttributeType.CriticalDamage, delta);
+                    if (nextTrigger)
+                    {
+                        _ctx.AddPendingNextAttackCritDamageBonus(delta);
+                        _lastResult[EffectResultType.ActualValue] = delta;
+                        Log($"  [下次攻击] 暴伤 {delta:+0;-0;0}%");
+                        return;
+                    }
+                    _ctx.AddBuff(BuffAttributeType.CriticalDamage, delta, turns);
                     _lastResult[EffectResultType.ActualValue] = delta;
                     Log($"  [Buff] 暴伤 {delta}");
                     return;
@@ -805,6 +952,8 @@ public class EffectExecutorV2
             case LightMiniGame.CardEditor.PlayerResourceType.CurrentHealth:
                 if (node.resourceOp == ResourceOperation.Add)
                     _ctx.HealPlayer(amount);
+                else if (node.resourceOp == ResourceOperation.Subtract)
+                    _ctx.LosePlayerHP(amount);
                 _lastResult[EffectResultType.ActualValue] = amount;
                 Log($"  [生命] {node.resourceOp} {amount}");
                 break;
@@ -855,8 +1004,41 @@ public class EffectExecutorV2
         bool toPlayer = TargetIsPlayerSide(node.target.unitTarget);
         if (toPlayer)
         {
-            _ctx.ApplyStatusToPlayer(MapStatus(node.statusType), stacks);
-            Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 玩家");
+            if (node.statusType == StatusType2.NextAttackDamageBonus)
+            {
+                _ctx.AddPendingNextAttackDamageBonus(stacks);
+                Log($"  [下次攻击] 伤害 +{stacks}");
+            }
+            else if (node.statusType == StatusType2.NextAttackCriticalDamageBonus)
+            {
+                _ctx.AddPendingNextAttackCritDamageBonus(stacks);
+                Log($"  [下次攻击] 暴伤 +{stacks}%");
+            }
+            else if (node.statusType == StatusType2.NextAttackGuaranteedCritical)
+            {
+                bool persist = node.duration != null &&
+                    (node.duration.type == DurationType.UntilCombatEnd || node.duration.type == DurationType.PermanentRun);
+                if (persist)
+                    _ctx.EnableFirstAttackEachTurnGuaranteedCrit();
+                else
+                    _ctx.AddPendingNextAttackGuaranteedCrit(Mathf.Max(1, stacks));
+                Log($"  [必暴] {(persist ? "每回合首次攻击" : "下次攻击")}");
+            }
+            else if (node.statusType == StatusType2.CriticalChanceModifier && stacks >= 100)
+            {
+                _ctx.EnableFirstAttackEachTurnGuaranteedCrit();
+                Log("  [必暴] 每回合首次攻击");
+            }
+            else
+            {
+                int turns = ResolveBuffTurns(node.duration);
+                var mapped = MapStatus(node.statusType);
+                if (TryMapBuffAttr(mapped, out var buffAttr))
+                    _ctx.AddBuff(buffAttr, stacks, turns);
+                else
+                    _ctx.ApplyStatusToPlayer(mapped, stacks);
+                Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 玩家");
+            }
         }
         else if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
         {
@@ -913,6 +1095,9 @@ public class EffectExecutorV2
         StatusType2.Bleed => StatusType.Bleed,
         StatusType2.TemporaryStrength => StatusType.Strength,
         StatusType2.TemporaryDexterity => StatusType.Dexterity,
+        StatusType2.NextAttackDamageBonus => StatusType.NextAttackDamageBoost,
+        StatusType2.NextAttackCriticalDamageBonus => StatusType.CritDamageBoost,
+        StatusType2.NextAttackGuaranteedCritical => StatusType.CritRateBoost,
         StatusType2.CriticalChanceModifier => StatusType.CritRateBoost,
         StatusType2.CriticalDamageModifier => StatusType.CritDamageBoost,
         StatusType2.Jammed => StatusType.Insane,
@@ -921,6 +1106,18 @@ public class EffectExecutorV2
         StatusType2.Fatigue => StatusType.Fatigue,
         _ => StatusType.Bleed
     };
+
+    private static bool TryMapBuffAttr(StatusType status, out BuffAttributeType attr)
+    {
+        switch (status)
+        {
+            case StatusType.Strength: attr = BuffAttributeType.Strength; return true;
+            case StatusType.Dexterity: attr = BuffAttributeType.Dexterity; return true;
+            case StatusType.CritRateBoost: attr = BuffAttributeType.CriticalChance; return true;
+            case StatusType.CritDamageBoost: attr = BuffAttributeType.CriticalDamage; return true;
+            default: attr = BuffAttributeType.Strength; return false;
+        }
+    }
 
     // ========================================================================
     // 移除状态
@@ -1007,6 +1204,33 @@ public class EffectExecutorV2
                 _ctx.DrawCards(count);
                 _lastResult[EffectResultType.CardsDrawn] = count;
                 break;
+            case CardZoneOperation.ExhaustThisCombat:
+            case CardZoneOperation.RemovePermanently:
+            {
+                int n = count > 0 ? count : node.target.selectionCount;
+                int done = _ctx.ExhaustRandomHandCards(Mathf.Max(1, n));
+                _lastResult[EffectResultType.CardsExhausted] = done;
+                _lastResult[EffectResultType.ActualValue] = done;
+                Log($"  [卡牌区域] 消耗 {done}张手牌");
+                return;
+            }
+            case CardZoneOperation.Discard:
+            {
+                int n = count > 0 ? count : 1;
+                int discarded = _ctx.DiscardRandomHandCards(n);
+                _lastResult[EffectResultType.CardsDiscarded] = discarded;
+                _lastResult[EffectResultType.ActualValue] = discarded;
+                Log($"  [卡牌区域] 弃 {discarded}张手牌");
+                return;
+            }
+            case CardZoneOperation.AutoPlay:
+            {
+                int n = count > 0 ? count : node.target.selectionCount;
+                int played = _ctx.AutoPlayTopDrawPile(Mathf.Max(1, n));
+                _lastResult[EffectResultType.ActualValue] = played;
+                Log($"  [卡牌区域] 自动打出抽牌堆顶 {played}张");
+                return;
+            }
             default:
                 Log($"  [卡牌区域] {opName} {count}张 (需要牌堆系统支持)");
                 break;
@@ -1032,6 +1256,51 @@ public class EffectExecutorV2
         int added = _ctx.AddGeneratedCards(node.createdCard, count, node.destinationZone);
         _lastResult[EffectResultType.ActualValue] = added;
         Log($"  [创建卡牌] {added}张「{node.createdCard?.cardName ?? "?"}」→ {EffectNode.GetZoneName(node.destinationZone)}");
+    }
+
+    private void ExecutePlayAutomatically(EffectNode node)
+    {
+        int count = node.target != null && node.target.selectionCount > 0
+            ? node.target.selectionCount
+            : EvaluateValue(node.zoneCount);
+        if (count <= 0) count = EvaluateValue(node.value);
+        count = Mathf.Max(1, count);
+        int played = _ctx.AutoPlayTopDrawPile(count);
+        _lastResult[EffectResultType.ActualValue] = played;
+        Log($"  [自动打牌] 抽牌堆顶 {played}张");
+    }
+
+    private int _replayDepth;
+
+    private void ExecuteReplayCurrentCard(EffectNode node)
+    {
+        if (_replayDepth >= 8)
+        {
+            Log("  [重放] 达到递归上限，停止");
+            return;
+        }
+        var card = _ctx.LastPlayedCard;
+        if (card == null)
+        {
+            Log("  [重放] 没有可重放的卡牌");
+            return;
+        }
+        int times = Mathf.Max(1, EvaluateValue(node.repeatCount));
+        if (_triggerExecDepth > 0)
+            times = Mathf.Max(times, Mathf.Max(1, _ctx.GetBattleCounter("CharactersSwitched")));
+
+        _replayDepth++;
+        try
+        {
+            for (int t = 0; t < times; t++)
+            {
+                bool skipTriggers = _triggerExecDepth > 0;
+                _ctx.ReplayCardEffects(card, skipTriggers);
+                Log($"  [重放] {card.cardName} ({t + 1}/{times})");
+            }
+        }
+        finally { _replayDepth--; }
+        _lastResult[EffectResultType.ActualValue] = times;
     }
 
     private void ExecuteModifyCardProperty(EffectNode node)
@@ -1062,18 +1331,22 @@ public class EffectExecutorV2
             return;
         }
 
+        var dur = node.duration;
+        if (dur == null || dur.type == DurationType.Instant)
+            dur = new EffectDuration { type = DurationType.UntilCombatEnd, expireOnCombatEnd = true };
+
         var varSnapshot = new Dictionary<string, int>(_localVars);
         _triggerSystem.RegisterTemporary(
             node.triggerEvent,
             node.conditions,
             node.childEffects,
-            node.duration,
+            dur,
             localVarSnapshot: varSnapshot,
             maxTriggers: node.maxTriggers,
             maxPerTurn: node.maxTriggersPerTurn
         );
 
-        Log($"  [注册触发器] {EffectNode.GetTriggerName(node.triggerEvent)} → {node.childEffects.Count}个子效果 ({node.duration.GetDescription()})");
+        Log($"  [注册触发器] {EffectNode.GetTriggerName(node.triggerEvent)} → {node.childEffects?.Count ?? 0}个子效果 ({dur.GetDescription()})");
         _lastResult[EffectResultType.ActualValue] = 1;
     }
 

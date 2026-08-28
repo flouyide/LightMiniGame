@@ -165,9 +165,9 @@ public class EnemyView : MonoBehaviour
         if (_highlighted == highlighted) return;
         _highlighted = highlighted;
         if (portraitImage == null) return;
-        portraitImage.color = _highlighted
-            ? new Color(1f, 1f, 0.45f)
-            : (_inst != null && _inst.Phase == 2 ? Color.red : Color.white);
+        //portraitImage.color = _highlighted
+        //    ? new Color(1f, 1f, 0.45f)
+        //    : (_inst != null && _inst.Phase == 2 ? Color.red : Color.white);
     }
 
     /// <summary>从绑定实例拉取最新状态重绘（HP/护甲/立绘/凝视/名字）。受伤、阶段切换后调用。</summary>
@@ -187,8 +187,8 @@ public class EnemyView : MonoBehaviour
         {
             var sprite = (_inst.Phase == 2 && cfg.phase2Portrait != null) ? cfg.phase2Portrait : cfg.phase1Portrait;
             if (sprite != null) portraitImage.sprite = sprite;
-            if (_shakeRoutine == null)
-                portraitImage.color = PortraitRestColor();
+            //if (_shakeRoutine == null)
+                //portraitImage.color = PortraitRestColor();
         }
     }
 
