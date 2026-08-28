@@ -181,7 +181,7 @@ MonoBehaviour:
     - rid: 1654833856827621755
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
-        nodeType: 17
+        nodeType: 19
         intValue: 0
         floatValue: 0
         attributeRef: 1
@@ -280,7 +280,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 1
+        intValue: 3
         floatValue: 0
         attributeRef: 1
         resourceRef: 1

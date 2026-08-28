@@ -17,6 +17,7 @@ namespace LightMiniGame.CardEditor
         float PlayerCritRate { get; }
         float PlayerCritDamage { get; }
         int PlayerSanity { get; }
+        int PlayerMaxSanity { get; }
         int PlayerEnergy { get; }
         int PlayerArmor { get; }
         int PlayerBleed { get; }

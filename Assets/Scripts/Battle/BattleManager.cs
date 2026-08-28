@@ -388,6 +388,18 @@ public class BattleManager : MonoBehaviour
     public float PlayerCritRate => (_playerBuffs?.GetEffectiveValue(BuffAttributeType.CriticalChance, _playerBaseCritRate) ?? _playerCritRate) / 100f;
     public float PlayerCritDamage => (_playerBuffs?.GetEffectiveValue(BuffAttributeType.CriticalDamage, _playerBaseCritDamage) ?? _playerCritDamage) / 100f;
     public int PlayerSanity => _playerSanity;
+    public int PlayerMaxSanity => _playerMaxSanity;
+    public bool CurrentAttackKilledEnemy { get; private set; }
+    public CardData LastPlayedCard { get; private set; }
+
+    /// <summary>重放时跳过 RegisterTrigger，避免背锅侠等自动打牌把触发器再注册一遍。</summary>
+    public bool SkipRegisterTriggersOnReplay { get; set; }
+
+    // 下次攻击消耗型加成（闭眼调整 / 提前铺垫 / 憋大招）
+    private int _pendingNextAttackDamageBonus;
+    private int _pendingNextAttackCritDamageBonus;
+    private int _pendingNextAttackGuaranteedCritUses;
+    private bool _firstAttackEachTurnGuaranteedCrit;
     public int PlayerFortune => _playerFortune;
     public int PlayerArmor => _playerArmor;
     public int PlayerBleed => 0;
@@ -604,6 +616,20 @@ public class BattleManager : MonoBehaviour
     public int GetTurnCounter(string name) => _turnCounters.TryGetValue(name, out var v) ? v : 0;
     public int GetBattleCounter(string name) => _battleCounters.TryGetValue(name, out var v) ? v : 0;
 
+    public void AddTurnCounter(string name, int delta)
+    {
+        if (string.IsNullOrEmpty(name) || delta == 0) return;
+        _turnCounters.TryGetValue(name, out int v);
+        _turnCounters[name] = v + delta;
+    }
+
+    public void AddBattleCounter(string name, int delta)
+    {
+        if (string.IsNullOrEmpty(name) || delta == 0) return;
+        _battleCounters.TryGetValue(name, out int v);
+        _battleCounters[name] = v + delta;
+    }
+
     public int GetCustomData(string key) => _customData.TryGetValue(key, out var v) ? v : 0;
     public void SetCustomData(string key, int value)
     {
@@ -664,6 +690,11 @@ public class BattleManager : MonoBehaviour
         inst.IsDead = true;
         Debug.Log($"[BattleManager] {inst.Name}（槽位{inst.SlotIndex}）被击败");
         inst.View?.Hide();
+
+        CurrentAttackKilledEnemy = true;
+        AddTurnCounter("EnemiesKilled", 1);
+        AddBattleCounter("EnemiesKilled", 1);
+        _triggerSystem?.FireEvent(TriggerEvent.OnEnemyKilled);
 
         // 敌人能力：死亡事件（如"该敌人死亡时玩家理智-1"）
         OnEnemyDied?.Invoke(inst);
@@ -1184,6 +1215,41 @@ public class BattleManager : MonoBehaviour
         if (type == BuffAttributeType.LifeSteal) return;
         _playerBuffs?.AddBuff(type, stacks, duration);
     }
+
+    public void AddPendingNextAttackDamageBonus(int amount) => _pendingNextAttackDamageBonus += amount;
+
+    public void AddPendingNextAttackCritDamageBonus(int percentPoints) => _pendingNextAttackCritDamageBonus += percentPoints;
+
+    public void AddPendingNextAttackGuaranteedCrit(int uses = 1) => _pendingNextAttackGuaranteedCritUses += Mathf.Max(1, uses);
+
+    public void EnableFirstAttackEachTurnGuaranteedCrit() => _firstAttackEachTurnGuaranteedCrit = true;
+
+    public int ConsumePendingNextAttackDamageBonus()
+    {
+        int v = _pendingNextAttackDamageBonus;
+        _pendingNextAttackDamageBonus = 0;
+        return v;
+    }
+
+    public int ConsumePendingNextAttackCritDamageBonus()
+    {
+        int v = _pendingNextAttackCritDamageBonus;
+        _pendingNextAttackCritDamageBonus = 0;
+        return v;
+    }
+
+    public bool ConsumePendingNextAttackGuaranteedCrit()
+    {
+        if (_pendingNextAttackGuaranteedCritUses > 0)
+        {
+            _pendingNextAttackGuaranteedCritUses--;
+            return true;
+        }
+        return false;
+    }
+
+    public bool IsFirstAttackThisTurnGuaranteedCrit =>
+        _firstAttackEachTurnGuaranteedCrit && GetTurnCounter("AttacksPerformed") <= 0;
 
     /// <summary>
     /// 设置一个仅用于玩家 Buff UI 的外部属性来源。stacks 为 0 时移除该来源。
@@ -1820,6 +1886,14 @@ public class BattleManager : MonoBehaviour
         _playerBuffs.SetMinValue(BuffAttributeType.CriticalDamage, 2);           // 暴伤最小2
         _enemyBuffs = new BuffSystem(); // 敌人使用相同约束（可后续扩展）
 
+        _pendingNextAttackDamageBonus = 0;
+        _pendingNextAttackCritDamageBonus = 0;
+        _pendingNextAttackGuaranteedCritUses = 0;
+        _firstAttackEachTurnGuaranteedCrit = false;
+        CurrentAttackKilledEnemy = false;
+        LastPlayedCard = null;
+        SkipRegisterTriggersOnReplay = false;
+
         // 设置卡面描述属性解析提供者（力量/敏捷变化时卡面数值实时更新）
         CardDisplay.PlayerStrengthProvider = () => PlayerStrength;
         CardDisplay.PlayerDexterityProvider = () => PlayerDexterity;
@@ -1871,6 +1945,9 @@ public class BattleManager : MonoBehaviour
         _turnCounters["CardsDrawn"] = 0;
         _turnCounters["CardsDiscarded"] = 0;
         _turnCounters["CardsExhausted"] = 0;
+        _turnCounters["SanityLost"] = 0;
+        _battleCounters["TotalSanityLost"] = 0;
+        _battleCounters["CharactersSwitched"] = 0;
 
         _triggerSystem.OnCombatStart();
 
@@ -2036,6 +2113,8 @@ public class BattleManager : MonoBehaviour
         }
 
         _currentFusionCard = card;   // 让 EffectExecutor 在执行效果时读取此卡融合覆盖
+        LastPlayedCard = card;
+        CurrentAttackKilledEnemy = false;
         ApplyCardEffects(card);
         _currentFusionCard = null;   // 执行完清除避免串扰
 
@@ -2203,6 +2282,7 @@ public class BattleManager : MonoBehaviour
     {
         if (card == null || _battleEnded) return false;
 
+        CurrentAttackKilledEnemy = false;
         _currentFusionCard = card;
         try
         {
@@ -2215,6 +2295,116 @@ public class BattleManager : MonoBehaviour
 
         Debug.Log($"[BattleManager] 免费重放卡牌效果：{card.cardName}");
         return true;
+    }
+
+    /// <summary>从手牌随机消耗 count 张（跳过正在打出的本牌）。</summary>
+    public int ExhaustRandomHandCards(int count)
+    {
+        if (count <= 0 || ActiveChar == null) return 0;
+        int exhausted = 0;
+        var candidates = new List<int>();
+        for (int i = 0; i < _hand.Count; i++)
+        {
+            if (_hand[i] == null || _hand[i] == _currentFusionCard) continue;
+            candidates.Add(i);
+        }
+        while (exhausted < count && candidates.Count > 0)
+        {
+            int pick = Random.Range(0, candidates.Count);
+            int index = candidates[pick];
+            candidates.RemoveAt(pick);
+            for (int i = 0; i < candidates.Count; i++)
+                if (candidates[i] > index) candidates[i]--;
+
+            var card = _hand[index];
+            _hand.RemoveAt(index);
+            ActiveChar.consumedPile.Add(card);
+            OnPlayerCardConsumed?.Invoke(card);
+            AddTurnCounter("CardsExhausted", 1);
+            exhausted++;
+        }
+        if (exhausted > 0)
+        {
+            OnHandCardsChanged?.Invoke();
+            RefreshHandUI();
+        }
+        return exhausted;
+    }
+
+    /// <summary>从手牌随机弃掉 count 张（跳过正在打出的本牌）。</summary>
+    public int DiscardRandomHandCards(int count)
+    {
+        if (count <= 0 || ActiveChar == null) return 0;
+        int discarded = 0;
+        var candidates = new List<int>();
+        for (int i = 0; i < _hand.Count; i++)
+        {
+            if (_hand[i] == null || _hand[i] == _currentFusionCard) continue;
+            candidates.Add(i);
+        }
+        while (discarded < count && candidates.Count > 0)
+        {
+            int pick = Random.Range(0, candidates.Count);
+            int index = candidates[pick];
+            candidates.RemoveAt(pick);
+            for (int i = 0; i < candidates.Count; i++)
+                if (candidates[i] > index) candidates[i]--;
+
+            var card = _hand[index];
+            _hand.RemoveAt(index);
+            ActiveChar.discardPile.Add(card);
+            AddTurnCounter("CardsDiscarded", 1);
+            discarded++;
+        }
+        if (discarded > 0)
+        {
+            OnHandCardsChanged?.Invoke();
+            RefreshHandUI();
+        }
+        return discarded;
+    }
+
+    /// <summary>自动打出抽牌堆顶 count 张牌：不扣费、不占出牌计数。</summary>
+    public int AutoPlayTopDrawPile(int count)
+    {
+        if (count <= 0 || ActiveChar == null || _battleEnded) return 0;
+        int played = 0;
+        var activeChar = ActiveChar;
+        for (int n = 0; n < count; n++)
+        {
+            if (_battleEnded) break;
+            if (activeChar.drawPile.Count == 0)
+            {
+                if (activeChar.discardPile.Count == 0) break;
+                activeChar.drawPile = new List<CardData>(activeChar.discardPile);
+                activeChar.discardPile.Clear();
+                ShuffleDrawPile(activeChar);
+            }
+            if (activeChar.drawPile.Count == 0) break;
+
+            var card = activeChar.drawPile[0];
+            activeChar.drawPile.RemoveAt(0);
+            if (card.sourceEntry != null)
+            {
+                int sanityThreshold = _ruleConfig != null ? _ruleConfig.sanity.lowSanityThreshold : 4;
+                card.isLowSanityForm = card.sourceEntry.ShouldUseLowSanityForm(_playerSanity, sanityThreshold);
+            }
+
+            var prev = _currentFusionCard;
+            _currentFusionCard = card;
+            try { ApplyCardEffects(card); }
+            finally { _currentFusionCard = prev; }
+
+            HandleCardConsumption(card);
+            played++;
+        }
+        if (played > 0)
+        {
+            RefreshHandUI();
+            UpdateUI();
+            CheckBattleEnd();
+        }
+        return played;
     }
 
     /// <summary>
@@ -2262,6 +2452,17 @@ public class BattleManager : MonoBehaviour
                 || (card.attachedEffectNodes != null && card.attachedEffectNodes.Count > 0))
             {
                 var nodes = card.GetEffectNodes(card.isLowSanityForm);
+                if (SkipRegisterTriggersOnReplay && nodes != null)
+                {
+                    var filtered = new List<EffectNode>(nodes.Count);
+                    foreach (var n in nodes)
+                    {
+                        if (n == null || n.operation == EffectOperation.RegisterTrigger) continue;
+                        if (n.operation == EffectOperation.ReplayCurrentCard) continue;
+                        filtered.Add(n);
+                    }
+                    nodes = filtered;
+                }
                 _triggerSystem?.FireEvent(TriggerEvent.OnCardPlayed);
                 if (entry.cardType == LightMiniGame.CardEditor.CardType.Attack)
                     _triggerSystem?.FireEvent(TriggerEvent.OnAttackCardPlayed);
@@ -2698,9 +2899,22 @@ public class BattleManager : MonoBehaviour
             OnPlayerDamaged(actualDamage);
     }
 
+    /// <summary>失去生命（无视格挡），用于「透支健康」等自残效果。不计入「本回合受到伤害」。</summary>
+    public void LosePlayerHP(int amount)
+    {
+        if (amount <= 0 || _battleEnded) return;
+        _playerHP = Mathf.Max(0, _playerHP - amount);
+        Debug.Log($"[BattleManager] 玩家失去 {amount} 点生命，剩余 {_playerHP}");
+        UpdateUI();
+        if (_playerHP <= 0)
+            HandlePlayerDefeat();
+    }
+
     /// <summary>玩家受伤的统一处理入口（飘字提示 + 事件记录）。</summary>
     private void OnPlayerDamaged(int damage)
     {
+        if (damage > 0)
+            AddTurnCounter("DamageTaken", damage);
         _triggerSystem?.FireEvent(TriggerEvent.OnDamageTaken);
         UpdateUI();
         if (_playerHP <= 0)
@@ -2748,6 +2962,17 @@ public class BattleManager : MonoBehaviour
         if (delta == 0) return;
         int prev = _playerSanity;
         _playerSanity = Mathf.Clamp(_playerSanity + delta, 0, _playerMaxSanity);
+
+        if (delta < 0)
+        {
+            int lost = prev - _playerSanity;
+            if (lost > 0)
+            {
+                AddTurnCounter("SanityLost", lost);
+                AddBattleCounter("TotalSanityLost", lost);
+                _triggerSystem?.FireEvent(TriggerEvent.OnSanityLost);
+            }
+        }
 
         // 进入低理智状态（从 >阈值 降至 ≤阈值）时广播，供遗物在阶段切换判定前回理智。
         if (prev > _sanityThreshold && _playerSanity <= _sanityThreshold)
@@ -2989,7 +3214,8 @@ public class BattleManager : MonoBehaviour
         _hasSwitchedThisTurn = true;
 
         // 计数器：切换角色
-        _turnCounters["CharactersSwitched"]++;
+        AddTurnCounter("CharactersSwitched", 1);
+        AddBattleCounter("CharactersSwitched", 1);
 
         // 热度系统：通知枪械师遗物已切换角色（由遗物标记本回合按切换衰减量衰减）
         OnCharacterSwitched?.Invoke();
@@ -3174,10 +3400,8 @@ public class BattleManager : MonoBehaviour
         // 热度系统：通知枪械师遗物回合结束（由遗物执行衰减与过热判定）
         OnPlayerTurnEnded?.Invoke();
 
-        // 统一触发器系统回合结束
-        _triggerSystem?.OnTurnEnd();
-
         // Buff 系统回合结束（递减持续回合，移除过期 buff）
+        // 触发器 OnTurnEnd 改在敌人回合结束后触发，见 RunEnemyTurnCoroutine。
         _playerBuffs?.OnTurnEnd();
         _enemyBuffs?.OnTurnEnd();
 
@@ -3314,7 +3538,12 @@ public class BattleManager : MonoBehaviour
 
         _enemyTurnRoutine = null;
         if (!_battleEnded)
-            StartPlayerTurn();
+        {
+            // 敌人回合结束后再触发 OnTurnEnd，让「未受到伤害」能计入敌人攻击。
+            _triggerSystem?.OnTurnEnd();
+            if (!_battleEnded)
+                StartPlayerTurn();
+        }
     }
 
     /// <summary>
@@ -3605,7 +3834,8 @@ public class BattleManager : MonoBehaviour
                 k == "AttacksPerformed" || k == "CriticalHits" || k == "DamageTaken" ||
                 k == "DamageDealt" || k == "HeatGained" || k == "HeatLost" ||
                 k == "CharactersSwitched" || k == "EnemiesKilled" || k == "BlockGained" ||
-                k == "CardsDrawn" || k == "CardsDiscarded" || k == "CardsExhausted")
+                k == "CardsDrawn" || k == "CardsDiscarded" || k == "CardsExhausted" ||
+                k == "SanityLost")
             {
                 _turnCounters[k] = 0;
             }
