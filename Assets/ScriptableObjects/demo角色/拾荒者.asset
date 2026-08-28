@@ -15,6 +15,7 @@ MonoBehaviour:
   characterId: scavengerLiu
   displayName: scavengerLiu
   avatar: {fileID: 21300000, guid: 5cf432eecb6554f449cc7e8f5fe21df1, type: 3}
+  description: "在废墟与账目之间周旋的拾荒者。擅长把被遗弃的资源变成继续前进的筹码。"
   startingLibrary: {fileID: 11400000, guid: 7a5de69b3a7d18f4dbce12c2f62b766a, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: 848a8fcae01c28a40a990206cedabb98, type: 2}

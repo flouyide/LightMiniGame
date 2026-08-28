@@ -40,6 +40,7 @@ namespace LightMiniGame.CardEditor.Editor
             "出指定卡后触发",
             "本场覆盖卡牌状态",
             "给卡牌添加词条",
+            "给抽牌堆随机卡加词条",
         };
 
         public static EffectNode CreateFromTemplate(string name)
@@ -75,6 +76,7 @@ namespace LightMiniGame.CardEditor.Editor
                 "出指定卡后触发" => OnPlayedCardTrigger(),
                 "本场覆盖卡牌状态" => OverrideCardStatus(),
                 "给卡牌添加词条" => AddKeywordToCards(),
+                "给抽牌堆随机卡加词条" => AddKeywordToRandomDrawPile(),
                 _ => new EffectNode { displayName = name }
             };
         }
@@ -470,6 +472,23 @@ namespace LightMiniGame.CardEditor.Editor
                 cardTarget = CardTarget.AllCardsInHand
             },
             zoneCount = ValueNode.Constant(1),
+            duration = new EffectDuration { type = DurationType.UntilCombatEnd, expireOnCombatEnd = true }
+        };
+
+        private static EffectNode AddKeywordToRandomDrawPile() => new EffectNode
+        {
+            displayName = "抽牌堆随机加词条",
+            operation = EffectOperation.MoveCards,
+            zoneOperation = CardZoneOperation.AddTemporaryKeyword,
+            keywordToApply = CardKeyword.Recycle,
+            target = new TargetSelector
+            {
+                category = TargetCategory.Card,
+                cardTarget = CardTarget.RandomCardsInDrawPile,
+                selectionMode = CardSelectionMode.RandomCount,
+                selectionCount = 2
+            },
+            zoneCount = ValueNode.Constant(2),
             duration = new EffectDuration { type = DurationType.UntilCombatEnd, expireOnCombatEnd = true }
         };
     }

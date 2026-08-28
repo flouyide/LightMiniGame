@@ -352,7 +352,9 @@ namespace LightMiniGame.CardEditor
         CardsInDiscardPile,
         CardsInExhaustPile,
         CardsPlayedThisTurn,
-        LastPlayedCard
+        LastPlayedCard,
+        RandomCardsInDrawPile,
+        AllCombatCards
     }
 
     // ========================================================================

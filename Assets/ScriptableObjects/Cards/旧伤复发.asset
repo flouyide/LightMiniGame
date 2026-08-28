@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_2cc456be
   cardName: "\u65E7\u4F24\u590D\u53D1"
-  normalDescription: "\u9020\u6210 10 \u4F24\u5BB3\u3002\u82E5\u76EE\u6807\u5DF2\u5E26\u75B2\u60EB\u503C\uFF0C\u672C\u6B21\u4F24\u5BB3\u7FFB\u500D"
-  lowSanityDescription: "\u9020\u6210 14 \u4F24\u5BB3\u3002\u82E5\u76EE\u6807\u5DF2\u5E26\u75B2\u60EB\u503C\uFF0C\u672C\u6B21\u4F24\u5BB3\u7FFB\u500D"
+  normalDescription: "\u9020\u6210{10+\u529B\u91CF}\u4F24\u5BB3\u3002\u82E5\u76EE\u6807\u5DF2\u5E26\u75B2\u60EB\u503C\uFF0C\u672C\u6B21\u4F24\u5BB3\u7FFB\u500D"
+  lowSanityDescription: "\u9020\u6210{14+\u529B\u91CF}\u4F24\u5BB3\u3002\u82E5\u76EE\u6807\u5DF2\u5E26\u75B2\u60EB\u503C\uFF0C\u672C\u6B21\u4F24\u5BB3\u7FFB\u500D"
   cardArt: {fileID: 21300000, guid: 6ad82b1a169eb794d9e526ef6e1bb53b, type: 3}
   descBoxSprite: {fileID: 21300000, guid: 78d1f640318bab44da1b4e67a128114b, type: 3}
   typeBoxSprite: {fileID: 0}
@@ -31,11 +31,1012 @@ MonoBehaviour:
   lowSanityCost: 2
   price: 10
   keyword: 0
+  keywordsAreFlags: 1
   hasLowSanityForm: 1
-  normalEffectNodes: []
-  lowSanityEffectNodes: []
+  normalEffectNodes:
+  - enabled: 1
+    displayName: "\u6548\u679C 1"
+    timing: 0
+    source:
+      category: 1
+      unitTarget: 0
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    target:
+      category: 2
+      unitTarget: 3
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    operation: 0
+    value:
+      rid: 3513299765630337391
+    repeatCount:
+      rid: 3513299765630337392
+    conditions:
+      logic: 0
+      conditions:
+      - conditionType: 0
+        leftValue:
+          rid: 3513299765630337393
+        comparison: 4
+        rightValue:
+          rid: 3513299765630337394
+        statusType: 0
+        statusTarget:
+          category: 2
+          unitTarget: 3
+          cardTarget: 7
+          selectionMode: 0
+          selectionCount: 1
+          cardFilterType: 0
+          cardFilterRarity: 0
+          cardFilterKeyword: 0
+          filterIsLowSanityForm: 0
+          filterTag: 
+        eventName: 
+        flagRef: 7
+        cardPropertyType: 0
+        chancePercent: 50
+        customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
+        nestedGroups: []
+    duration:
+      type: 0
+      turns: 1
+      triggerCount: 1
+      expireAtTurnStart: 0
+      expireAtTurnEnd: 0
+      expireOnCharacterSwitch: 0
+      expireOnCombatEnd: 1
+    outputVariableName: 
+    childEffects: []
+    scalingMode: 1
+    criticalCheckMode: 0
+    ignoreAllBlock: 0
+    useArmorBreak: 0
+    armorBreakValue:
+      rid: 3513299765630337395
+    countAsAttack: 1
+    resourceType: 4
+    resourceOp: 0
+    attributeType: 1
+    statusType: 0
+    statusValue:
+      rid: 3513299765630337396
+    stackMode: 0
+    sourceZone: 0
+    destinationZone: 0
+    zoneOperation: 0
+    zoneCount:
+      rid: 3513299765630337397
+    triggerEvent: 27
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    activeOnlyWhenOwnerIsActive: 1
+    customOperation: {fileID: 0}
+    customParams: 
+    createdCard: {fileID: 0}
+  - enabled: 1
+    displayName: "\u6548\u679C 1"
+    timing: 0
+    source:
+      category: 1
+      unitTarget: 0
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    target:
+      category: 2
+      unitTarget: 3
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    operation: 0
+    value:
+      rid: 3513299765630337398
+    repeatCount:
+      rid: 3513299765630337399
+    conditions:
+      logic: 0
+      conditions:
+      - conditionType: 0
+        leftValue:
+          rid: 3513299765630337393
+        comparison: 4
+        rightValue:
+          rid: 3513299765630337394
+        statusType: 0
+        statusTarget:
+          category: 2
+          unitTarget: 3
+          cardTarget: 7
+          selectionMode: 0
+          selectionCount: 1
+          cardFilterType: 0
+          cardFilterRarity: 0
+          cardFilterKeyword: 0
+          filterIsLowSanityForm: 0
+          filterTag: 
+        eventName: 
+        flagRef: 7
+        cardPropertyType: 0
+        chancePercent: 50
+        customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
+        nestedGroups: []
+    duration:
+      type: 0
+      turns: 1
+      triggerCount: 1
+      expireAtTurnStart: 0
+      expireAtTurnEnd: 0
+      expireOnCharacterSwitch: 0
+      expireOnCombatEnd: 1
+    outputVariableName: 
+    childEffects: []
+    scalingMode: 1
+    criticalCheckMode: 0
+    ignoreAllBlock: 0
+    useArmorBreak: 0
+    armorBreakValue:
+      rid: 3513299765630337400
+    countAsAttack: 1
+    resourceType: 4
+    resourceOp: 0
+    attributeType: 1
+    statusType: 0
+    statusValue:
+      rid: 3513299765630337401
+    stackMode: 0
+    sourceZone: 0
+    destinationZone: 0
+    zoneOperation: 0
+    zoneCount:
+      rid: 3513299765630337402
+    triggerEvent: 27
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    activeOnlyWhenOwnerIsActive: 1
+    customOperation: {fileID: 0}
+    customParams: 
+    createdCard: {fileID: 0}
+  lowSanityEffectNodes:
+  - enabled: 1
+    displayName: "\u6548\u679C 1"
+    timing: 0
+    source:
+      category: 1
+      unitTarget: 0
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    target:
+      category: 2
+      unitTarget: 3
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    operation: 0
+    value:
+      rid: 3513299765630337403
+    repeatCount:
+      rid: 3513299765630337404
+    conditions:
+      logic: 0
+      conditions:
+      - conditionType: 0
+        leftValue:
+          rid: 3513299765630337393
+        comparison: 4
+        rightValue:
+          rid: 3513299765630337394
+        statusType: 0
+        statusTarget:
+          category: 2
+          unitTarget: 3
+          cardTarget: 7
+          selectionMode: 0
+          selectionCount: 1
+          cardFilterType: 0
+          cardFilterRarity: 0
+          cardFilterKeyword: 0
+          filterIsLowSanityForm: 0
+          filterTag: 
+        eventName: 
+        flagRef: 7
+        cardPropertyType: 0
+        chancePercent: 50
+        customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
+        nestedGroups: []
+    duration:
+      type: 0
+      turns: 1
+      triggerCount: 1
+      expireAtTurnStart: 0
+      expireAtTurnEnd: 0
+      expireOnCharacterSwitch: 0
+      expireOnCombatEnd: 1
+    outputVariableName: 
+    childEffects: []
+    scalingMode: 1
+    criticalCheckMode: 0
+    ignoreAllBlock: 0
+    useArmorBreak: 0
+    armorBreakValue:
+      rid: 3513299765630337405
+    countAsAttack: 1
+    resourceType: 4
+    resourceOp: 0
+    attributeType: 1
+    statusType: 0
+    statusValue:
+      rid: 3513299765630337406
+    stackMode: 0
+    sourceZone: 0
+    destinationZone: 0
+    zoneOperation: 0
+    zoneCount:
+      rid: 3513299765630337407
+    triggerEvent: 27
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    activeOnlyWhenOwnerIsActive: 1
+    customOperation: {fileID: 0}
+    customParams: 
+    createdCard: {fileID: 0}
+  - enabled: 1
+    displayName: "\u6548\u679C 1"
+    timing: 0
+    source:
+      category: 1
+      unitTarget: 0
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    target:
+      category: 2
+      unitTarget: 3
+      cardTarget: 7
+      selectionMode: 0
+      selectionCount: 1
+      cardFilterType: 0
+      cardFilterRarity: 0
+      cardFilterKeyword: 0
+      filterIsLowSanityForm: 0
+      filterTag: 
+    operation: 0
+    value:
+      rid: 3513299765630337408
+    repeatCount:
+      rid: 3513299765630337409
+    conditions:
+      logic: 0
+      conditions:
+      - conditionType: 0
+        leftValue:
+          rid: 3513299765630337393
+        comparison: 4
+        rightValue:
+          rid: 3513299765630337394
+        statusType: 0
+        statusTarget:
+          category: 2
+          unitTarget: 3
+          cardTarget: 7
+          selectionMode: 0
+          selectionCount: 1
+          cardFilterType: 0
+          cardFilterRarity: 0
+          cardFilterKeyword: 0
+          filterIsLowSanityForm: 0
+          filterTag: 
+        eventName: 
+        flagRef: 7
+        cardPropertyType: 0
+        chancePercent: 50
+        customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
+        nestedGroups: []
+    duration:
+      type: 0
+      turns: 1
+      triggerCount: 1
+      expireAtTurnStart: 0
+      expireAtTurnEnd: 0
+      expireOnCharacterSwitch: 0
+      expireOnCombatEnd: 1
+    outputVariableName: 
+    childEffects: []
+    scalingMode: 1
+    criticalCheckMode: 0
+    ignoreAllBlock: 0
+    useArmorBreak: 0
+    armorBreakValue:
+      rid: 3513299765630337410
+    countAsAttack: 1
+    resourceType: 4
+    resourceOp: 0
+    attributeType: 1
+    statusType: 0
+    statusValue:
+      rid: 3513299765630337411
+    stackMode: 0
+    sourceZone: 0
+    destinationZone: 0
+    zoneOperation: 0
+    zoneCount:
+      rid: 3513299765630337412
+    triggerEvent: 27
+    maxTriggers: 0
+    maxTriggersPerTurn: 0
+    activeOnlyWhenOwnerIsActive: 1
+    customOperation: {fileID: 0}
+    customParams: 
+    createdCard: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 3513299765630337391
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 10
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337413
+        - rid: 3513299765630337414
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337392
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337393
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 5
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 17
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337394
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337395
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337396
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337397
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337398
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 17
+        intValue: 20
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337415
+        - rid: 3513299765630337416
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337399
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337400
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337401
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337402
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337403
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 14
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337417
+        - rid: 3513299765630337418
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337404
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337405
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337406
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337407
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337408
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 17
+        intValue: 20
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337419
+        - rid: 3513299765630337420
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337409
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337410
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337411
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337412
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 1
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337413
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 10
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337414
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 7
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337421
+        - rid: 3513299765630337422
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337415
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 20
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337416
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 19
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337423
+        - rid: 3513299765630337424
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337417
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 10
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337418
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 7
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337425
+        - rid: 3513299765630337426
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337419
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 28
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337420
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 19
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands:
+        - rid: 3513299765630337427
+        - rid: 3513299765630337428
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337421
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337422
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337423
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 2
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337424
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 2
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337425
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337426
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337427
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 2
+        intValue: 0
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1
+    - rid: 3513299765630337428
+      type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
+      data:
+        nodeType: 0
+        intValue: 2
+        floatValue: 0
+        attributeRef: 1
+        resourceRef: 1
+        statusRef: 0
+        counterRef: 0
+        flagRef: 7
+        variableName: 
+        resultRef: 1
+        operands: []
+        everyN: 1
+        convertToM: 1

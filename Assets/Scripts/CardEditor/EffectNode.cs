@@ -92,6 +92,8 @@ namespace LightMiniGame.CardEditor
             CardTarget.CardsInExhaustPile => "消耗堆中的牌",
             CardTarget.CardsPlayedThisTurn => "本回合打出的牌",
             CardTarget.LastPlayedCard => "最后打出的牌",
+            CardTarget.RandomCardsInDrawPile => "抽牌堆随机牌",
+            CardTarget.AllCombatCards => "本场全部卡牌",
             _ => t.ToString()
         };
     }

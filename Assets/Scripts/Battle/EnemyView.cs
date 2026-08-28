@@ -24,6 +24,10 @@ public class EnemyView : MonoBehaviour
     [Header("Buff 栏（血条正下方左侧）")]
     [Tooltip("单个 buff 图标预制体（含 Image + TMP）。留空则运行时用色块+字生成")]
     [SerializeField] private GameObject buffIconPrefab;
+    [Tooltip("敌人 buff 图标宽高（像素）。只影响敌人，不改玩家 buff 栏")]
+    [SerializeField] private float buffIconSize = 52f;
+    [Tooltip("敌人 buff 图标间距（像素）")]
+    [SerializeField] private float buffIconSpacing = 6f;
     [SerializeField] private Sprite fatigueIcon;
     [SerializeField] private Sprite armorBreakIcon;
     [SerializeField] private Sprite strengthIcon;
@@ -201,6 +205,7 @@ public class EnemyView : MonoBehaviour
 
         var buffs = _inst.GetDisplayedBuffs();
         _buffDeckRoot.gameObject.SetActive(buffs.Count > 0);
+        ApplyBuffDeckLayout();
 
         for (int i = 0; i < buffs.Count; i++)
         {
@@ -218,6 +223,7 @@ public class EnemyView : MonoBehaviour
                 else _buffIconPool.Add(iconGo);
             }
             ApplyBuffIcon(iconGo, buffs[i]);
+            ApplyBuffIconSize(iconGo);
         }
         for (int i = buffs.Count; i < _buffIconPool.Count; i++)
         {
@@ -236,13 +242,14 @@ public class EnemyView : MonoBehaviour
 
         var hlg = go.GetComponent<HorizontalLayoutGroup>();
         hlg.padding = new RectOffset(0, 0, 0, 0);
-        hlg.spacing = 4f;
+        hlg.spacing = buffIconSpacing;
         hlg.childAlignment = TextAnchor.UpperLeft;
         hlg.childControlWidth = false;
         hlg.childControlHeight = false;
         hlg.childForceExpandWidth = false;
         hlg.childForceExpandHeight = false;
 
+        float iconSize = ResolvedBuffIconSize;
         _buffDeckRoot.pivot = new Vector2(0f, 1f);
         if (hpRt != null)
         {
@@ -253,16 +260,63 @@ public class EnemyView : MonoBehaviour
             float left = hpRt.anchoredPosition.x - width * hpRt.pivot.x;
             float bottom = hpRt.anchoredPosition.y - height * hpRt.pivot.y;
             _buffDeckRoot.anchoredPosition = new Vector2(left, bottom - 2f);
-            _buffDeckRoot.sizeDelta = new Vector2(width, 36f);
+            _buffDeckRoot.sizeDelta = new Vector2(width, iconSize);
         }
         else
         {
             _buffDeckRoot.anchorMin = _buffDeckRoot.anchorMax = new Vector2(0.5f, 1f);
             _buffDeckRoot.anchoredPosition = new Vector2(-213f, -82f);
-            _buffDeckRoot.sizeDelta = new Vector2(438f, 36f);
+            _buffDeckRoot.sizeDelta = new Vector2(438f, iconSize);
         }
 
         _buffDeckRoot.SetSiblingIndex(hpRt != null ? hpRt.GetSiblingIndex() + 1 : 0);
+    }
+
+    private float ResolvedBuffIconSize => buffIconSize > 0f ? buffIconSize : 52f;
+
+    private void ApplyBuffDeckLayout()
+    {
+        if (_buffDeckRoot == null) return;
+        var hlg = _buffDeckRoot.GetComponent<HorizontalLayoutGroup>();
+        if (hlg != null)
+            hlg.spacing = buffIconSpacing;
+        var sd = _buffDeckRoot.sizeDelta;
+        sd.y = ResolvedBuffIconSize;
+        _buffDeckRoot.sizeDelta = sd;
+    }
+
+    private void ApplyBuffIconSize(GameObject iconGo)
+    {
+        if (iconGo == null) return;
+        float size = ResolvedBuffIconSize;
+        float scale = size / 36f;
+
+        var rt = iconGo.GetComponent<RectTransform>();
+        if (rt != null)
+            rt.sizeDelta = new Vector2(size, size);
+
+        var le = iconGo.GetComponent<LayoutElement>();
+        if (le == null) le = iconGo.AddComponent<LayoutElement>();
+        le.preferredWidth = size;
+        le.preferredHeight = size;
+        le.minWidth = size;
+        le.minHeight = size;
+        le.ignoreLayout = false;
+
+        var iconRt = iconGo.transform.Find("Icon") as RectTransform;
+        if (iconRt != null)
+        {
+            iconRt.sizeDelta = new Vector2(32f * scale, 32f * scale);
+            iconRt.anchoredPosition = new Vector2(18f * scale, -16f * scale);
+        }
+
+        var stackText = iconGo.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (stackText != null)
+        {
+            var stackRt = stackText.rectTransform;
+            stackRt.sizeDelta = new Vector2(25f * scale, 25f * scale);
+            stackText.fontSize = 15f * scale;
+        }
     }
 
     private GameObject CreateBuffIcon()
@@ -278,13 +332,14 @@ public class EnemyView : MonoBehaviour
 
         var go = new GameObject("BuffIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
         go.transform.SetParent(_buffDeckRoot, false);
+        float size = ResolvedBuffIconSize;
         var rt = go.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(32f, 32f);
+        rt.sizeDelta = new Vector2(size, size);
         var le = go.GetComponent<LayoutElement>();
-        le.preferredWidth = 32f;
-        le.preferredHeight = 32f;
-        le.minWidth = 32f;
-        le.minHeight = 32f;
+        le.preferredWidth = size;
+        le.preferredHeight = size;
+        le.minWidth = size;
+        le.minHeight = size;
 
         var icon = go.GetComponent<Image>();
         icon.raycastTarget = true;
@@ -297,7 +352,7 @@ public class EnemyView : MonoBehaviour
         labelRt.anchorMax = new Vector2(1f, 0f);
         labelRt.pivot = new Vector2(1f, 0f);
         labelRt.anchoredPosition = Vector2.zero;
-        labelRt.sizeDelta = new Vector2(24f, 20f);
+        labelRt.sizeDelta = new Vector2(30f, 0f);
         var tmp = labelGo.GetComponent<TextMeshProUGUI>();
         if (hpText != null)
         {
@@ -305,7 +360,7 @@ public class EnemyView : MonoBehaviour
             if (hpText.fontSharedMaterial != null)
                 tmp.fontSharedMaterial = hpText.fontSharedMaterial;
         }
-        tmp.fontSize = 14;
+        tmp.fontSize = Mathf.Max(14f, ResolvedBuffIconSize * 0.35f);
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.BottomRight;
         tmp.enableWordWrapping = false;

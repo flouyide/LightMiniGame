@@ -137,7 +137,7 @@ MonoBehaviour:
       logic: 0
       conditions: []
     duration:
-      type: 0
+      type: 6
       turns: 1
       triggerCount: 1
       expireAtTurnStart: 0
