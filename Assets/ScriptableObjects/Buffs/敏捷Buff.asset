@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 7c4e9b2a1d8f4e6c9a3b5d7e1f0c2a48, type: 3}
   m_Name: "\u654F\u6377Buff"
-  m_EditorClassIdentifier: Assembly-CSharp::BuffData
-  buffName: "\u654F\u6377Buff"
+  m_EditorClassIdentifier:
+  buffName: "敏捷Buff"
   icon: {fileID: 21300000, guid: 146544ea9f6dd934c84489d17b8ccb33, type: 3}
   attributeType: 1
   minValue: -2147483648
+  description: "每点敏捷使获得的护甲 +1。"

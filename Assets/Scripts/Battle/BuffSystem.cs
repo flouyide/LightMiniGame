@@ -14,26 +14,7 @@ public enum BuffAttributeType
     CriticalChance, // 暴击率（最小0）
     CriticalDamage, // 暴击伤害（最小2）
     Fatigue,        // 疲惫（层数，每轮扣等量血并 -1 层）
-    ArmorBreak,     // 破甲（敌人 buff 栏）
-}
-
-// ========================================================================
-// Buff 数据 —— 每个属性一个 ScriptableObject，Inspector 配置图标
-// ========================================================================
-[CreateAssetMenu(menuName = "CardGame/Buff Data", fileName = "NewBuff")]
-public class BuffData : ScriptableObject
-{
-    [Tooltip("Buff 名称")]
-    public string buffName = "新Buff";
-
-    [Tooltip("图标")]
-    public Sprite icon;
-
-    [Tooltip("属性类型")]
-    public BuffAttributeType attributeType = BuffAttributeType.Strength;
-
-    [Tooltip("该属性的最小值（实际应用值不低于此）")]
-    public int minValue = 0;
+    ArmorBreak,     // 破甲（玩家 / 敌人 buff 栏）
 }
 
 // ========================================================================
@@ -178,4 +159,6 @@ public struct DisplayedBuff
     public int totalStacks;  // 正=增益，负=减益
     public Sprite customIcon; // 敌人能力等：直接用遗物图标
     public bool hideStacks;   // true 时不显示层数（能力图标）
+    public string tooltipTitle;
+    public string tooltipBody;
 }

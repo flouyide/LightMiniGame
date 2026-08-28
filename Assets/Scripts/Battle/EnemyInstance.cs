@@ -23,6 +23,8 @@ public class EnemyInstance
 
     /// <summary>当前被破甲削减的护甲总量（用于 RemoveStatus 还原）</summary>
     public int ArmorBreakStacks;
+    /// <summary>实际从护甲上剥下来的量；可能小于层数（没护甲时仍能叠破甲）。</summary>
+    public int ArmorBreakStripped;
 
     /// <summary>运行时力量，开战从 EnemyConfig.strength 拷入，战斗内增减不写回资产。</summary>
     public int Strength;
@@ -267,22 +269,38 @@ public class EnemyInstance
 
     /// <summary>
     /// 受击结算（伤害倍率已在 BattleManager 算好）。返回实际造成的总伤害。
-    /// armorBreak&gt;0 时为"破甲伤害"：额外 X 点直接扣血、无视护甲（沿用原单敌人 DealDamageToEnemy 语义）。
-    /// 注意与 ApplyStatus(ArmorBreak) 区分：后者才是削减护甲值。
+    /// armorBreak&gt;0 时为本次攻击附带的额外直伤（无视护甲）。
+    /// 已有的破甲层数会让等量伤害绕过护甲。
     /// </summary>
     public int TakeDamage(int damage, bool ignoreArmor, int armorBreak)
     {
         int actualDamage = 0;
 
-        // 破甲：额外X点伤害直接扣血，无视护甲
         if (armorBreak > 0)
         {
             HP = Mathf.Max(0, HP - armorBreak);
             actualDamage += armorBreak;
         }
 
-        // 基础伤害走护甲
-        if (!ignoreArmor && Armor > 0 && damage > 0)
+        if (damage <= 0) return actualDamage;
+
+        if (ignoreArmor)
+        {
+            HP = Mathf.Max(0, HP - damage);
+            actualDamage += damage;
+            return actualDamage;
+        }
+
+        // 已有破甲层：等量伤害绕过护甲（与「施加破甲」层数 1:1）
+        int bypass = Mathf.Min(Mathf.Max(0, ArmorBreakStacks), damage);
+        if (bypass > 0)
+        {
+            HP = Mathf.Max(0, HP - bypass);
+            actualDamage += bypass;
+            damage -= bypass;
+        }
+
+        if (Armor > 0 && damage > 0)
         {
             int absorbed = Mathf.Min(Armor, damage);
             Armor -= absorbed;
@@ -298,7 +316,10 @@ public class EnemyInstance
         return actualDamage;
     }
 
-    /// <summary>施加状态：破甲减甲；力量/敏捷改运行时属性；疲惫叠加层数。</summary>
+    /// <summary>
+    /// 施加状态。破甲是可叠加减益：请求的层数总会加上（没有护甲也能挂上），
+    /// 若当前有护甲则额外剥离等量护甲，供 RemoveStatus 还原。
+    /// </summary>
     public void ApplyStatus(StatusType status, int stacks)
     {
         if (stacks == 0) return;
@@ -306,9 +327,12 @@ public class EnemyInstance
         {
             case StatusType.ArmorBreak:
             {
-                int actual = Mathf.Min(Armor, Mathf.Max(0, stacks));
-                Armor -= actual;
-                ArmorBreakStacks += actual;
+                int add = Mathf.Max(0, stacks);
+                if (add == 0) break;
+                int stripped = Mathf.Min(Armor, add);
+                Armor -= stripped;
+                ArmorBreakStripped += stripped;
+                ArmorBreakStacks += add;
                 break;
             }
             case StatusType.Strength:
@@ -323,7 +347,7 @@ public class EnemyInstance
         }
     }
 
-    /// <summary>移除状态（ArmorBreak：还原被削减的护甲；力量/敏捷/疲惫按层数回退）。</summary>
+    /// <summary>移除状态（ArmorBreak：扣层数，并把曾剥离的护甲按层还回去；力量/敏捷/疲惫按层数回退）。</summary>
     public void RemoveStatus(StatusType status, int stacks)
     {
         if (stacks <= 0) return;
@@ -331,9 +355,11 @@ public class EnemyInstance
         {
             case StatusType.ArmorBreak:
             {
-                int restore = Mathf.Min(ArmorBreakStacks, stacks);
+                int remove = Mathf.Min(ArmorBreakStacks, stacks);
+                ArmorBreakStacks -= remove;
+                int restore = Mathf.Min(ArmorBreakStripped, remove);
                 Armor += restore;
-                ArmorBreakStacks -= restore;
+                ArmorBreakStripped -= restore;
                 break;
             }
             case StatusType.Strength:
@@ -384,7 +410,9 @@ public class EnemyInstance
                 {
                     customIcon = relic.icon,
                     hideStacks = true,
-                    totalStacks = 0
+                    totalStacks = 0,
+                    tooltipTitle = string.IsNullOrEmpty(relic.relicName) ? relic.name : relic.relicName,
+                    tooltipBody = relic.description
                 });
             }
         }

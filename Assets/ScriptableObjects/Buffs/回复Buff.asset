@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 7c4e9b2a1d8f4e6c9a3b5d7e1f0c2a48, type: 3}
   m_Name: "\u56DE\u590DBuff"
-  m_EditorClassIdentifier: Assembly-CSharp::BuffData
-  buffName: "\u56DE\u590DBuff"
+  m_EditorClassIdentifier:
+  buffName: "回复Buff"
   icon: {fileID: 21300000, guid: 86098311059453c439d59c743c371708, type: 3}
   attributeType: 2
   minValue: 0
+  description: "回合开始时回复等同层数的生命。"

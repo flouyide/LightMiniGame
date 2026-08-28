@@ -678,7 +678,14 @@ public class EffectExecutorV2
             {
                 isCrit = false;
                 hitDamage = baseDamage;
-                // 敌人对玩家的破甲语义：沿用敌人伤害，此处不再单独追加
+                if (node.useArmorBreak)
+                {
+                    int armorBreak = EvaluateValue(node.armorBreakValue);
+                    if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.ArmorBreak, out int fusedAB))
+                        armorBreak = fusedAB;
+                    if (armorBreak > 0)
+                        _ctx.ApplyStatusToPlayer(StatusType.ArmorBreak, armorBreak);
+                }
                 _ctx.DealDamageToPlayer(hitDamage, _initiatorEnemySlot);
             }
             else
@@ -700,7 +707,6 @@ public class EffectExecutorV2
                     critMult += extraCritDamagePercent / 100f;
                 hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * critMult) : baseDamage;
 
-                // 破甲
                 int armorBreak = 0;
                 if (node.useArmorBreak)
                 {
@@ -709,9 +715,11 @@ public class EffectExecutorV2
                         armorBreak = fusedAB;
                 }
 
-                // 目标选择
+                // 先挂破甲再结算伤害，使本击就能绕过等量护甲；全体敌人原先漏了破甲。
                 if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
                 {
+                    if (armorBreak > 0)
+                        _ctx.ApplyStatusToEnemy(-1, StatusType.ArmorBreak, armorBreak);
                     _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock, isCrit);
                 }
                 else
@@ -725,9 +733,9 @@ public class EffectExecutorV2
                     };
                     if (targetIdx >= 0)
                     {
-                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock, isCrit);
                         if (armorBreak > 0)
                             _ctx.ApplyStatusToEnemy(targetIdx, StatusType.ArmorBreak, armorBreak);
+                        _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock, isCrit);
                     }
                 }
             }
@@ -1137,7 +1145,8 @@ public class EffectExecutorV2
 
         // 玩家侧目标：玩家出牌时当前角色/效果发起者指玩家；敌人出牌时当前角色指玩家。
         // 敌人出牌时 EffectSource（对敌人自己施加）走敌人分支。
-        bool toPlayer = TargetIsPlayerSide(node.target.unitTarget);
+        var unit = node.target != null ? node.target.unitTarget : CombatUnitTarget.SelectedEnemy;
+        bool toPlayer = TargetIsPlayerSide(unit);
         if (toPlayer)
         {
             if (node.statusType == StatusType2.NextAttackDamageBonus)
@@ -1176,14 +1185,14 @@ public class EffectExecutorV2
                 Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 玩家");
             }
         }
-        else if (IsEnemyInitiator && node.target.unitTarget == CombatUnitTarget.EffectSource)
+        else if (IsEnemyInitiator && unit == CombatUnitTarget.EffectSource)
         {
             _ctx.ApplyStatusToEnemy(_initiatorEnemySlot, MapStatus(node.statusType), stacks);
             Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → {_initiatorEnemySlot}号敌人");
         }
         else
         {
-            int targetIdx = ResolveStatusEnemyIndex(node.target.unitTarget);
+            int targetIdx = ResolveStatusEnemyIndex(unit);
             _ctx.ApplyStatusToEnemy(targetIdx, MapStatus(node.statusType), stacks);
             Log($"  [施加状态] {ValueNode.GetStatusName(node.statusType)} {stacks}层 → 敌人");
         }
@@ -1251,6 +1260,7 @@ public class EffectExecutorV2
             case StatusType.Dexterity: attr = BuffAttributeType.Dexterity; return true;
             case StatusType.CritRateBoost: attr = BuffAttributeType.CriticalChance; return true;
             case StatusType.CritDamageBoost: attr = BuffAttributeType.CriticalDamage; return true;
+            case StatusType.ArmorBreak: attr = BuffAttributeType.ArmorBreak; return true;
             default: attr = BuffAttributeType.Strength; return false;
         }
     }
