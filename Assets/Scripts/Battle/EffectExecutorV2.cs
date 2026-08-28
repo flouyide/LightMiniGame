@@ -45,6 +45,7 @@ public class EffectExecutorV2
         if (effects == null) return;
         _localVars = externalVars ?? new Dictionary<string, int>();
         _lastResult = new Dictionary<EffectResultType, int>();
+        _ctx.InitiatorEnemySlot = _initiatorEnemySlot;
 
         for (int i = 0; i < effects.Count; i++)
         {
@@ -143,8 +144,13 @@ public class EffectExecutorV2
     {
         int prev = _initiatorEnemySlot;
         _initiatorEnemySlot = enemySlot;
+        _ctx.InitiatorEnemySlot = enemySlot;
         try { ExecuteEffectList(effects, externalVars); }
-        finally { _initiatorEnemySlot = prev; }
+        finally
+        {
+            _initiatorEnemySlot = prev;
+            _ctx.InitiatorEnemySlot = prev;
+        }
     }
 
     private bool IsEnemyInitiator => _initiatorEnemySlot >= 0;

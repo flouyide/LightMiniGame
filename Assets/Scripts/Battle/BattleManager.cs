@@ -9,6 +9,7 @@ using TMPro;
 using LightMiniGame.Card;
 using LightMiniGame.CardEditor;
 using LightMiniGame.Relic;
+using LightMiniGame.RelicEffects;
 using Random = UnityEngine.Random;
 
 /// <summary>
@@ -249,6 +250,11 @@ public class BattleManager : MonoBehaviour
     // === CardEntry 效果系统支持 ===
     private EffectExecutorV2 _effectExecutorV2;
     private TriggerSystem _triggerSystem;
+    private BattleCardContext _cardContext;
+    private UnfinishedCardRuntime _unfinished;
+
+    public UnfinishedCardRuntime Unfinished => _unfinished;
+    public int CurrentInitiatorEnemySlot => _cardContext != null ? _cardContext.InitiatorEnemySlot : -1;
     // === Buff 系统 ===
     private BuffSystem _playerBuffs;
     private BuffSystem _enemyBuffs;
@@ -511,6 +517,7 @@ public class BattleManager : MonoBehaviour
             var cd = CardEntryAdapter.ConvertSingle(entry);
             if (cd == null) break;
             cd.extraCost = _handCostBonus;
+            cd.statusCostBonus = _unfinished != null ? _unfinished.EntangleStacks : 0;
             if (zone == CardZoneType.DrawPile)
             {
                 ActiveChar.drawPile.Add(cd);
@@ -831,6 +838,8 @@ public class BattleManager : MonoBehaviour
         clone.fusion = card.fusion;
         clone.extraCost = card.extraCost;
         clone.relicCostReduction = card.relicCostReduction;
+        clone.costOverrideThisTurn = card.costOverrideThisTurn;
+        clone.statusCostBonus = card.statusCostBonus;
         clone.attachedEffectNodes = card.attachedEffectNodes != null
             ? card.attachedEffectNodes.ConvertAll(n => n != null ? n.Clone() : null)
             : null;
@@ -857,6 +866,7 @@ public class BattleManager : MonoBehaviour
         if (_currentFusionCard == from) _currentFusionCard = to;
         if (_recycleUsedThisTurn.Remove(from))
             _recycleUsedThisTurn.Add(to);
+        _unfinished?.ReplaceCard(from, to);
         foreach (var g in _tempKeywordGrants)
             if (g.card == from) g.card = to;
     }
@@ -1594,6 +1604,7 @@ public class BattleManager : MonoBehaviour
     public void AddPlayerBuff(BuffAttributeType type, int stacks, int duration = 0)
     {
         if (type == BuffAttributeType.LifeSteal) return;
+        if (type == BuffAttributeType.DirtyWork) return;
         if (type == BuffAttributeType.ArmorBreak)
         {
             ApplyPlayerArmorBreak(stacks, duration);
@@ -1660,6 +1671,7 @@ public class BattleManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(sourceId)) return;
         if (type == BuffAttributeType.LifeSteal) return;
+        if (type == BuffAttributeType.DirtyWork) return;
 
         if (stacks == 0)
         {
@@ -1700,12 +1712,30 @@ public class BattleManager : MonoBehaviour
         {
             if (pair.Value == 0) continue;
             if (pair.Key == BuffAttributeType.LifeSteal) continue;
+            if (pair.Key == BuffAttributeType.DirtyWork) continue;
             result.Add(new DisplayedBuff
             {
                 attributeType = pair.Key,
                 totalStacks = pair.Value
             });
         }
+
+        int dirtyWork = _unfinished != null ? _unfinished.DirtyWorkStacks : 0;
+        if (dirtyWork > 0)
+        {
+            var data = GetBuffData(BuffAttributeType.DirtyWork);
+            Sprite icon = data != null ? data.icon : null;
+            if (icon == null) icon = BuffData.LoadBuiltinIcon(BuffAttributeType.DirtyWork);
+            result.Add(new DisplayedBuff
+            {
+                attributeType = BuffAttributeType.DirtyWork,
+                totalStacks = dirtyWork,
+                customIcon = icon,
+                tooltipTitle = data != null ? data.GetDisplayName() : BuffData.DefaultName(BuffAttributeType.DirtyWork),
+                tooltipBody = data != null ? data.GetDescription() : BuffData.DefaultDescription(BuffAttributeType.DirtyWork)
+            });
+        }
+
         return result;
     }
 
@@ -1726,6 +1756,7 @@ public class BattleManager : MonoBehaviour
             BuffAttributeType.Recovery => "Assets/ScriptableObjects/Buffs/回复Buff.asset",
             BuffAttributeType.CriticalChance => "Assets/ScriptableObjects/Buffs/暴击率Buff.asset",
             BuffAttributeType.CriticalDamage => "Assets/ScriptableObjects/Buffs/暴击伤害Buff.asset",
+            BuffAttributeType.DirtyWork => "Assets/ScriptableObjects/Buffs/脏活Buff.asset",
             _ => null
         };
         if (path != null)
@@ -2348,6 +2379,8 @@ public class BattleManager : MonoBehaviour
         // 初始化效果系统
         _ruleConfig = GameRuleConfig.Load();
         var ctx = new BattleCardContext(this);
+        _cardContext = ctx;
+        _unfinished = new UnfinishedCardRuntime(this);
         _triggerSystem = new TriggerSystem(null);
         _effectExecutorV2 = new EffectExecutorV2(ctx, _triggerSystem);
         // 通过反射替换 _triggerSystem 内部 executor（避免创建两个实例）
@@ -2481,6 +2514,7 @@ public class BattleManager : MonoBehaviour
 
             var drawn = activeChar.drawPile[0];
             drawn.extraCost = _handCostBonus;   // 继承当前过载费用加成
+            drawn.statusCostBonus = _unfinished != null ? _unfinished.EntangleStacks : 0;
             _hand.Add(drawn);
             activeChar.drawPile.RemoveAt(0);
         }
@@ -2510,6 +2544,11 @@ public class BattleManager : MonoBehaviour
         if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return false;
 
         var card = _hand[handIndex];
+        if (_unfinished != null && _unfinished.IsLockedNextTurn(card))
+        {
+            Debug.Log($"[BattleManager] 「{card.cardName}」本回合无法打出（考勤警告）");
+            return false;
+        }
         TryApplyPendingKeywordOnPlay(card);
         int cost = ResolveCardPlayCost(card);
         int paidAP = Mathf.Min(_actionPoints, cost);
@@ -2603,7 +2642,7 @@ public class BattleManager : MonoBehaviour
         return ok;
     }
 
-    /// <summary>拖拽结束回调：攻击牌命中敌人区域出牌；增益/防御牌拖到中央出牌区释放即出牌（无需选敌）。由 CardDragHandler 调用。</summary>
+    /// <summary>拖拽结束回调：需要选定敌人的牌必须拖到敌人身上；其余牌拖到中央出牌区释放即可。由 CardDragHandler 调用。</summary>
     private void OnCardDropped(int handIndex, Vector2 screenPos)
     {
         if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return;
@@ -2616,7 +2655,7 @@ public class BattleManager : MonoBehaviour
 
         if (RequiresEnemyTarget(card))
         {
-            // 攻击牌：拖到敌人身上（或刚悬停高亮的敌人上）释放
+            // 攻击牌 / 效果目标为选定敌人的技能：拖到敌人身上（或刚悬停高亮的敌人上）释放
             if (slot < 0) slot = lastHovered;
             ClearEnemyHover();
             if (slot < 0) return;   // 未命中任何敌人，卡牌弹回
@@ -2624,7 +2663,7 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            // 增益/防御牌：拖到中央出牌区放开即出牌，不选择敌人
+            // 自身增益、全体/随机等无需点名的牌：拖到中央出牌区放开即出牌
             ClearEnemyHover();
             if (!IsInPlayZone(screenPos)) return;   // 仍拖在手牌区则弹回
             PlayCard(handIndex, -1);   // -1：不修改目标（此类牌无需敌目标）
@@ -2632,8 +2671,8 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 拖拽过程中逐帧更新悬停高亮：仅攻击牌命中哪个敌人就高亮哪个，切走/离开时取消。
-    /// 增益/防御牌不锁定敌人，不加高亮。
+    /// 拖拽过程中逐帧更新悬停高亮：需要选定敌人的牌，命中哪个敌人就高亮哪个。
+    /// 切走/离开时取消。无需选敌的牌不加高亮。
     /// </summary>
     public void SetCardDragOver(int handIndex, Vector2 screenPos)
     {
@@ -2646,7 +2685,7 @@ public class BattleManager : MonoBehaviour
         bool targeting = handIndex >= 0 && handIndex < _hand.Count && RequiresEnemyTarget(_hand[handIndex]);
         if (!targeting)
         {
-            ClearEnemyHover();   // 非攻击牌拖动时不锁定敌人
+            ClearEnemyHover();
             return;
         }
         int slot = GetEnemySlotAtScreenPosition(screenPos);
@@ -2667,13 +2706,15 @@ public class BattleManager : MonoBehaviour
         _hoverEnemyIndex = -1;
     }
 
-    /// <summary>该卡是否需要对敌人选目标（攻击牌为是，增益/防御牌为否）。</summary>
+    /// <summary>
+    /// 该卡是否必须拖到指定敌人上打出。
+    /// 攻击牌始终需要；技能/能力若效果会打到「选定敌人」，同样需要。
+    /// </summary>
     private bool RequiresEnemyTarget(CardData card)
     {
         if (card == null) return false;
-        if (card.sourceEntry != null)
-            return card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack;
-        return card.cardType == CardType.Attack;
+        if (card.IsAttackCard()) return true;
+        return EffectNode.ListNeedsPlayerSelectedEnemyTarget(card.GetEffectNodes(card.isLowSanityForm));
     }
 
     /// <summary>屏幕坐标是否落在中央出牌区（手牌区上沿以上、敌人上方的中间战场）。</summary>
@@ -3266,6 +3307,160 @@ public class BattleManager : MonoBehaviour
         UpdateUI();
     }
 
+    public void RefreshHandDisplays() => RefreshHandUI();
+
+    public CardData EnsureRuntimeCard(CardData card) => EnsureMutableCard(card);
+
+    public int AddKeywordToRandomHandCards(KeywordType kw, int count)
+    {
+        if (kw == KeywordType.None || count <= 0) return 0;
+        var candidates = new List<CardData>();
+        for (int i = 0; i < _hand.Count; i++)
+        {
+            if (_hand[i] != null && !_hand[i].HasKeyword(kw))
+                candidates.Add(_hand[i]);
+        }
+        int n = Mathf.Min(count, candidates.Count);
+        if (n <= 0) return 0;
+        for (int i = candidates.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+        }
+        var duration = new EffectDuration { type = DurationType.UntilCombatEnd };
+        int changed = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (ModifyCardKeyword(candidates[i], kw, true, duration))
+                changed++;
+        }
+        if (changed > 0) RefreshHandUI();
+        return changed;
+    }
+
+    public bool ReplaceRandomDeckCard(CardEntry replacement)
+    {
+        if (replacement == null || ActiveChar == null) return false;
+        var lists = new List<List<CardData>>();
+        if (ActiveChar.drawPile != null && ActiveChar.drawPile.Count > 0)
+            lists.Add(ActiveChar.drawPile);
+        if (ActiveChar.discardPile != null && ActiveChar.discardPile.Count > 0)
+            lists.Add(ActiveChar.discardPile);
+        if (lists.Count == 0) return false;
+
+        int total = 0;
+        for (int i = 0; i < lists.Count; i++) total += lists[i].Count;
+        int pick = Random.Range(0, total);
+        List<CardData> targetList = lists[0];
+        int index = pick;
+        for (int i = 0; i < lists.Count; i++)
+        {
+            if (pick < lists[i].Count)
+            {
+                targetList = lists[i];
+                index = pick;
+                break;
+            }
+            pick -= lists[i].Count;
+        }
+        var old = targetList[index];
+        var neu = CardEntryAdapter.ConvertSingle(replacement);
+        if (neu == null) return false;
+        neu.extraCost = _handCostBonus;
+        targetList[index] = neu;
+        Debug.Log($"[BattleManager] 改名：{old?.cardName} → {neu.cardName}");
+        return true;
+    }
+
+    public int GetImpostorStacks(int slot)
+    {
+        var inst = GetEnemy(slot);
+        if (inst == null) return 0;
+        for (int i = 0; i < _enemyAbilityEffects.Count; i++)
+        {
+            if (_enemyAbilityEffects[i].effect is ImpostorEffect impostor)
+                return impostor.GetStacks(inst);
+        }
+        return 0;
+    }
+
+    public void AddImpostorStacks(int slot, int amount)
+    {
+        var inst = GetEnemy(slot);
+        if (inst == null) return;
+        for (int i = 0; i < _enemyAbilityEffects.Count; i++)
+        {
+            if (_enemyAbilityEffects[i].effect is ImpostorEffect impostor)
+            {
+                impostor.AddStacks(inst, amount);
+                inst.View?.Refresh();
+                return;
+            }
+        }
+        Debug.LogWarning("[BattleManager] 场上没有冒名能力，无法叠加冒名层数");
+    }
+
+    public void SummonEnemyCompanion(int sourceSlot, Vector2 spawnOffset)
+    {
+        if (_enemies.Count >= UnfinishedCardRuntime.MaxSummonedEnemies)
+        {
+            Debug.Log("[BattleManager] 敌人数量已达上限，跳过召唤");
+            return;
+        }
+        var source = GetEnemy(sourceSlot);
+        if (source == null || source.Config == null)
+        {
+            Debug.LogWarning("[BattleManager] 召唤失败：找不到发起者配置");
+            return;
+        }
+
+        var cfg = source.Config;
+        var inst = new EnemyInstance
+        {
+            SlotIndex = _enemies.Count,
+            Config = cfg,
+            ActionOrder = cfg.actionPriority,
+            MaxHP = cfg.maxHP,
+            HP = cfg.maxHP,
+            Armor = cfg.armor,
+            Strength = cfg.strength,
+            Dexterity = cfg.dexterity,
+            Tiredness = Mathf.Max(0, cfg.fatigue),
+            Phase = source.Phase,
+            UseLowSanityPool = source.UseLowSanityPool,
+            TurnInCycle = 0,
+            LockedCharIdx = -1,
+            IsDead = false,
+        };
+
+        Vector2 pos = Vector2.zero;
+        if (source.View != null)
+        {
+            var srcRt = source.View.GetComponent<RectTransform>();
+            if (srcRt != null) pos = srcRt.anchoredPosition + spawnOffset;
+        }
+        else
+        {
+            var last = GetEnemyAnchor(_enemies.Count - 1);
+            if (last != null) pos = last.anchoredPosition + spawnOffset;
+        }
+
+        if (enemyViewPrefab != null && enemyContainer != null)
+        {
+            var view = Instantiate(enemyViewPrefab, enemyContainer);
+            var rect = view.GetComponent<RectTransform>();
+            if (rect != null) rect.anchoredPosition = pos;
+            inst.View = view;
+            view.SetCardPrefabs(attackCardPrefab, skillCardPrefab, abilityCardPrefab);
+            view.Bind(inst);
+        }
+
+        _enemies.Add(inst);
+        RefreshEnemyIntentDeck(inst);
+        UpdateUI();
+        Debug.Log($"[BattleManager] 召唤同伴[{inst.SlotIndex}] {cfg.enemyName} @ {pos}");
+    }
+
     /// <summary>
     /// 给指定槽位敌人施加属性增益（敌人自buff）。仅支持敌人模型存在的属性（力量/敏捷），
     /// 其它属性敌人不具此概念，返回 false（调用方可忽略或回退）。
@@ -3328,6 +3523,8 @@ public class BattleManager : MonoBehaviour
         {
             damage = Mathf.RoundToInt(damage * PercentToFactor(_playerDamageTakenMultiplier));
         }
+        if (damage > 0 && _unfinished != null)
+            damage += _unfinished.IncomingDamageBonus;
         int remaining = damage;
         int armorBreak = Mathf.Max(0, _playerBuffs?.GetTempValue(BuffAttributeType.ArmorBreak) ?? 0);
         int bypass = Mathf.Min(armorBreak, remaining);
@@ -3623,6 +3820,7 @@ public class BattleManager : MonoBehaviour
     private bool IsCardPlayable(CardData card)
     {
         if (card == null || IsPlayerInputLocked) return false;
+        if (_unfinished != null && _unfinished.IsLockedNextTurn(card)) return false;
         int cost = ResolveCardPlayCost(card);
         if (_actionPoints >= cost) return true;
         int missing = cost - _actionPoints;
@@ -3830,6 +4028,7 @@ public class BattleManager : MonoBehaviour
     private void EndPlayerTurn()
     {
         ExpireTemporaryKeywords(turnEnd: true, characterSwitch: false);
+        _unfinished?.OnPlayerTurnEnded();
         _isPlayerTurn = false;
 
         var activeChar = ActiveChar;
@@ -4264,6 +4463,7 @@ public class BattleManager : MonoBehaviour
 
         DrawCards(drawPerTurn + _slackBonusDraw);
         _slackBonusDraw = 0;
+        _unfinished?.ApplyPendingHandEffects();
         _recycleUsedThisTurn.Clear();
         _isPlayerTurn = true;
 
@@ -4331,6 +4531,9 @@ public class BattleManager : MonoBehaviour
 
         // 敌人能力效果：战斗结束钩子并清理
         ShutdownEnemyAbilityEffects(victory);
+        _unfinished?.Clear();
+        _unfinished = null;
+        _cardContext = null;
 
         if (_enemyTurnRoutine != null) { StopCoroutine(_enemyTurnRoutine); _enemyTurnRoutine = null; }
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }

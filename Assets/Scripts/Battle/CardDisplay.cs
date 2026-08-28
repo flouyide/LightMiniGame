@@ -265,7 +265,7 @@ public class CardDisplay : MonoBehaviour
 
         var ordered = CardKeywords.GetOrderedFlags(keywords, _keywordDisplayOrder);
         if (_resolvedKeywordTab != null)
-            _resolvedKeywordTab.gameObject.SetActive(true);
+            _resolvedKeywordTab.gameObject.SetActive(ordered.Count > 0);
 
         while (_keywordIconPool.Count > ordered.Count)
         {
@@ -276,6 +276,8 @@ public class CardDisplay : MonoBehaviour
             if (Application.isPlaying) Destroy(go);
             else DestroyImmediate(go);
         }
+
+        if (ordered.Count == 0) return;
 
         for (int i = 0; i < ordered.Count; i++)
         {

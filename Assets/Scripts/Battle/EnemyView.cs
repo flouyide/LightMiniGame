@@ -77,6 +77,7 @@ public class EnemyView : MonoBehaviour
     // 血条下方 buff 栏
     private RectTransform _buffDeckRoot;
     private readonly List<GameObject> _buffIconPool = new List<GameObject>();
+    private BattleManager _battle;
 
     /// <summary>绑定运行时实例并全量刷新显示</summary>
     public void Bind(EnemyInstance inst)
@@ -203,7 +204,8 @@ public class EnemyView : MonoBehaviour
         EnsureBuffDeck();
         if (_buffDeckRoot == null || _inst == null) return;
 
-        var buffs = _inst.GetDisplayedBuffs();
+        if (_battle == null) _battle = FindObjectOfType<BattleManager>();
+        var buffs = _inst.GetDisplayedBuffs(_battle);
         _buffDeckRoot.gameObject.SetActive(buffs.Count > 0);
         ApplyBuffDeckLayout();
 
@@ -413,8 +415,8 @@ public class EnemyView : MonoBehaviour
             stackText.raycastTarget = false;
         }
 
-        var battle = Object.FindObjectOfType<BattleManager>();
-        BuffIconHover.Bind(iconGo, buff, battle);
+        if (_battle == null) _battle = FindObjectOfType<BattleManager>();
+        BuffIconHover.Bind(iconGo, buff, _battle);
     }
 
     private Sprite ResolveBuffSprite(BuffAttributeType type)

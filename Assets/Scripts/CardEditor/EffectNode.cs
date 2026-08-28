@@ -827,5 +827,69 @@ namespace LightMiniGame.CardEditor
             EffectOperation.CustomOperation => "自定义操作",
             _ => op.ToString()
         };
+
+        /// <summary>
+        /// 玩家打出时是否必须拖到指定敌人：本节点（含子效果）会结算到「选定敌人 / 当前攻击目标」。
+        /// 全体、随机、生命最低等自动选敌，以及自身增益，都不需要。
+        /// </summary>
+        public bool NeedsPlayerSelectedEnemyTarget()
+        {
+            if (!enabled) return false;
+            if (ThisNodeNeedsPlayerSelectedEnemy()) return true;
+            return ListNeedsPlayerSelectedEnemyTarget(childEffects);
+        }
+
+        public static bool ListNeedsPlayerSelectedEnemyTarget(List<EffectNode> nodes)
+        {
+            if (nodes == null) return false;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (nodes[i] != null && nodes[i].NeedsPlayerSelectedEnemyTarget())
+                    return true;
+            }
+            return false;
+        }
+
+        private bool ThisNodeNeedsPlayerSelectedEnemy()
+        {
+            if (!OperationCanHitChosenEnemy(operation, attributeType)) return false;
+
+            var unit = target != null ? target.unitTarget : DefaultUnitTargetForEnemyHit(operation);
+            if (target != null
+                && target.category != TargetCategory.Enemy
+                && target.category != TargetCategory.CombatUnit)
+                return false;
+
+            return unit == CombatUnitTarget.SelectedEnemy
+                || unit == CombatUnitTarget.CurrentAttackTarget;
+        }
+
+        private static CombatUnitTarget DefaultUnitTargetForEnemyHit(EffectOperation op)
+        {
+            switch (op)
+            {
+                case EffectOperation.DealDamage:
+                case EffectOperation.ApplyStatus:
+                case EffectOperation.RemoveStatus:
+                    return CombatUnitTarget.SelectedEnemy;
+                default:
+                    return CombatUnitTarget.CurrentCharacter;
+            }
+        }
+
+        private static bool OperationCanHitChosenEnemy(EffectOperation op, PlayerAttributeType attr)
+        {
+            switch (op)
+            {
+                case EffectOperation.DealDamage:
+                case EffectOperation.ApplyStatus:
+                case EffectOperation.RemoveStatus:
+                    return true;
+                case EffectOperation.ModifyAttribute:
+                    return attr == PlayerAttributeType.Recovery;
+                default:
+                    return false;
+            }
+        }
     }
 }

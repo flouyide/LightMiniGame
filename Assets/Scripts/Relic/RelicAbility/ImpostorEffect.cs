@@ -53,6 +53,7 @@ namespace LightMiniGame.RelicEffects
             {
                 if (inst == null || inst.IsDead || !IsHost(inst)) continue;
                 _remainingStacksByHost[inst] = _initialStacks;
+                inst.View?.Refresh();
             }
 
             _battle.OnEnemyDamageIntercept += OnEnemyDamageIntercept;
@@ -87,6 +88,7 @@ namespace LightMiniGame.RelicEffects
             // 每次敌人受击均代表一个独立伤害段；多段攻击会逐段消耗冒名。
             remainingStacks--;
             _remainingStacksByHost[inst] = remainingStacks;
+            inst.View?.Refresh();
 
             _battle.DealReflectedDamageToPlayer(reflectedDamage);
 
@@ -95,6 +97,23 @@ namespace LightMiniGame.RelicEffects
                 $"剩余冒名层数 {remainingStacks}。"
             );
             return true;
+        }
+
+        public int GetStacks(EnemyInstance inst)
+        {
+            if (inst == null) return 0;
+            if (_remainingStacksByHost.TryGetValue(inst, out int stacks))
+                return Mathf.Max(0, stacks);
+            return IsHost(inst) ? _initialStacks : 0;
+        }
+
+        public void AddStacks(EnemyInstance inst, int amount)
+        {
+            if (inst == null || amount == 0 || !IsHost(inst)) return;
+            int current = GetStacks(inst);
+            _remainingStacksByHost[inst] = Mathf.Max(0, current + amount);
+            inst.View?.Refresh();
+            Debug.Log($"[Impostor] {inst.Name} 冒名 {amount:+0;-0;0} → {_remainingStacksByHost[inst]} 层");
         }
 
         private bool IsHost(EnemyInstance inst)

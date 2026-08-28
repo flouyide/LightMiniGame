@@ -169,7 +169,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
-    isFinalNode: 0
+    isFinalNode: 1
     mutuallyExclusiveIds: []
     followUpIds: []
     prerequisiteIds: []

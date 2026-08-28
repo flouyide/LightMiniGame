@@ -387,8 +387,11 @@ public class EnemyInstance
         return dmg;
     }
 
-    /// <summary>敌人 buff 栏：疲惫、破甲、力量，以及 Config.abilities 里的能力（用 RelicData.icon）。0 层不显示。</summary>
-    public List<DisplayedBuff> GetDisplayedBuffs()
+    /// <summary>
+    /// 敌人 buff 栏：疲惫、破甲、力量，以及 Config.abilities 里的能力（用 RelicData.icon）。
+    /// 能力图标默认不显示层数；仅冒名显示剩余层数角标，层数归零后不再显示。
+    /// </summary>
+    public List<DisplayedBuff> GetDisplayedBuffs(BattleManager battle = null)
     {
         var list = new List<DisplayedBuff>();
         if (Tiredness != 0)
@@ -406,17 +409,36 @@ public class EnemyInstance
             {
                 var relic = abilities[i] != null ? abilities[i].relic : null;
                 if (relic == null || !seen.Add(relic)) continue;
+
+                bool impostor = IsImpostorAbility(relic);
+                int impostorStacks = 0;
+                if (impostor)
+                {
+                    impostorStacks = battle != null ? battle.GetImpostorStacks(SlotIndex) : 0;
+                    if (impostorStacks <= 0) continue;
+                }
+
                 list.Add(new DisplayedBuff
                 {
                     customIcon = relic.icon,
-                    hideStacks = true,
-                    totalStacks = 0,
+                    hideStacks = !impostor,
+                    totalStacks = impostor ? impostorStacks : 0,
                     tooltipTitle = string.IsNullOrEmpty(relic.relicName) ? relic.name : relic.relicName,
                     tooltipBody = relic.description
                 });
             }
         }
         return list;
+    }
+
+    private static bool IsImpostorAbility(LightMiniGame.Shop.RelicData relic)
+    {
+        if (relic == null) return false;
+        string script = relic.effectScriptName;
+        if (!string.IsNullOrEmpty(script) &&
+            script.IndexOf("ImpostorEffect", System.StringComparison.Ordinal) >= 0)
+            return true;
+        return relic.relicId == "ImpostorAbility" || relic.relicName == "冒名";
     }
 
     /// <summary>获得护甲（加法累加）。由 BattleManager 在执行 gainBlock 技能时调用。</summary>
