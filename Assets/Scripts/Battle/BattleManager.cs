@@ -2642,7 +2642,7 @@ public class BattleManager : MonoBehaviour
         return ok;
     }
 
-    /// <summary>拖拽结束回调：攻击牌命中敌人区域出牌；增益/防御牌拖到中央出牌区释放即出牌（无需选敌）。由 CardDragHandler 调用。</summary>
+    /// <summary>拖拽结束回调：需要选定敌人的牌必须拖到敌人身上；其余牌拖到中央出牌区释放即可。由 CardDragHandler 调用。</summary>
     private void OnCardDropped(int handIndex, Vector2 screenPos)
     {
         if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return;
@@ -2655,7 +2655,7 @@ public class BattleManager : MonoBehaviour
 
         if (RequiresEnemyTarget(card))
         {
-            // 攻击牌：拖到敌人身上（或刚悬停高亮的敌人上）释放
+            // 攻击牌 / 效果目标为选定敌人的技能：拖到敌人身上（或刚悬停高亮的敌人上）释放
             if (slot < 0) slot = lastHovered;
             ClearEnemyHover();
             if (slot < 0) return;   // 未命中任何敌人，卡牌弹回
@@ -2663,7 +2663,7 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            // 增益/防御牌：拖到中央出牌区放开即出牌，不选择敌人
+            // 自身增益、全体/随机等无需点名的牌：拖到中央出牌区放开即出牌
             ClearEnemyHover();
             if (!IsInPlayZone(screenPos)) return;   // 仍拖在手牌区则弹回
             PlayCard(handIndex, -1);   // -1：不修改目标（此类牌无需敌目标）
@@ -2671,8 +2671,8 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 拖拽过程中逐帧更新悬停高亮：仅攻击牌命中哪个敌人就高亮哪个，切走/离开时取消。
-    /// 增益/防御牌不锁定敌人，不加高亮。
+    /// 拖拽过程中逐帧更新悬停高亮：需要选定敌人的牌，命中哪个敌人就高亮哪个。
+    /// 切走/离开时取消。无需选敌的牌不加高亮。
     /// </summary>
     public void SetCardDragOver(int handIndex, Vector2 screenPos)
     {
@@ -2685,7 +2685,7 @@ public class BattleManager : MonoBehaviour
         bool targeting = handIndex >= 0 && handIndex < _hand.Count && RequiresEnemyTarget(_hand[handIndex]);
         if (!targeting)
         {
-            ClearEnemyHover();   // 非攻击牌拖动时不锁定敌人
+            ClearEnemyHover();
             return;
         }
         int slot = GetEnemySlotAtScreenPosition(screenPos);
@@ -2706,13 +2706,15 @@ public class BattleManager : MonoBehaviour
         _hoverEnemyIndex = -1;
     }
 
-    /// <summary>该卡是否需要对敌人选目标（攻击牌为是，增益/防御牌为否）。</summary>
+    /// <summary>
+    /// 该卡是否必须拖到指定敌人上打出。
+    /// 攻击牌始终需要；技能/能力若效果会打到「选定敌人」，同样需要。
+    /// </summary>
     private bool RequiresEnemyTarget(CardData card)
     {
         if (card == null) return false;
-        if (card.sourceEntry != null)
-            return card.sourceEntry.cardType == LightMiniGame.CardEditor.CardType.Attack;
-        return card.cardType == CardType.Attack;
+        if (card.IsAttackCard()) return true;
+        return EffectNode.ListNeedsPlayerSelectedEnemyTarget(card.GetEffectNodes(card.isLowSanityForm));
     }
 
     /// <summary>屏幕坐标是否落在中央出牌区（手牌区上沿以上、敌人上方的中间战场）。</summary>
