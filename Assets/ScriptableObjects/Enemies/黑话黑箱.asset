@@ -15,8 +15,8 @@ MonoBehaviour:
   enemyName: "\u9ED1\u8BDD\u9ED1\u7BB1"
   maxHP: 150
   armor: 0
-  phase1Portrait: {fileID: 21300000, guid: ffef8168bc00c8948827b196bac3e72b, type: 3}
-  phase2Portrait: {fileID: 21300000, guid: ffef8168bc00c8948827b196bac3e72b, type: 3}
+  phase1Portrait: {fileID: 21300000, guid: 40b8e473d3ff32a46bb7d699bc22b93b, type: 3}
+  phase2Portrait: {fileID: 21300000, guid: 40b8e473d3ff32a46bb7d699bc22b93b, type: 3}
   phase1Skills:
   - {fileID: 11400000, guid: ddabdeed817e8cc48be371c3eac78762, type: 2}
   - {fileID: 11400000, guid: 6e0a955c1f2809e4f98a95043112716c, type: 2}

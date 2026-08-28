@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 11400000, guid: c138027e021a6d74881fdfdfdcbb0c41, type: 2}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -173,6 +174,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 11400000, guid: c138027e021a6d74881fdfdfdcbb0c41, type: 2}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
