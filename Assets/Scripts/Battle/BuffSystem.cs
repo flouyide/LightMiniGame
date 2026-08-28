@@ -16,6 +16,7 @@ public enum BuffAttributeType
     Fatigue,        // 疲惫（层数，每轮扣等量血并 -1 层）
     ArmorBreak,     // 破甲（玩家 / 敌人 buff 栏）
     DirtyWork,      // 脏活（玩家减益：受伤额外 3×层数；仅 UI + UnfinishedCardRuntime）
+    Heat,           // 热度（枪械师资源：层数=_customData["Heat"]；仅 UI）
 }
 
 // ========================================================================
@@ -56,6 +57,7 @@ public class BuffSystem
         if (stacks == 0) return;
         if (type == BuffAttributeType.LifeSteal) return;
         if (type == BuffAttributeType.DirtyWork) return;
+        if (type == BuffAttributeType.Heat) return;
 
         // 同属性、同持续类型（都永久或都有持续）的 buff 合并
         bool isPermanent = duration == 0;
@@ -149,6 +151,7 @@ public class BuffSystem
             if (kv.Value == 0) continue; // 0 层不显示
             if (kv.Key == BuffAttributeType.LifeSteal) continue;
             if (kv.Key == BuffAttributeType.DirtyWork) continue;
+            if (kv.Key == BuffAttributeType.Heat) continue;
             list.Add(new DisplayedBuff { attributeType = kv.Key, totalStacks = kv.Value });
         }
         return list;

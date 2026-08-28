@@ -377,6 +377,10 @@ public class BattleManager : MonoBehaviour
     private SettingsPanelUI _settingsPanel;
     private ChapterManager _cachedChapterManager;   // 懒缓存，供货币代理使用
     private readonly HashSet<string> _playerInputLockSources = new();
+    private readonly HashSet<CardData> _pendingDrawVisuals = new();
+    private readonly HashSet<CardData> _pendingDiscardVisuals = new();
+    private readonly HashSet<CardData> _pendingExhaustVisuals = new();
+    private Coroutine _endTurnExitRoutine;
 
     public bool IsPlayerTurn => _isPlayerTurn && !_battleEnded;
     /// <summary>是否存在阻止出牌、结束回合和角色切换的临时玩家输入锁。</summary>
@@ -1605,6 +1609,7 @@ public class BattleManager : MonoBehaviour
     {
         if (type == BuffAttributeType.LifeSteal) return;
         if (type == BuffAttributeType.DirtyWork) return;
+        if (type == BuffAttributeType.Heat) return;
         if (type == BuffAttributeType.ArmorBreak)
         {
             ApplyPlayerArmorBreak(stacks, duration);
@@ -1672,6 +1677,7 @@ public class BattleManager : MonoBehaviour
         if (string.IsNullOrEmpty(sourceId)) return;
         if (type == BuffAttributeType.LifeSteal) return;
         if (type == BuffAttributeType.DirtyWork) return;
+        if (type == BuffAttributeType.Heat) return;
 
         if (stacks == 0)
         {
@@ -1713,6 +1719,7 @@ public class BattleManager : MonoBehaviour
             if (pair.Value == 0) continue;
             if (pair.Key == BuffAttributeType.LifeSteal) continue;
             if (pair.Key == BuffAttributeType.DirtyWork) continue;
+            if (pair.Key == BuffAttributeType.Heat) continue;
             result.Add(new DisplayedBuff
             {
                 attributeType = pair.Key,
@@ -1736,7 +1743,59 @@ public class BattleManager : MonoBehaviour
             });
         }
 
+        if (ShouldDisplayHeatBuff())
+        {
+            int heat = Mathf.Max(0, GetCustomData("Heat"));
+            var heatData = GetBuffData(BuffAttributeType.Heat);
+            Sprite heatIcon = heatData != null ? heatData.icon : null;
+            if (heatIcon == null) heatIcon = BuffData.LoadBuiltinIcon(BuffAttributeType.Heat);
+            result.Add(new DisplayedBuff
+            {
+                attributeType = BuffAttributeType.Heat,
+                totalStacks = heat,
+                customIcon = heatIcon,
+                tooltipTitle = heatData != null ? heatData.GetDisplayName() : BuffData.DefaultName(BuffAttributeType.Heat),
+                tooltipBody = heatData != null ? heatData.GetDescription() : BuffData.DefaultDescription(BuffAttributeType.Heat)
+            });
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// 枪械师在场时，热度始终出现在玩家 buff 栏（含 0 层；切换角色不摘掉）。
+    /// </summary>
+    private bool ShouldDisplayHeatBuff()
+    {
+        if (_battleEnded) return false;
+        return IsHeatCharacter(ActiveChar?.data)
+            || IsHeatCharacter(InactiveChar?.data)
+            || IsHeatCharacter(StartActiveChar)
+            || IsHeatCharacter(StartInactiveChar);
+    }
+
+    private static bool IsHeatCharacter(CharacterData data)
+    {
+        if (data == null) return false;
+        string id = data.characterId ?? "";
+        string name = string.IsNullOrEmpty(data.displayName) ? data.name : data.displayName;
+        if (id.IndexOf("gun", System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
+        if (!string.IsNullOrEmpty(name)
+            && (name.IndexOf("枪械", System.StringComparison.Ordinal) >= 0
+                || name.IndexOf("Gunner", System.StringComparison.OrdinalIgnoreCase) >= 0))
+            return true;
+        var relics = data.startingRelics;
+        if (relics == null) return false;
+        for (int i = 0; i < relics.Count; i++)
+        {
+            var relic = relics[i];
+            if (relic == null) continue;
+            if (relic.relicId == "GunnerInit") return true;
+            if (!string.IsNullOrEmpty(relic.effectScriptName)
+                && relic.effectScriptName.IndexOf("GunsmithHeat", System.StringComparison.Ordinal) >= 0)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>获取 BuffData 资产（按属性类型）</summary>
@@ -1757,6 +1816,7 @@ public class BattleManager : MonoBehaviour
             BuffAttributeType.CriticalChance => "Assets/ScriptableObjects/Buffs/暴击率Buff.asset",
             BuffAttributeType.CriticalDamage => "Assets/ScriptableObjects/Buffs/暴击伤害Buff.asset",
             BuffAttributeType.DirtyWork => "Assets/ScriptableObjects/Buffs/脏活Buff.asset",
+            BuffAttributeType.Heat => "Assets/ScriptableObjects/Buffs/热度Buff.asset",
             _ => null
         };
         if (path != null)
@@ -1877,7 +1937,9 @@ public class BattleManager : MonoBehaviour
     public void DiscardHandCard(int index)
     {
         if (index < 0 || index >= _hand.Count) return;
-        ActiveChar.discardPile.Add(_hand[index]);
+        var card = _hand[index];
+        ActiveChar.discardPile.Add(card);
+        QueueCardExitVisual(card, exhaust: false);
         _hand.RemoveAt(index);
         RefreshHandUI();
     }
@@ -2080,6 +2142,10 @@ public class BattleManager : MonoBehaviour
             handLayout.SetCardDropCallback(OnCardDropped);
             handLayout.SetCardDragOverCallback(SetCardDragOver);
             handLayout.SetCardPrefabs(attackCardPrefab, skillCardPrefab, abilityCardPrefab);
+            handLayout.OnDrawFlightsStarted -= OnHandDrawFlightsStarted;
+            handLayout.OnDrawFlightsFinished -= OnHandDrawFlightsFinished;
+            handLayout.OnDrawFlightsStarted += OnHandDrawFlightsStarted;
+            handLayout.OnDrawFlightsFinished += OnHandDrawFlightsFinished;
         }
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
@@ -2112,6 +2178,11 @@ public class BattleManager : MonoBehaviour
         if (_pilePanel == null)
             _pilePanel = gameObject.AddComponent<BattlePilePanel>();
         _pilePanel.Bind(this, attackCardPrefab, skillCardPrefab, abilityCardPrefab);
+        if (handLayout != null)
+        {
+            handLayout.SetDrawPileOrigin(_pilePanel.DrawPileRect);
+            handLayout.SetDiscardPileOrigin(_pilePanel.DiscardPileRect);
+        }
         _fusionUsesThisTurn = 0;       // 每场战斗重置
         StartBattle();
     }
@@ -2260,6 +2331,14 @@ public class BattleManager : MonoBehaviour
             return;
         _runtimeLootCurrencyBonus = 0;
         ClearPlayerInputLocks();
+        _pendingDrawVisuals.Clear();
+        _pendingDiscardVisuals.Clear();
+        _pendingExhaustVisuals.Clear();
+        if (_endTurnExitRoutine != null)
+        {
+            StopCoroutine(_endTurnExitRoutine);
+            _endTurnExitRoutine = null;
+        }
         HideTeamBalanceChoice();
         _hasSwitchedThisTurn = false;
         _turnCount = 1;
@@ -2517,6 +2596,7 @@ public class BattleManager : MonoBehaviour
             drawn.statusCostBonus = _unfinished != null ? _unfinished.EntangleStacks : 0;
             _hand.Add(drawn);
             activeChar.drawPile.RemoveAt(0);
+            _pendingDrawVisuals.Add(drawn);
         }
         OnHandCardsChanged?.Invoke();
         RefreshHandUI();
@@ -2803,6 +2883,7 @@ public class BattleManager : MonoBehaviour
             var card = _hand[index];
             _hand.RemoveAt(index);
             ActiveChar.consumedPile.Add(card);
+            QueueCardExitVisual(card, exhaust: true);
             OnPlayerCardConsumed?.Invoke(card);
             AddTurnCounter("CardsExhausted", 1);
             exhausted++;
@@ -2837,6 +2918,7 @@ public class BattleManager : MonoBehaviour
             var card = _hand[index];
             _hand.RemoveAt(index);
             ActiveChar.discardPile.Add(card);
+            QueueCardExitVisual(card, exhaust: false);
             AddTurnCounter("CardsDiscarded", 1);
             discarded++;
         }
@@ -3056,10 +3138,12 @@ public class BattleManager : MonoBehaviour
             {
                 case CardExistence.Normal:
                     ActiveChar.discardPile.Add(card);
+                    QueueCardExitVisual(card, exhaust: false);
                     break;
                 case CardExistence.BattleRemove:
                 case CardExistence.PermanentRemove:
                     ActiveChar.consumedPile.Add(card);
+                    QueueCardExitVisual(card, exhaust: true);
                     OnPlayerCardConsumed?.Invoke(card);
                     break;
             }
@@ -3071,10 +3155,12 @@ public class BattleManager : MonoBehaviour
         {
             case ConsumeType.None:
                 ActiveChar.discardPile.Add(card);
+                QueueCardExitVisual(card, exhaust: false);
                 break;
             case ConsumeType.ThisBattle:
             case ConsumeType.ThisRun:
                 ActiveChar.consumedPile.Add(card);
+                QueueCardExitVisual(card, exhaust: true);
                 OnPlayerCardConsumed?.Invoke(card);
                 break;
         }
@@ -3849,7 +3935,10 @@ public class BattleManager : MonoBehaviour
         if (oldChar != null)
         {
             foreach (var card in _hand)
+            {
                 oldChar.discardPile.Add(card);
+                QueueCardExitVisual(card, exhaust: false);
+            }
         }
         _hand.Clear();
 
@@ -4033,7 +4122,10 @@ public class BattleManager : MonoBehaviour
 
         var activeChar = ActiveChar;
         foreach (var card in _hand)
+        {
             activeChar.discardPile.Add(card);
+            QueueCardExitVisual(card, exhaust: false);
+        }
         _hand.Clear();
         RefreshHandUI();
 
@@ -4054,7 +4146,23 @@ public class BattleManager : MonoBehaviour
         _playerBuffs?.OnTurnEnd();
         _enemyBuffs?.OnTurnEnd();
 
-        StartEnemyTurn();
+        if (_endTurnExitRoutine != null)
+            StopCoroutine(_endTurnExitRoutine);
+        _endTurnExitRoutine = StartCoroutine(WaitForHandExitsThenEnemyTurn());
+    }
+
+    private IEnumerator WaitForHandExitsThenEnemyTurn()
+    {
+        float timeout = 1.8f;
+        float elapsed = 0f;
+        while (handLayout != null && handLayout.HasActiveCardExits && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        _endTurnExitRoutine = null;
+        if (!_battleEnded)
+            StartEnemyTurn();
     }
 
     // ========================================================================
@@ -4536,6 +4644,7 @@ public class BattleManager : MonoBehaviour
         _cardContext = null;
 
         if (_enemyTurnRoutine != null) { StopCoroutine(_enemyTurnRoutine); _enemyTurnRoutine = null; }
+        if (_endTurnExitRoutine != null) { StopCoroutine(_endTurnExitRoutine); _endTurnExitRoutine = null; }
         if (_sanityTrembleRoutine != null) { StopCoroutine(_sanityTrembleRoutine); _sanityTrembleRoutine = null; }
         if (enemySkillCard != null) enemySkillCard.SetActive(false);   // 兜底：敌人行动被打断时隐藏技能卡
         if (_enemyPlayedCard != null) { Destroy(_enemyPlayedCard); _enemyPlayedCard = null; } // 兜底：清理敌人出牌展示卡
@@ -4576,8 +4685,36 @@ public class BattleManager : MonoBehaviour
 
     private void RefreshHandUI()
     {
-        if (handLayout != null)
-            handLayout.UpdateHand(_hand, IsCardPlayable);
+        if (handLayout == null) return;
+        handLayout.UpdateHand(
+            _hand,
+            IsCardPlayable,
+            _pendingDrawVisuals.Count > 0 ? _pendingDrawVisuals : null,
+            _pendingDiscardVisuals.Count > 0 ? _pendingDiscardVisuals : null,
+            _pendingExhaustVisuals.Count > 0 ? _pendingExhaustVisuals : null);
+        _pendingDrawVisuals.Clear();
+        _pendingDiscardVisuals.Clear();
+        _pendingExhaustVisuals.Clear();
+    }
+
+    private void QueueCardExitVisual(CardData card, bool exhaust)
+    {
+        if (card == null) return;
+        if (exhaust)
+            _pendingExhaustVisuals.Add(card);
+        else
+            _pendingDiscardVisuals.Add(card);
+    }
+
+    private void OnHandDrawFlightsStarted()
+    {
+        SetPlayerInputLocked("drawFlight", true);
+    }
+
+    private void OnHandDrawFlightsFinished()
+    {
+        SetPlayerInputLocked("drawFlight", false);
+        RefreshPlayerInputInteractable();
     }
 
     /// <summary>刷新敌人意图牌展示：只显示已抽取、下一回合（或本回合尚未打出）会打出的卡。</summary>

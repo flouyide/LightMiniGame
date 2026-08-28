@@ -89,14 +89,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (_layout != null && _originalHandSiblingIndex >= 0)
             _layout.transform.SetSiblingIndex(_originalHandSiblingIndex);
 
-        if (_rect != null)
-        {
-            // 恢复本地变换基准，使布局能平滑归位
-            _rect.localPosition = _originalLocalPos;
-            _rect.localScale = _originalLocalScale;
-            _rect.localRotation = _originalLocalRot;
-        }
-
         _layout.SetDraggedIndex(-1);
         _layout.SetHoveredIndex(-1);
 
