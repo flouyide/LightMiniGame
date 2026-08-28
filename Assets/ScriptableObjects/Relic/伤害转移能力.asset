@@ -24,5 +24,5 @@ MonoBehaviour:
   - 0.5
   effectStringParams: []
   effectObjectParams:
-  - {fileID: 11400000, guid: 4915724f8f93bcf4196e039310b1941b, type: 2}
+  - {fileID: 11400000, guid: d3a12703c1325914ead5563a17198af4, type: 2}
   effectScript: {fileID: 11500000, guid: d2e7a3cf9c53ff247987e3a58f50753e, type: 3}

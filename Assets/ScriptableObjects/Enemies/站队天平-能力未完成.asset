@@ -37,6 +37,8 @@ MonoBehaviour:
   dexterity: 0
   damageDealtMultiplier: 100
   damageTakenMultiplier: 100
+  fatigue: 0
   highSanityCardCount: 2
   lowSanityCardCount: 2
-  abilities: []
+  abilities:
+  - relic: {fileID: 11400000, guid: cfc388ff2d64eb64181b252e01ab25eb, type: 2}

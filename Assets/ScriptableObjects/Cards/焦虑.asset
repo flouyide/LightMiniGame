@@ -10,29 +10,29 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: "\u585E\u4F0A\u683C\u4E9A-APP\u5B9A\u4F4D-\u8BCD\u6761\u672A\u5B8C\u6210"
+  m_Name: "\u7126\u8651"
   m_EditorClassIdentifier: 
-  cardId: card_4dab5528
-  cardName: "\u585E\u4F0A\u683C\u4E9A-APP\u5B9A\u4F4D-\u8BCD\u6761\u672A\u5B8C\u6210"
-  normalDescription: "\u6807\u8BB0\u73A9\u5BB63\u5F20\u968F\u673A\u624B\u724C\u4E3A\"\u76D1\u63A7\u76EE\u6807\"\uFF08\u73A9\u5BB6\u672C\u56DE\u5408\u5185\u6253\u51FA\u5219Boss+1\u529B\u91CF\uFF09"
-  lowSanityDescription: "32\u4F24\u5BB3+\u73A9\u5BB6\u534A\u6570\u624B\u724C\uFF08\u5411\u4E0A\u53D6\u6574\uFF09\u672C\u56DE\u5408\u65E0\u6CD5\u6253\u51FA"
-  cardArt: {fileID: 21300000, guid: 750b1f7c290596a4fa2924a32d6d5e3b, type: 3}
+  cardId: card_9465c8ff
+  cardName: "\u7126\u8651"
+  normalDescription: "\u6D88\u8017"
+  lowSanityDescription: "\u6D88\u8017"
+  cardArt: {fileID: 0}
   descBoxSprite: {fileID: 21300000, guid: b32ccd1bf9e9dee40943fe73816b1c38, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: 0
   descBoxOffsetY: 0
   descBoxHeight: 0
   descBoxInset: 0
-  grade: 2
+  grade: 0
   cardType: 1
-  existence: 0
-  lowSanityExistence: 0
-  normalCost: 0
-  lowSanityCost: 0
+  existence: 1
+  lowSanityExistence: 1
+  normalCost: 9
+  lowSanityCost: 9
   price: 10
   keyword: 0
   keywordsAreFlags: 1
-  hasLowSanityForm: 0
+  hasLowSanityForm: 1
   normalEffectNodes: []
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
