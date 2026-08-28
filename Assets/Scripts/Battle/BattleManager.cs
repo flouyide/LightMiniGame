@@ -3370,6 +3370,7 @@ public class BattleManager : MonoBehaviour
             if (_enemyAbilityEffects[i].effect is ImpostorEffect impostor)
             {
                 impostor.AddStacks(inst, amount);
+                inst.View?.Refresh();
                 return;
             }
         }
