@@ -15,6 +15,7 @@ MonoBehaviour:
   characterId: gunmithSun
   displayName: gunmithSun
   avatar: {fileID: 21300000, guid: 4c7d8b8acce015348a6d5cc606cec978, type: 3}
+  description: "熟悉枪械与火药的枪械师。以稳定火力压制敌人，为队伍打开突破口。"
   startingLibrary: {fileID: 11400000, guid: 29eece4c0ce88584f859e3b584c33cfe, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: eeff3d2b2e6ab754cb6dc4e99c563460, type: 2}

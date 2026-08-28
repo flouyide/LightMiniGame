@@ -22,6 +22,11 @@ namespace LightMiniGame.Card
         [Tooltip("角色头像（牌库面板/角色栏显示用，拖入 Sprite）")]
         public Sprite avatar;
 
+        [Header("角色介绍")]
+        [Tooltip("选人界面鼠标悬停时显示的角色介绍")]
+        [TextArea(2, 5)]
+        public string description;
+
         [Header("初始牌组")]
         [Tooltip("该角色的初始牌库配置；游戏开始时据此构建起始卡组。为空则预置空牌库")]
         public CharacterStartingLibrary startingLibrary;
