@@ -33,6 +33,30 @@ public class HandCardLayout : MonoBehaviour
     [Tooltip("未滑入窗口的牌从扇形外侧滑入/滑出的距离（槽位）")]
     [SerializeField] private float overflowPeekSlots = 0.7f;
 
+    [Header("抽牌飞入")]
+    [Tooltip("从抽牌堆飞入时的起始缩放")]
+    [SerializeField] private float drawStartScale = 0.38f;
+    [Tooltip("多张连抽时，后一张相对前一张的延迟（秒）")]
+    [SerializeField] private float drawStagger = 0.09f;
+    [Tooltip("飞入持续时间（秒）")]
+    [SerializeField] private float drawFlightDuration = 0.34f;
+    [Tooltip("飞入抛物线高度（手牌本地像素）")]
+    [SerializeField] private float drawArcHeight = 90f;
+
+    [Header("弃牌 / 消耗")]
+    [Tooltip("非消耗牌飞入弃牌堆的时长（秒）")]
+    [SerializeField] private float discardFlightDuration = 0.32f;
+    [Tooltip("飞入弃牌堆的抛物线高度")]
+    [SerializeField] private float discardArcHeight = 70f;
+    [Tooltip("消耗牌渐隐时长（秒）")]
+    [SerializeField] private float exhaustFadeDuration = 0.28f;
+    [Tooltip("回合结束多张弃牌时的错开间隔（秒）")]
+    [SerializeField] private float discardStagger = 0.055f;
+    [Tooltip("飞到弃牌堆时的结束缩放")]
+    [SerializeField] private float discardEndScale = 0.32f;
+    [Tooltip("飞入进度达到该值后，卡牌图层收到弃牌堆后面")]
+    [SerializeField] [Range(0.2f, 0.95f)] private float tuckBehindDiscardAt = 0.55f;
+
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
     [FormerlySerializedAs("armorCardPrefab")] [SerializeField] private GameObject skillCardPrefab;
@@ -51,11 +75,48 @@ public class HandCardLayout : MonoBehaviour
     private float _scrollVelocity;
     private int _siblingStamp = int.MinValue;
     private readonly List<CanvasGroup> _cardCanvasGroups = new List<CanvasGroup>();
+    private readonly List<float> _drawHoldUntil = new List<float>();
+    private readonly List<float> _drawFlightT = new List<float>();
+    private readonly List<Vector3> _drawStartPos = new List<Vector3>();
+    private readonly List<Vector3> _drawStartScale = new List<Vector3>();
+    private readonly List<Quaternion> _drawStartRot = new List<Quaternion>();
+    private RectTransform _drawPileOrigin;
+    private RectTransform _discardPileOrigin;
+    private int _activeDrawFlights;
+    private readonly List<ExitingCard> _exiting = new List<ExitingCard>();
     private System.Action<int> _onCardClicked;
     private System.Action<int, UnityEngine.Vector2> _onCardDrop;
     private System.Action<int, UnityEngine.Vector2> _onCardDragOver;
 
     public int CardCount => _cardObjects.Count;
+    public bool HasActiveDrawFlights => _activeDrawFlights > 0;
+    public bool HasActiveCardExits => _exiting.Count > 0;
+    public event System.Action OnDrawFlightsStarted;
+    public event System.Action OnDrawFlightsFinished;
+    public event System.Action OnCardExitsFinished;
+
+    public void SetDrawPileOrigin(RectTransform pileIcon)
+    {
+        _drawPileOrigin = pileIcon;
+    }
+
+    public void SetDiscardPileOrigin(RectTransform pileIcon)
+    {
+        _discardPileOrigin = pileIcon;
+    }
+
+    private sealed class ExitingCard
+    {
+        public GameObject go;
+        public CanvasGroup cg;
+        public bool exhaust;
+        public float holdUntil;
+        public float t;
+        public Vector3 startPos;
+        public Vector3 startScale;
+        public Quaternion startRot;
+        public bool tuckedBehindPile;
+    }
 
     /// <summary>返回指定索引手牌卡面视图的 RectTransform（越界返回 null），用于原位徽章定位。</summary>
     public RectTransform GetCardViewTransform(int index)
@@ -122,22 +183,279 @@ public class HandCardLayout : MonoBehaviour
         };
     }
 
+    private CardData IndexToData(int index)
+    {
+        if (index < 0 || index >= _cardDataRefs.Count) return null;
+        return _cardDataRefs[index];
+    }
+
+    private int DataToIndex(CardData data)
+    {
+        if (data == null) return -1;
+        for (int i = 0; i < _cardDataRefs.Count; i++)
+            if (_cardDataRefs[i] == data) return i;
+        return -1;
+    }
+
+    private Vector3 GetDrawStartLocal()
+    {
+        if (_drawPileOrigin == null)
+            return new Vector3(-420f, -40f, 0f);
+        return PileCenterToHandLocal(_drawPileOrigin);
+    }
+
+    private Vector3 GetDiscardEndLocal()
+    {
+        if (_discardPileOrigin == null)
+            return new Vector3(420f, -40f, 0f);
+        return PileCenterToHandLocal(_discardPileOrigin);
+    }
+
     /// <summary>
-    /// 更新手牌显示 —— 传入 CardData 列表，自动实例化对应类型 Prefab 并填充数据
+    /// 把牌堆图标的矩形中心换到手牌层本地坐标。
+    /// 抽牌堆锚点在左上、弃牌堆锚点在右下，直接用 position 会对准角落而不是图标中心。
+    /// </summary>
+    private Vector3 PileCenterToHandLocal(RectTransform pile)
+    {
+        Vector3 worldCenter = pile.TransformPoint(pile.rect.center);
+        var hand = transform as RectTransform;
+        if (hand == null)
+            return transform.InverseTransformPoint(worldCenter);
+
+        var canvas = GetComponentInParent<Canvas>();
+        Camera cam = null;
+        if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            cam = canvas.worldCamera;
+
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, worldCenter);
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(hand, screen, cam, out Vector2 local))
+            return local;
+        return transform.InverseTransformPoint(worldCenter);
+    }
+
+    private void TuckBehindDiscardPile(ExitingCard ex)
+    {
+        if (ex == null || ex.go == null || _discardPileOrigin == null) return;
+        var pileParent = _discardPileOrigin.parent;
+        if (pileParent == null) return;
+        ex.tuckedBehindPile = true;
+        ex.go.transform.SetParent(pileParent, true);
+        PlaceBehindDiscardPile(ex.go.transform);
+    }
+
+    private void PlaceBehindDiscardPile(Transform card)
+    {
+        if (card == null || _discardPileOrigin == null) return;
+        if (card.parent != _discardPileOrigin.parent) return;
+        int pileIdx = _discardPileOrigin.GetSiblingIndex();
+        card.SetSiblingIndex(pileIdx);
+    }
+
+    private void BeginExit(GameObject cardObj, CanvasGroup cg, bool exhaust, int seq)
+    {
+        if (cardObj == null) return;
+        if (cg == null) cg = cardObj.GetComponent<CanvasGroup>();
+        if (cg == null) cg = cardObj.AddComponent<CanvasGroup>();
+        cg.blocksRaycasts = false;
+        cg.interactable = false;
+        cg.alpha = 1f;
+
+        var hover = cardObj.GetComponent<CardHoverEffect>();
+        if (hover != null) hover.enabled = false;
+        var drag = cardObj.GetComponent<CardDragHandler>();
+        if (drag != null) drag.enabled = false;
+
+        cardObj.transform.SetAsLastSibling();
+        _exiting.Add(new ExitingCard
+        {
+            go = cardObj,
+            cg = cg,
+            exhaust = exhaust,
+            holdUntil = Time.time + seq * Mathf.Max(0f, discardStagger),
+            t = -1f,
+            startPos = cardObj.transform.localPosition,
+            startScale = cardObj.transform.localScale,
+            startRot = cardObj.transform.localRotation
+        });
+    }
+
+    private void UpdateExits()
+    {
+        if (_exiting.Count == 0) return;
+        Vector3 discardEnd = GetDiscardEndLocal();
+        Quaternion discardRot = Quaternion.Euler(0f, 0f, -10f);
+        Vector3 discardScale = Vector3.one * Mathf.Max(0.12f, discardEndScale);
+
+        for (int i = _exiting.Count - 1; i >= 0; i--)
+        {
+            var ex = _exiting[i];
+            if (ex.go == null)
+            {
+                _exiting.RemoveAt(i);
+                continue;
+            }
+
+            if (Time.time < ex.holdUntil)
+                continue;
+
+            if (ex.t < 0f)
+            {
+                ex.startPos = ex.go.transform.localPosition;
+                ex.startScale = ex.go.transform.localScale;
+                ex.startRot = ex.go.transform.localRotation;
+                ex.t = 0f;
+            }
+
+            float dur = ex.exhaust
+                ? Mathf.Max(0.08f, exhaustFadeDuration)
+                : Mathf.Max(0.08f, discardFlightDuration);
+            ex.t = Mathf.Min(1f, ex.t + Time.deltaTime / dur);
+            float s = ex.t * ex.t * (3f - 2f * ex.t);
+            var trans = ex.go.transform;
+
+            if (ex.exhaust)
+            {
+                trans.SetAsLastSibling();
+                trans.localPosition = ex.startPos + new Vector3(0f, 28f * s, 0f);
+                trans.localScale = Vector3.Lerp(ex.startScale, ex.startScale * 0.82f, s);
+                trans.localRotation = ex.startRot;
+                if (ex.cg != null) ex.cg.alpha = 1f - s;
+            }
+            else
+            {
+                Vector3 p = Vector3.LerpUnclamped(ex.startPos, discardEnd, s);
+                p.y += Mathf.Sin(s * Mathf.PI) * discardArcHeight;
+                if (!ex.tuckedBehindPile && s >= tuckBehindDiscardAt)
+                    TuckBehindDiscardPile(ex);
+                if (ex.tuckedBehindPile)
+                    PlaceBehindDiscardPile(trans);
+                else
+                    trans.SetAsLastSibling();
+
+                trans.position = transform.TransformPoint(p);
+                trans.localRotation = Quaternion.Slerp(ex.startRot, discardRot, s);
+                trans.localScale = Vector3.Lerp(ex.startScale, discardScale, s);
+                if (ex.cg != null) ex.cg.alpha = 1f - 0.35f * s;
+            }
+
+            if (ex.t >= 1f)
+            {
+                Destroy(ex.go);
+                _exiting.RemoveAt(i);
+            }
+        }
+
+        if (_exiting.Count == 0)
+            OnCardExitsFinished?.Invoke();
+    }
+
+    private GameObject CreateHandCard(CardData data, int index, System.Func<CardData, bool> isPlayable)
+    {
+        var prefab = GetPrefabForType(data.cardType);
+        if (prefab == null)
+        {
+            Debug.LogError($"[HandCardLayout] 未找到卡牌类型 {data.cardType} 对应的 Prefab");
+            return null;
+        }
+
+        var cardObj = Instantiate(prefab, transform);
+        var display = cardObj.GetComponent<CardDisplay>();
+        if (display == null)
+        {
+            Debug.LogError($"[HandCardLayout] 卡牌Prefab缺少CardDisplay组件: {prefab.name}");
+            Destroy(cardObj);
+            return null;
+        }
+
+        BindHandCard(cardObj, display, data, index, isPlayable);
+        return cardObj;
+    }
+
+    private void BindHandCard(GameObject cardObj, CardDisplay display, CardData data, int index, System.Func<CardData, bool> isPlayable)
+    {
+        if (display != null)
+        {
+            display.ApplyCardData(data);
+            if (isPlayable != null)
+                display.SetPlayable(isPlayable(data));
+        }
+
+        var hover = cardObj.GetComponent<CardHoverEffect>();
+        if (hover != null)
+            hover.Setup(index, this, _onCardClicked);
+
+        var drag = cardObj.GetComponent<CardDragHandler>();
+        if (drag != null)
+            drag.Setup(index, this, _onCardDrop, _onCardDragOver);
+    }
+
+    private void RecountDrawFlights(bool fireEvents)
+    {
+        int prev = _activeDrawFlights;
+        int n = 0;
+        for (int i = 0; i < _drawFlightT.Count; i++)
+        {
+            if (i < _drawHoldUntil.Count && Time.time < _drawHoldUntil[i]) n++;
+            else if (_drawFlightT[i] >= 0f && _drawFlightT[i] < 1f) n++;
+        }
+        _activeDrawFlights = n;
+        if (!fireEvents) return;
+        if (prev == 0 && n > 0) OnDrawFlightsStarted?.Invoke();
+        if (prev > 0 && n == 0) OnDrawFlightsFinished?.Invoke();
+    }
+
+    /// <summary>
+    /// 更新手牌显示。已存在的 CardData 实例会复用卡面，避免整手重建。
+    /// flyFromDraw 中的新牌从抽牌堆飞入。
     /// </summary>
     public void UpdateHand(List<CardData> hand, System.Func<CardData, bool> isPlayable = null)
     {
-        // 销毁旧卡牌
-        foreach (var obj in _cardObjects)
-        {
-            if (obj != null) Destroy(obj);
-        }
+        UpdateHand(hand, isPlayable, null, null, null);
+    }
+
+    public void UpdateHand(List<CardData> hand, System.Func<CardData, bool> isPlayable, HashSet<CardData> flyFromDraw)
+    {
+        UpdateHand(hand, isPlayable, flyFromDraw, null, null);
+    }
+
+    public void UpdateHand(
+        List<CardData> hand,
+        System.Func<CardData, bool> isPlayable,
+        HashSet<CardData> flyFromDraw,
+        HashSet<CardData> flyToDiscard,
+        HashSet<CardData> fadeOut)
+    {
+        if (hand == null) hand = new List<CardData>();
+
+        CardData hoveredData = IndexToData(_hoveredIndex);
+        CardData draggedData = IndexToData(_draggedIndex);
+
+        var oldObjects = new List<GameObject>(_cardObjects);
+        var oldDisplays = new List<CardDisplay>(_cardDisplays);
+        var oldData = new List<CardData>(_cardDataRefs);
+        var oldGroups = new List<CanvasGroup>(_cardCanvasGroups);
+        var oldHold = new List<float>(_drawHoldUntil);
+        var oldFlightT = new List<float>(_drawFlightT);
+        var oldStartPos = new List<Vector3>(_drawStartPos);
+        var oldStartScale = new List<Vector3>(_drawStartScale);
+        var oldStartRot = new List<Quaternion>(_drawStartRot);
+        var usedOld = new bool[oldObjects.Count];
+
         _cardObjects.Clear();
         _cardDisplays.Clear();
         _cardDataRefs.Clear();
         _cardCanvasGroups.Clear();
+        _drawHoldUntil.Clear();
+        _drawFlightT.Clear();
+        _drawStartPos.Clear();
+        _drawStartScale.Clear();
+        _drawStartRot.Clear();
 
-        // 创建新卡牌
+        int flySeq = 0;
+        int exitSeq = 0;
+        Vector3 drawLocal = GetDrawStartLocal();
+        Quaternion pileRot = Quaternion.Euler(0f, 0f, 8f);
+
         for (int i = 0; i < hand.Count; i++)
         {
             if (hand[i] == null)
@@ -146,48 +464,98 @@ public class HandCardLayout : MonoBehaviour
                 continue;
             }
 
-            var prefab = GetPrefabForType(hand[i].cardType);
-            if (prefab == null)
+            int oldIndex = -1;
+            for (int o = 0; o < oldData.Count; o++)
             {
-                Debug.LogError($"[HandCardLayout] 未找到卡牌类型 {hand[i].cardType} 对应的 Prefab");
-                continue;
+                if (usedOld[o]) continue;
+                if (oldData[o] == hand[i])
+                {
+                    oldIndex = o;
+                    usedOld[o] = true;
+                    break;
+                }
             }
 
-            var cardObj = Instantiate(prefab, transform);
-            var display = cardObj.GetComponent<CardDisplay>();
-            if (display == null)
+            GameObject cardObj;
+            CardDisplay display;
+            CanvasGroup cg;
+            if (oldIndex >= 0 && oldObjects[oldIndex] != null)
             {
-                Debug.LogError($"[HandCardLayout] 卡牌Prefab缺少CardDisplay组件: {prefab.name}");
-                Destroy(cardObj);
-                continue;
+                cardObj = oldObjects[oldIndex];
+                display = oldDisplays[oldIndex];
+                cg = oldGroups[oldIndex];
+                BindHandCard(cardObj, display, hand[i], i, isPlayable);
+                _cardObjects.Add(cardObj);
+                _cardDisplays.Add(display);
+                _cardDataRefs.Add(hand[i]);
+                _cardCanvasGroups.Add(cg);
+                _drawHoldUntil.Add(oldHold[oldIndex]);
+                _drawFlightT.Add(oldFlightT[oldIndex]);
+                _drawStartPos.Add(oldStartPos[oldIndex]);
+                _drawStartScale.Add(oldStartScale[oldIndex]);
+                _drawStartRot.Add(oldStartRot[oldIndex]);
             }
+            else
+            {
+                cardObj = CreateHandCard(hand[i], i, isPlayable);
+                if (cardObj == null) continue;
+                display = cardObj.GetComponent<CardDisplay>();
+                cg = cardObj.GetComponent<CanvasGroup>();
+                if (cg == null) cg = cardObj.AddComponent<CanvasGroup>();
 
-            display.ApplyCardData(hand[i]);
-            if (isPlayable != null)
-                display.SetPlayable(isPlayable(hand[i]));
+                bool fly = flyFromDraw != null && flyFromDraw.Contains(hand[i]);
+                if (fly)
+                {
+                    float hold = Time.time + flySeq * Mathf.Max(0f, drawStagger);
+                    flySeq++;
+                    cardObj.transform.localPosition = drawLocal;
+                    cardObj.transform.localRotation = pileRot;
+                    cardObj.transform.localScale = Vector3.one * drawStartScale;
+                    cg.blocksRaycasts = false;
+                    cg.interactable = false;
+                    _drawHoldUntil.Add(hold);
+                    _drawFlightT.Add(-1f);
+                    _drawStartPos.Add(drawLocal);
+                    _drawStartScale.Add(Vector3.one * drawStartScale);
+                    _drawStartRot.Add(pileRot);
+                }
+                else
+                {
+                    cardObj.transform.localPosition = new Vector3(0, -200f, 0);
+                    _drawHoldUntil.Add(0f);
+                    _drawFlightT.Add(-1f);
+                    _drawStartPos.Add(Vector3.zero);
+                    _drawStartScale.Add(Vector3.one);
+                    _drawStartRot.Add(Quaternion.identity);
+                }
 
-            var hover = cardObj.GetComponent<CardHoverEffect>();
-            if (hover != null)
-                hover.Setup(i, this, _onCardClicked);
-
-            var drag = cardObj.GetComponent<CardDragHandler>();
-            if (drag != null)
-                drag.Setup(i, this, _onCardDrop, _onCardDragOver);
-
-            cardObj.transform.localPosition = new Vector3(0, -200f, 0);
-            _cardObjects.Add(cardObj);
-            _cardDisplays.Add(display);
-            _cardDataRefs.Add(hand[i]);
-
-            var cg = cardObj.GetComponent<CanvasGroup>();
-            if (cg == null) cg = cardObj.AddComponent<CanvasGroup>();
-            _cardCanvasGroups.Add(cg);
+                _cardObjects.Add(cardObj);
+                _cardDisplays.Add(display);
+                _cardDataRefs.Add(hand[i]);
+                _cardCanvasGroups.Add(cg);
+            }
         }
 
-        _hoveredIndex = -1;
+        for (int o = 0; o < oldObjects.Count; o++)
+        {
+            if (usedOld[o] || oldObjects[o] == null) continue;
+            var data = oldData[o];
+            bool exhaust = fadeOut != null && fadeOut.Contains(data);
+            bool discard = flyToDiscard != null && flyToDiscard.Contains(data);
+            if (exhaust || discard)
+                BeginExit(oldObjects[o], oldGroups[o], exhaust, exitSeq++);
+            else
+                Destroy(oldObjects[o]);
+        }
+
+        _hoveredIndex = DataToIndex(hoveredData);
+        _draggedIndex = DataToIndex(draggedData);
         _siblingStamp = int.MinValue;
         ClampScroll();
+        if (flySeq > 0 && MaxScroll > 0f)
+            _scrollTarget = MaxScroll;
         CalculateLayout();
+        RecountDrawFlights(true);
     }
 
     /// <summary>
@@ -197,8 +565,9 @@ public class HandCardLayout : MonoBehaviour
     {
         for (int i = 0; i < _cardDisplays.Count; i++)
         {
-            if (_cardDisplays[i] != null && isPlayable != null && i < _cardDataRefs.Count)
-                _cardDisplays[i].SetPlayable(isPlayable(_cardDataRefs[i]));
+            var display = _cardDisplays[i];
+            if (display == null || isPlayable == null || i >= _cardDataRefs.Count) continue;
+            display.SetPlayable(isPlayable(_cardDataRefs[i]));
         }
     }
 
@@ -210,11 +579,12 @@ public class HandCardLayout : MonoBehaviour
     {
         for (int i = 0; i < _cardDisplays.Count; i++)
         {
-            if (_cardDisplays[i] == null) continue;
+            var display = _cardDisplays[i];
+            if (display == null) continue;
             if (i < _cardDataRefs.Count && _cardDataRefs[i] != null)
-                _cardDisplays[i].ApplyCardData(_cardDataRefs[i]);
+                display.ApplyCardData(_cardDataRefs[i]);
             else
-                _cardDisplays[i].UpdateDisplay();
+                display.UpdateDisplay();
         }
     }
 
@@ -298,6 +668,7 @@ public class HandCardLayout : MonoBehaviour
     private void SetCardRaycast(int index, bool on)
     {
         if (index < 0 || index >= _cardCanvasGroups.Count) return;
+        if (IsDrawFlightActive(index)) on = false;
         var cg = _cardCanvasGroups[index];
         if (cg == null) return;
         cg.blocksRaycasts = on;
@@ -416,6 +787,7 @@ public class HandCardLayout : MonoBehaviour
         for (int i = 0; i < _cardObjects.Count; i++)
         {
             if (_cardObjects[i] == null || i >= _targetPositions.Count) continue;
+            if (IsDrawFlightActive(i)) continue;
             var trans = _cardObjects[i].transform;
             trans.localPosition = _targetPositions[i];
             if (i < _targetRotations.Count) trans.localRotation = _targetRotations[i];
@@ -423,24 +795,117 @@ public class HandCardLayout : MonoBehaviour
         }
     }
 
+    private bool IsDrawFlightActive(int i)
+    {
+        if (i < 0 || i >= _drawFlightT.Count) return false;
+        if (i < _drawHoldUntil.Count && Time.time < _drawHoldUntil[i]) return true;
+        return _drawFlightT[i] >= 0f && _drawFlightT[i] < 1f;
+    }
+
+    private void UpdateDrawFlights()
+    {
+        int prev = _activeDrawFlights;
+        _activeDrawFlights = 0;
+        float dur = Mathf.Max(0.08f, drawFlightDuration);
+        Vector3 livePile = GetDrawStartLocal();
+
+        for (int i = 0; i < _cardObjects.Count; i++)
+        {
+            if (_cardObjects[i] == null) continue;
+            if (i >= _drawFlightT.Count) continue;
+
+            if (Time.time < _drawHoldUntil[i])
+            {
+                var trans = _cardObjects[i].transform;
+                trans.localPosition = livePile;
+                trans.localRotation = _drawStartRot[i];
+                trans.localScale = _drawStartScale[i];
+                trans.SetAsLastSibling();
+                _activeDrawFlights++;
+                continue;
+            }
+
+            if (_drawFlightT[i] < 0f && _drawHoldUntil[i] > 0f)
+            {
+                _drawStartPos[i] = _cardObjects[i].transform.localPosition;
+                _drawStartScale[i] = _cardObjects[i].transform.localScale;
+                _drawStartRot[i] = _cardObjects[i].transform.localRotation;
+                _drawFlightT[i] = 0f;
+                _drawHoldUntil[i] = 0f;
+            }
+
+            if (_drawFlightT[i] >= 0f && _drawFlightT[i] < 1f)
+            {
+                _drawFlightT[i] = Mathf.Min(1f, _drawFlightT[i] + Time.deltaTime / dur);
+                float u = _drawFlightT[i];
+                float s = u * u * (3f - 2f * u);
+                if (i < _targetPositions.Count)
+                {
+                    Vector3 a = _drawStartPos[i];
+                    Vector3 b = _targetPositions[i];
+                    Vector3 p = Vector3.LerpUnclamped(a, b, s);
+                    p.y += Mathf.Sin(s * Mathf.PI) * drawArcHeight;
+                    var trans = _cardObjects[i].transform;
+                    trans.localPosition = p;
+                    if (i < _targetRotations.Count)
+                        trans.localRotation = Quaternion.Slerp(_drawStartRot[i], _targetRotations[i], s);
+                    if (i < _targetScales.Count)
+                        trans.localScale = Vector3.Lerp(_drawStartScale[i], _targetScales[i], s);
+                    trans.SetAsLastSibling();
+                }
+
+                if (_drawFlightT[i] >= 1f)
+                {
+                    _drawFlightT[i] = -1f;
+                    SetCardRaycast(i, true);
+                    if (i < _targetPositions.Count)
+                    {
+                        var trans = _cardObjects[i].transform;
+                        trans.localPosition = _targetPositions[i];
+                        if (i < _targetRotations.Count) trans.localRotation = _targetRotations[i];
+                        if (i < _targetScales.Count) trans.localScale = _targetScales[i];
+                    }
+                }
+                else
+                {
+                    _activeDrawFlights++;
+                }
+            }
+        }
+
+        if (prev == 0 && _activeDrawFlights > 0) OnDrawFlightsStarted?.Invoke();
+        if (prev > 0 && _activeDrawFlights == 0) OnDrawFlightsFinished?.Invoke();
+    }
+
     private void Update()
     {
-        if (_cardObjects.Count == 0) return;
+        if (_cardObjects.Count == 0)
+        {
+            if (_activeDrawFlights > 0)
+            {
+                _activeDrawFlights = 0;
+                OnDrawFlightsFinished?.Invoke();
+            }
+            UpdateExits();
+            return;
+        }
 
         UpdateOverflowScroll();
         CalculateLayout();
+        UpdateExits();
+        UpdateDrawFlights();
 
         float follow = 1f - Mathf.Exp(-lerpSpeed * Time.deltaTime);
         for (int i = 0; i < _cardObjects.Count; i++)
         {
             if (_cardObjects[i] == null) continue;
             if (i >= _targetPositions.Count) continue;
-            // 拖拽中的卡牌位置由拖拽处理器控制，布局不与其抢位
             if (i == _draggedIndex)
             {
                 _cardObjects[i].transform.localRotation = Quaternion.identity;
                 continue;
             }
+            if (IsDrawFlightActive(i)) continue;
             var trans = _cardObjects[i].transform;
             trans.localPosition = Vector3.Lerp(trans.localPosition, _targetPositions[i], follow);
             trans.localRotation = Quaternion.Slerp(trans.localRotation, _targetRotations[i], follow);

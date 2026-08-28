@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u65BD\u52A0\u7834\u7532"
     timing: 0
@@ -197,6 +198,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u65BD\u52A0\u7834\u7532"
@@ -267,6 +269,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u65BD\u52A0\u7834\u7532"
     timing: 0
@@ -361,6 +364,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
@@ -418,7 +422,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 3
+        intValue: 2
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -530,7 +534,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 3
+        intValue: 2
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -610,7 +614,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 2
+        intValue: 3
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -690,7 +694,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 2
+        intValue: 3
         floatValue: 0
         attributeRef: 1
         resourceRef: 1

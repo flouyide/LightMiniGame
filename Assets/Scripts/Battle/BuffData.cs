@@ -47,6 +47,7 @@ public class BuffData : ScriptableObject
         BuffAttributeType.Fatigue => "疲惫",
         BuffAttributeType.ArmorBreak => "破甲",
         BuffAttributeType.DirtyWork => "脏活",
+        BuffAttributeType.Heat => "热度",
         _ => "Buff"
     };
 
@@ -60,6 +61,7 @@ public class BuffData : ScriptableObject
         BuffAttributeType.Fatigue => "回合开始时受到等同层数的伤害（无视护甲），然后层数 -1。",
         BuffAttributeType.ArmorBreak => "每层破甲使受到的攻击伤害绕过 1 点护甲。没有护甲时也能叠加。",
         BuffAttributeType.DirtyWork => "受到伤害时，额外受到 3×层数 点伤害。",
+        BuffAttributeType.Heat => "打出攻击牌增加热度。热度达到 25 时过载，手牌费用 +1。",
         _ => ""
     };
 
@@ -73,6 +75,7 @@ public class BuffData : ScriptableObject
             BuffAttributeType.Fatigue => new[] { "Assets/Art/局内/疲惫.png" },
             BuffAttributeType.Strength => new[] { "Assets/Art/局内/力量.png" },
             BuffAttributeType.DirtyWork => new[] { "Assets/Art/局内/脏活.png" },
+            BuffAttributeType.Heat => new[] { "Assets/Art/局内/枪械师文件夹.png" },
             _ => System.Array.Empty<string>()
         };
         foreach (string path in paths)

@@ -38,6 +38,11 @@ public class BattlePilePanel : MonoBehaviour
     private static Sprite _discardBin;
 
     public bool IsOpen => _panelRoot != null && _panelRoot.activeSelf;
+    public RectTransform DrawPileRect => _drawPileRoot;
+    public RectTransform DiscardPileRect => _discardPileRoot;
+
+    private RectTransform _drawPileRoot;
+    private RectTransform _discardPileRoot;
 
     public void Bind(BattleManager battle, GameObject attackPrefab, GameObject skillPrefab, GameObject abilityPrefab)
     {
@@ -80,6 +85,7 @@ public class BattlePilePanel : MonoBehaviour
 
         if (drawIcon != null)
         {
+            _drawPileRoot = drawIcon as RectTransform;
             HideDecorations(drawIcon);
             _drawIconImage = EnsureIconImage(drawIcon, FolderSpriteFor(_battle != null ? _battle.ActiveCharacterData : null));
             WireClick(drawIcon, OnDrawPileClicked);
@@ -87,6 +93,7 @@ public class BattlePilePanel : MonoBehaviour
 
         if (discardIcon != null)
         {
+            _discardPileRoot = discardIcon as RectTransform;
             HideDecorations(discardIcon);
             EnsureIconImage(discardIcon, LoadSprite(ref _discardBin, DiscardBinPath));
             WireClick(discardIcon, OnDiscardPileClicked);

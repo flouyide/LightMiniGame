@@ -42,7 +42,7 @@ public class BuffIconHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 body = BuffData.DefaultDescription(buff.attributeType);
             }
         }
-        if (!buff.hideStacks && buff.totalStacks != 0 && !string.IsNullOrEmpty(title))
+        if (!buff.hideStacks && !string.IsNullOrEmpty(title))
             title = $"{title} {FormatStacks(buff.totalStacks)}";
         hover.Setup(title, body);
     }

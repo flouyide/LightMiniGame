@@ -11,9 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c4e9b2a1d8f4e6c9a3b5d7e1f0c2a48, type: 3}
   m_Name: "\u810F\u6D3BBuff"
-  m_EditorClassIdentifier:
-  buffName: "脏活"
-  icon: {fileID: 21300000, guid: XnNK5H/8Vn2e3yYKPj4wNCT8O0D+0/XIXpvCc9mlLFPdwRAmsz29VPc=, type: 3}
+  m_EditorClassIdentifier: 
+  buffName: "\u810F\u6D3B"
+  icon: {fileID: 21300000, guid: a9eaea56489f99044ad69a576d0a58ef, type: 3}
   attributeType: 8
   minValue: 0
-  description: "受到伤害时，额外受到 3×层数 点伤害。"
+  description: "\u53D7\u5230\u4F24\u5BB3\u65F6\uFF0C\u989D\u5916\u53D7\u5230 3\xD7\u5C42\u6570
+    \u70B9\u4F24\u5BB3\u3002"
