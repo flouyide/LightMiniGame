@@ -301,7 +301,7 @@ MonoBehaviour:
   - eventId: ch1_event_mflsq
     displayName: "\u514D\u8D39\u96F6\u98DF\u5899"
     description: "\u8336\u6C34\u95F4\u7684\u67DC\u5B50\u5806\u6EE1\u4E86\u4E0D\u77E5\u9053\u54EA\u4E2A\u90E8\u95E8\u8D5E\u52A9\u7684\u96F6\u98DF\uFF0C\u591A\u5F97\u50CF\u8981\u6EA2\u51FA\u6765\u3002\u4F60\u73AF\u987E\u56DB\u5468\u60F3\u627E\u627E\u6709\u6CA1\u6709\u76D1\u63A7\u2014\u2014\u679C\u7136\uFF0C\u89D2\u843D\u90A3\u9897\u6444\u50CF\u5934\u6B63\u5BF9\u7740\u8FD9\u91CC\u3002"
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 537474c3f6ed5a64bacfd365d799a743, type: 3}
     eventType: 3
     isRepeatable: 0
     isFinalNode: 0
@@ -639,9 +639,9 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_cczg
-    displayName: "\u6B8B\u5B58\u4E4B\u5149"
+    displayName: "\u5E9F\u65E7\u6587\u5370\u5BA4"
     description: "\u4E00\u4E2A\u5E9F\u65E7\u7684\u6587\u5370\u5BA4\uFF0C\u91CC\u9762\u53EA\u6709\u4E00\u53F0\u7834\u65E7\u7684\u6253\u5370\u673A\uFF0C\u706F\u6CE1\u597D\u50CF\u6709\u95EE\u9898\uFF0C\u65F6\u5E38\u95EA\u70C1\uFF0C\u4F60\u611F\u5230\u5FC3\u70E6\u610F\u4E71"
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 8db2100dadcf2934f80cb9110a1c005e, type: 3}
     eventType: 3
     isRepeatable: 0
     isFinalNode: 0
