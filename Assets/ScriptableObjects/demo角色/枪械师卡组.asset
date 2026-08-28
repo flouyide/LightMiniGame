@@ -15,9 +15,13 @@ MonoBehaviour:
   character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
   startingCards:
   - {fileID: 11400000, guid: c05c6d9c4dbfb40f2a461b95cb7fed35, type: 2}
-  - {fileID: 11400000, guid: ecbf9f7ba61ff4e86ad1e2eebb2633de, type: 2}
-  - {fileID: 11400000, guid: ecbf9f7ba61ff4e86ad1e2eebb2633de, type: 2}
+  - {fileID: 11400000, guid: 77e28d2cda3a08d45bf6dfdffce8a005, type: 2}
+  - {fileID: 11400000, guid: d618672302bb3af4fb34c2dfa5f80504, type: 2}
   - {fileID: 11400000, guid: 000b97317cba5cc43b73b560ff7af1a5, type: 2}
-  - {fileID: 11400000, guid: 000b97317cba5cc43b73b560ff7af1a5, type: 2}
-  - {fileID: 11400000, guid: 000b97317cba5cc43b73b560ff7af1a5, type: 2}
-  - {fileID: 11400000, guid: 000b97317cba5cc43b73b560ff7af1a5, type: 2}
+  - {fileID: 11400000, guid: 4606106806382f243929d42bdc3596f9, type: 2}
+  - {fileID: 11400000, guid: 4606106806382f243929d42bdc3596f9, type: 2}
+  - {fileID: 11400000, guid: ee61c77e52e64304a964287b40335a2c, type: 2}
+  - {fileID: 11400000, guid: c39fed0bded30d947869d8a7b552f267, type: 2}
+  - {fileID: 11400000, guid: 4a7821e5d4d697e44bc2553c48397013, type: 2}
+  - {fileID: 11400000, guid: 19a96fbf9332df3428ff57f23fd0c516, type: 2}
+  - {fileID: 11400000, guid: 783aa92d7e0e4ed4f87dab24d0f49875, type: 2}

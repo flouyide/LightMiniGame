@@ -70,7 +70,7 @@ MonoBehaviour:
       - conditionType: 0
         leftValue:
           rid: 3513299765630337393
-        comparison: 4
+        comparison: 2
         rightValue:
           rid: 3513299765630337394
         statusType: 0
@@ -128,6 +128,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 1"
     timing: 0
@@ -164,7 +165,7 @@ MonoBehaviour:
       - conditionType: 0
         leftValue:
           rid: 3513299765630337393
-        comparison: 4
+        comparison: 5
         rightValue:
           rid: 3513299765630337394
         statusType: 0
@@ -222,6 +223,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -259,7 +261,7 @@ MonoBehaviour:
       - conditionType: 0
         leftValue:
           rid: 3513299765630337393
-        comparison: 4
+        comparison: 2
         rightValue:
           rid: 3513299765630337394
         statusType: 0
@@ -317,6 +319,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 1"
     timing: 0
@@ -353,7 +356,7 @@ MonoBehaviour:
       - conditionType: 0
         leftValue:
           rid: 3513299765630337393
-        comparison: 4
+        comparison: 5
         rightValue:
           rid: 3513299765630337394
         statusType: 0
@@ -411,6 +414,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

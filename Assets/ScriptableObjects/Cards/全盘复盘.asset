@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -119,7 +120,7 @@ MonoBehaviour:
       filterTag: 
     target:
       category: 2
-      unitTarget: 3
+      unitTarget: 5
       cardTarget: 7
       selectionMode: 0
       selectionCount: 1
@@ -172,6 +173,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u5168\u4F53\u7834\u7532"
@@ -242,6 +244,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -258,7 +261,7 @@ MonoBehaviour:
       filterTag: 
     target:
       category: 2
-      unitTarget: 3
+      unitTarget: 5
       cardTarget: 7
       selectionMode: 0
       selectionCount: 1
@@ -311,6 +314,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
