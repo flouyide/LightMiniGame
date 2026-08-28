@@ -210,7 +210,10 @@ public class HandCardLayout : MonoBehaviour
     {
         for (int i = 0; i < _cardDisplays.Count; i++)
         {
-            if (_cardDisplays[i] != null)
+            if (_cardDisplays[i] == null) continue;
+            if (i < _cardDataRefs.Count && _cardDataRefs[i] != null)
+                _cardDisplays[i].ApplyCardData(_cardDataRefs[i]);
+            else
                 _cardDisplays[i].UpdateDisplay();
         }
     }

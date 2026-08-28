@@ -1228,6 +1228,14 @@ public class CardDisplay : MonoBehaviour
         return CardFusionSlots.Collect(nodes, ContextStrength, ContextDexterity, _isEnemyCard, LiveFusion);
     }
 
+    /// <summary>当前卡面正在用的效果节点（与融合槽/描述形态一致）。</summary>
+    public List<EffectNode> GetFusionEffectNodes()
+    {
+        bool low = _data != null ? _data.isLowSanityForm : _displayLowSanity;
+        var entry = _entry != null ? _entry : (_data != null ? _data.sourceEntry : null);
+        return entry != null ? entry.GetEffectNodes(low) : null;
+    }
+
     /// <summary>
     /// 融合感知描述：若存在融合覆盖，按效果数字槽顺序把文案中对应数字替换为融合后的值。
     /// 无融合覆盖或无法解析时回退原文案。

@@ -177,6 +177,17 @@ public static class CardKeywords
         }
     }
 
+    public static void RemoveFlags(ref KeywordType flags, List<KeywordType> order, KeywordType toRemove)
+    {
+        flags &= ~toRemove;
+        if (order == null) return;
+        for (int i = order.Count - 1; i >= 0; i--)
+        {
+            if (!Has(flags, order[i]))
+                order.RemoveAt(i);
+        }
+    }
+
     public static List<string> GetNames(KeywordType keywords) => GetNames(keywords, null);
 
     public static List<string> GetNames(KeywordType keywords, IList<KeywordType> order)

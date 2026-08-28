@@ -388,6 +388,9 @@ public class FusionController : MonoBehaviour
 
         if (slots.Count == 0)
         {
+            var nodes = card.sourceEntry != null ? card.sourceEntry.GetEffectNodes(card.isLowSanityForm) : null;
+            if (CardFusionSlots.ShouldSkipLegacyNumericFusion(nodes))
+                return;
             AddLegacyHandSlots(list, card, hview, handI, handIdx);
             return;
         }
@@ -447,6 +450,8 @@ public class FusionController : MonoBehaviour
         if (slots == null || slots.Count == 0)
         {
             if (tokens == null) return;
+            if (deckView != null && CardFusionSlots.ShouldSkipLegacyNumericFusion(deckView.GetFusionEffectNodes()))
+                return;
             for (int tIdx = 0; tIdx < tokens.Count; tIdx++)
             {
                 int captured = tIdx;

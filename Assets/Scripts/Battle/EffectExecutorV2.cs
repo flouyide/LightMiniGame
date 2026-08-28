@@ -636,7 +636,7 @@ public class EffectExecutorV2
 
         if (!replacedByFusion
             && (node.scalingMode == ScalingMode.AddStrength || IsEnemyInitiator)
-            && !ValueNode.ReadsAttribute(node.value, LightMiniGame.CardEditor.PlayerAttributeType.Strength))
+            && ValueNode.ShouldApplyStrengthBonus(node.value))
             baseDamage += OwnerStrength;
 
         int nextAtkBonus = 0;
@@ -660,8 +660,33 @@ public class EffectExecutorV2
         int critCount = 0;
         bool anyCrit = false;
 
+        var unitTarget = node.target != null ? node.target.unitTarget : CombatUnitTarget.SelectedEnemy;
         // 敌人出牌：命中玩家侧目标时对玩家结算，且敌人不参与暴击
-        bool toPlayer = IsEnemyInitiator && TargetIsPlayerSide(node.target.unitTarget);
+        bool toPlayer = IsEnemyInitiator && TargetIsPlayerSide(unitTarget);
+
+        int armorBreak = 0;
+        if (node.useArmorBreak)
+        {
+            armorBreak = EvaluateValue(node.armorBreakValue);
+            if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.ArmorBreak, out int fusedAB))
+                armorBreak = fusedAB;
+        }
+        // 多段攻击只挂一次破甲，避免 3 击把破甲叠成 3 倍
+        if (armorBreak > 0)
+        {
+            if (toPlayer)
+                _ctx.ApplyStatusToPlayer(StatusType.ArmorBreak, armorBreak);
+            else if (IsEnemyInitiator && unitTarget == CombatUnitTarget.EffectSource)
+                _ctx.ApplyStatusToEnemy(_initiatorEnemySlot, StatusType.ArmorBreak, armorBreak);
+            else if (unitTarget == CombatUnitTarget.AllEnemies)
+                _ctx.ApplyStatusToEnemy(-1, StatusType.ArmorBreak, armorBreak);
+            else
+            {
+                int abIdx = ResolveDamageEnemyIndex(unitTarget);
+                if (abIdx >= 0)
+                    _ctx.ApplyStatusToEnemy(abIdx, StatusType.ArmorBreak, armorBreak);
+            }
+        }
 
         if (!toPlayer && node.countAsAttack)
         {
@@ -678,14 +703,6 @@ public class EffectExecutorV2
             {
                 isCrit = false;
                 hitDamage = baseDamage;
-                if (node.useArmorBreak)
-                {
-                    int armorBreak = EvaluateValue(node.armorBreakValue);
-                    if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.ArmorBreak, out int fusedAB))
-                        armorBreak = fusedAB;
-                    if (armorBreak > 0)
-                        _ctx.ApplyStatusToPlayer(StatusType.ArmorBreak, armorBreak);
-                }
                 _ctx.DealDamageToPlayer(hitDamage, _initiatorEnemySlot);
             }
             else
@@ -707,36 +724,13 @@ public class EffectExecutorV2
                     critMult += extraCritDamagePercent / 100f;
                 hitDamage = isCrit ? Mathf.RoundToInt(baseDamage * critMult) : baseDamage;
 
-                int armorBreak = 0;
-                if (node.useArmorBreak)
-                {
-                    armorBreak = EvaluateValue(node.armorBreakValue);
-                    if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.ArmorBreak, out int fusedAB))
-                        armorBreak = fusedAB;
-                }
-
-                // 先挂破甲再结算伤害，使本击就能绕过等量护甲；全体敌人原先漏了破甲。
-                if (node.target.unitTarget == CombatUnitTarget.AllEnemies)
-                {
-                    if (armorBreak > 0)
-                        _ctx.ApplyStatusToEnemy(-1, StatusType.ArmorBreak, armorBreak);
+                if (unitTarget == CombatUnitTarget.AllEnemies)
                     _ctx.DealDamageToAllEnemies(hitDamage, node.ignoreAllBlock, isCrit);
-                }
                 else
                 {
-                    int targetIdx = node.target.unitTarget switch
-                    {
-                        CombatUnitTarget.SelectedEnemy => _ctx.SelectedEnemyIndex,
-                        CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
-                        CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
-                        _ => _ctx.SelectedEnemyIndex
-                    };
+                    int targetIdx = ResolveDamageEnemyIndex(unitTarget);
                     if (targetIdx >= 0)
-                    {
-                        if (armorBreak > 0)
-                            _ctx.ApplyStatusToEnemy(targetIdx, StatusType.ArmorBreak, armorBreak);
                         _ctx.DealDamageToEnemy(targetIdx, hitDamage, node.ignoreAllBlock, isCrit);
-                    }
                 }
             }
 
@@ -1377,6 +1371,16 @@ public class EffectExecutorV2
                 Log($"  [卡牌区域] 自动打出抽牌堆顶 {played}张");
                 return;
             }
+            case CardZoneOperation.AddTemporaryKeyword:
+            case CardZoneOperation.RemoveTemporaryKeyword:
+            {
+                bool add = node.zoneOperation == CardZoneOperation.AddTemporaryKeyword;
+                int n = count > 0 ? count : (node.target != null ? node.target.selectionCount : 1);
+                int changed = _ctx.ApplyTemporaryKeyword(node, add, Mathf.Max(1, n));
+                _lastResult[EffectResultType.ActualValue] = changed;
+                Log($"  [词条] {(add ? "添加" : "移除")} {string.Join("、", CardKeywords.GetNames(CardKeywords.FromEditor(node.keywordToApply)))} → {changed}张");
+                return;
+            }
             default:
                 Log($"  [卡牌区域] {opName} {count}张 (需要牌堆系统支持)");
                 break;
@@ -1392,9 +1396,12 @@ public class EffectExecutorV2
             CombatUnitTarget.AllEnemies => -1,
             CombatUnitTarget.RandomEnemy => GetRandomAliveEnemyIndex(),
             CombatUnitTarget.LowestHPEnemy => GetLowestHPEnemyIndex(),
+            CombatUnitTarget.EffectSource when IsEnemyInitiator => _initiatorEnemySlot,
             _ => _ctx.SelectedEnemyIndex
         };
     }
+
+    private int ResolveDamageEnemyIndex(CombatUnitTarget unit) => ResolveStatusEnemyIndex(unit);
 
     private void ExecuteCreateCard(EffectNode node)
     {

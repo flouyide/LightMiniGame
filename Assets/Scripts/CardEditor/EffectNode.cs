@@ -428,8 +428,11 @@ namespace LightMiniGame.CardEditor
         [TextArea(1, 3)]
         public string customParams = "";
 
-        [Tooltip("生成/覆盖的目标卡（CreateCard、ModifyCardProperty）")]
+        [Tooltip("生成/覆盖的目标卡（CreateCard、ModifyCardProperty、添加临时词条）")]
         public CardEntry createdCard;
+
+        [Tooltip("要添加或移除的词条（AddTemporaryKeyword / RemoveTemporaryKeyword）")]
+        public CardKeyword keywordToApply = CardKeyword.None;
 
         // === 描述生成 ===
 
@@ -491,7 +494,21 @@ namespace LightMiniGame.CardEditor
                     break;
 
                 case EffectOperation.MoveCards:
-                    sb.Append($"{zoneOperation} {ValueNode.ResolveValue(zoneCount, strength, dexterity)}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
+                    if (zoneOperation == CardZoneOperation.AddTemporaryKeyword
+                        || zoneOperation == CardZoneOperation.RemoveTemporaryKeyword)
+                    {
+                        string kw = string.Join("、", CardKeywords.GetNames(CardKeywords.FromEditor(keywordToApply)));
+                        if (string.IsNullOrEmpty(kw)) kw = "?";
+                        string who = createdCard != null
+                            ? $"「{createdCard.cardName}」"
+                            : target.GetDescription();
+                        sb.Append(zoneOperation == CardZoneOperation.AddTemporaryKeyword
+                            ? $"给{who}添加词条 {kw}"
+                            : $"从{who}移除词条 {kw}");
+                        if (duration != null && duration.type != DurationType.Instant) sb.Append($" ({duration.GetDescription()})");
+                    }
+                    else
+                        sb.Append($"{GetZoneOperationName(zoneOperation)} {ValueNode.ResolveValue(zoneCount, strength, dexterity)}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
                     break;
 
                 case EffectOperation.CreateCard:
@@ -592,7 +609,21 @@ namespace LightMiniGame.CardEditor
                     break;
 
                 case EffectOperation.MoveCards:
-                    sb.Append($"{zoneOperation} {zoneCount?.GetDescription() ?? "1"}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
+                    if (zoneOperation == CardZoneOperation.AddTemporaryKeyword
+                        || zoneOperation == CardZoneOperation.RemoveTemporaryKeyword)
+                    {
+                        string kw = string.Join("、", CardKeywords.GetNames(CardKeywords.FromEditor(keywordToApply)));
+                        if (string.IsNullOrEmpty(kw)) kw = "?";
+                        string who = createdCard != null
+                            ? $"「{createdCard.cardName}」"
+                            : target.GetDescription();
+                        sb.Append(zoneOperation == CardZoneOperation.AddTemporaryKeyword
+                            ? $"给{who}添加词条 {kw}"
+                            : $"从{who}移除词条 {kw}");
+                        if (duration != null && duration.type != DurationType.Instant) sb.Append($" ({duration.GetDescription()})");
+                    }
+                    else
+                        sb.Append($"{GetZoneOperationName(zoneOperation)} {zoneCount?.GetDescription() ?? "1"}张牌: {GetZoneName(sourceZone)}→{GetZoneName(destinationZone)}");
                     break;
 
                 case EffectOperation.CreateCard:
@@ -688,7 +719,7 @@ namespace LightMiniGame.CardEditor
                 zoneOperation = zoneOperation, zoneCount = zoneCount != null ? CloneValueNode(zoneCount) : ValueNode.Constant(1),
                 triggerEvent = triggerEvent, maxTriggers = maxTriggers, maxTriggersPerTurn = maxTriggersPerTurn,
                 activeOnlyWhenOwnerIsActive = activeOnlyWhenOwnerIsActive, customOperation = customOperation, customParams = customParams,
-                createdCard = createdCard
+                createdCard = createdCard, keywordToApply = keywordToApply
             };
         }
 
@@ -707,6 +738,27 @@ namespace LightMiniGame.CardEditor
                     clone.operands.Add(op != null ? CloneValueNode(op) : null);
             return clone;
         }
+
+        public static string GetZoneOperationName(CardZoneOperation op) => op switch
+        {
+            CardZoneOperation.Draw => "抽牌",
+            CardZoneOperation.Discard => "弃牌",
+            CardZoneOperation.ExhaustThisCombat => "消耗",
+            CardZoneOperation.RemovePermanently => "永久移除",
+            CardZoneOperation.MoveToHand => "移到手牌",
+            CardZoneOperation.MoveToDrawPileTop => "移到抽牌堆顶",
+            CardZoneOperation.MoveToDrawPileBottom => "移到抽牌堆底",
+            CardZoneOperation.MoveToDiscardPile => "移到弃牌堆",
+            CardZoneOperation.ShuffleIntoDrawPile => "洗入抽牌堆",
+            CardZoneOperation.Create => "创建",
+            CardZoneOperation.Copy => "复制",
+            CardZoneOperation.AutoPlay => "自动打出",
+            CardZoneOperation.Replay => "重新释放",
+            CardZoneOperation.ModifyCost => "修改费用",
+            CardZoneOperation.AddTemporaryKeyword => "添加临时词条",
+            CardZoneOperation.RemoveTemporaryKeyword => "移除临时词条",
+            _ => op.ToString()
+        };
 
         public static string GetZoneName(CardZoneType z) => z switch
         {

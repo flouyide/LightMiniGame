@@ -102,6 +102,9 @@ public class CardData : ScriptableObject
     /// <summary>运行时附加效果（配件打出后叠到「主机」上，本场战斗内永久、不限层数）。</summary>
     [NonSerialized] public List<EffectNode> attachedEffectNodes;
 
+    /// <summary>战斗内 CreateInstance / Instantiate 的副本。为 false 时改词条必须先克隆，避免写回卡牌资产。</summary>
+    [NonSerialized] public bool isRuntimeInstance;
+
     /// <summary>该卡是否带指定词条。</summary>
     public bool HasKeyword(KeywordType k) => CardKeywords.Has(keywords, k);
 

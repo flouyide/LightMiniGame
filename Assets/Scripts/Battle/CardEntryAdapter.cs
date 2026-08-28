@@ -44,6 +44,7 @@ public static class CardEntryAdapter
         if (entry == null) return null;
 
         var cd = ScriptableObject.CreateInstance<CardData>();
+        cd.isRuntimeInstance = true;
 
         // 关联 CardEntry（核心：让 ApplyCardEffects 走 EffectExecutor）
         cd.sourceEntry = entry;
@@ -80,6 +81,7 @@ public static class CardEntryAdapter
 
         // 词条映射（默认无词条）
         cd.keywords = CardKeywords.FromEditor(entry.keyword);
+        cd.keywordOrder = CardKeywords.GetOrderedFlags(cd.keywords, null);
 
         // 消耗类型映射
         cd.consumeType = entry.existence switch

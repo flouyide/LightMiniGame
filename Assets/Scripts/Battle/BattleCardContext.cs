@@ -198,4 +198,6 @@ public class BattleCardContext : ICardRuntimeContext
         => _battle.SetCardStatusValueOverride(cardId, status, value);
     public bool TryGetCardStatusValueOverride(string cardId, StatusType status, out int value)
         => _battle.TryGetCardStatusValueOverride(cardId, status, out value);
+    public int ApplyTemporaryKeyword(EffectNode node, bool add, int count)
+        => _battle.ApplyTemporaryKeyword(node, add, count);
 }

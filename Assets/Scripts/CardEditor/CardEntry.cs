@@ -164,6 +164,9 @@ namespace LightMiniGame.CardEditor
                 if (node == null || !node.enabled) continue;
                 if (node.operation != EffectOperation.DealDamage && node.operation != EffectOperation.GainBlock)
                     continue;
+                // 已损失理智*3 这类公式不要把文案里的系数替换成力量
+                if (node.operation == EffectOperation.DealDamage && ValueNode.ContainsNonAttributeFormula(node.value))
+                    continue;
                 int oldVal = ValueNode.ResolveValue(node.value, 0, 0);
                 int newVal = ValueNode.ResolveCombatValue(node.value, node.operation, node.scalingMode, strength, dexterity, isEnemy);
                 if (oldVal == newVal) continue;
@@ -300,26 +303,41 @@ namespace LightMiniGame.CardEditor
             if (string.IsNullOrEmpty(expr)) return 0;
             expr = expr.Trim();
 
-            // 查找运算符（跳过开头的负号）
-            int opIdx = -1;
-            char op = '+';
+            // 查找运算符（跳过开头的负号）。乘除优先于加减，使 {5+力量}*3 在花括号外仍按描述显示，
+            // 花括号内 {5*3+力量} / {力量*10} 能算出乘积。
+            int addIdx = -1;
+            int mulIdx = -1;
+            char addOp = '+';
             for (int i = 1; i < expr.Length; i++)
             {
-                if (expr[i] == '+' || expr[i] == '-')
+                char c = expr[i];
+                if (addIdx < 0 && (c == '+' || c == '-'))
                 {
-                    opIdx = i;
-                    op = expr[i];
-                    break;
+                    addIdx = i;
+                    addOp = c;
+                }
+                else if (mulIdx < 0 && (c == '*' || c == '×' || c == 'x' || c == 'X'))
+                {
+                    mulIdx = i;
                 }
             }
 
-            if (opIdx > 0)
+            if (mulIdx > 0)
             {
-                string left = expr.Substring(0, opIdx).Trim();
-                string right = expr.Substring(opIdx + 1).Trim();
+                string left = expr.Substring(0, mulIdx).Trim();
+                string right = expr.Substring(mulIdx + 1).Trim();
+                int leftVal = ResolveTemplateExpr(left, strength, dexterity);
+                int rightVal = ResolveTemplateExpr(right, strength, dexterity);
+                return leftVal * rightVal;
+            }
+
+            if (addIdx > 0)
+            {
+                string left = expr.Substring(0, addIdx).Trim();
+                string right = expr.Substring(addIdx + 1).Trim();
                 int leftVal = ResolveTemplateTerm(left, strength, dexterity);
                 int rightVal = ResolveTemplateTerm(right, strength, dexterity);
-                return op == '+' ? leftVal + rightVal : leftVal - rightVal;
+                return addOp == '+' ? leftVal + rightVal : leftVal - rightVal;
             }
 
             return ResolveTemplateTerm(expr, strength, dexterity);

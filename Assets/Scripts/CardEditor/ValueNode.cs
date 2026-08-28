@@ -132,6 +132,52 @@ namespace LightMiniGame.CardEditor
         }
 
         /// <summary>
+        /// 表达式是否含「已损失理智 × N」这类非属性公式。
+        /// 这类伤害应按公式本身结算，不要再叠一层力量。
+        /// </summary>
+        public static bool ContainsNonAttributeFormula(ValueNode node)
+        {
+            if (node == null) return false;
+            switch (node.nodeType)
+            {
+                case ValueNodeType.Percentage:
+                case ValueNodeType.EveryNConvertToM:
+                case ValueNodeType.Modulo:
+                case ValueNodeType.ReadResource:
+                case ValueNodeType.ReadResourceLostAmount:
+                case ValueNodeType.ReadCounter:
+                case ValueNodeType.ReadStatusStacks:
+                case ValueNodeType.ReadAllEnemiesStatusStacks:
+                case ValueNodeType.ReadHandCount:
+                case ValueNodeType.ReadDrawPileCount:
+                case ValueNodeType.ReadDiscardPileCount:
+                case ValueNodeType.ReadEnemyCount:
+                case ValueNodeType.ReadTargetCount:
+                case ValueNodeType.ReadLocalVariable:
+                case ValueNodeType.ReadLastEffectResult:
+                case ValueNodeType.ReadCardCost:
+                case ValueNodeType.ReadActualPaidCost:
+                case ValueNodeType.ReadRuntimeFlag:
+                case ValueNodeType.ReadMaxHandCount:
+                case ValueNodeType.ReadHandVacancies:
+                    return true;
+            }
+            if (node.operands == null) return false;
+            for (int i = 0; i < node.operands.Count; i++)
+            {
+                if (ContainsNonAttributeFormula(node.operands[i])) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 普通 {N+力量} 才按 scaling / 敌人出牌再加力量。
+        /// 公式伤害（理智×N）和树上已经读了力量的表达式都不再加。
+        /// </summary>
+        public static bool ShouldApplyStrengthBonus(ValueNode value)
+            => !ReadsAttribute(value, PlayerAttributeType.Strength) && !ContainsNonAttributeFormula(value);
+
+        /// <summary>
         /// 效果数值：先求值，再按缩放叠加力量/敏捷。树里已经 ReadAttribute 的不再加，避免 {N+力量} 双算。
         /// isEnemy 时 DealDamage 额外吃力量（与杀戮尖塔敌人攻击一致）。
         /// </summary>
@@ -141,7 +187,7 @@ namespace LightMiniGame.CardEditor
             switch (op)
             {
                 case EffectOperation.DealDamage:
-                    if ((scaling == ScalingMode.AddStrength || isEnemy) && !ReadsAttribute(value, PlayerAttributeType.Strength))
+                    if ((scaling == ScalingMode.AddStrength || isEnemy) && ShouldApplyStrengthBonus(value))
                         v += strength;
                     break;
                 case EffectOperation.GainBlock:

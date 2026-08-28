@@ -39,6 +39,7 @@ namespace LightMiniGame.CardEditor.Editor
             "按目标疲惫造成伤害",
             "出指定卡后触发",
             "本场覆盖卡牌状态",
+            "给卡牌添加词条",
         };
 
         public static EffectNode CreateFromTemplate(string name)
@@ -73,6 +74,7 @@ namespace LightMiniGame.CardEditor.Editor
                 "按目标疲惫造成伤害" => DamageFromFatigue(),
                 "出指定卡后触发" => OnPlayedCardTrigger(),
                 "本场覆盖卡牌状态" => OverrideCardStatus(),
+                "给卡牌添加词条" => AddKeywordToCards(),
                 _ => new EffectNode { displayName = name }
             };
         }
@@ -454,6 +456,21 @@ namespace LightMiniGame.CardEditor.Editor
             operation = EffectOperation.ModifyCardProperty,
             statusType = StatusType2.Fatigue,
             statusValue = ValueNode.Constant(3)
+        };
+
+        private static EffectNode AddKeywordToCards() => new EffectNode
+        {
+            displayName = "添加词条",
+            operation = EffectOperation.MoveCards,
+            zoneOperation = CardZoneOperation.AddTemporaryKeyword,
+            keywordToApply = CardKeyword.Recycle,
+            target = new TargetSelector
+            {
+                category = TargetCategory.Card,
+                cardTarget = CardTarget.AllCardsInHand
+            },
+            zoneCount = ValueNode.Constant(1),
+            duration = new EffectDuration { type = DurationType.UntilCombatEnd, expireOnCombatEnd = true }
         };
     }
 }

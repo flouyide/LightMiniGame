@@ -255,6 +255,14 @@ public class BattleManager : MonoBehaviour
     [Header("Buff 数据资产（每属性一个，Inspector 配置图标）")]
     [SerializeField] private BuffData[] buffDataAssets;
 
+    private sealed class TempKeywordGrant
+    {
+        public CardData card;
+        public KeywordType flags;
+        public int remainingTurns; // -1 = 直到战斗结束
+        public bool expireOnSwitch;
+    }
+
     private sealed class DisplayOnlyBuff
     {
         public BuffAttributeType attributeType;
@@ -338,6 +346,8 @@ public class BattleManager : MonoBehaviour
     // 使用独立对象而非可重置的整数序号，避免跨回合或战斗初始化时旧状态与新卡牌结算发生碰撞。
     private object _activePlayerCardExecutionToken;
     private readonly Dictionary<string, int> _cardStatusValueOverrides = new Dictionary<string, int>();
+    private readonly List<TempKeywordGrant> _tempKeywordGrants = new();
+    private EffectNode _pendingNextPlayKeywordNode;
 
     /// <summary>开启进阶效果1：融合修改跨战斗持久化。</summary>
     public void EnableFusionPersistence() => persistFusion = true;
@@ -543,6 +553,332 @@ public class BattleManager : MonoBehaviour
     }
 
     private static string OverrideKey(string cardId, StatusType status) => cardId + ":" + (int)status;
+
+    /// <summary>给战斗内卡牌添加或移除临时词条。返回实际改动的张数。</summary>
+    public int ApplyTemporaryKeyword(EffectNode node, bool add, int count = 1)
+    {
+        if (node == null) return 0;
+        var kw = CardKeywords.FromEditor(node.keywordToApply);
+        if (kw == KeywordType.None)
+        {
+            Debug.LogWarning("[BattleManager] 添加/移除词条：未选择词条");
+            return 0;
+        }
+
+        var cardTarget = node.target != null ? node.target.cardTarget : CardTarget.AllCardsInHand;
+        if (node.createdCard == null && IsDeferredKeywordTarget(cardTarget) && add)
+        {
+            _pendingNextPlayKeywordNode = node.Clone();
+            Debug.Log($"[BattleManager] 词条将在下一张打出的牌上生效：{string.Join("、", CardKeywords.GetNames(kw))}");
+            return 1;
+        }
+
+        var cards = CollectKeywordTargetCards(node, Mathf.Max(1, count));
+        int changed = 0;
+        foreach (var card in cards)
+        {
+            if (ModifyCardKeyword(card, kw, add, node.duration))
+                changed++;
+        }
+        if (changed > 0)
+            RefreshHandUI();
+        return changed;
+    }
+
+    private static bool IsDeferredKeywordTarget(CardTarget t) =>
+        t == CardTarget.NextPlayedCard
+        || t == CardTarget.NextAttackCard
+        || t == CardTarget.NextSkillCard
+        || t == CardTarget.NextAbilityCard;
+
+    private void TryApplyPendingKeywordOnPlay(CardData card)
+    {
+        var pending = _pendingNextPlayKeywordNode;
+        if (pending == null || card == null) return;
+        var want = pending.target != null ? pending.target.cardTarget : CardTarget.NextPlayedCard;
+        bool match = want switch
+        {
+            CardTarget.NextAttackCard => HandCardHasAttack(card),
+            CardTarget.NextSkillCard => HandCardHasArmor(card),
+            CardTarget.NextAbilityCard => !HandCardHasAttack(card) && !HandCardHasArmor(card),
+            _ => true
+        };
+        if (!match) return;
+        _pendingNextPlayKeywordNode = null;
+        ModifyCardKeyword(card, CardKeywords.FromEditor(pending.keywordToApply), true, pending.duration);
+        RefreshHandUI();
+    }
+
+    private bool ModifyCardKeyword(CardData card, KeywordType kw, bool add, EffectDuration duration)
+    {
+        if (card == null || kw == KeywordType.None) return false;
+        card = EnsureMutableCard(card);
+        if (card.keywordOrder == null)
+            card.keywordOrder = CardKeywords.GetOrderedFlags(card.keywords, null);
+
+        if (add)
+        {
+            KeywordType newly = KeywordType.None;
+            foreach (var flag in CardKeywords.EnumerateFlags(kw))
+            {
+                if (card.HasKeyword(flag)) continue;
+                newly |= flag;
+            }
+            if (newly == KeywordType.None) return false;
+            CardKeywords.AddFlags(ref card.keywords, card.keywordOrder, newly);
+            TrackTempKeyword(card, newly, duration);
+            if (duration != null && duration.type == DurationType.PermanentRun)
+                PersistKeywordToLibrary(card, newly);
+            Debug.Log($"[BattleManager] 「{card.cardName}」获得词条 {string.Join("、", CardKeywords.GetNames(newly))}");
+            return true;
+        }
+
+        KeywordType removed = card.keywords & kw;
+        if (removed == KeywordType.None) return false;
+        CardKeywords.RemoveFlags(ref card.keywords, card.keywordOrder, removed);
+        for (int i = _tempKeywordGrants.Count - 1; i >= 0; i--)
+        {
+            if (_tempKeywordGrants[i].card != card) continue;
+            _tempKeywordGrants[i].flags &= ~removed;
+            if (_tempKeywordGrants[i].flags == KeywordType.None)
+                _tempKeywordGrants.RemoveAt(i);
+        }
+        Debug.Log($"[BattleManager] 「{card.cardName}」失去词条 {string.Join("、", CardKeywords.GetNames(removed))}");
+        return true;
+    }
+
+    private void TrackTempKeyword(CardData card, KeywordType newly, EffectDuration duration)
+    {
+        int turns = -1;
+        bool expireOnSwitch = false;
+        if (duration != null)
+        {
+            expireOnSwitch = duration.type == DurationType.UntilCharacterSwitch || duration.expireOnCharacterSwitch;
+            if (duration.type == DurationType.CurrentTurn) turns = 1;
+            else if (duration.type == DurationType.Turns) turns = Mathf.Max(1, duration.turns);
+        }
+        if (turns < 0 && !expireOnSwitch) return;
+        _tempKeywordGrants.Add(new TempKeywordGrant
+        {
+            card = card,
+            flags = newly,
+            remainingTurns = turns,
+            expireOnSwitch = expireOnSwitch
+        });
+    }
+
+    private void ExpireTemporaryKeywords(bool turnEnd, bool characterSwitch)
+    {
+        bool any = false;
+        for (int i = _tempKeywordGrants.Count - 1; i >= 0; i--)
+        {
+            var g = _tempKeywordGrants[i];
+            bool expire = false;
+            if (characterSwitch && g.expireOnSwitch) expire = true;
+            if (turnEnd && g.remainingTurns > 0)
+            {
+                g.remainingTurns--;
+                if (g.remainingTurns <= 0) expire = true;
+            }
+            if (!expire) continue;
+            if (g.card != null && g.flags != KeywordType.None)
+            {
+                if (g.card.keywordOrder == null)
+                    g.card.keywordOrder = CardKeywords.GetOrderedFlags(g.card.keywords, null);
+                CardKeywords.RemoveFlags(ref g.card.keywords, g.card.keywordOrder, g.flags);
+                any = true;
+            }
+            _tempKeywordGrants.RemoveAt(i);
+        }
+        if (any)
+            RefreshHandUI();
+    }
+
+    private List<CardData> CollectKeywordTargetCards(EffectNode node, int count)
+    {
+        var result = new List<CardData>();
+        if (node.createdCard != null)
+        {
+            foreach (var card in EnumerateCombatCards(CardZoneType.PermanentDeck))
+            {
+                if (CardMatchesEntry(card, node.createdCard))
+                    result.Add(card);
+            }
+            return result;
+        }
+
+        var sel = node.target;
+        var cardTarget = sel != null && sel.category == TargetCategory.Card
+            ? sel.cardTarget
+            : CardTarget.AllCardsInHand;
+        var mode = sel != null ? sel.selectionMode : CardSelectionMode.All;
+
+        List<CardData> pool = cardTarget switch
+        {
+            CardTarget.CurrentCard => WrapCard(_currentFusionCard),
+            CardTarget.LastPlayedCard => WrapCard(LastPlayedCard),
+            CardTarget.TopCardsOfDrawPile => CopyList(ActiveChar?.drawPile),
+            CardTarget.CardsInDiscardPile => CopyList(ActiveChar?.discardPile),
+            CardTarget.CardsInExhaustPile => CopyList(ActiveChar?.consumedPile),
+            CardTarget.RandomCardInHand => CopyList(_hand),
+            CardTarget.SelectedCardInHand => CopyList(_hand),
+            _ => CopyList(_hand)
+        };
+
+        if (pool.Count == 0) return result;
+        if (mode == CardSelectionMode.RandomCount || cardTarget == CardTarget.RandomCardInHand)
+        {
+            int n = Mathf.Clamp(count, 1, pool.Count);
+            ShuffleInPlace(pool);
+            for (int i = 0; i < n; i++) result.Add(pool[i]);
+            return result;
+        }
+        if (mode == CardSelectionMode.TopCount || cardTarget == CardTarget.TopCardsOfDrawPile)
+        {
+            int n = Mathf.Clamp(count, 1, pool.Count);
+            for (int i = 0; i < n; i++) result.Add(pool[i]);
+            return result;
+        }
+        if (mode == CardSelectionMode.FirstMatching)
+        {
+            if (pool.Count > 0) result.Add(pool[0]);
+            return result;
+        }
+        if (mode == CardSelectionMode.LastMatching)
+        {
+            if (pool.Count > 0) result.Add(pool[pool.Count - 1]);
+            return result;
+        }
+        result.AddRange(pool);
+        return result;
+    }
+
+    private IEnumerable<CardData> EnumerateCombatCards(CardZoneType zone)
+    {
+        if (zone == CardZoneType.Hand || zone == CardZoneType.PermanentDeck)
+        {
+            foreach (var c in _hand) if (c != null) yield return c;
+        }
+        if (ActiveChar != null && (zone == CardZoneType.DrawPile || zone == CardZoneType.PermanentDeck))
+        {
+            foreach (var c in ActiveChar.drawPile) if (c != null) yield return c;
+        }
+        if (ActiveChar != null && (zone == CardZoneType.DiscardPile || zone == CardZoneType.PermanentDeck))
+        {
+            foreach (var c in ActiveChar.discardPile) if (c != null) yield return c;
+        }
+        if (ActiveChar != null && (zone == CardZoneType.CombatExhaustPile || zone == CardZoneType.PermanentDeck))
+        {
+            foreach (var c in ActiveChar.consumedPile) if (c != null) yield return c;
+        }
+        if (zone == CardZoneType.PermanentDeck && InactiveChar != null)
+        {
+            foreach (var c in InactiveChar.drawPile) if (c != null) yield return c;
+            foreach (var c in InactiveChar.discardPile) if (c != null) yield return c;
+            foreach (var c in InactiveChar.consumedPile) if (c != null) yield return c;
+        }
+    }
+
+    private static bool CardMatchesEntry(CardData card, CardEntry entry)
+    {
+        if (card == null || entry == null) return false;
+        if (card.sourceEntry == entry) return true;
+        if (card.sourceEntry != null && !string.IsNullOrEmpty(entry.cardId) && card.sourceEntry.cardId == entry.cardId)
+            return true;
+        return !string.IsNullOrEmpty(entry.cardName) && card.cardName == entry.cardName;
+    }
+
+    private static List<CardData> WrapCard(CardData card)
+    {
+        var list = new List<CardData>();
+        if (card != null) list.Add(card);
+        return list;
+    }
+
+    private static List<CardData> CopyList(List<CardData> src)
+    {
+        var list = new List<CardData>();
+        if (src == null) return list;
+        foreach (var c in src) if (c != null) list.Add(c);
+        return list;
+    }
+
+    private static void ShuffleInPlace(List<CardData> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+    }
+
+    private CardData EnsureMutableCard(CardData card)
+    {
+        if (card == null) return null;
+        if (card.isRuntimeInstance) return card;
+        var clone = Instantiate(card);
+        clone.isRuntimeInstance = true;
+        clone.isLowSanityForm = card.isLowSanityForm;
+        clone.fusion = card.fusion;
+        clone.extraCost = card.extraCost;
+        clone.relicCostReduction = card.relicCostReduction;
+        clone.attachedEffectNodes = card.attachedEffectNodes != null
+            ? card.attachedEffectNodes.ConvertAll(n => n != null ? n.Clone() : null)
+            : null;
+        if (card.keywordOrder != null)
+            clone.keywordOrder = new List<KeywordType>(card.keywordOrder);
+        ReplaceCardReference(card, clone);
+        return clone;
+    }
+
+    private void ReplaceCardReference(CardData from, CardData to)
+    {
+        ReplaceInList(_hand, from, to);
+        if (_chars != null)
+        {
+            foreach (var ch in _chars)
+            {
+                if (ch == null) continue;
+                ReplaceInList(ch.drawPile, from, to);
+                ReplaceInList(ch.discardPile, from, to);
+                ReplaceInList(ch.consumedPile, from, to);
+            }
+        }
+        if (LastPlayedCard == from) LastPlayedCard = to;
+        if (_currentFusionCard == from) _currentFusionCard = to;
+        if (_recycleUsedThisTurn.Remove(from))
+            _recycleUsedThisTurn.Add(to);
+        foreach (var g in _tempKeywordGrants)
+            if (g.card == from) g.card = to;
+    }
+
+    private static void ReplaceInList(List<CardData> list, CardData from, CardData to)
+    {
+        if (list == null) return;
+        for (int i = 0; i < list.Count; i++)
+            if (list[i] == from) list[i] = to;
+    }
+
+    private void PersistKeywordToLibrary(CardData card, KeywordType kw)
+    {
+        var lib = GlobalCardLibrary.Instance;
+        var owner = ActiveChar?.data;
+        if (lib == null || owner == null || card == null) return;
+        var cards = lib.GetCards(owner);
+        if (cards == null) return;
+        foreach (var inst in cards)
+        {
+            if (inst == null) continue;
+            bool match = inst.template == card
+                || (card.sourceEntry != null && inst.template != null && inst.template.sourceEntry == card.sourceEntry)
+                || (card.sourceEntry != null && inst.template != null && inst.template.sourceEntry != null
+                    && inst.template.sourceEntry.cardId == card.sourceEntry.cardId);
+            if (!match) continue;
+            if ((inst.EffectiveKeywords & kw) == kw) continue;
+            inst.AddKeyword(kw);
+            break;
+        }
+    }
 
     /// <summary>按槽位索引取敌人实例（越界返回 null）</summary>
     private EnemyInstance GetEnemy(int slotIndex)
@@ -2003,6 +2339,8 @@ public class BattleManager : MonoBehaviour
 
         _hand.Clear();
         _cardStatusValueOverrides.Clear();
+        _tempKeywordGrants.Clear();
+        _pendingNextPlayKeywordNode = null;
         _actionPoints = maxActionPoints;
 
         // 初始化效果系统
@@ -2075,6 +2413,7 @@ public class BattleManager : MonoBehaviour
                 if (inst.overrideData != null && inst.overrideData.hasKeywordsOverride)
                 {
                     cd = Instantiate(inst.template);
+                    cd.isRuntimeInstance = true;
                     cd.keywords = inst.EffectiveKeywords;
                     if (inst.overrideData.keywordOrder != null)
                         cd.keywordOrder = new List<KeywordType>(inst.overrideData.keywordOrder);
@@ -2169,6 +2508,7 @@ public class BattleManager : MonoBehaviour
         if (!_isPlayerTurn || _battleEnded || IsPlayerInputLocked) return false;
 
         var card = _hand[handIndex];
+        TryApplyPendingKeywordOnPlay(card);
         int cost = ResolveCardPlayCost(card);
         int paidAP = Mathf.Min(_actionPoints, cost);
         int missing = cost - paidAP;
@@ -2531,6 +2871,7 @@ public class BattleManager : MonoBehaviour
 
         CardData copy = Instantiate(source);
         copy.name = $"{source.name}(Copy)";
+        copy.isRuntimeInstance = true;
         copy.isLowSanityForm = source.isLowSanityForm;
         copy.fusion = source.fusion;
         copy.extraCost = _handCostBonus;
@@ -3308,6 +3649,7 @@ public class BattleManager : MonoBehaviour
 
     private void SwitchCharacter()
     {
+        ExpireTemporaryKeywords(turnEnd: false, characterSwitch: true);
         var oldChar = ActiveChar;
         if (oldChar != null)
         {
@@ -3490,6 +3832,7 @@ public class BattleManager : MonoBehaviour
 
     private void EndPlayerTurn()
     {
+        ExpireTemporaryKeywords(turnEnd: true, characterSwitch: false);
         _isPlayerTurn = false;
 
         var activeChar = ActiveChar;

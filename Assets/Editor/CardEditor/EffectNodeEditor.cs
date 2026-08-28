@@ -296,7 +296,36 @@ namespace LightMiniGame.CardEditor.Editor
         private static void DrawMoveCardsFields(EffectNode node)
         {
             EditorGUILayout.LabelField("卡牌区域操作", EditorStyles.boldLabel);
-            node.zoneOperation = (CardZoneOperation)EditorGUILayout.Popup("操作", (int)node.zoneOperation, GetZoneOpNames());
+            var newOp = (CardZoneOperation)EditorGUILayout.Popup("操作", (int)node.zoneOperation, GetZoneOpNames());
+            if (newOp != node.zoneOperation)
+            {
+                node.zoneOperation = newOp;
+                if (newOp == CardZoneOperation.AddTemporaryKeyword
+                    || newOp == CardZoneOperation.RemoveTemporaryKeyword)
+                {
+                    if (node.target == null) node.target = new TargetSelector();
+                    node.target.category = TargetCategory.Card;
+                    node.target.cardTarget = CardTarget.AllCardsInHand;
+                    if (node.duration == null) node.duration = new EffectDuration();
+                    if (node.duration.type == DurationType.Instant)
+                        node.duration.type = DurationType.UntilCombatEnd;
+                }
+            }
+
+            if (node.zoneOperation == CardZoneOperation.AddTemporaryKeyword
+                || node.zoneOperation == CardZoneOperation.RemoveTemporaryKeyword)
+            {
+                EditorGUILayout.HelpBox(
+                    "给目标卡牌添加/移除词条。上方「目标」选卡牌（全部手牌 / 手牌随机 / 当前卡等）。也可指定一张卡，则本场该卡的所有副本都会改。",
+                    MessageType.Info);
+                int kwMask = EditorGUILayout.MaskField("词条（可多选）", (int)node.keywordToApply, CardKeywords.FlagMaskNames);
+                node.keywordToApply = (CardKeyword)kwMask;
+                node.createdCard = (CardEntry)EditorGUILayout.ObjectField("指定卡牌（可选）", node.createdCard, typeof(CardEntry), false);
+                DrawValueNodeField("随机数量", node.zoneCount);
+                DrawDurationField(node);
+                return;
+            }
+
             node.sourceZone = (CardZoneType)EditorGUILayout.Popup("源区域", (int)node.sourceZone, GetZoneNames());
             node.destinationZone = (CardZoneType)EditorGUILayout.Popup("目标区域", (int)node.destinationZone, GetZoneNames());
             DrawValueNodeField("数量", node.zoneCount);

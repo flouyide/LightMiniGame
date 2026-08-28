@@ -56,9 +56,12 @@ public static class CardFusionSlots
             switch (n.operation)
             {
                 case EffectOperation.DealDamage:
-                    Add(list, i, FusionSlotKind.Damage, "伤害",
-                        ValueNode.ResolveCombatValue(n.value, n.operation, n.scalingMode, strength, dexterity, isEnemy),
-                        fusion);
+                    if (!ValueNode.ContainsNonAttributeFormula(n.value))
+                    {
+                        Add(list, i, FusionSlotKind.Damage, "伤害",
+                            ValueNode.ResolveCombatValue(n.value, n.operation, n.scalingMode, strength, dexterity, isEnemy),
+                            fusion);
+                    }
                     int repeat = ValueNode.ResolveValue(n.repeatCount, strength, dexterity);
                     bool fuseRepeat = fusion != null && fusion.TryGetSlot(i, FusionSlotKind.Repeat, out _);
                     if (repeat != 1 || fuseRepeat)
@@ -111,6 +114,38 @@ public static class CardFusionSlots
         }
 
         return list;
+    }
+
+    /// <summary>
+    /// 只有「已损失理智*3」这类公式伤害、没有其它可融合数字时，不要走旧逻辑把文案里的系数当成攻击值。
+    /// </summary>
+    public static bool ShouldSkipLegacyNumericFusion(List<EffectNode> nodes)
+    {
+        if (nodes == null) return false;
+        bool anyFormulaDamage = false;
+        bool anyFusable = false;
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var n = nodes[i];
+            if (n == null || !n.enabled) continue;
+            switch (n.operation)
+            {
+                case EffectOperation.DealDamage:
+                    if (ValueNode.ContainsNonAttributeFormula(n.value))
+                        anyFormulaDamage = true;
+                    else
+                        anyFusable = true;
+                    break;
+                case EffectOperation.GainBlock:
+                case EffectOperation.ModifyAttribute:
+                case EffectOperation.DrawCards:
+                case EffectOperation.RestoreActionPoints:
+                case EffectOperation.ApplyStatus:
+                    anyFusable = true;
+                    break;
+            }
+        }
+        return anyFormulaDamage && !anyFusable;
     }
 
     private static bool ShouldInclude(int baseValue, FusionCardDelta fusion, int nodeIndex, FusionSlotKind kind, bool legacy)
