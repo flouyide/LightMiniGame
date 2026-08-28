@@ -31,6 +31,13 @@ namespace LightMiniGame.CardEditor
         [FormerlySerializedAs("upgradeDescription")]
         public string lowSanityDescription = "";
 
+        /// <summary>
+        /// 仅运行时卡面显示控制，不会序列化到 CardEntry 资产。
+        /// 目前由“抄袭专家”创建的临时敌方副本使用：保留描述数据供效果与调试使用，
+        /// 但在战斗卡牌实例上隐藏 DescText。
+        /// </summary>
+        [NonSerialized] public bool hideDescriptionText;
+
         [Tooltip("底层：卡面原画（卡牌最底层的卡面美术）")]
         public Sprite cardArt;
 

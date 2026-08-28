@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: ImpostorAbility
   relicName: "\u5192\u540D"
-  description: "\u62E5\u6709\u6B64\u80FD\u529B\u7684\u654C\u4EBA\u521D\u59CB\u83B7\u5F973\u5C42\u5192\u540D\u3002\u6BCF\u6B21\u53D7\u5230\u653B\u51FB\u65F6\uFF0C\u5C06\u672C\u6B21\u653B\u51FB\u4F24\u5BB3\u53CD\u5F39\u7ED9\u73A9\u5BB6\u5E76\u6D88\u80171\u5C42\uFF1B\u654C\u4EBA\u4E0D\u53D7\u672C\u6B21\u653B\u51FB\u4F24\u5BB3\u3002"
+  description: "拥有此能力的敌人初始获得3层冒名。每张卡牌的首次攻击伤害会反弹给玩家并消耗1层；敌人不受该段伤害，后续同卡伤害正常结算。"
   icon: {fileID: 0}
   value: 0
   grade: 0

@@ -134,6 +134,8 @@ public class CardDisplay : MonoBehaviour
     private int _enemyDexterity;
     /// <summary>当前显示低理智形态（ApplyCardEntry 的 upgraded 参数）</summary>
     private bool _displayLowSanity;
+    /// <summary>当前 CardEntry 是否要求仅隐藏 DescText（运行时复制牌专用）。</summary>
+    private bool _hideDescriptionText;
 
     /// <summary>实时融合覆盖层：优先读 CardData.fusion（融合可能新建覆盖层使旧引用失效），否则用缓存。</summary>
     private FusionCardDelta LiveFusion => _data != null && _data.fusion != null ? _data.fusion : _fusion;
@@ -564,7 +566,13 @@ public class CardDisplay : MonoBehaviour
             costText.text = GetDisplayCost().ToString();
         if (typeText) typeText.text = CardData.GetCardTypeName(cardType);
         if (gradeText) gradeText.text = CardData.GetGradeName(grade);
-        if (descText) descText.text = GetFusionAwareDescription();
+        if (descText)
+        {
+            // 运行时复制牌可保留描述数据，但不在卡面实例展示 DescText。
+            // 每次刷新都显式恢复普通卡牌的文本节点，避免对象复用后错误沿用隐藏状态。
+            descText.gameObject.SetActive(!_hideDescriptionText);
+            descText.text = GetFusionAwareDescription();
+        }
 
         // 词条文本（有侧签图标时不再在卡面叠一层文字）
         if (keywordText)
@@ -668,6 +676,7 @@ public class CardDisplay : MonoBehaviour
         // 融合覆盖层：卡片数值被融合修改后优先显示覆盖值
         _data = data;
         _fusion = data.fusion;
+        _hideDescriptionText = false;
 
         // 如果有关联的 CardEntry，优先从 CardEntry 读取显示数据
         if (data.sourceEntry != null)
@@ -728,6 +737,7 @@ public class CardDisplay : MonoBehaviour
         if (entry == null) return;
         _entry = entry;
         _displayLowSanity = upgraded;
+        _hideDescriptionText = entry.hideDescriptionText;
 
         cardName = entry.cardName;
         description = entry.GetDescription(upgraded);

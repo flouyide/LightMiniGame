@@ -9,7 +9,7 @@ namespace LightMiniGame.RelicEffects
     /// <summary>
     /// 敌人能力：会议邀请轰炸机。
     ///
-    /// 每当拥有本能力的敌人完成自身一整次行动且仍存活时，向玩家当前手牌塞入会议邀请牌。
+    /// 战斗首回合、以及每当拥有本能力的敌人完成自身一整次行动且仍存活时，向玩家当前手牌塞入会议邀请牌。
     /// 普通理智状态塞入 effectParams[0] 张（默认 3）；低理智状态塞入 effectParams[1] 张（默认 5）。
     ///
     /// 牌池配置：RelicData.effectObjectParams 中的每一个 CardEntry 都是可随机抽取的会议邀请牌。
@@ -46,12 +46,23 @@ namespace LightMiniGame.RelicEffects
             _hasLoggedMissingCardPool = false;
 
             _battle.OnEnemyTurnCompleted += OnEnemyTurnCompleted;
+
+            // StartBattle 的首回合不会经过敌人行动完成事件。
+            // 以当前所有存活宿主为单位主动补一次，语义与它们后续完成自身回合时一致。
+            foreach (EnemyInstance inst in _battle.EnemyInstances)
+            {
+                if (inst == null || inst.IsDead || !IsHost(inst)) continue;
+                InsertInvitationCards(inst, "战斗首回合");
+            }
         }
 
         public override void OnBattleEnd(RelicEffectContext ctx, bool victory) => Detach(ctx?.battle);
         public override void OnLost(RelicEffectContext ctx) => Detach(ctx?.battle);
 
         private void OnEnemyTurnCompleted(EnemyInstance inst)
+            => InsertInvitationCards(inst, "完成自身回合");
+
+        private void InsertInvitationCards(EnemyInstance inst, string trigger)
         {
             if (_battle == null || inst == null || inst.IsDead || !IsHost(inst)) return;
 
@@ -66,7 +77,8 @@ namespace LightMiniGame.RelicEffects
                 return;
             }
 
-            int requestedCount = _battle.IsLowSanityForFusion ? _lowSanityCardCount : _normalCardCount;
+            bool lowSanity = _battle.IsLowSanityForFusion;
+            int requestedCount = lowSanity ? _lowSanityCardCount : _normalCardCount;
             int insertedCount = 0;
             for (int i = 0; i < requestedCount && _battle.HandCount < _battle.HandLimit; i++)
             {
@@ -74,8 +86,8 @@ namespace LightMiniGame.RelicEffects
                 insertedCount += _battle.AddGeneratedCards(entry, 1, CardZoneType.Hand);
             }
 
-            Debug.Log($"[MeetingInvitationBomber] {inst.Name} 完成自身回合，" +
-                      $"{(_battle.IsLowSanityForFusion ? "低理智" : "普通")}状态请求塞入 {requestedCount} 张，" +
+            Debug.Log($"[MeetingInvitationBomber] {inst.Name} {trigger}，" +
+                      $"{(lowSanity ? "低理智" : "普通")}状态请求塞入 {requestedCount} 张，" +
                       $"实际塞入 {insertedCount} 张会议邀请牌。");
         }
 
