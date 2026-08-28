@@ -97,7 +97,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.20558086, g: 0.027411893, b: 0.5283019, a: 1}
+  m_Color: {r: 1, g: 0.8821108, b: 0.43710685, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -311,7 +311,7 @@ MonoBehaviour:
   keywordIconContainer: {fileID: 2856627574512661402}
   keywordIconLibrary: {fileID: 0}
   keywordIconSprites: []
-  keywordIconSize: 10
+  keywordIconSize: 30
   keywordIconSpacing: 2
   keywordTooltip: {fileID: 0}
   tooltipText: {fileID: 0}
