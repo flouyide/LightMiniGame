@@ -102,6 +102,8 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -127,7 +129,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 14
+    operation: 8
     value:
       rid: 3513299765630337311
     repeatCount:
@@ -152,16 +154,16 @@ MonoBehaviour:
     armorBreakValue:
       rid: 3513299765630337313
     countAsAttack: 1
-    resourceType: 4
+    resourceType: 2
     resourceOp: 0
     attributeType: 1
-    statusType: 0
+    statusType: 12
     statusValue:
       rid: 3513299765630337314
     stackMode: 0
     sourceZone: 0
     destinationZone: 0
-    zoneOperation: 0
+    zoneOperation: 13
     zoneCount:
       rid: 3513299765630337315
     triggerEvent: 27
@@ -170,6 +172,8 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: 
@@ -180,7 +184,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 1
+        intValue: 2
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -324,7 +328,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 1
+        intValue: -1
         floatValue: 0
         attributeRef: 1
         resourceRef: 1

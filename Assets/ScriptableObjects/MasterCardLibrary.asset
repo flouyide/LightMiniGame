@@ -15,11 +15,33 @@ MonoBehaviour:
   pools:
   - character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
     cards:
-    - {fileID: 11400000, guid: e67a755fbba244d328279a5a31049970, type: 2}
-    - {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
+    - {fileID: 11400000, guid: 0c32533053f9843d0ad3e07a5badbb73, type: 2}
     - {fileID: 11400000, guid: 8d7e348ec937a4d01911eca1e9729110, type: 2}
-    - {fileID: 11400000, guid: 8221096f21e0a4552b1eca66bdb4a969, type: 2}
     - {fileID: 11400000, guid: ecbf9f7ba61ff4e86ad1e2eebb2633de, type: 2}
+    - {fileID: 11400000, guid: 8221096f21e0a4552b1eca66bdb4a969, type: 2}
+    - {fileID: 11400000, guid: c3c3c660339724cb8a701ca154ec2fcd, type: 2}
+    - {fileID: 11400000, guid: e5eabae7b93a0eb48b6a145016e8d04d, type: 2}
+    - {fileID: 11400000, guid: 1bae248137e9b704ea779ae3e5ab0c71, type: 2}
+    - {fileID: 11400000, guid: f52c66af8d38f7240928665274d4f68a, type: 2}
+    - {fileID: 11400000, guid: 0c4f247fb90a5d340a12e9056737af6a, type: 2}
+    - {fileID: 11400000, guid: 98a49f89ca8ac4fd3a7fff33ad43c7df, type: 2}
+    - {fileID: 11400000, guid: e6091de5115d6443b9df9268b28c6282, type: 2}
+    - {fileID: 11400000, guid: a92d2916402657046a1ea5a8fbc76985, type: 2}
+    - {fileID: 11400000, guid: c05c6d9c4dbfb40f2a461b95cb7fed35, type: 2}
+    - {fileID: 11400000, guid: 77e28d2cda3a08d45bf6dfdffce8a005, type: 2}
+    - {fileID: 11400000, guid: d618672302bb3af4fb34c2dfa5f80504, type: 2}
+    - {fileID: 11400000, guid: ee61c77e52e64304a964287b40335a2c, type: 2}
+    - {fileID: 11400000, guid: c39fed0bded30d947869d8a7b552f267, type: 2}
+    - {fileID: 11400000, guid: 4a7821e5d4d697e44bc2553c48397013, type: 2}
+    - {fileID: 11400000, guid: 19a96fbf9332df3428ff57f23fd0c516, type: 2}
+    - {fileID: 11400000, guid: b24a86fcf61c7694fa250d2e38bc8fba, type: 2}
+    - {fileID: 11400000, guid: 4606106806382f243929d42bdc3596f9, type: 2}
+    - {fileID: 11400000, guid: 783aa92d7e0e4ed4f87dab24d0f49875, type: 2}
+    - {fileID: 11400000, guid: 000b97317cba5cc43b73b560ff7af1a5, type: 2}
+    - {fileID: 11400000, guid: 20a383c8dff7efc47b0c4df9cf86dc02, type: 2}
+    - {fileID: 11400000, guid: 013759baf65501b4abfb532ce23c2872, type: 2}
+    - {fileID: 11400000, guid: 97449648e547e5043beb8dbae64e05f7, type: 2}
+    - {fileID: 11400000, guid: 550e24b54cd5a0e49bd42397779db821, type: 2}
   - character: {fileID: 11400000, guid: 05c4874963545144daee7fef33724012, type: 2}
     cards:
     - {fileID: 11400000, guid: c3c3c660339724cb8a701ca154ec2fcd, type: 2}
