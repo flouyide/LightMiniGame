@@ -35,7 +35,7 @@ MonoBehaviour:
   hasLowSanityForm: 1
   normalEffectNodes:
   - enabled: 1
-    displayName: "\u6548\u679C 1"
+    displayName: "\u6DFB\u52A0\u76D1\u63A7\u76EE\u6807\u8BCD\u6761"
     timing: 0
     source:
       category: 2
@@ -59,7 +59,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 8
+    operation: 20
     value:
       rid: 6563294506372562946
     repeatCount:
@@ -100,12 +100,13 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
-    customParams: 
+    customOperation: {fileID: 11400000, guid: 9aca1386386734e30815024ea1bc4264, type: 2}
+    customParams: '{"count":3}'
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
-    displayName: "\u6548\u679C 1"
+    displayName: "\u6DFB\u52A0\u76D1\u63A7\u76EE\u6807\u8BCD\u6761"
     timing: 0
     source:
       category: 2
@@ -129,7 +130,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 8
+    operation: 20
     value:
       rid: 6563294506372562951
     repeatCount:
@@ -170,9 +171,10 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
-    customParams: 
+    customOperation: {fileID: 11400000, guid: 9aca1386386734e30815024ea1bc4264, type: 2}
+    customParams: '{"count":3}'
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

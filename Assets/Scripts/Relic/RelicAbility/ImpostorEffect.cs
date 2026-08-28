@@ -97,6 +97,22 @@ namespace LightMiniGame.RelicEffects
             return true;
         }
 
+        public int GetStacks(EnemyInstance inst)
+        {
+            if (inst == null) return 0;
+            if (_remainingStacksByHost.TryGetValue(inst, out int stacks))
+                return Mathf.Max(0, stacks);
+            return IsHost(inst) ? _initialStacks : 0;
+        }
+
+        public void AddStacks(EnemyInstance inst, int amount)
+        {
+            if (inst == null || amount == 0 || !IsHost(inst)) return;
+            int current = GetStacks(inst);
+            _remainingStacksByHost[inst] = Mathf.Max(0, current + amount);
+            Debug.Log($"[Impostor] {inst.Name} 冒名 {amount:+0;-0;0} → {_remainingStacksByHost[inst]} 层");
+        }
+
         private bool IsHost(EnemyInstance inst)
         {
             if (inst?.Config?.abilities == null) return false;

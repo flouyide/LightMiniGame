@@ -6,7 +6,7 @@ using UnityEngine;
 namespace LightMiniGame.CardEditor.Editor
 {
     /// <summary>
-    /// 为未完成卡牌创建自定义效果资产，并写入效果列表的「脚本」字段。
+    /// 按策划表紫色格，为未完成卡牌写入自定义效果脚本。
     /// 菜单：Tools/卡牌编辑器/绑定未完成卡牌自定义脚本
     /// </summary>
     public static class UnfinishedCardScriptBinder
@@ -19,15 +19,16 @@ namespace LightMiniGame.CardEditor.Editor
             if (!AssetDatabase.IsValidFolder(AssetDir))
                 AssetDatabase.CreateFolder("Assets/ScriptableObjects/Cards", "CustomScripts");
 
-            var halfCost = LoadOrCreate<SetHalfHandCostThisTurnEffect>("SetHalfHandCostThisTurn");
             var watch = LoadOrCreate<MarkWatchTargetThisTurnEffect>("MarkWatchTargetThisTurn");
+            var lockHalf = LoadOrCreate<LockHalfHandNextTurnEffect>("LockHalfHandNextTurn");
             var summon = LoadOrCreate<SummonEnemyCompanionEffect>("SummonEnemyCompanion");
             var entangle = LoadOrCreate<ApplyEntangleEffect>("ApplyEntangle");
             var fromImpostor = LoadOrCreate<GainStrengthFromImpostorEffect>("GainStrengthFromImpostor");
             var addImpostor = LoadOrCreate<AddImpostorStacksEffect>("AddImpostorStacks");
             var rename = LoadOrCreate<ApplyRenameThisTurnEffect>("ApplyRenameThisTurn");
             var dirtyWork = LoadOrCreate<ApplyDirtyWorkEffect>("ApplyDirtyWork");
-            var dirtyDmg = LoadOrCreate<DirtyWorkBonusDamageEffect>("DirtyWorkBonusDamage");
+
+            TryAssignRenameReplacement(rename);
 
             int changed = 0;
             foreach (var guid in AssetDatabase.FindAssets("t:CardEntry"))
@@ -38,28 +39,24 @@ namespace LightMiniGame.CardEditor.Editor
                     continue;
 
                 bool dirty = false;
-                if (card.cardName.Contains("最终警告"))
-                    dirty |= EnsureAppend(card, halfCost, "{\"cost\":9}", "半数手牌费用变为9");
-                else if (card.cardName.Contains("APP定位"))
-                    dirty |= EnsureReplaceOrAppend(card, watch, "{\"count\":3}", "监控目标", preferMoveCards: true);
+                if (card.cardName.Contains("APP定位"))
+                    dirty |= EnsureBoth(card, watch, "{\"count\":3}", "添加监控目标词条");
+                else if (card.cardName.Contains("最终警告") || card.cardName.Contains("考勤警告"))
+                    dirty |= EnsureLowSanityOnly(card, lockHalf, "", "半数手牌下回合无法打出");
                 else if (card.cardName.Contains("拉小团体"))
-                    dirty |= EnsureAppend(card, summon, "", "召唤双头鼠同伴");
+                    dirty |= EnsureBoth(card, summon, "", "召唤同伙");
                 else if (card.cardName.Contains("中伤"))
-                    dirty |= EnsureReplaceOrAppend(card, entangle, "{\"stacks\":1}", "缠结", preferMoveCards: true);
+                    dirty |= EnsureAppend(card, entangle, "{\"stacks\":1}", "施加缠结", "{\"stacks\":2}");
                 else if (card.cardName.Contains("力量不属于你"))
-                {
-                    dirty |= EnsureAppend(card, fromImpostor, "{\"bonus\":0}", "按冒名获得力量", lowSanityParams: "{\"bonus\":1}");
-                }
+                    dirty |= EnsureAppend(card, fromImpostor, "{\"bonus\":0}", "按冒名获得力量", "{\"bonus\":1}");
                 else if (card.cardName.Contains("冒名顶替"))
-                    dirty |= EnsureAppend(card, addImpostor, "{\"stacks\":1}", "获得1层冒名");
-                else if (card.cardName.Contains("借用你的名字"))
-                    dirty |= EnsureAppend(card, rename, "", "手牌改名为本回合攻击");
-                else if (card.cardName.Contains("都是为你好"))
-                    dirty |= EnsureAppend(card, dirtyDmg, "{\"perStack\":3}", "脏活额外伤害");
+                    dirty |= EnsureAppend(card, addImpostor, "{\"stacks\":1}", "获得冒名", "{\"stacks\":2}");
+                else if (card.cardName.Contains("借用你的名字") || card.cardName.Contains("改名"))
+                    dirty |= EnsureBoth(card, rename, "", "牌库随机牌替换为攻击");
                 else if (card.cardName.Contains("这个你来做"))
-                    dirty |= EnsureAppend(card, dirtyWork, "{\"stacks\":2}", "施加脏活", lowSanityParams: "{\"stacks\":3}");
+                    dirty |= EnsureBoth(card, dirtyWork, "{\"stacks\":2}", "施加脏活");
                 else if (card.cardName.Contains("压榨"))
-                    dirty |= EnsureAppend(card, dirtyWork, "{\"stacks\":1}", "施加1层脏活");
+                    dirty |= EnsureBoth(card, dirtyWork, "{\"stacks\":1}", "施加1层脏活");
 
                 if (!dirty) continue;
                 EditorUtility.SetDirty(card);
@@ -68,8 +65,7 @@ namespace LightMiniGame.CardEditor.Editor
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log($"[未完成卡牌脚本] 已绑定 {changed} 张卡。自定义效果资产在 {AssetDir}");
-            EditorUtility.DisplayDialog("未完成卡牌脚本", $"已为 {changed} 张未完成卡牌写入脚本区。", "确定");
+            Debug.Log($"[未完成卡牌脚本] 已绑定 {changed} 张卡。资产目录 {AssetDir}");
         }
 
         [InitializeOnLoadMethod]
@@ -77,17 +73,30 @@ namespace LightMiniGame.CardEditor.Editor
         {
             EditorApplication.delayCall += () =>
             {
-                if (EditorPrefs.GetBool("UnfinishedCardScriptsBound_v1", false)) return;
+                if (EditorPrefs.GetBool("UnfinishedCardScriptsBound_v2", false)) return;
                 try
                 {
                     Bind();
-                    EditorPrefs.SetBool("UnfinishedCardScriptsBound_v1", true);
+                    EditorPrefs.SetBool("UnfinishedCardScriptsBound_v2", true);
                 }
                 catch (System.Exception ex)
                 {
                     Debug.LogWarning($"[未完成卡牌脚本] 自动绑定跳过：{ex.Message}");
                 }
             };
+        }
+
+        private static void TryAssignRenameReplacement(ApplyRenameThisTurnEffect rename)
+        {
+            if (rename == null || rename.replacementCard != null) return;
+            foreach (var guid in AssetDatabase.FindAssets("t:CardEntry 点名"))
+            {
+                var card = AssetDatabase.LoadAssetAtPath<CardEntry>(AssetDatabase.GUIDToAssetPath(guid));
+                if (card == null || !card.cardName.Contains("点名")) continue;
+                rename.replacementCard = card;
+                EditorUtility.SetDirty(rename);
+                return;
+            }
         }
 
         private static T LoadOrCreate<T>(string fileName) where T : CustomEffectScript
@@ -100,65 +109,45 @@ namespace LightMiniGame.CardEditor.Editor
             return asset;
         }
 
+        private static bool EnsureBoth(CardEntry card, CustomEffectScript script, string customParams, string displayName)
+            => EnsureAppend(card, script, customParams, displayName, customParams);
+
+        private static bool EnsureLowSanityOnly(CardEntry card, CustomEffectScript script, string customParams, string displayName)
+        {
+            if (card.lowSanityEffectNodes == null) card.lowSanityEffectNodes = new List<EffectNode>();
+            return ReplaceMoveCardsOrAppend(card.lowSanityEffectNodes, script, customParams, displayName);
+        }
+
         private static bool EnsureAppend(
             CardEntry card,
             CustomEffectScript script,
             string customParams,
             string displayName,
-            string lowSanityParams = null)
+            string lowSanityParams)
         {
             if (card.normalEffectNodes == null) card.normalEffectNodes = new List<EffectNode>();
             if (card.lowSanityEffectNodes == null) card.lowSanityEffectNodes = new List<EffectNode>();
-            bool dirty = AppendIfMissing(card.normalEffectNodes, script, customParams, displayName);
-            dirty |= AppendIfMissing(
-                card.lowSanityEffectNodes,
-                script,
-                string.IsNullOrEmpty(lowSanityParams) ? customParams : lowSanityParams,
-                displayName);
+            bool dirty = ReplaceMoveCardsOrAppend(card.normalEffectNodes, script, customParams, displayName);
+            dirty |= ReplaceMoveCardsOrAppend(card.lowSanityEffectNodes, script, lowSanityParams, displayName);
             return dirty;
         }
 
-        private static bool EnsureReplaceOrAppend(
-            CardEntry card,
-            CustomEffectScript script,
-            string customParams,
-            string displayName,
-            bool preferMoveCards)
-        {
-            if (card.normalEffectNodes == null) card.normalEffectNodes = new List<EffectNode>();
-            if (card.lowSanityEffectNodes == null) card.lowSanityEffectNodes = new List<EffectNode>();
-            bool dirty = ReplaceOrAppend(card.normalEffectNodes, script, customParams, displayName, preferMoveCards);
-            dirty |= ReplaceOrAppend(card.lowSanityEffectNodes, script, customParams, displayName, preferMoveCards);
-            return dirty;
-        }
-
-        private static bool AppendIfMissing(List<EffectNode> nodes, CustomEffectScript script, string customParams, string displayName)
-        {
-            if (HasScript(nodes, script)) return false;
-            nodes.Add(MakeCustomNode(script, customParams, displayName));
-            return true;
-        }
-
-        private static bool ReplaceOrAppend(
+        private static bool ReplaceMoveCardsOrAppend(
             List<EffectNode> nodes,
             CustomEffectScript script,
             string customParams,
-            string displayName,
-            bool preferMoveCards)
+            string displayName)
         {
             if (HasScript(nodes, script)) return false;
-            if (preferMoveCards)
+            for (int i = 0; i < nodes.Count; i++)
             {
-                for (int i = 0; i < nodes.Count; i++)
-                {
-                    var node = nodes[i];
-                    if (node == null || node.operation != EffectOperation.MoveCards) continue;
-                    node.operation = EffectOperation.CustomOperation;
-                    node.customOperation = script;
-                    node.customParams = customParams;
-                    node.displayName = displayName;
-                    return true;
-                }
+                var node = nodes[i];
+                if (node == null || node.operation != EffectOperation.MoveCards) continue;
+                node.operation = EffectOperation.CustomOperation;
+                node.customOperation = script;
+                node.customParams = customParams;
+                node.displayName = displayName;
+                return true;
             }
             nodes.Add(MakeCustomNode(script, customParams, displayName));
             return true;

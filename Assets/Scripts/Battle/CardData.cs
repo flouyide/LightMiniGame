@@ -99,6 +99,12 @@ public class CardData : ScriptableObject
     /// </summary>
     [NonSerialized] public int relicCostReduction = 0;
 
+    /// <summary>本回合覆盖费用（-1=未覆盖）。</summary>
+    [NonSerialized] public int costOverrideThisTurn = -1;
+
+    /// <summary>缠结等状态加在手牌上的费用。不写入资产。</summary>
+    [NonSerialized] public int statusCostBonus = 0;
+
     /// <summary>运行时附加效果（配件打出后叠到「主机」上，本场战斗内永久、不限层数）。</summary>
     [NonSerialized] public List<EffectNode> attachedEffectNodes;
 
@@ -139,11 +145,13 @@ public class CardData : ScriptableObject
     /// </summary>
     public int GetEffectiveCost()
     {
+        if (costOverrideThisTurn >= 0)
+            return costOverrideThisTurn;
         int baseCost = sourceEntry != null ? sourceEntry.GetCost(isLowSanityForm) : actionPointCost;
         int cost = (fusion != null && fusion.overrideCost) ? fusion.cost : baseCost;
         if (HasKeyword(KeywordType.InternalPrice))
             cost = Mathf.Max(0, cost - 1);
-        return Mathf.Max(0, cost + extraCost - relicCostReduction);
+        return Mathf.Max(0, cost + extraCost + statusCostBonus - relicCostReduction);
     }
 
     /// <summary>有效攻击值（融合覆盖优先；供显示/执行统一使用）。</summary>

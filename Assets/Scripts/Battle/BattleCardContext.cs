@@ -12,6 +12,11 @@ public class BattleCardContext : ICardRuntimeContext
 
     public BattleCardContext(BattleManager battle) { _battle = battle; }
 
+    public BattleManager Battle => _battle;
+
+    /// <summary>当前效果发起者敌人槽位；&lt;0 表示玩家出牌。</summary>
+    public int InitiatorEnemySlot { get; set; } = -1;
+
     // === 玩家状态 ===
     public int PlayerHP => _battle.PlayerHP;
     public int PlayerMaxHP => _battle.PlayerMaxHP;

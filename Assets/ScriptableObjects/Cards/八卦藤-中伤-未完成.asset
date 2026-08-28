@@ -102,8 +102,10 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
-    displayName: "\u6548\u679C 2"
+    displayName: "\u65BD\u52A0\u7F20\u7ED3"
     timing: 0
     source:
       category: 2
@@ -127,7 +129,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 8
+    operation: 20
     value:
       rid: 6563294425589481574
     repeatCount:
@@ -168,8 +170,10 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
-    customParams: 
+    customOperation: {fileID: 11400000, guid: fe9bcfbd1fcbf45b484f0a1df3183d18, type: 2}
+    customParams: '{"stacks":1}'
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -239,8 +243,10 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
-    displayName: "\u6548\u679C 2"
+    displayName: "\u65BD\u52A0\u7F20\u7ED3"
     timing: 0
     source:
       category: 2
@@ -264,7 +270,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 8
+    operation: 20
     value:
       rid: 6563294425589481584
     repeatCount:
@@ -305,8 +311,10 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
-    customParams: 
+    customOperation: {fileID: 11400000, guid: fe9bcfbd1fcbf45b484f0a1df3183d18, type: 2}
+    customParams: '{"stacks":2}'
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
