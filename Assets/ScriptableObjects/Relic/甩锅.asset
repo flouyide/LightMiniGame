@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u7529\u9505"
   m_EditorClassIdentifier: 
   relicId: DamageTransferEffect
-  relicName: "\u4F24\u5BB3\u8F6C\u79FB\u80FD\u529B"
+  relicName: "\u7529\u9505"
   description: "\u53D7\u5230\u7684\u4F24\u5BB3\u5C06\u8F6C\u79FB50%\u5230\u80CC\u9505\u866B"
   icon: {fileID: 21300000, guid: 1f5d6c0078b231e48ac7592973de322c, type: 3}
   value: 0
