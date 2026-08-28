@@ -85,7 +85,10 @@ public class BuffDisplay : MonoBehaviour
                 stackText.color = buff.totalStacks > 0
                     ? new Color(0.3f, 0.9f, 0.3f, 1f)
                     : new Color(0.9f, 0.3f, 0.3f, 1f);
+                stackText.raycastTarget = false;
             }
+
+            BuffIconHover.Bind(iconObj, buff, _battle);
         }
     }
 

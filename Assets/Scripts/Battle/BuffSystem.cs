@@ -18,25 +18,6 @@ public enum BuffAttributeType
 }
 
 // ========================================================================
-// Buff 数据 —— 每个属性一个 ScriptableObject，Inspector 配置图标
-// ========================================================================
-[CreateAssetMenu(menuName = "CardGame/Buff Data", fileName = "NewBuff")]
-public class BuffData : ScriptableObject
-{
-    [Tooltip("Buff 名称")]
-    public string buffName = "新Buff";
-
-    [Tooltip("图标")]
-    public Sprite icon;
-
-    [Tooltip("属性类型")]
-    public BuffAttributeType attributeType = BuffAttributeType.Strength;
-
-    [Tooltip("该属性的最小值（实际应用值不低于此）")]
-    public int minValue = 0;
-}
-
-// ========================================================================
 // Buff 实例（运行时）
 // ========================================================================
 [Serializable]
@@ -178,4 +159,6 @@ public struct DisplayedBuff
     public int totalStacks;  // 正=增益，负=减益
     public Sprite customIcon; // 敌人能力等：直接用遗物图标
     public bool hideStacks;   // true 时不显示层数（能力图标）
+    public string tooltipTitle;
+    public string tooltipBody;
 }

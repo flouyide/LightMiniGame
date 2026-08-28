@@ -165,9 +165,9 @@ public class EnemyView : MonoBehaviour
         if (_highlighted == highlighted) return;
         _highlighted = highlighted;
         if (portraitImage == null) return;
-        //portraitImage.color = _highlighted
-        //    ? new Color(1f, 1f, 0.45f)
-        //    : (_inst != null && _inst.Phase == 2 ? Color.red : Color.white);
+        portraitImage.color = _highlighted
+            ? new Color(1f, 1f, 0.45f)
+            : Color.white;
     }
 
     /// <summary>从绑定实例拉取最新状态重绘（HP/护甲/立绘/凝视/名字）。受伤、阶段切换后调用。</summary>
@@ -287,7 +287,7 @@ public class EnemyView : MonoBehaviour
         le.minHeight = 32f;
 
         var icon = go.GetComponent<Image>();
-        icon.raycastTarget = false;
+        icon.raycastTarget = true;
         icon.preserveAspect = true;
 
         var labelGo = new GameObject("StackText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
@@ -336,6 +336,7 @@ public class EnemyView : MonoBehaviour
                     ? new Color(0.7f, 0.55f, 0.2f, 1f)
                     : BuffFallbackColor(buff.attributeType);
             }
+            iconImage.raycastTarget = true;
         }
 
         if (stackText != null)
@@ -354,7 +355,11 @@ public class EnemyView : MonoBehaviour
                     ? new Color(0.9f, 0.3f, 0.3f, 1f)
                     : new Color(0.3f, 0.9f, 0.3f, 1f);
             }
+            stackText.raycastTarget = false;
         }
+
+        var battle = Object.FindObjectOfType<BattleManager>();
+        BuffIconHover.Bind(iconGo, buff, battle);
     }
 
     private Sprite ResolveBuffSprite(BuffAttributeType type)
@@ -709,7 +714,6 @@ public class EnemyView : MonoBehaviour
     private Color PortraitRestColor()
     {
         if (_highlighted) return new Color(1f, 1f, 0.45f);
-        if (_inst != null && _inst.Phase == 2) return Color.red;
         return Color.white;
     }
 

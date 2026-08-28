@@ -384,7 +384,9 @@ public class EnemyInstance
                 {
                     customIcon = relic.icon,
                     hideStacks = true,
-                    totalStacks = 0
+                    totalStacks = 0,
+                    tooltipTitle = string.IsNullOrEmpty(relic.relicName) ? relic.name : relic.relicName,
+                    tooltipBody = relic.description
                 });
             }
         }
