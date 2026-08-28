@@ -69,8 +69,6 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private TextMeshProUGUI actionPointText;
     [SerializeField] private TextMeshProUGUI armorText;
-    [SerializeField] private TextMeshProUGUI strengthText;
-    [SerializeField] private TextMeshProUGUI dexterityText;
     [SerializeField] private Slider playerHPBar;
 
     [Header("UI引用 - 理智")]
@@ -706,6 +704,28 @@ public class BattleManager : MonoBehaviour
     }
 
     public void HealPlayer(int amount) => _playerHP = Mathf.Min(playerMaxHP, _playerHP + amount);
+
+    /// <summary>增减指定槽位敌人当前生命（正=治疗，负=直接扣血无视护甲），钳到 0..MaxHP。</summary>
+    public void ModifyEnemyHP(int slot, int delta)
+    {
+        var e = GetEnemy(slot);
+        if (e == null || e.IsDead || delta == 0) return;
+        int before = e.HP;
+        e.HP = Mathf.Clamp(e.HP + delta, 0, e.MaxHP);
+        Debug.Log($"[BattleManager] {e.Name} HP {before}→{e.HP}/{e.MaxHP} ({e.HP - before:+0;-0;0})");
+        e.View?.Refresh();
+        if (e.HP <= 0) HandleEnemyFatalDamage(e);
+    }
+
+    /// <summary>增减所有存活敌人当前生命。</summary>
+    public void ModifyAllEnemiesHP(int delta)
+    {
+        if (delta == 0) return;
+        for (int i = 0; i < _enemies.Count; i++)
+            ModifyEnemyHP(i, delta);
+        UpdateUI();
+    }
+
     public void AddPlayerArmor(int amount) => _playerArmor += amount;
     public void AddActionPoints(int amount) => _actionPoints = Mathf.Max(0, _actionPoints + amount);
 
@@ -890,8 +910,17 @@ public class BattleManager : MonoBehaviour
         var cm = GetChapterManager();
         if (cm == null) return;
         int val = Mathf.Max(0, value);
-        //int diff = val - cm.PlayerGold;
-        if (val != 0) cm.AddGold(val);   // 复用 AddGold 以广播 UI（内部 clamp≥0）
+        int diff = val - cm.PlayerGold;
+        if (diff != 0) cm.ModifyGold(diff);
+    }
+
+    /// <summary>增减玩家货币（卡牌效果用；可负，结果钳到 ≥0）。</summary>
+    public void ModifyPlayerGold(int delta)
+    {
+        var cm = GetChapterManager();
+        if (cm == null || delta == 0) return;
+        cm.ModifyGold(delta);
+        UpdateUI();
     }
 
     private ChapterManager GetChapterManager()
@@ -1561,6 +1590,7 @@ public class BattleManager : MonoBehaviour
         ModifiableAttribute.CurrentSanity => _playerSanity,
         ModifiableAttribute.MaxSanity => _playerMaxSanity,
         ModifiableAttribute.Fortune => _playerFortune,
+        ModifiableAttribute.Currency => PlayerGold,
         ModifiableAttribute.PlayerDamageMultiplier => _playerDamageMultiplier,
         ModifiableAttribute.PlayerDamageTakenMultiplier => _playerDamageTakenMultiplier,
         // EnemyDamageMultiplier / EnemyDamageTakenMultiplier 已迁入 EnemyConfig（个体倍率），不再全局可改
@@ -1582,6 +1612,7 @@ public class BattleManager : MonoBehaviour
             case ModifiableAttribute.CurrentSanity: ModifySanity(value - _playerSanity); break;
             case ModifiableAttribute.MaxSanity: _playerMaxSanity = value; break;
             case ModifiableAttribute.Fortune: SetPlayerFortune(value); break;
+            case ModifiableAttribute.Currency: SetPlayerGold(value); break;
             case ModifiableAttribute.PlayerDamageMultiplier: _playerDamageMultiplier = value; break;
             case ModifiableAttribute.PlayerDamageTakenMultiplier: _playerDamageTakenMultiplier = value; break;
             // EnemyDamageMultiplier / EnemyDamageTakenMultiplier 已迁入 EnemyConfig（个体倍率），不再全局可改
@@ -1733,6 +1764,9 @@ public class BattleManager : MonoBehaviour
                 LockedCharIdx = -1,
                 IsDead = false,
             };
+            bool lowSanity = _playerSanity <= _sanityThreshold;
+            inst.UseLowSanityPool = lowSanity;
+            if (lowSanity && inst.HasPhase2) inst.Phase = 2;
 
             if (enemyViewPrefab != null && enemyContainer != null)
             {
@@ -3989,7 +4023,8 @@ public class BattleManager : MonoBehaviour
         if (armorText != null) armorText.text = _playerArmor > 0 ? $"{_playerArmor}" : "";
 
         // 玩家回合：刷新每个存活敌人的意图预览（下一回合将打出的卡）
-        if (_isPlayerTurn && !_battleEnded)
+        // 融合进行中不要重建意图牌，否则会拆掉挂在卡面上的融合高亮
+        if (_isPlayerTurn && !_battleEnded && !FusionController.IsOpen)
         {
             foreach (var e in _enemies)
             {
@@ -3997,9 +4032,6 @@ public class BattleManager : MonoBehaviour
                 RefreshEnemyIntentDeck(e);
             }
         }
-
-        if (strengthText != null) strengthText.text = _playerStrength > 0 ? $"力量: {_playerStrength}" : "";
-        if (dexterityText != null) dexterityText.text = _playerDexterity > 0 ? $"敏捷: {_playerDexterity}" : "";
 
         if (playerHPBar != null)
         {

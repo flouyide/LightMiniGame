@@ -1070,6 +1070,10 @@ public class CardDisplay : MonoBehaviour
     /// <summary>返回费用文本的 RectTransform（供融合点击层定位）。</summary>
     public RectTransform GetCostRectTransform() => costText != null ? costText.rectTransform : null;
 
+    public float GetCostFontSize() => costText != null ? costText.fontSize : 16f;
+
+    public float GetDescFontSize() => descText != null ? descText.fontSize : 16f;
+
     /// <summary>当前显示的费用（融合覆盖优先；否则按入口当前形态费用）。</summary>
     public int GetDisplayCost()
     {

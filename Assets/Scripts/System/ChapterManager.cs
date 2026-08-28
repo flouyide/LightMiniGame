@@ -329,7 +329,14 @@ public class ChapterManager : MonoBehaviour
     public void AddGold(int amount)
     {
         if (amount <= 0) return;
-        PlayerGold += amount;
+        ModifyGold(amount);
+    }
+
+    /// <summary>增减金币（可负），结果钳到 ≥0，并广播金币 UI。</summary>
+    public void ModifyGold(int delta)
+    {
+        if (delta == 0) return;
+        PlayerGold = Mathf.Max(0, PlayerGold + delta);
         OnPlayerStatsUpdated?.Invoke(PlayerHP, PlayerGold, PlayerSanity);
     }
 

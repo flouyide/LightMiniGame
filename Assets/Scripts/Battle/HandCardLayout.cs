@@ -4,6 +4,7 @@ using UnityEngine.Serialization;
 
 /// <summary>
 /// 手牌扇形布局管理 —— 负责卡牌的弧形排列、悬浮放大、丝滑过渡动画。
+/// 可见手牌默认最多 5 张；超出部分叠在两侧，鼠标移到扇形最左/最右时平滑滑入。
 /// 接收 CardData 列表，根据卡牌类型自动选择对应 Prefab 实例化并填充数据。
 /// </summary>
 public class HandCardLayout : MonoBehaviour
@@ -21,6 +22,17 @@ public class HandCardLayout : MonoBehaviour
     [Header("动画")]
     [SerializeField] private float lerpSpeed = 20f;
 
+    [Header("溢出手牌（超过可见张数时靠边滑动）")]
+    [SerializeField] private int maxVisibleCards = 5;
+    [Tooltip("最左/最右触发滑动的宽度（像素，含扇形外侧空白）")]
+    [SerializeField] private float edgeZoneWidth = 72f;
+    [Tooltip("按住边缘时每秒滑过的卡牌数")]
+    [SerializeField] private float scrollSpeed = 2.4f;
+    [Tooltip("窗口滑动平滑时间")]
+    [SerializeField] private float scrollSmoothTime = 0.14f;
+    [Tooltip("未滑入窗口的牌从扇形外侧滑入/滑出的距离（槽位）")]
+    [SerializeField] private float overflowPeekSlots = 0.7f;
+
     [Header("卡牌预制体（按类型）")]
     [SerializeField] private GameObject attackCardPrefab;
     [FormerlySerializedAs("armorCardPrefab")] [SerializeField] private GameObject skillCardPrefab;
@@ -34,6 +46,11 @@ public class HandCardLayout : MonoBehaviour
     private readonly List<Vector3> _targetScales = new List<Vector3>();
     private int _hoveredIndex = -1;
     private int _draggedIndex = -1;
+    private float _scrollOffset;
+    private float _scrollTarget;
+    private float _scrollVelocity;
+    private int _siblingStamp = int.MinValue;
+    private readonly List<CanvasGroup> _cardCanvasGroups = new List<CanvasGroup>();
     private System.Action<int> _onCardClicked;
     private System.Action<int, UnityEngine.Vector2> _onCardDrop;
     private System.Action<int, UnityEngine.Vector2> _onCardDragOver;
@@ -118,6 +135,7 @@ public class HandCardLayout : MonoBehaviour
         _cardObjects.Clear();
         _cardDisplays.Clear();
         _cardDataRefs.Clear();
+        _cardCanvasGroups.Clear();
 
         // 创建新卡牌
         for (int i = 0; i < hand.Count; i++)
@@ -160,9 +178,15 @@ public class HandCardLayout : MonoBehaviour
             _cardObjects.Add(cardObj);
             _cardDisplays.Add(display);
             _cardDataRefs.Add(hand[i]);
+
+            var cg = cardObj.GetComponent<CanvasGroup>();
+            if (cg == null) cg = cardObj.AddComponent<CanvasGroup>();
+            _cardCanvasGroups.Add(cg);
         }
 
         _hoveredIndex = -1;
+        _siblingStamp = int.MinValue;
+        ClampScroll();
         CalculateLayout();
     }
 
@@ -194,16 +218,28 @@ public class HandCardLayout : MonoBehaviour
     public void SetHoveredIndex(int index)
     {
         if (_hoveredIndex == index) return;
-
-        if (_hoveredIndex >= 0 && _hoveredIndex < _cardObjects.Count && _cardObjects[_hoveredIndex] != null)
-            _cardObjects[_hoveredIndex].transform.SetSiblingIndex(_hoveredIndex);
-
         _hoveredIndex = index;
-
-        if (_hoveredIndex >= 0 && _hoveredIndex < _cardObjects.Count && _cardObjects[_hoveredIndex] != null)
-            _cardObjects[_hoveredIndex].transform.SetAsLastSibling();
-
         CalculateLayout();
+    }
+
+    private int VisibleSlotCount
+    {
+        get
+        {
+            int cap = Mathf.Max(1, maxVisibleCards);
+            return Mathf.Min(_cardObjects.Count, cap);
+        }
+    }
+
+    private float MaxScroll => Mathf.Max(0f, _cardObjects.Count - VisibleSlotCount);
+
+    private void ClampScroll()
+    {
+        float max = MaxScroll;
+        _scrollTarget = Mathf.Clamp(_scrollTarget, 0f, max);
+        _scrollOffset = Mathf.Clamp(_scrollOffset, 0f, max);
+        if (max <= 0f)
+            _scrollVelocity = 0f;
     }
 
     private void CalculateLayout()
@@ -215,18 +251,30 @@ public class HandCardLayout : MonoBehaviour
         int count = _cardObjects.Count;
         if (count == 0) return;
 
+        int vis = VisibleSlotCount;
+        bool windowed = count > vis;
+        float totalWidth = vis <= 1 ? 0f : (vis - 1) * cardSpacing;
+        float fanLeft = -totalWidth / 2f;
+        float peek = Mathf.Max(0.05f, overflowPeekSlots);
+
         for (int i = 0; i < count; i++)
         {
-            float t = count == 1 ? 0.5f : (float)i / (count - 1);
+            float slot = windowed ? i - _scrollOffset : i;
+            float displaySlot = windowed ? Mathf.Clamp(slot, -peek, vis - 1 + peek) : slot;
+
+            float t = vis <= 1 ? 0.5f : displaySlot / (vis - 1);
             float angle = Mathf.Lerp(-maxFanAngle / 2f, maxFanAngle / 2f, t);
             float rad = angle * Mathf.Deg2Rad;
-
-            float totalWidth = (count - 1) * cardSpacing;
-            float x = -totalWidth / 2f + i * cardSpacing;
+            float x = fanLeft + displaySlot * cardSpacing;
             float y = -fanRadius + Mathf.Cos(rad) * fanRadius;
 
-            float scale = 1f;
-            if (i == _hoveredIndex)
+            bool overflowHidden = windowed && (slot < -peek || slot > vis - 1 + peek);
+            float scale = overflowHidden ? 0.9f : 1f;
+            if (overflowHidden)
+                y -= 12f;
+
+            bool hoveredInFan = i == _hoveredIndex && !overflowHidden;
+            if (hoveredInFan)
             {
                 y += hoverYOffset;
                 scale = hoverScale;
@@ -236,6 +284,123 @@ public class HandCardLayout : MonoBehaviour
             _targetPositions.Add(new Vector3(x, y, 0));
             _targetRotations.Add(Quaternion.Euler(0, 0, -angle));
             _targetScales.Add(Vector3.one * scale);
+
+            bool interactable = !windowed || (slot >= -peek - 0.15f && slot <= vis - 1 + peek + 0.15f);
+            SetCardRaycast(i, interactable);
+        }
+
+        RefreshSiblingOrder(count, vis, windowed);
+    }
+
+    private void SetCardRaycast(int index, bool on)
+    {
+        if (index < 0 || index >= _cardCanvasGroups.Count) return;
+        var cg = _cardCanvasGroups[index];
+        if (cg == null) return;
+        cg.blocksRaycasts = on;
+        cg.interactable = on;
+    }
+
+    /// <summary>
+    /// 溢出牌叠在两侧时：深处的牌在后，窗口内的牌在前，悬停/拖拽的牌置顶。
+    /// </summary>
+    private void RefreshSiblingOrder(int count, int vis, bool windowed)
+    {
+        float peek = Mathf.Max(0.05f, overflowPeekSlots);
+        int windowStart = windowed ? Mathf.FloorToInt(_scrollOffset + peek) : 0;
+        int stamp = count * 397 ^ vis * 17 ^ windowStart ^ (_hoveredIndex + 3) * 31 ^ (_draggedIndex + 5);
+        if (stamp == _siblingStamp) return;
+        _siblingStamp = stamp;
+
+        int sibling = 0;
+        if (windowed)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (_cardObjects[i] == null) continue;
+                float slot = i - _scrollOffset;
+                if (slot < -peek)
+                    _cardObjects[i].transform.SetSiblingIndex(sibling++);
+            }
+
+            for (int i = count - 1; i >= 0; i--)
+            {
+                if (_cardObjects[i] == null) continue;
+                float slot = i - _scrollOffset;
+                if (slot > vis - 1 + peek)
+                    _cardObjects[i].transform.SetSiblingIndex(sibling++);
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                if (_cardObjects[i] == null) continue;
+                float slot = i - _scrollOffset;
+                if (slot >= -peek && slot <= vis - 1 + peek)
+                    _cardObjects[i].transform.SetSiblingIndex(sibling++);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (_cardObjects[i] != null)
+                    _cardObjects[i].transform.SetSiblingIndex(sibling++);
+            }
+        }
+
+        if (_hoveredIndex >= 0 && _hoveredIndex < count && _cardObjects[_hoveredIndex] != null)
+            _cardObjects[_hoveredIndex].transform.SetAsLastSibling();
+        if (_draggedIndex >= 0 && _draggedIndex < count && _cardObjects[_draggedIndex] != null)
+            _cardObjects[_draggedIndex].transform.SetAsLastSibling();
+    }
+
+    private bool TryGetLocalMouse(RectTransform rt, out Vector2 local)
+    {
+        local = default;
+        var canvas = GetComponentInParent<Canvas>();
+        Camera cam = null;
+        if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            cam = canvas.worldCamera;
+        return RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, Input.mousePosition, cam, out local);
+    }
+
+    private void UpdateOverflowScroll()
+    {
+        ClampScroll();
+        float maxScroll = MaxScroll;
+        if (maxScroll <= 0f)
+            return;
+
+        if (_draggedIndex < 0 && transform is RectTransform rt && TryGetLocalMouse(rt, out Vector2 local))
+        {
+            Rect r = rt.rect;
+            bool inHand =
+                local.x >= r.xMin && local.x <= r.xMax &&
+                local.y >= r.yMin - 80f && local.y <= r.yMax;
+
+            if (inHand)
+            {
+                int vis = VisibleSlotCount;
+                float totalWidth = vis <= 1 ? 0f : (vis - 1) * cardSpacing;
+                float fanLeft = -totalWidth / 2f;
+                float fanRight = totalWidth / 2f;
+                float zone = Mathf.Max(24f, edgeZoneWidth);
+
+                if (local.x <= fanLeft + zone)
+                    _scrollTarget -= scrollSpeed * Time.deltaTime;
+                else if (local.x >= fanRight - zone)
+                    _scrollTarget += scrollSpeed * Time.deltaTime;
+
+                _scrollTarget = Mathf.Clamp(_scrollTarget, 0f, maxScroll);
+            }
+        }
+
+        _scrollOffset = Mathf.SmoothDamp(
+            _scrollOffset, _scrollTarget, ref _scrollVelocity, Mathf.Max(0.04f, scrollSmoothTime));
+        if (Mathf.Abs(_scrollOffset - _scrollTarget) < 0.001f)
+        {
+            _scrollOffset = _scrollTarget;
+            _scrollVelocity = 0f;
         }
     }
 
@@ -258,11 +423,15 @@ public class HandCardLayout : MonoBehaviour
     private void Update()
     {
         if (_cardObjects.Count == 0) return;
-        float dt = Time.deltaTime * lerpSpeed;
 
+        UpdateOverflowScroll();
+        CalculateLayout();
+
+        float follow = 1f - Mathf.Exp(-lerpSpeed * Time.deltaTime);
         for (int i = 0; i < _cardObjects.Count; i++)
         {
             if (_cardObjects[i] == null) continue;
+            if (i >= _targetPositions.Count) continue;
             // 拖拽中的卡牌位置由拖拽处理器控制，布局不与其抢位
             if (i == _draggedIndex)
             {
@@ -270,9 +439,9 @@ public class HandCardLayout : MonoBehaviour
                 continue;
             }
             var trans = _cardObjects[i].transform;
-            trans.localPosition = Vector3.Lerp(trans.localPosition, _targetPositions[i], dt);
-            trans.localRotation = Quaternion.Slerp(trans.localRotation, _targetRotations[i], dt);
-            trans.localScale = Vector3.Lerp(trans.localScale, _targetScales[i], dt);
+            trans.localPosition = Vector3.Lerp(trans.localPosition, _targetPositions[i], follow);
+            trans.localRotation = Quaternion.Slerp(trans.localRotation, _targetRotations[i], follow);
+            trans.localScale = Vector3.Lerp(trans.localScale, _targetScales[i], follow);
         }
     }
 }
