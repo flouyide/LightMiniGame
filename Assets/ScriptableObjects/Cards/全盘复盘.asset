@@ -102,6 +102,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -170,6 +171,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u5168\u4F53\u7834\u7532"
@@ -239,6 +241,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -307,6 +310,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

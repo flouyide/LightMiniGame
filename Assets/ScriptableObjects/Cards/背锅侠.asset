@@ -25,8 +25,8 @@ MonoBehaviour:
   descBoxInset: 0
   grade: 2
   cardType: 0
-  existence: 0
-  lowSanityExistence: 0
+  existence: 1
+  lowSanityExistence: 1
   normalCost: 1
   lowSanityCost: 1
   price: 10
@@ -102,6 +102,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -170,6 +171,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 3"
     timing: 0
@@ -238,6 +240,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -307,6 +310,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -375,6 +379,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 3"
     timing: 0
@@ -443,6 +448,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

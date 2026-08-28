@@ -70,7 +70,7 @@ MonoBehaviour:
       logic: 0
       conditions: []
     duration:
-      type: 0
+      type: 6
       turns: 1
       triggerCount: 1
       expireAtTurnStart: 0
@@ -98,12 +98,13 @@ MonoBehaviour:
     zoneOperation: 0
     zoneCount:
       rid: 3513299765630337134
-    triggerEvent: 27
+    triggerEvent: 28
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u6548\u679C 1"
     timing: 0
@@ -160,6 +161,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 0
@@ -196,6 +198,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: 

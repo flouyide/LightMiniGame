@@ -102,6 +102,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3"
     timing: 0
@@ -158,6 +159,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 1
@@ -194,6 +196,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u4E3B\u4F24\u5BB3"
@@ -263,6 +266,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   - enabled: 1
     displayName: "\u66B4\u51FB\u8FFD\u52A0\u4F24\u5BB3"
     timing: 0
@@ -319,6 +323,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 0}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 1
@@ -355,6 +360,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: 
   references:

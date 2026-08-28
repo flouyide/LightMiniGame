@@ -90,6 +90,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 11400000, guid: 5b729929bac35443f9959511a2539644, type: 2}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 1
@@ -126,6 +127,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u72D9\u51FB\u4F24\u5BB3"
@@ -183,6 +185,7 @@ MonoBehaviour:
         cardPropertyType: 0
         chancePercent: 50
         customConditionScript: {fileID: 11400000, guid: 5b729929bac35443f9959511a2539644, type: 2}
+        cardRef: {fileID: 0}
         nestedGroups: []
     duration:
       type: 1
@@ -219,6 +222,7 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
   customCardScript: {fileID: 0}
   designerNotes: "\u70ED\u5EA6(Heat)\u4E3A\u81EA\u5B9A\u4E49\u5C5E\u6027\uFF0C\u9700\u6218\u6597\u7CFB\u7EDF\u5B9E\u73B0\u3002\u6761\u4EF6\u53EF\u901A\u8FC7\u81EA\u5B9A\u4E49\u6761\u4EF6\u811A\u672C\u5B9E\u73B0\u3002"
   references:
