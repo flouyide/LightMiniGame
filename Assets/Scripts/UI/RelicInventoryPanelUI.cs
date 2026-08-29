@@ -46,6 +46,7 @@ public class RelicInventoryPanelUI : MonoBehaviour
     private readonly List<CharacterData> _registeredCharacters = new List<CharacterData>();
     private int _currentCharacterIndex = -1;     // 当前选中角色的索引（_registeredCharacters 中）
     private readonly List<GameObject> _entryObjects = new List<GameObject>();
+    private readonly Dictionary<Button, ColorBlock> _characterButtonDefaultColors = new Dictionary<Button, ColorBlock>();
 
     // 暂停 & 背景屏蔽（与 CardLibraryPanelUI 同模式）
     private readonly List<Selectable> _disabledBackground = new List<Selectable>();
@@ -274,6 +275,8 @@ public class RelicInventoryPanelUI : MonoBehaviour
     {
         if (btn == null) return;
 
+        CacheCharacterButtonColors(btn);
+
         bool hasChar = index < _registeredCharacters.Count;
         btn.gameObject.SetActive(hasChar);   // 角色不足两个时隐藏多余按钮
         if (!hasChar) return;
@@ -316,12 +319,34 @@ public class RelicInventoryPanelUI : MonoBehaviour
     private void UpdateCharacterButtonHighlight(Button btn, int index, int activeIndex)
     {
         if (btn == null) return;
+
+        CacheCharacterButtonColors(btn);
+        bool active = (index == activeIndex);
+        var colors = _characterButtonDefaultColors[btn];
+        if (active)
+        {
+            // Button 的 Selected 状态会在点击列表或其它控件后丢失；
+            // 将当前角色按钮的所有交互状态固定为选中颜色，使展示内容与高亮状态保持一致。
+            colors.normalColor = colors.selectedColor;
+            colors.highlightedColor = colors.selectedColor;
+            colors.pressedColor = colors.selectedColor;
+        }
+
+        btn.colors = colors;
+        if (btn.targetGraphic != null)
+            btn.targetGraphic.color = colors.normalColor;
+
         var txt = btn.GetComponentInChildren<TextMeshProUGUI>();
         if (txt == null) return;
 
-        bool active = (index == activeIndex);
         txt.color = active ? new Color(0.95f, 0.85f, 0.45f) : new Color(0.65f, 0.6f, 0.55f);  // 亮黄 vs 灰
         txt.fontStyle = active ? FontStyles.Bold : FontStyles.Normal;
+    }
+
+    private void CacheCharacterButtonColors(Button btn)
+    {
+        if (btn != null && !_characterButtonDefaultColors.ContainsKey(btn))
+            _characterButtonDefaultColors.Add(btn, btn.colors);
     }
 
     #endregion
