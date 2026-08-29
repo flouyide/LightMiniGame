@@ -5569,8 +5569,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e81ec51de1eb242a6a763a4096bd03c3, type: 2}
   - {fileID: 11400000, guid: 94e7904ad44754c87b838b21980cecd7, type: 2}
   - {fileID: 11400000, guid: c4e8a1b27d5f4c9e8a3b6d1f0e7c2a95, type: 2}
-  persistFusion: 1
-  includeHPInFusion: 1
+  persistFusion: 0
+  includeHPInFusion: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
