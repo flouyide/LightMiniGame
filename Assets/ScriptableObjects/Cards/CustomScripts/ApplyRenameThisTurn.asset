@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 479dec800c3e34084aad5690fd7767af, type: 3}
   m_Name: ApplyRenameThisTurn
-  m_EditorClassIdentifier: Assembly-CSharp:LightMiniGame.CardEditor:ApplyRenameThisTurnEffect
-  replacementCard: {fileID: 11400000, guid: 9748c368e6c61b443b0b2168ff55f8e3, type: 2}
+  m_EditorClassIdentifier: 
+  replacementCard: {fileID: 0}
