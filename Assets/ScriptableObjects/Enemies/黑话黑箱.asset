@@ -35,4 +35,4 @@ MonoBehaviour:
   highSanityCardCount: 1
   lowSanityCardCount: 2
   abilities:
-  - relic: {fileID: 0}
+  - relic: {fileID: 11400000, guid: efccd5d6db8fad64cab3f06ace69d20a, type: 2}

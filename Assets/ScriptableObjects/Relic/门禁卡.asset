@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: AccessCard
   relicName: "\u95E8\u7981\u5361"
   description: "\u6BCF\u4E00\u7AE0\u989D\u5916\u589E\u52A0 3 \u6B21\u4E66\u9875\u9009\u62E9\u6B21\u6570\uFF08\u83B7\u5F97\u540E\u7ACB\u5373\u5728\u672C\u7AE0\u751F\u6548\uFF09"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f1db2c295afbfeb458362403a7929f94, type: 3}
   value: 40
   grade: 1
   sortOrder: 0
