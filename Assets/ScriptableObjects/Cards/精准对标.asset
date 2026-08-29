@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u66B4\u51FB\u62BD\u724C"
     timing: 0
@@ -197,6 +198,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u4F24\u5BB3"
@@ -267,6 +269,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u66B4\u51FB\u62BD\u724C"
     timing: 0
@@ -361,6 +364,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: "\u66B4\u51FB\u6761\u4EF6\u901A\u8FC7\u4E8B\u4EF6\u6761\u4EF6 OnCrit
     \u5B9E\u73B0\u3002"
