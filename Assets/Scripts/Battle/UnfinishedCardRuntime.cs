@@ -11,7 +11,7 @@ public sealed class UnfinishedCardRuntime
 {
     public const int DirtyWorkDamagePerStack = 3;
     public const int ImpostorStrengthCap = 3;
-    public const int MaxSummonedEnemies = 4;
+    public const int MaxSummonedEnemies = 3;
 
     private readonly BattleManager _battle;
     private readonly List<Action> _pendingAfterDraw = new List<Action>();
