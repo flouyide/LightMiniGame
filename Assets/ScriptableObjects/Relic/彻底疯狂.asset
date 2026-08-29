@@ -16,8 +16,8 @@ MonoBehaviour:
   relicName: "\u5F7B\u5E95\u75AF\u72C2\u9B54\u65B9"
   description: "\u6BCF\u6B21\u878D\u5408\u65F6\u603B\u6570\u503C +10"
   icon: {fileID: 21300000, guid: 43c19a4f17ef78a49803dc14a908e4d3, type: 3}
-  value: 100
-  grade: 0
+  value: 40
+  grade: 1
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.LuckyRingEffect
   effectParams:

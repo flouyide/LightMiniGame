@@ -16,8 +16,8 @@ MonoBehaviour:
   relicName: "\u7EED\u7EA6\u5408\u540C"
   description: "\u9996\u6B21\u6B7B\u4EA1\u540E\u56DE\u590D30%\u7684\u8840\u91CF\uFF0C\u4E4B\u540E\u8BE5\u9057\u7269\u5931\u6548"
   icon: {fileID: 21300000, guid: 2187dc005b6bcc148a45efe0c1823e86, type: 3}
-  value: 100
-  grade: 0
+  value: 45
+  grade: 1
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.ContractRenewalEffect
   effectParams:
