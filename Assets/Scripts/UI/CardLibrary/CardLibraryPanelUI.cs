@@ -50,7 +50,9 @@ public class CardLibraryPanelUI : MonoBehaviour
     private readonly List<CharacterData> _registeredCharacters = new List<CharacterData>();
     private int _currentCharacterIndex = -1;     // 当前选中角色的索引（_registeredCharacters 中）
     private readonly List<GameObject> _entryObjects = new List<GameObject>(); // 当前展示的卡面对象
+    private readonly Dictionary<Button, ColorBlock> _characterButtonDefaultColors = new Dictionary<Button, ColorBlock>();
     private Image characterAvatar;
+    private ScrollRect _cardScrollRect;
     
     // 删除模式（商店删牌用）：非 null 时，网格中的卡变为可点击按钮，点击触发该回调
     private Action<CardInstance, CharacterData> _cardClickHandler;
@@ -276,6 +278,10 @@ public class CardLibraryPanelUI : MonoBehaviour
             ApplyCardEntrySprites(go, inst.template);
             _entryObjects.Add(go);
 
+            // 普通浏览时卡面不拦截射线，确保滚轮事件落在 ScrollRect 的 Viewport 上。
+            // 删除/选择模式仍保留卡面点击能力。
+            SetCardRaycastTarget(go, _cardClickHandler != null);
+
             // 删除模式：让卡牌变为可点击按钮，点击触发回调
             if (_cardClickHandler != null)
             {
@@ -289,8 +295,47 @@ public class CardLibraryPanelUI : MonoBehaviour
             }
         }
 
-        // 强制刷新布局
+        RefreshScrollLayout();
+    }
+
+    /// <summary>
+    /// 牌库卡面在运行时动态创建，GridLayoutGroup 与 ContentSizeFitter 可能不会在同一帧
+    /// 及时更新 Content 高度，导致 ScrollRect 误判为无可滚动内容。
+    /// 这里显式绑定并重建滚动布局，确保鼠标拖拽、滚轮都能正常上下翻页。
+    /// </summary>
+    private void RefreshScrollLayout()
+    {
+        if (_cardScrollRect == null && panel != null)
+            _cardScrollRect = panel.GetComponentInChildren<ScrollRect>(true);
+
+        if (_cardScrollRect == null || gridContent == null)
+            return;
+
+        _cardScrollRect.content = gridContent as RectTransform;
+        _cardScrollRect.horizontal = false;
+        _cardScrollRect.vertical = true;
+        _cardScrollRect.movementType = ScrollRect.MovementType.Elastic;
+
+        // Viewport 原本不接收射线时，鼠标落在卡牌之间的空白区域不会有滚轮事件。
+        // 开启它的射线接收，使滚轮在整个牌库可视范围内都能被 ScrollRect 捕获。
+        var viewportGraphic = _cardScrollRect.viewport != null
+            ? _cardScrollRect.viewport.GetComponent<Graphic>()
+            : null;
+        if (viewportGraphic != null)
+            viewportGraphic.raycastTarget = true;
+
         Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gridContent as RectTransform);
+        Canvas.ForceUpdateCanvases();
+        _cardScrollRect.verticalNormalizedPosition = 1f;
+    }
+
+    private static void SetCardRaycastTarget(GameObject cardGo, bool enabled)
+    {
+        if (cardGo == null) return;
+
+        foreach (var graphic in cardGo.GetComponentsInChildren<Graphic>(true))
+            graphic.raycastTarget = enabled;
     }
 
     /// <summary>按卡牌类型选择对应的 Battle 卡面预制体。</summary>
@@ -530,6 +575,8 @@ public class CardLibraryPanelUI : MonoBehaviour
     {
         if (btn == null) return;
 
+        CacheCharacterButtonColors(btn);
+
         bool hasChar = index < _registeredCharacters.Count;
         btn.gameObject.SetActive(hasChar);   // 角色不足两个时隐藏多余按钮
         if (!hasChar) return;
@@ -572,12 +619,34 @@ public class CardLibraryPanelUI : MonoBehaviour
     private void UpdateCharacterButtonHighlight(Button btn, int index, int activeIndex)
     {
         if (btn == null) return;
+
+        CacheCharacterButtonColors(btn);
+        bool active = (index == activeIndex);
+        var colors = _characterButtonDefaultColors[btn];
+        if (active)
+        {
+            // Button 的 Selected 状态会在点击网格或其它控件后丢失；
+            // 将当前角色按钮的所有交互状态固定为选中颜色，使展示内容与高亮状态保持一致。
+            colors.normalColor = colors.selectedColor;
+            colors.highlightedColor = colors.selectedColor;
+            colors.pressedColor = colors.selectedColor;
+        }
+
+        btn.colors = colors;
+        if (btn.targetGraphic != null)
+            btn.targetGraphic.color = colors.normalColor;
+
         var txt = btn.GetComponentInChildren<TextMeshProUGUI>();
         if (txt == null) return;
 
-        bool active = (index == activeIndex);
         txt.color = active ? new Color(0.95f, 0.85f, 0.45f) : new Color(0.65f, 0.6f, 0.55f);  // 亮黄 vs 灰
         txt.fontStyle = active ? FontStyles.Bold : FontStyles.Normal;
+    }
+
+    private void CacheCharacterButtonColors(Button btn)
+    {
+        if (btn != null && !_characterButtonDefaultColors.ContainsKey(btn))
+            _characterButtonDefaultColors.Add(btn, btn.colors);
     }
 
     #endregion
