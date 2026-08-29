@@ -1230,7 +1230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 17.290009, y: -18.869995}
+  m_AnchoredPosition: {x: 17.290009, y: -7}
   m_SizeDelta: {x: -139.41, y: -100.63}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &314223494
@@ -1253,11 +1253,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u8BF7\u9009\u62E9\u4E24\u540D\u89D2\u8272\u5F00\u59CB\u6E38\u620F"
+  m_text: "\u8BF7\u9009\u62E9\u4E24\u540D\u89D2\u8272\u5165\u804C"
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
-  m_sharedMaterial: {fileID: -8530084090043915268, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d84f79b2e49a96c4891bfbefffbcc0ae, type: 2}
+  m_sharedMaterial: {fileID: 7148880879094119985, guid: d84f79b2e49a96c4891bfbefffbcc0ae, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -4617,7 +4617,7 @@ PrefabInstance:
     - target: {fileID: 6435492684188942134, guid: f63fcde336064a449b1363004f2adb07, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
+      objectReference: {fileID: 11400000, guid: d84f79b2e49a96c4891bfbefffbcc0ae, type: 2}
     - target: {fileID: 6435492684188942134, guid: f63fcde336064a449b1363004f2adb07, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 1
