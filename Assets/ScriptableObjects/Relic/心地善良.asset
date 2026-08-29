@@ -15,7 +15,7 @@ MonoBehaviour:
   relicId: PriestInit
   relicName: "\u7267\u5E08\u521D\u59CB\u9057\u7269"
   description: "\u7267\u5E08\u521D\u59CB\u9057\u7269"
-  icon: {fileID: 21300000, guid: 3ac39ab2332cbbe4abada3f400b12d5d, type: 3}
+  icon: {fileID: 21300000, guid: fd2efae7cdbdd0148a96f91677a2f19e, type: 3}
   value: 0
   grade: 0
   sortOrder: 0
