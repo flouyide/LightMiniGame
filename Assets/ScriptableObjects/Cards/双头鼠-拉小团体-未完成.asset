@@ -100,7 +100,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
+    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -170,7 +170,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
+    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -240,7 +240,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
+    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -311,7 +311,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
+    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -381,7 +381,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
+    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -451,7 +451,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
+    customOperation: {fileID: 11400000, guid: 55d72e436656940b68fd0fbf1f5403e6, type: 2}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0

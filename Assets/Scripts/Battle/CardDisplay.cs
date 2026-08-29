@@ -264,14 +264,19 @@ public class CardDisplay : MonoBehaviour
         KeywordTooltipOverlay.Reposition();
     }
 
-    /// <summary>生成词条提示文本（含锁定原因）</summary>
+    /// <summary>生成词条提示文本（含锁定原因/缠结提示）</summary>
     private string GetKeywordTooltipText()
     {
         var kw = CardKeywords.GetTooltip(keywords);
+        var extra = new System.Text.StringBuilder();
         var lockReason = _data != null ? _data.lockReason : null;
         if (!string.IsNullOrEmpty(lockReason))
-            return string.IsNullOrEmpty(kw) ? lockReason : kw + "\n" + lockReason;
-        return kw;
+            extra.AppendLine(lockReason);
+        if (_data != null && _data.statusCostBonus > 0)
+            extra.AppendLine($"缠结：费用+{_data.statusCostBonus}");
+        var extraText = extra.ToString().TrimEnd();
+        if (string.IsNullOrEmpty(extraText)) return kw;
+        return string.IsNullOrEmpty(kw) ? extraText : kw + "\n" + extraText;
     }
 
     /// <summary>设置词条展示顺序（加入先后）。null 则按枚举位顺序。</summary>
