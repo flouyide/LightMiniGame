@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa7a65bd6777a64a96d7cc180c1bd0f, type: 3}
+  m_Name: scavengerLiu
+  m_EditorClassIdentifier: 
+  characterId: scavengerLiu
+  displayName: scavengerLiu
+  avatar: {fileID: 21300000, guid: 5cf432eecb6554f449cc7e8f5fe21df1, type: 3}
+  description: "\u5728\u5E9F\u589F\u4E0E\u8D26\u76EE\u4E4B\u95F4\u5468\u65CB\u7684\u62FE\u8352\u8005\u3002\u64C5\u957F\u628A\u88AB\u9057\u5F03\u7684\u8D44\u6E90\u53D8\u6210\u7EE7\u7EED\u524D\u8FDB\u7684\u7B79\u7801\u3002"
+  startingLibrary: {fileID: 11400000, guid: 7a5de69b3a7d18f4dbce12c2f62b766a, type: 2}
+  startingRelics:
+  - {fileID: 11400000, guid: 848a8fcae01c28a40a990206cedabb98, type: 2}
+  maxLibrarySize: 100
