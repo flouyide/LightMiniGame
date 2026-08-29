@@ -1834,6 +1834,10 @@ PrefabInstance:
       propertyPath: m_Padding.m_Bottom
       value: 320
       objectReference: {fileID: 0}
+    - target: {fileID: 1001971982569757545, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_Padding.m_Top
+      value: -90
+      objectReference: {fileID: 0}
     - target: {fileID: 1044642063857900942, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
