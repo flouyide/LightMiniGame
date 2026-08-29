@@ -381,7 +381,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: 844d0e9f2e123406d8af20f48f8654a3, type: 2}
+    customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
     keywordToApply: 0
