@@ -15,7 +15,7 @@ MonoBehaviour:
   characterId: priestZhang
   displayName: priestZhang
   avatar: {fileID: 21300000, guid: fad4bfc0b364ea241b617564316e77b5, type: 3}
-  description: "将信仰与疗愈化作防线的牧师。善于维持队伍状态，在崩溃边缘拉回同伴。"
+  description: "\"\u53EA\u8981\u6211\u591F\u52AA\u529B\uFF0C\u603B\u4F1A\u88AB\u770B\u89C1\u7684\u3002\"\r\n\u5979\u628A\u6BCF\u4E00\u4EFD\u6D3B\u90FD\u63FD\u8FDB\u6000\u91CC\uFF0C\u628A\u6BCF\u4E00\u6B21\u71AC\u591C\u90FD\u5F53\u6210\u52CB\u7AE0\u3002\u5F53\u7CBE\u795E\u70E7\u5230\u5C3D\u5934\uFF0C\u53CD\u800C\u7206\u53D1\u51FA\u60CA\u4EBA\u7684\u529B\u91CF\u3002"
   startingLibrary: {fileID: 11400000, guid: 6b804e5802a4ee046bb33c71d0eb50ba, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: 8f7ddc6a4bd10094486e4656cb17e063, type: 2}
