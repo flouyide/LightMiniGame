@@ -2329,7 +2329,7 @@ PrefabInstance:
     - target: {fileID: 6989493030389473068, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: relicItemPrefab
       value: 
-      objectReference: {fileID: 1450422795469039436, guid: 2fb4235ca2af82e4294d6c4b5a6fae5c, type: 3}
+      objectReference: {fileID: 1450422795469039436, guid: c25a383677ad4fc5b60a9b7d262092f7, type: 3}
     - target: {fileID: 6989493030389473068, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: deleteCardPrefab
       value: 
