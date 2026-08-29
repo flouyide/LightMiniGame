@@ -16,8 +16,8 @@ MonoBehaviour:
   relicName: "\u8BA1\u7B97\u5668"
   description: "\u6BCF\u6253\u51FA\u7B2C\u4E94\u5F20\u724C\u8D39\u7528 -1"
   icon: {fileID: 0}
-  value: 100
-  grade: 0
+  value: 30
+  grade: 1
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.CalculatorEffect
   effectParams:
