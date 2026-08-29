@@ -1102,6 +1102,63 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
+  - eventId: ch1_event_wnhds
+    displayName: "\u201D\u4E3A\u4F60\u597D\u201C\u5BFC\u5E08"
+    description: 
+    icon: {fileID: 0}
+    eventType: 0
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
+    enemies:
+    - config: {fileID: 11400000, guid: 8736b52da1f1bfa4e940c4573b72105c, type: 2}
+      anchoredPosition: {x: 0, y: -50}
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
   NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   sanityThreshold: 5
