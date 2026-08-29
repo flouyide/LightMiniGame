@@ -890,8 +890,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_rest
-    displayName: 
-    description: 
+    displayName: "\u8336\u6C34\u95F4"
+    description: "\u56DE\u590D30%\u8840\u91CF"
     icon: {fileID: 0}
     eventType: 2
     isRepeatable: 1
@@ -945,8 +945,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_rest
-    displayName: 
-    description: 
+    displayName: "\u8336\u6C34\u95F4"
+    description: "\u56DE\u590D30%\u8840\u91CF"
     icon: {fileID: 0}
     eventType: 2
     isRepeatable: 1
@@ -1000,8 +1000,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_shop
-    displayName: 
-    description: 
+    displayName: "\u597D\u7269\u5546\u5E97"
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
     icon: {fileID: 0}
     eventType: 1
     isRepeatable: 1
@@ -1055,8 +1055,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_shop
-    displayName: 
-    description: 
+    displayName: "\u597D\u7269\u5546\u5E97"
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
     icon: {fileID: 0}
     eventType: 1
     isRepeatable: 1

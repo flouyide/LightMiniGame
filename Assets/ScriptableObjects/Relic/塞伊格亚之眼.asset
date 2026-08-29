@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u585E\u4F0A\u683C\u4E9A\u4E4B\u773C"
+  m_EditorClassIdentifier: 
+  relicId: saiyigeya
+  relicName: "\u585E\u4F0A\u683C\u4E9A\u4E4B\u773C"
+  description: "\u798F\u62A5\u9B54\u65B9\u53EF\u4FEE\u6539\u66F4\u591A\u6570\u503C"
+  icon: {fileID: 21300000, guid: a8cd56f178ead474a9601c854b9e5a23, type: 3}
+  value: 100
+  grade: 2
+  sortOrder: 0
+  effectScriptName: 
+  effectParams: []
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 0}

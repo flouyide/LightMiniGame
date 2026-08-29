@@ -22,7 +22,7 @@ MonoBehaviour:
   maxActionPoints: 3
   drawPerTurn: 5
   fusionUsesPerTurn: 1
-  strength: 0
+  strength: 1000
   dexterity: 0
   lifesteal: 0
   critRate: 0

@@ -379,7 +379,6 @@ MonoBehaviour:
   titleText: {fileID: 9143483937642539495}
   descText: {fileID: 4001628086425171282}
   cardButton: {fileID: 9156259663493027503}
-  finalNodeIndicator: {fileID: 7520450307443419937}
   deleteButton: {fileID: 8153353738604125650}
   deleteButtonText: {fileID: 1226831289012836784}
   showDeleteOnBattle: 0

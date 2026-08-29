@@ -104,7 +104,9 @@ public class LootCardPanelUI : MonoBehaviour
         // 按白色背景自动缩放卡牌：n 张牌（默认 3 张）统一缩放铺满 CardLayer
         var cardRT = cardPrefab.GetComponent<RectTransform>();
         float baseW = cardRT != null ? cardRT.rect.width : 180f;
+
         float baseH = cardRT != null ? cardRT.rect.height : 252f;
+   
         float scale = ComputeFillScale(cards.Count, baseW, baseH);
 
         // 实例化候选卡牌（按铺满缩放）

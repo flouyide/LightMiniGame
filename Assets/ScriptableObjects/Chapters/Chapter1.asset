@@ -884,7 +884,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_shop
     displayName: "\u597D\u7269\u5546\u5E97"
-    description: 
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
     icon: {fileID: 0}
     eventType: 1
     isRepeatable: 1
@@ -939,7 +939,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_shop
     displayName: "\u597D\u7269\u5546\u5E97"
-    description: 
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
     icon: {fileID: 0}
     eventType: 1
     isRepeatable: 1
@@ -993,8 +993,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_rest
-    displayName: "\u56DE\u590D30%\u8840\u91CF"
-    description: 
+    displayName: "\u8336\u6C34\u95F4"
+    description: "\u56DE\u590D30%\u8840\u91CF"
     icon: {fileID: 0}
     eventType: 2
     isRepeatable: 1
@@ -1048,8 +1048,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_rest
-    displayName: "\u56DE\u590D30%\u8840\u91CF"
-    description: 
+    displayName: "\u8336\u6C34\u95F4"
+    description: "\u56DE\u590D30%\u8840\u91CF"
     icon: {fileID: 0}
     eventType: 2
     isRepeatable: 1
@@ -1153,7 +1153,25 @@ MonoBehaviour:
     - config: {fileID: 11400000, guid: 8736b52da1f1bfa4e940c4573b72105c, type: 2}
       anchoredPosition: {x: 0, y: -50}
     lootTable:
-      entries: []
+      entries:
+      - kind: 0
+        currencyAmount: 20
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 
+      - kind: 1
+        currencyAmount: 0
+        cardRarities: 0100000000000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 
+      - kind: 2
+        currencyAmount: 0
+        cardRarities: 0100000000000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 0000000001000000
     normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
     backgroundSanityThreshold: 4
