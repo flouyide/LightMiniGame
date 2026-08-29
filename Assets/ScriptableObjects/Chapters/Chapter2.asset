@@ -1109,6 +1109,6 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
-  NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
-  AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
+  NormalBG: {fileID: 21300000, guid: cbf53323245b401418f4adcf1ee4d8c2, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: cbf53323245b401418f4adcf1ee4d8c2, type: 3}
   sanityThreshold: 5

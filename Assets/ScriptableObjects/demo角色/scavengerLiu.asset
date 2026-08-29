@@ -15,7 +15,7 @@ MonoBehaviour:
   characterId: scavengerLiu
   displayName: scavengerLiu
   avatar: {fileID: 21300000, guid: 5cf432eecb6554f449cc7e8f5fe21df1, type: 3}
-  description: "\u5728\u5E9F\u589F\u4E0E\u8D26\u76EE\u4E4B\u95F4\u5468\u65CB\u7684\u62FE\u8352\u8005\u3002\u64C5\u957F\u628A\u88AB\u9057\u5F03\u7684\u8D44\u6E90\u53D8\u6210\u7EE7\u7EED\u524D\u8FDB\u7684\u7B79\u7801\u3002"
+  description: "\"\u8FD9\u6D3B\u513F\uFF1F\u884C\u884C\u884C\uFF0C\u56DE\u5934\u5C31\u5F04\u3002\"\uFF08\u4ED6\u4E0D\u4F1A\u5F04\u7684\u3002\uFF09\u810F\u6D3B\u7D2F\u6D3B\u5168\u5F80\u4ED6\u624B\u91CC\u585E\uFF0C\u4ED6\u5374\u534A\u70B9\u4E0D\u5F80\u5FC3\u91CC\u53BB\uFF0C\u53EA\u6709\u4ED6\u8FD8\u540A\u513F\u90CE\u5F53\u5730\u6D3B\u7740\u3002\r\n"
   startingLibrary: {fileID: 11400000, guid: 7a5de69b3a7d18f4dbce12c2f62b766a, type: 2}
   startingRelics:
   - {fileID: 11400000, guid: 848a8fcae01c28a40a990206cedabb98, type: 2}
