@@ -129,7 +129,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 8
+    operation: 14
     value:
       rid: 3513299765630337311
     repeatCount:
@@ -154,16 +154,16 @@ MonoBehaviour:
     armorBreakValue:
       rid: 3513299765630337313
     countAsAttack: 1
-    resourceType: 2
+    resourceType: 4
     resourceOp: 0
     attributeType: 1
-    statusType: 12
+    statusType: 0
     statusValue:
       rid: 3513299765630337314
     stackMode: 0
     sourceZone: 0
     destinationZone: 0
-    zoneOperation: 13
+    zoneOperation: 0
     zoneCount:
       rid: 3513299765630337315
     triggerEvent: 27
@@ -184,7 +184,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 2
+        intValue: 1
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -328,7 +328,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: -1
+        intValue: 1
         floatValue: 0
         attributeRef: 1
         resourceRef: 1

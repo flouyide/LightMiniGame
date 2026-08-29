@@ -126,7 +126,7 @@ MonoBehaviour:
         discountRatio: 0.5
         enterBattleEnemies: []
     enemies:
-    - config: {fileID: 11400000, guid: e1ae5ac7568c1b74a87377927f327496, type: 2}
+    - config: {fileID: 11400000, guid: 7b6a483dfbeee4c46b397d2afc305dd9, type: 2}
       anchoredPosition: {x: -300, y: -100}
     lootTable:
       entries:

@@ -16,7 +16,7 @@ MonoBehaviour:
   cardName: "\u5931\u53BB\u771F\u540D\u7684\u5361"
   normalDescription: "\u9020\u6210{6+\u529B\u91CF}\u4F24\u5BB3"
   lowSanityDescription: "\u9020\u6210{6+\u529B\u91CF}\u4F24\u5BB3"
-  cardArt: {fileID: 21300000, guid: 7c3c42d08fe8a794298ee8ac0d891271, type: 3}
+  cardArt: {fileID: 21300000, guid: 233fc305df306c745bdc4af2e911ad21, type: 3}
   descBoxSprite: {fileID: 21300000, guid: 43e189e3b10da0349a54dde26445ecfa, type: 3}
   typeBoxSprite: {fileID: 0}
   descBoxOffsetX: -1

@@ -240,7 +240,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: 9aca1386386734e30815024ea1bc4264, type: 2}
+    customOperation: {fileID: 0}
     customParams: '{"count":3}'
     createdCard: {fileID: 0}
     keywordToApply: 0
@@ -451,7 +451,7 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 11400000, guid: 9aca1386386734e30815024ea1bc4264, type: 2}
+    customOperation: {fileID: 0}
     customParams: '{"count":3}'
     createdCard: {fileID: 0}
     keywordToApply: 0
