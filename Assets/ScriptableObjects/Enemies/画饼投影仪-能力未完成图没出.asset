@@ -33,6 +33,6 @@ MonoBehaviour:
   damageTakenMultiplier: 100
   fatigue: 0
   highSanityCardCount: 1
-  lowSanityCardCount: 1
+  lowSanityCardCount: 2
   abilities:
   - relic: {fileID: 11400000, guid: a2aa44ed1cbb80f4e9e95e221bf9d1b7, type: 2}

@@ -11,9 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c4e9b2a1d8f4e6c9a3b5d7e1f0c2a48, type: 3}
   m_Name: "\u70ED\u5EA6Buff"
-  m_EditorClassIdentifier:
-  buffName: "热度"
-  icon: {fileID: 21300000, guid: e6924a7fcdaac514a9fb47b23402d68d, type: 3}
+  m_EditorClassIdentifier: 
+  buffName: "\u70ED\u5EA6"
+  icon: {fileID: 21300000, guid: cfced5b55feb5e04aa1b320360bb52e6, type: 3}
   attributeType: 9
   minValue: 0
-  description: "打出攻击牌增加热度。热度达到 25 时过载，手牌费用 +1。"
+  description: "\u6253\u51FA\u653B\u51FB\u724C\u589E\u52A0\u70ED\u5EA6\u3002\u70ED\u5EA6\u8FBE\u5230
+    25 \u65F6\u8FC7\u8F7D\uFF0C\u624B\u724C\u8D39\u7528 +1\u3002"

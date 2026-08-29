@@ -11,13 +11,14 @@ public sealed class UnfinishedCardRuntime
 {
     public const int DirtyWorkDamagePerStack = 3;
     public const int ImpostorStrengthCap = 3;
-    public const int MaxSummonedEnemies = 4;
+    public const int MaxSummonedEnemies = 3;
 
     private readonly BattleManager _battle;
     private readonly List<Action> _pendingAfterDraw = new List<Action>();
     private readonly HashSet<CardData> _lockedNextTurn = new HashSet<CardData>();
     private int _entangleStacks;
     private int _dirtyWorkStacks;
+    private int _handCostReductionThisTurn;
 
     public UnfinishedCardRuntime(BattleManager battle)
     {
@@ -31,9 +32,10 @@ public sealed class UnfinishedCardRuntime
     public void Clear()
     {
         _pendingAfterDraw.Clear();
-        _lockedNextTurn.Clear();
+        ClearLocks();
         _entangleStacks = 0;
         _dirtyWorkStacks = 0;
+        _handCostReductionThisTurn = 0;
         SyncHandCostBonus();
     }
 
@@ -71,7 +73,8 @@ public sealed class UnfinishedCardRuntime
 
     public void OnPlayerTurnEnded()
     {
-        _lockedNextTurn.Clear();
+        ClearLocks();
+        _handCostReductionThisTurn = 0;
         if (_entangleStacks > 0)
         {
             _entangleStacks--;
@@ -110,11 +113,21 @@ public sealed class UnfinishedCardRuntime
     {
         var hand = _battle.HandCards;
         if (hand == null) return;
+        int bonus = _entangleStacks - _handCostReductionThisTurn;
         for (int i = 0; i < hand.Count; i++)
         {
             if (hand[i] != null)
-                hand[i].statusCostBonus = _entangleStacks;
+                hand[i].statusCostBonus = bonus;
         }
+    }
+
+    /// <summary>本回合手牌费用减少指定值（如"周末补觉"打出后全手牌-1费）。</summary>
+    public void ReduceHandCostThisTurn(int amount)
+    {
+        _handCostReductionThisTurn += amount;
+        SyncHandCostBonus();
+        _battle.RefreshHandDisplays();
+        Debug.Log($"[UnfinishedCard] 手牌费用-{amount}（累计-{_handCostReductionThisTurn}）");
     }
 
     private void ApplyCeilHalfLock()
@@ -128,8 +141,19 @@ public sealed class UnfinishedCardRuntime
             var card = _battle.EnsureRuntimeCard(hand[i]);
             if (card == null) continue;
             _lockedNextTurn.Add(card);
+            card.lockReason = "考勤警告：本回合无法打出";
         }
         Debug.Log($"[UnfinishedCard] {n} 张手牌下回合无法打出（向上取整半数）");
+    }
+
+    private void ClearLocks()
+    {
+        if (_lockedNextTurn.Count > 0)
+        {
+            foreach (var card in _lockedNextTurn)
+                if (card != null) card.lockReason = "";
+        }
+        _lockedNextTurn.Clear();
     }
 
     private List<CardData> CopyHand()

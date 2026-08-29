@@ -111,6 +111,9 @@ public class CardData : ScriptableObject
     /// <summary>战斗内 CreateInstance / Instantiate 的副本。为 false 时改词条必须先克隆，避免写回卡牌资产。</summary>
     [NonSerialized] public bool isRuntimeInstance;
 
+    /// <summary>本回合无法打出的原因（如"考勤警告"）。空字符串=可正常打出。不写入资产。</summary>
+    [NonSerialized] public string lockReason = "";
+
     /// <summary>该卡是否带指定词条。</summary>
     public bool HasKeyword(KeywordType k) => CardKeywords.Has(keywords, k);
 

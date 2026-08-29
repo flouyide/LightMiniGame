@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u66B4\u8E81\u5927\u54E5"
   m_EditorClassIdentifier: 
   enemyName: "\u66B4\u8E81\u5927\u54E5"
-  maxHP: 50
+  maxHP: 200
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: ee6c227d905fef24db50a8e620c10bae, type: 3}
   phase2Portrait: {fileID: 21300000, guid: ee6c227d905fef24db50a8e620c10bae, type: 3}
@@ -31,6 +31,7 @@ MonoBehaviour:
   dexterity: 0
   damageDealtMultiplier: 100
   damageTakenMultiplier: 100
+  fatigue: 0
   highSanityCardCount: 1
-  lowSanityCardCount: 1
+  lowSanityCardCount: 2
   abilities: []

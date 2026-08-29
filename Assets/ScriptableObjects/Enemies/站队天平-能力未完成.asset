@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u7AD9\u961F\u5929\u5E73-\u80FD\u529B\u672A\u5B8C\u6210"
   m_EditorClassIdentifier: 
   enemyName: "\u7AD9\u961F\u5929\u5E73-\u80FD\u529B\u672A\u5B8C\u6210"
-  maxHP: 160
+  maxHP: 300
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: 479ffe1c434a8594290d179ba55b7f84, type: 3}
   phase2Portrait: {fileID: 21300000, guid: 479ffe1c434a8594290d179ba55b7f84, type: 3}

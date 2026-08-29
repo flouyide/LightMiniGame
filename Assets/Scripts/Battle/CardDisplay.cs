@@ -212,24 +212,71 @@ public class CardDisplay : MonoBehaviour
     /// <summary>悬浮时显示词条提示，移开时隐藏</summary>
     public void ShowKeywordTooltip(bool show)
     {
-        if (keywordTooltip == null) return;
-        if (!show) { keywordTooltip.SetActive(false); return; }
+        if (!show)
+        {
+            if (keywordTooltip != null)
+                keywordTooltip.SetActive(false);
+            else
+                KeywordTooltipOverlay.Hide(transform as RectTransform);
+            return;
+        }
 
         var desc = GetKeywordTooltipText();
-        if (string.IsNullOrEmpty(desc)) { keywordTooltip.SetActive(false); return; }
-
-        if (tooltipText != null)
+        if (string.IsNullOrEmpty(desc))
         {
-            tooltipText.text = desc;
-            tooltipText.color = tooltipTextColor;
+            if (keywordTooltip != null)
+                keywordTooltip.SetActive(false);
+            else
+                KeywordTooltipOverlay.Hide(transform as RectTransform);
+            return;
         }
-        keywordTooltip.SetActive(true);
+
+        if (keywordTooltip != null)
+        {
+            if (tooltipText != null)
+            {
+                tooltipText.text = desc;
+                tooltipText.color = tooltipTextColor;
+            }
+            keywordTooltip.SetActive(true);
+        }
+        else
+        {
+            KeywordTooltipOverlay.Show(transform as RectTransform, desc, tooltipBgColor, tooltipTextColor, ResolveFont());
+        }
     }
 
-    /// <summary>生成词条提示文本</summary>
+    private TMP_FontAsset ResolveFont()
+    {
+        if (nameText != null && nameText.font != null) return nameText.font;
+        if (descText != null && descText.font != null) return descText.font;
+        if (costText != null && costText.font != null) return costText.font;
+        return null;
+    }
+
+    private void OnDisable()
+    {
+        KeywordTooltipOverlay.Hide(transform as RectTransform);
+    }
+
+    private void LateUpdate()
+    {
+        KeywordTooltipOverlay.Reposition();
+    }
+
+    /// <summary>生成词条提示文本（含锁定原因/缠结提示）</summary>
     private string GetKeywordTooltipText()
     {
-        return CardKeywords.GetTooltip(keywords);
+        var kw = CardKeywords.GetTooltip(keywords);
+        var extra = new System.Text.StringBuilder();
+        var lockReason = _data != null ? _data.lockReason : null;
+        if (!string.IsNullOrEmpty(lockReason))
+            extra.AppendLine(lockReason);
+        if (_data != null && _data.statusCostBonus > 0)
+            extra.AppendLine($"缠结：费用+{_data.statusCostBonus}");
+        var extraText = extra.ToString().TrimEnd();
+        if (string.IsNullOrEmpty(extraText)) return kw;
+        return string.IsNullOrEmpty(kw) ? extraText : kw + "\n" + extraText;
     }
 
     /// <summary>设置词条展示顺序（加入先后）。null 则按枚举位顺序。</summary>
@@ -1546,4 +1593,106 @@ public class CardDisplay : MonoBehaviour
         UpdateDisplay();
     }
 #endif
+}
+
+/// <summary>全屏画布上唯一的词条说明框，始终画在最上层，定位在卡牌正上方。</summary>
+internal static class KeywordTooltipOverlay
+{
+    private static RectTransform _root;
+    private static TextMeshProUGUI _body;
+    private static RectTransform _shownFor;
+    private static RectTransform _canvasRT;
+    private static Camera _canvasCam;
+
+    public static void Show(RectTransform card, string text, Color bgColor, Color textColor, TMP_FontAsset font)
+    {
+        if (card == null) return;
+        Ensure(font, bgColor);
+        if (_root == null) return;
+
+        _shownFor = card;
+        _body.text = text;
+        _body.color = textColor;
+        if (font != null) _body.font = font;
+
+        _root.gameObject.SetActive(true);
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
+
+        var canvas = card.GetComponentInParent<Canvas>();
+        if (canvas != null) canvas = canvas.rootCanvas;
+        if (canvas == null) return;
+        _canvasRT = canvas.transform as RectTransform;
+        _canvasCam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        _root.SetParent(_canvasRT, false);
+        _root.SetAsLastSibling();
+
+        Reposition();
+    }
+
+    public static void Hide(RectTransform card)
+    {
+        if (card != null && _shownFor != card) return;
+        _shownFor = null;
+        if (_root != null)
+            _root.gameObject.SetActive(false);
+    }
+
+    public static void Reposition()
+    {
+        if (_root == null || !_root.gameObject.activeSelf || _shownFor == null || _canvasRT == null) return;
+
+        Vector3[] corners = new Vector3[4];
+        _shownFor.GetWorldCorners(corners);
+        Vector3 topCenter = (corners[1] + corners[2]) * 0.5f;
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(_canvasCam, topCenter);
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRT, screen, _canvasCam, out Vector2 local))
+            return;
+
+        _root.anchorMin = _root.anchorMax = new Vector2(0.5f, 0.5f);
+        _root.pivot = new Vector2(0.5f, 0f);
+        _root.anchoredPosition = local + new Vector2(0f, 8f);
+    }
+
+    private static void Ensure(TMP_FontAsset font, Color bgColor)
+    {
+        if (_root != null) return;
+
+        var go = new GameObject("KeywordTooltip", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        _root = go.GetComponent<RectTransform>();
+        _root.sizeDelta = new Vector2(220f, 40f);
+
+        var bg = go.GetComponent<Image>();
+        bg.color = bgColor;
+        bg.raycastTarget = false;
+
+        var vlg = go.GetComponent<VerticalLayoutGroup>();
+        vlg.padding = new RectOffset(10, 10, 8, 8);
+        vlg.spacing = 0f;
+        vlg.childAlignment = TextAnchor.UpperCenter;
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = true;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+
+        var fitter = go.GetComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var labelGo = new GameObject("Body", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        labelGo.transform.SetParent(go.transform, false);
+        _body = labelGo.GetComponent<TextMeshProUGUI>();
+        if (font != null) _body.font = font;
+        _body.fontSize = 14;
+        _body.color = new Color(0.85f, 0.8f, 0.95f, 1f);
+        _body.alignment = TextAlignmentOptions.Top;
+        _body.enableWordWrapping = true;
+        _body.overflowMode = TextOverflowModes.Overflow;
+        _body.raycastTarget = false;
+        var le = labelGo.AddComponent<LayoutElement>();
+        le.preferredWidth = 200f;
+
+        go.SetActive(false);
+    }
 }
