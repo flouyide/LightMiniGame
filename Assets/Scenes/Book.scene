@@ -1253,7 +1253,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u8BF7\u9009\u62E9\u4E24\u540D\u89D2\u8272\u5165\u804C"
+  m_text: "\u9009\u62E9\u4F60\u7684\u804C\u573A\u642D\u5B50\uFF1A\n\uFF08\u9009\u62E9\u4E24\u4F4D\u89D2\u8272\u5F00\u59CB\u6E38\u620F\uFF09"
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d84f79b2e49a96c4891bfbefffbcc0ae, type: 2}
@@ -1833,6 +1833,10 @@ PrefabInstance:
     - target: {fileID: 979241303717941953, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Padding.m_Bottom
       value: 320
+      objectReference: {fileID: 0}
+    - target: {fileID: 1001971982569757545, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_Padding.m_Top
+      value: -90
       objectReference: {fileID: 0}
     - target: {fileID: 1044642063857900942, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_AnchorMax.y

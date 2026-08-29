@@ -889,63 +889,6 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
-  - eventId: ch1_event_wnhds
-    displayName: "\u4E3A\u4F60\u597D\u5BFC\u5E08"
-    description: 
-    icon: {fileID: 0}
-    eventType: 0
-    isRepeatable: 0
-    isFinalNode: 0
-    mutuallyExclusiveIds: []
-    followUpIds: []
-    prerequisiteIds: []
-    options:
-    - optionText: "\u7ED9\u5F00\u5173\u4E00\u62F3\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\u201C\u6076\u610F\u4E0D\u606F\u201D\uFF09"
-      effects:
-      - type: 11
-        amount: 0
-        itemDesc: 
-        attributeOp: 0
-        targetAttribute: 5
-        relic: {fileID: 0}
-        card: {fileID: 11400000, guid: 1c593927656f2264db66aba1ef873064, type: 2}
-        keywordToAdd: 0
-        discountRatio: 0
-        enterBattleEnemies: []
-    - optionText: "\u4FEE\u590D\u706F\u6CE1\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\u201C\u6B8B\u5B58\u4E4B\u5149\u201D\uFF09"
-      effects:
-      - type: 10
-        amount: 0
-        itemDesc: 
-        attributeOp: 0
-        targetAttribute: 5
-        relic: {fileID: 11400000, guid: a97bc92ee45145b498a0e6d1243f42d2, type: 2}
-        card: {fileID: 0}
-        keywordToAdd: 0
-        discountRatio: 0
-        enterBattleEnemies: []
-    enemies:
-    - config: {fileID: 11400000, guid: 8736b52da1f1bfa4e940c4573b72105c, type: 2}
-      anchoredPosition: {x: 0, y: -50}
-    lootTable:
-      entries:
-      - kind: 0
-        currencyAmount: 10
-        cardRarities: 
-        cardDrawCount: 0
-        cardPickCount: 0
-        relicRarities: 
-      - kind: 1
-        currencyAmount: 10
-        cardRarities: 0000000001000000
-        cardDrawCount: 3
-        cardPickCount: 1
-        relicRarities: 
-    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
-    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
-    backgroundSanityThreshold: 4
-    restHealingPercent: 30
-    defaultEffects: []
   - eventId: ch1_event_rest
     displayName: 
     description: 
@@ -1166,6 +1109,6 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
-  NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
-  AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
+  NormalBG: {fileID: 21300000, guid: cbf53323245b401418f4adcf1ee4d8c2, type: 3}
+  AbnormalBG: {fileID: 21300000, guid: cbf53323245b401418f4adcf1ee4d8c2, type: 3}
   sanityThreshold: 5

@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -172,6 +173,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 3"
     timing: 0
@@ -197,7 +199,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 12
+    operation: 0
     value:
       rid: 3513299765630337226
     repeatCount:
@@ -241,6 +243,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes:
   - enabled: 1
     displayName: "\u6548\u679C 1"
@@ -311,6 +314,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 2"
     timing: 0
@@ -380,6 +384,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u6548\u679C 3"
     timing: 0
@@ -449,6 +454,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   customCardScript: {fileID: 0}
   designerNotes: 
   references:
@@ -618,7 +624,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 0
+        intValue: 8
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -633,13 +639,13 @@ MonoBehaviour:
     - rid: 3513299765630337227
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
-        nodeType: 0
+        nodeType: 6
         intValue: 1
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
         statusRef: 0
-        counterRef: 0
+        counterRef: 15
         flagRef: 7
         variableName: 
         resultRef: 1

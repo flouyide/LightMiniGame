@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1aa7a65bd6777a64a96d7cc180c1bd0f, type: 3}
-  m_Name: "\u62FE\u8352\u8005"
+  m_Name: scavengerLiu
   m_EditorClassIdentifier: 
   characterId: scavengerLiu
   displayName: scavengerLiu

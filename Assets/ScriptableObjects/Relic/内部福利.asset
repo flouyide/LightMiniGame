@@ -17,8 +17,8 @@ MonoBehaviour:
   description: "\u63A5\u4E0B\u6765\u7684\u6240\u6709\u666E\u901A\u5546\u5E97\uFF0C\u6240\u6709\u5546\u54C1
     5 \u6298"
   icon: {fileID: 21300000, guid: ad2ea6d9145ad624c966283625da84f9, type: 3}
-  value: 100
-  grade: 0
+  value: 30
+  grade: 1
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.InternalBenefitEffect
   effectParams:

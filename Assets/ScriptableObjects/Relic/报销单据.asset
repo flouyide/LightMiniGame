@@ -16,7 +16,7 @@ MonoBehaviour:
   relicName: "\u62A5\u9500\u5355\u636E"
   description: "\u6BCF\u6D88\u8017 3 \u5F20\u724C\uFF0C\u6062\u590D 1 \u70B9\u884C\u52A8\u70B9"
   icon: {fileID: 0}
-  value: 100
+  value: 15
   grade: 0
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.ExpenseReceiptEffect
