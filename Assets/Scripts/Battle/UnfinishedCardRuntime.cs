@@ -31,7 +31,7 @@ public sealed class UnfinishedCardRuntime
     public void Clear()
     {
         _pendingAfterDraw.Clear();
-        _lockedNextTurn.Clear();
+        ClearLocks();
         _entangleStacks = 0;
         _dirtyWorkStacks = 0;
         SyncHandCostBonus();
@@ -71,7 +71,7 @@ public sealed class UnfinishedCardRuntime
 
     public void OnPlayerTurnEnded()
     {
-        _lockedNextTurn.Clear();
+        ClearLocks();
         if (_entangleStacks > 0)
         {
             _entangleStacks--;
@@ -128,8 +128,19 @@ public sealed class UnfinishedCardRuntime
             var card = _battle.EnsureRuntimeCard(hand[i]);
             if (card == null) continue;
             _lockedNextTurn.Add(card);
+            card.lockReason = "考勤警告：本回合无法打出";
         }
         Debug.Log($"[UnfinishedCard] {n} 张手牌下回合无法打出（向上取整半数）");
+    }
+
+    private void ClearLocks()
+    {
+        if (_lockedNextTurn.Count > 0)
+        {
+            foreach (var card in _lockedNextTurn)
+                if (card != null) card.lockReason = "";
+        }
+        _lockedNextTurn.Clear();
     }
 
     private List<CardData> CopyHand()
