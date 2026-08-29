@@ -2264,11 +2264,11 @@ PrefabInstance:
       objectReference: {fileID: 21300000, guid: 62bb9cc734f88734993e6c8d050f08a8, type: 3}
     - target: {fileID: 6801435193124065518, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Padding.m_Top
-      value: 304
+      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 6801435193124065518, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Padding.m_Left
-      value: 240
+      value: 360
       objectReference: {fileID: 0}
     - target: {fileID: 6801435193124065518, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_ConstraintCount
@@ -2276,7 +2276,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6801435193124065518, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Padding.m_Right
-      value: 102
+      value: 240
+      objectReference: {fileID: 0}
+    - target: {fileID: 6801435193124065518, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_Padding.m_Bottom
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6823395027372352287, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_Color.a
