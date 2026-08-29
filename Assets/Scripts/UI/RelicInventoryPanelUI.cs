@@ -37,16 +37,20 @@ public class RelicInventoryPanelUI : MonoBehaviour
     public Button CharacterButton2;
     [Tooltip("遗物列表内容容器（VerticalLayoutGroup 的父节点，通常挂在一个 ScrollRect 的 Content 上）")]
     public Transform content;
+    [Tooltip("遗物库使用的条目预制体，运行时会隐藏其中的 PriceRow。")]
+    public GameObject relicItemPrefab;
 
     [Header("=== 单条遗物条目布局 ===")]
-    [Tooltip("条目最小高度（垂直布局中每行的基础高度）")]
-    [SerializeField] private float itemMinHeight = 76f;
+    [Tooltip("遗物库条目预制体的统一缩放倍率")]
+    [SerializeField, Min(0.01f)] private float relicItemScale = 1f;
 
     // ===== 内部状态 =====
     private readonly List<CharacterData> _registeredCharacters = new List<CharacterData>();
     private int _currentCharacterIndex = -1;     // 当前选中角色的索引（_registeredCharacters 中）
     private readonly List<GameObject> _entryObjects = new List<GameObject>();
     private readonly Dictionary<Button, ColorBlock> _characterButtonDefaultColors = new Dictionary<Button, ColorBlock>();
+    private Vector2 _baseRelicGridCellSize;
+    private bool _hasBaseRelicGridCellSize;
 
     // 暂停 & 背景屏蔽（与 CardLibraryPanelUI 同模式）
     private readonly List<Selectable> _disabledBackground = new List<Selectable>();
@@ -151,6 +155,8 @@ public class RelicInventoryPanelUI : MonoBehaviour
             return;
         }
 
+        ApplyRelicItemScaleToLayout();
+
         foreach (var relic in relics)
             AddRelicItem(relic);
 
@@ -159,67 +165,84 @@ public class RelicInventoryPanelUI : MonoBehaviour
 
     private void AddRelicItem(RelicData relic)
     {
-        if (relic == null) return;
+        if (relic == null || relicItemPrefab == null) return;
 
-        // 条目根：竖向布局 = [图标] + [名称+品级行] + [描述]
-        var row = new GameObject("RelicItem", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        row.transform.SetParent(content, false);
-        var rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(0, 0);
-        var vlg = row.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(8, 8, 8, 8);
-        vlg.spacing = 4;
-        vlg.childAlignment = TextAnchor.UpperCenter;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-        // 行最小高度（在非网格布局容器下也能占位）
-        var rowLE = row.AddComponent<LayoutElement>();
-        rowLE.minHeight = itemMinHeight;
+        // GridLayoutGroup 不会把 localScale 计入子节点的占位尺寸。
+        // 用未缩放的占位容器参与网格排版，再将实际视觉预制体放入其中缩放，避免放大后跨出相邻格子或库边框。
+        var slot = new GameObject($"{relic.relicName}_Slot", typeof(RectTransform));
+        slot.transform.SetParent(content, false);
 
-        // 图标（来自 RelicData.icon）
-        var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(row.transform, false);
-        var iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.sizeDelta = new Vector2(80, 80);
-        var iconImg = iconGO.GetComponent<Image>();
-        iconImg.preserveAspect = true;
-        iconImg.raycastTarget = false;
-        if (relic.icon != null)
+        var item = Instantiate(relicItemPrefab, slot.transform, false);
+        item.name = relic.relicName;
+        var itemRect = item.transform as RectTransform;
+        if (itemRect != null)
         {
-            iconImg.sprite = relic.icon;
-            iconImg.color = Color.white;
+            itemRect.anchorMin = new Vector2(0.5f, 0.5f);
+            itemRect.anchorMax = new Vector2(0.5f, 0.5f);
+            itemRect.anchoredPosition = Vector2.zero;
         }
-        else
+        item.transform.localScale = Vector3.one * relicItemScale;
+        item.SetActive(true);
+
+        var iconImage = item.transform.Find("Icon")?.GetComponent<Image>();
+        if (iconImage != null)
         {
-            // 占位底色：未配置 icon 时仍可见一个空槽
-            iconImg.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+            iconImage.sprite = relic.icon;
+            iconImage.color = relic.icon != null ? Color.white : new Color(0.3f, 0.3f, 0.3f, 1f);
         }
-        var iconLE = iconGO.AddComponent<LayoutElement>();
-        iconLE.minWidth = 80;
-        iconLE.minHeight = 80;
-        iconLE.preferredWidth = 80;
-        iconLE.preferredHeight = 80;
 
-        // 名称 + 品级（横向一行，居中）
-        var nameRow = new GameObject("NameRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        nameRow.transform.SetParent(row.transform, false);
-        var hlg = nameRow.GetComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 8;
-        hlg.childAlignment = TextAnchor.MiddleCenter;
-        hlg.childControlWidth = false;
-        hlg.childControlHeight = false;
-        hlg.childForceExpandWidth = false;
-        hlg.childForceExpandHeight = false;
-        AddTmpText(nameRow.transform, relic.relicName, 16, FontStyles.Bold, new Color(0.95f, 0.85f, 0.45f), TextAlignmentOptions.MidlineLeft, true, false);
-        AddTmpText(nameRow.transform, CardData.GetGradeName(relic.grade), 12, FontStyles.Normal, new Color(0.7f, 0.7f, 0.7f), TextAlignmentOptions.MidlineLeft, true, false);
+        var nameText = item.transform.Find("Name")?.GetComponent<TextMeshProUGUI>();
+        if (nameText != null)
+            nameText.SetText(relic.relicName);
 
-        // 描述（TMP，自动撑高）
-        AddTmpText(row.transform, string.IsNullOrEmpty(relic.description) ? "（无描述）" : relic.description,
-            12, FontStyles.Normal, new Color(0.85f, 0.85f, 0.85f), TextAlignmentOptions.TopLeft, false, true);
+        // RelicItem 同时服务商店与遗物库：遗物库只展示已拥有遗物，因此不展示购买价格行。
+        var priceRow = item.transform.Find("PriceRow");
+        if (priceRow != null)
+            priceRow.gameObject.SetActive(false);
 
-        _entryObjects.Add(row);
+        _entryObjects.Add(slot);
+    }
+
+    /// <summary>
+    /// Transform.localScale 不参与 GridLayoutGroup 的排版计算。
+    /// 缩放遗物条目后同步扩大单元格，并按 Viewport 宽度重新计算列数，
+    /// 让超出可视区域的内容转为下一行并交由 ScrollRect 滚动，而非溢出遗物库边框。
+    /// </summary>
+    private void ApplyRelicItemScaleToLayout()
+    {
+        if (content == null || relicItemPrefab == null)
+            return;
+
+        var grid = content.GetComponent<GridLayoutGroup>();
+        var prefabRect = relicItemPrefab.transform as RectTransform;
+        if (grid == null || prefabRect == null)
+            return;
+
+        if (!_hasBaseRelicGridCellSize)
+        {
+            _baseRelicGridCellSize = grid.cellSize;
+            _hasBaseRelicGridCellSize = true;
+        }
+
+        float scale = Mathf.Max(0.01f, relicItemScale);
+        // 预留边距，保证缩放后的视觉边界仍完整落在 Grid 单元格内。
+        Vector2 scaledItemSize = prefabRect.sizeDelta * scale;
+        const float cellPadding = 16f;
+        grid.cellSize = new Vector2(
+            Mathf.Max(_baseRelicGridCellSize.x, scaledItemSize.x + cellPadding),
+            Mathf.Max(_baseRelicGridCellSize.y, scaledItemSize.y + cellPadding));
+
+        var scrollRect = content.GetComponentInParent<ScrollRect>();
+        if (scrollRect != null && scrollRect.viewport != null)
+        {
+            float availableWidth = scrollRect.viewport.rect.width - grid.padding.left - grid.padding.right;
+            float cellWidthWithSpacing = grid.cellSize.x + grid.spacing.x;
+            int columns = Mathf.Max(1, Mathf.FloorToInt((availableWidth + grid.spacing.x) / cellWidthWithSpacing));
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = columns;
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content as RectTransform);
     }
 
     private void AddNote(string text)

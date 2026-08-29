@@ -287,7 +287,7 @@ MonoBehaviour:
   goodsLayerSize: {x: 1631.685, y: 483.6244}
   goodsLayerScale: {x: 1, y: 1, z: 1}
   cardItemPrefab: {fileID: 460558179267894742, guid: 57c065b48c6e8e947a36caefc7af95c1, type: 3}
-  relicItemPrefab: {fileID: 1450422795469039436, guid: 2fb4235ca2af82e4294d6c4b5a6fae5c, type: 3}
+  relicItemPrefab: {fileID: 1450422795469039436, guid: c25a383677ad4fc5b60a9b7d262092f7, type: 3}
   deleteCardPrefab: {fileID: 7258994312282142446, guid: bea71b2a001ff2749a31739dbdd64a72, type: 3}
   cardItemPositionOffset: {x: 0, y: 0}
   cardItemSize: {x: 100, y: 100}
