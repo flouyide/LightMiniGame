@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u5165\u804C\u6307\u5BFC1"
+  m_EditorClassIdentifier: 
+  relicId: rzzd
+  relicName: "\u5165\u804C\u6307\u5BFC\u2160"
+  description: "\u6B22\u8FCE\u5165\u804C\uFF0C\u65B0\u4EBA\uFF01"
+  icon: {fileID: 21300000, guid: 4c6d28e5e6bda144b943afe1087694e5, type: 3}
+  value: 100
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.ProloguePopupEffect
+  effectParams:
+  - 3
+  effectStringParams:
+  - "\u8BF7\u67E5\u6536\u5165\u804C\u6307\u5357\uFF1A1.\u4F7F\u7528\u201C\u5165\u804C\u6307\u5357-1\u201D\u5BF9\u654C\u4EBA\u9020\u6210\u4F24\u5BB3"
+  - "2.\u4F7F\u7528\u201C\u5165\u804C\u6307\u5357-2\u201D\u62B5\u6321\u654C\u4EBA\u653B\u51FB"
+  - "3.\u4F7F\u7528\u798F\u62A5\u9B54\u65B9\u91CD\u6784\u201C\u5165\u804C\u6307\u5357-3\u201D\u4E0E\u201C\u6559\u5BFC-2\u201D\u7684\u6570\u503C"
+  effectObjectParams:
+  - {fileID: 6009059552920315112, guid: 462f0008afcc41e4a95a123e9ac971ba, type: 3}
+  effectScript: {fileID: 11500000, guid: dfc56414aa2669a4fbcd53ae89e6a613, type: 3}

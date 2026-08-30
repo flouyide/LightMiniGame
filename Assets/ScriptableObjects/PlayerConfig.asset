@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHP: 65
   startHP: 65
-  startGold: 20
+  startGold: 0
   startSanity: 10
   maxSanity: 10
   sanityThreshold: 4
