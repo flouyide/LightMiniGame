@@ -95,6 +95,13 @@ namespace LightMiniGame.Card
 
         public IReadOnlyList<CharacterCardLibrary> AllLibraries => _libraries;
 
+        /// <summary>清空所有角色的牌库（回到未注册状态）。返回主菜单重开一局时调用，清除上一局数据。</summary>
+        public void ClearAll()
+        {
+            _libraries.Clear();
+            _index.Clear();
+        }
+
         // ===== 全局 CRUD（必须指定角色，路由到对应牌库）=====
 
         public void AddCard(CharacterData character, CardData template)

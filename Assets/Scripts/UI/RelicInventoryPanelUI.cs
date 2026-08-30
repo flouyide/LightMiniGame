@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using LightMiniGame.Card;
 using LightMiniGame.Shop;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
@@ -44,10 +45,18 @@ public class RelicInventoryPanelUI : MonoBehaviour
     [Tooltip("遗物库条目预制体的统一缩放倍率")]
     [SerializeField, Min(0.01f)] private float relicItemScale = 1f;
 
+    [Header("=== 描述悬停（TooltipLayer）===")]
+    [Tooltip("描述文本相对遗物条目底部中心的偏移（x 正向右、y 正向上；默认略微下移留出间隙）")]
+    [SerializeField] private Vector2 tooltipOffset = new Vector2(0f, -8f);
+
     // ===== 内部状态 =====
     private readonly List<CharacterData> _registeredCharacters = new List<CharacterData>();
     private int _currentCharacterIndex = -1;     // 当前选中角色的索引（_registeredCharacters 中）
     private readonly List<GameObject> _entryObjects = new List<GameObject>();
+    private readonly List<GameObject> _descTexts = new List<GameObject>();   // 被 reparent 到 TooltipLayer 的描述（需随条目一起清理）
+    private Transform _tooltipLayer;            // 描述专用层：panel 的最后一个子物体，确保渲染在 Content 之上
+    private GameObject _activeTooltipItem;      // 当前悬停的遗物条目（LateUpdate 跟随其位置）
+    private GameObject _activeTooltipDesc;     // 当前显示的描述文本
     private readonly Dictionary<Button, ColorBlock> _characterButtonDefaultColors = new Dictionary<Button, ColorBlock>();
     private Vector2 _baseRelicGridCellSize;
     private bool _hasBaseRelicGridCellSize;
@@ -139,6 +148,12 @@ public class RelicInventoryPanelUI : MonoBehaviour
         foreach (var go in _entryObjects)
             if (go != null) Destroy(go);
         _entryObjects.Clear();
+        // 旧条目 reparent 到 TooltipLayer 的描述也已脱离条目，需独立清理
+        foreach (var go in _descTexts)
+            if (go != null) Destroy(go);
+        _descTexts.Clear();
+        _activeTooltipItem = null;
+        _activeTooltipDesc = null;
 
         var relics = character != null ? GlobalRelicInventory.Instance?.GetRelics(character) : null;
 
@@ -200,7 +215,136 @@ public class RelicInventoryPanelUI : MonoBehaviour
         if (priceRow != null)
             priceRow.gameObject.SetActive(false);
 
+        // 遗物库专属：描述文本默认隐藏，鼠标悬停时才显示（商店共用同一预制体，不走这里，故不受影响）。
+        var descNode = item.transform.Find("DescText");
+        if (descNode != null)
+        {
+            var descTmp = descNode.GetComponent<TextMeshProUGUI>();
+            if (descTmp != null && !string.IsNullOrEmpty(relic.description))
+                descTmp.SetText(relic.description);
+            descNode.gameObject.SetActive(false);
+            RaiseDescAboveSiblings(descNode.gameObject);
+            BindDescHover(item, descNode.gameObject);
+            _descTexts.Add(descNode.gameObject);
+        }
+
         _entryObjects.Add(slot);
+    }
+
+    /// <summary>
+    /// 遗物库条目悬停规则：鼠标移入条目 → 启用 DescText 并对齐到条目下方；鼠标移出 → 禁用 DescText。
+    /// 用 EventTrigger 挂运行时监听，不改动预制体，因此商店里实例化的 RelicItem 不会有这条规则。
+    /// </summary>
+    private void BindDescHover(GameObject item, GameObject descGo)
+    {
+        var trigger = item.GetComponent<EventTrigger>();
+        if (trigger == null) trigger = item.AddComponent<EventTrigger>();
+
+        var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enter.callback.AddListener(_ =>
+        {
+            descGo.SetActive(true);
+            _activeTooltipItem = item;
+            _activeTooltipDesc = descGo;
+            PositionTooltip(item, descGo);   // 显示时立即对齐一次
+        });
+        trigger.triggers.Add(enter);
+
+        var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exit.callback.AddListener(_ =>
+        {
+            descGo.SetActive(false);
+            if (_activeTooltipDesc == descGo)
+            {
+                _activeTooltipItem = null;
+                _activeTooltipDesc = null;
+            }
+        });
+        trigger.triggers.Add(exit);
+    }
+
+    /// <summary>
+    /// 悬停期间每帧跟随条目位置（ScrollRect 滚动时描述不会与条目脱节）。
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (_activeTooltipItem != null && _activeTooltipDesc != null && _activeTooltipDesc.activeSelf)
+            PositionTooltip(_activeTooltipItem, _activeTooltipDesc);
+    }
+
+    /// <summary>
+    /// 把描述文本对齐到遗物条目正下方：
+    /// 取条目底部中心的世界坐标，转换到 TooltipLayer 局部坐标，再叠加可调偏移 tooltipOffset。
+    /// 描述锚点/轴心取顶部中心（pivot 上沿对齐条目底边），向下展开。
+    /// </summary>
+    private void PositionTooltip(GameObject item, GameObject descGo)
+    {
+        if (_tooltipLayer == null) return;
+        var layerRT = (RectTransform)_tooltipLayer;
+        var itemRT = item.transform as RectTransform;
+        var descRT = descGo.transform as RectTransform;
+        if (itemRT == null || descRT == null) return;
+
+        // 条目底部中心（GetWorldCorners 顺序：左下、左上、右上、右下，已含缩放）
+        var corners = new Vector3[4];
+        itemRT.GetWorldCorners(corners);
+        var bottomCenter = (corners[0] + corners[3]) * 0.5f;
+
+        // 转换到 TooltipLayer 局部坐标（层 pivot=中心，锚点也取中心，直接可用）
+        var local = layerRT.InverseTransformPoint(bottomCenter);
+
+        descRT.anchorMin = descRT.anchorMax = new Vector2(0.5f, 0.5f);
+        descRT.pivot = new Vector2(0.5f, 1f);   // 顶部中心为轴，从条目底边向下展开
+        descRT.anchoredPosition = (Vector2)local + tooltipOffset;
+    }
+
+    /// <summary>
+    /// 让描述文本渲染在所有遗物条目之上，解决被下一行条目遮挡的问题。
+    ///
+    /// DescText 位于条目 rect 下方、超出 GridLayoutGroup 单元格范围，最初的方案是给它挂
+    /// overrideSorting 的嵌套 Canvas，但在本项目面板结构（panel 在 BookCanvas 下、未必
+    /// overrideSorting）下经常与其它 UI 同批次绘制，仍按 hierarchy 顺序被下一行条目盖住。
+    /// 这里改为更稳的做法：把 DescText 整个 reparent 到 panel 下的 TooltipLayer
+    /// （作为 panel 的最后一个子物体），让 hierarchy 顺序直接保证它绘制在 Content 之上。
+    /// worldPositionStays 已不再需要：位置由 PositionTooltip 在悬停时按条目当前位置
+    /// 动态对齐到条目下方（LateUpdate 跟随，支持滚动），并用 tooltipOffset 字段微调。
+    /// 同时关闭其射线检测：描述不接收指针，指针穿过它落到背后的条目上，
+    /// 符合「移出条目即隐藏」的规则，也不会出现悬停闪烁。
+    /// </summary>
+    private void RaiseDescAboveSiblings(GameObject descGo)
+    {
+        if (panel == null) return;
+        EnsureTooltipLayer();
+
+        var descRT = descGo.transform as RectTransform;
+        if (descRT == null) return;
+
+        // 只负责脱离条目树；锚点/轴心/位置由 PositionTooltip 在显示时按条目位置动态设定。
+        descRT.SetParent(_tooltipLayer, false);
+
+        // 描述不参与点击：关闭射线检测，避免它截获指针事件。
+        var tmp = descGo.GetComponent<TextMeshProUGUI>();
+        if (tmp != null) tmp.raycastTarget = false;
+    }
+
+    /// <summary>
+    /// 懒创建 TooltipLayer：作为 panel 的最后一个子物体（hierarchy 顺序最后，渲染最上层）。
+    /// 全屏拉伸到 panel 内，使其中的描述可以基于 panel 坐标系自由定位。
+    /// </summary>
+    private void EnsureTooltipLayer()
+    {
+        if (_tooltipLayer != null) return;
+        if (panel == null) return;
+
+        var go = new GameObject("TooltipLayer", typeof(RectTransform));
+        _tooltipLayer = go.transform;
+        var rt = (RectTransform)_tooltipLayer;
+        rt.SetParent(panel.transform, false);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        _tooltipLayer.SetAsLastSibling();
     }
 
     /// <summary>
