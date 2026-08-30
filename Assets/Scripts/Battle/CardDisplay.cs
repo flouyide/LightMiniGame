@@ -72,6 +72,7 @@ public class CardDisplay : MonoBehaviour
     [SerializeField] private Image descBoxImage;
     [SerializeField] private Image typeBadgeImage;
     [SerializeField] private Image costBadgeImage;
+    [SerializeField] private Sprite entagleSprite;
 
     [Header("词条图标")]
     [Tooltip("右侧签上的图标容器（VerticalLayoutGroup）。空则按名字 KeyWordsDeck/KeywordIcons 查找或运行时创建")]
@@ -608,18 +609,13 @@ public class CardDisplay : MonoBehaviour
     {
         if (iconGo == null) return;
         var img = iconGo.GetComponent<Image>();
-        var label = iconGo.GetComponentInChildren<TextMeshProUGUI>(true);
+      
 
         if (img != null)
         {
-            img.sprite = FallbackIconSprite();
-            img.color = new Color(0.55f, 0.25f, 0.70f, 1f);
+            img.sprite = entagleSprite;
         }
-        if (label != null)
-        {
-            label.gameObject.SetActive(true);
-            label.text = "缠";
-        }
+
     }
 
     private Sprite ResolveKeywordSprite(KeywordType kw)

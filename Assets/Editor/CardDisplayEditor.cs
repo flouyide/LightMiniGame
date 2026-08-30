@@ -71,6 +71,7 @@ public class CardDisplayEditor : Editor
         var descBoxImageProp = serializedObject.FindProperty("descBoxImage");
         var typeBadgeProp = serializedObject.FindProperty("typeBadgeImage");
         var costBadgeProp = serializedObject.FindProperty("costBadgeImage");
+        var entagleSpriteProp = serializedObject.FindProperty("entagleSprite");
 
         EditorGUILayout.PropertyField(nameTextProp);
         EditorGUILayout.PropertyField(descTextProp);
@@ -84,6 +85,7 @@ public class CardDisplayEditor : Editor
         EditorGUILayout.PropertyField(descBoxImageProp);
         EditorGUILayout.PropertyField(typeBadgeProp);
         EditorGUILayout.PropertyField(costBadgeProp);
+        EditorGUILayout.PropertyField(entagleSpriteProp);
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("词条图标", EditorStyles.boldLabel);
