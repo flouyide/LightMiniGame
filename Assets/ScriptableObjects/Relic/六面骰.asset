@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "\u5E78\u8FD0\u6212\u6307"
+  m_Name: "\u516D\u9762\u9AB0"
   m_EditorClassIdentifier: 
-  relicId: LuckyRing
-  relicName: "\u5E78\u8FD0\u6212\u6307"
-  description: "\u798F\u62A5\u503C\u52A010"
-  icon: {fileID: 21300000, guid: f604c93d5b0afa74d8fc5b5bd69533b4, type: 3}
-  value: 25
-  grade: 1
+  relicId: Dice6
+  relicName: "\u516D\u9762\u9AB0"
+  description: "\u6BCF\u56DE\u5408\u53EF\u989D\u5916\u8FDB\u884C2\u6B21\u878D\u5408"
+  icon: {fileID: 21300000, guid: 53feec6e996505842a052998c20dedfc, type: 3}
+  value: 100
+  grade: 2
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.LuckyRingEffect
+  effectScriptName: LightMiniGame.RelicEffects.DiceEffect
   effectParams:
-  - 10
+  - 2
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: 505e64fa250844448b2684d9f90ab3dc, type: 3}
+  effectScript: {fileID: 11500000, guid: 21a46ac66f1c3b047875ba3c0dfe8d44, type: 3}

@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "\u5E78\u8FD0\u6212\u6307"
+  m_Name: "\u5973\u795E\u6212\u6307"
   m_EditorClassIdentifier: 
-  relicId: LuckyRing
-  relicName: "\u5E78\u8FD0\u6212\u6307"
-  description: "\u798F\u62A5\u503C\u52A010"
+  relicId: LuckyRingGod
+  relicName: "\u5973\u795E\u6212\u6307"
+  description: "\u798F\u62A5\u503C\u52A020"
   icon: {fileID: 21300000, guid: f604c93d5b0afa74d8fc5b5bd69533b4, type: 3}
-  value: 25
-  grade: 1
+  value: 70
+  grade: 2
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.LuckyRingEffect
   effectParams:
-  - 10
+  - 20
   effectStringParams: []
   effectObjectParams: []
   effectScript: {fileID: 11500000, guid: 505e64fa250844448b2684d9f90ab3dc, type: 3}
