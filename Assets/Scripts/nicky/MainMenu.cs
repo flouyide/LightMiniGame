@@ -1,4 +1,6 @@
 using System.Collections;
+using LightMiniGame.Card;
+using LightMiniGame.Shop;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -59,6 +61,19 @@ public class MainMenu : MonoBehaviour
 
     public void StartGame()
     {
+        // 两个库都是 DontDestroyOnLoad 常驻单例，重开一局前必须清除上一局数据；
+        // 首次进入时 Instance 为 null（Book 场景里 ChapterManager 会负责初始化），无需清除。
+        if (GlobalCardLibrary.Instance != null)
+        {
+            GlobalCardLibrary.Instance.ClearAll();
+            Debug.Log("[MainMenu] 已清除上一局的玩家牌库");
+        }
+        if (GlobalRelicInventory.Instance != null)
+        {
+            GlobalRelicInventory.Instance.ClearAll();
+            Debug.Log("[MainMenu] 已清除上一局的遗物库");
+        }
+
         SceneManager.LoadScene("Book");
     }
 

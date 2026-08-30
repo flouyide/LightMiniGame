@@ -86,6 +86,13 @@ namespace LightMiniGame.Shop
 
         public IReadOnlyList<CharacterRelicLibrary> AllLibraries => _libraries;
 
+        /// <summary>清空所有角色的遗物库（回到未注册状态）。返回主菜单重开一局时调用，清除上一局数据。</summary>
+        public void ClearAll()
+        {
+            _libraries.Clear();
+            _index.Clear();
+        }
+
         // ===== 全局 CRUD（必须指定角色，路由到对应遗物库）=====
 
         public void Add(CharacterData character, RelicData relic)
