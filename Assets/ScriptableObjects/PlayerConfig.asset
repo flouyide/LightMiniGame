@@ -20,7 +20,7 @@ MonoBehaviour:
   sanityThreshold: 4
   startFortune: 0
   maxActionPoints: 3
-  drawPerTurn: 9
+  drawPerTurn: 5
   fusionUsesPerTurn: 1
   strength: 0
   dexterity: 0

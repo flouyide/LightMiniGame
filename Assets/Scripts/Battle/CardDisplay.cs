@@ -771,10 +771,11 @@ public class CardDisplay : MonoBehaviour
 
         // 恢复文本颜色
         Color normalTextColor = Color.white;
+        Color normalTextColor2 = Color.black;
         if (nameText) nameText.color = normalTextColor;
         if (descText) descText.color = normalTextColor;
         if (costText) costText.color = normalTextColor;
-        if (typeText) typeText.color = normalTextColor;
+        if (typeText) typeText.color = normalTextColor2;
         if (gradeText) gradeText.color = normalTextColor;
         if (keywordText) keywordText.color = normalTextColor;
     }

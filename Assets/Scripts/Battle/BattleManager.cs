@@ -2788,6 +2788,7 @@ public class BattleManager : MonoBehaviour
         // 保留本次原始出牌的上下文；结算范围由 helper 统一维护，确保融合覆盖在异常或嵌套重放后恢复。
         LastPlayedCard = card;
         CurrentAttackKilledEnemy = false;
+        AudioManager.Instance.PlaySfx("SendCard2", 1f);
         ExecutePlayerCardEffects(card);
 
         // 原始出牌效果结算完成后通知遗物。自动重放不走此事件，避免“复印机”重复递归。

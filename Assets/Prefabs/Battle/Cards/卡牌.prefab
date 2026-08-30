@@ -979,8 +979,8 @@ MonoBehaviour:
   m_text: "\u653B\u51FB"
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: d84f79b2e49a96c4891bfbefffbcc0ae, type: 2}
-  m_sharedMaterial: {fileID: 7148880879094119985, guid: d84f79b2e49a96c4891bfbefffbcc0ae, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
+  m_sharedMaterial: {fileID: -8530084090043915268, guid: fe9b28a3d2ec0bb45b2de269ad58eb9e, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
