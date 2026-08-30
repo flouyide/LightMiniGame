@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "\u8463\u4E8B\u957F\u50CF"
+  m_Name: "\u98DE\u884C\u978B"
   m_EditorClassIdentifier: 
-  relicId: ChairmanPortrait
-  relicName: "\u8463\u4E8B\u957F\u50CF"
-  description: "\u62FE\u8D77\u65F6\u83B7\u5F97100\u8D27\u5E01"
-  icon: {fileID: 21300000, guid: 33b06f9f213f3614a99970e201b26e5c, type: 3}
-  value: 35
+  relicId: SportsShoes2
+  relicName: "\u98DE\u884C\u978B"
+  description: "\u62FE\u8D77\u65F6\u73A9\u5BB6\u654F\u6377\u52A03"
+  icon: {fileID: 21300000, guid: e7cdf158a250caa41b3765406371d29a, type: 3}
+  value: 20
   grade: 1
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.ChairmanPortraitEffect
+  effectScriptName: LightMiniGame.RelicEffects.SportsShoesEffect
   effectParams:
-  - 100
+  - 3
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: dbe273b6a12974b42a0d2f5b567ea1c4, type: 3}
+  effectScript: {fileID: 11500000, guid: 714797582e2b7004cb1bc08f58acfb52, type: 3}
