@@ -46,17 +46,23 @@ public class RelicInventoryPanelUI : MonoBehaviour
     [SerializeField, Min(0.01f)] private float relicItemScale = 1f;
 
     [Header("=== 描述悬停（TooltipLayer）===")]
-    [Tooltip("描述文本相对遗物条目底部中心的偏移（x 正向右、y 正向上；默认略微下移留出间隙）")]
+    [Tooltip("提示框（DescImage 背景 + DescText 文字）相对遗物条目底部中心的偏移（x 正向右、y 正向上；默认略微下移留出间隙）")]
     [SerializeField] private Vector2 tooltipOffset = new Vector2(0f, -8f);
+    [Tooltip("提示框背景宽度（含两侧内边距），单位与 prefab 一致")]
+    [SerializeField] private float tooltipBgWidth = 220f;
+    [Tooltip("提示框背景相对文字高度的上下内边距（两侧之和）")]
+    [SerializeField] private float tooltipBgPaddingY = 12f;
+    [Tooltip("提示框背景最小高度（文字很短时也保留的框高）")]
+    [SerializeField] private float tooltipBgMinHeight = 50f;
 
     // ===== 内部状态 =====
     private readonly List<CharacterData> _registeredCharacters = new List<CharacterData>();
     private int _currentCharacterIndex = -1;     // 当前选中角色的索引（_registeredCharacters 中）
     private readonly List<GameObject> _entryObjects = new List<GameObject>();
-    private readonly List<GameObject> _descTexts = new List<GameObject>();   // 被 reparent 到 TooltipLayer 的描述（需随条目一起清理）
+    private readonly List<GameObject> _reparentedDesc = new List<GameObject>();   // 被 reparent 到 TooltipLayer 的提示框（DescImage 背景 + DescText，需随条目一起清理）
     private Transform _tooltipLayer;            // 描述专用层：panel 的最后一个子物体，确保渲染在 Content 之上
     private GameObject _activeTooltipItem;      // 当前悬停的遗物条目（LateUpdate 跟随其位置）
-    private GameObject _activeTooltipDesc;     // 当前显示的描述文本
+    private GameObject _activeTooltipDesc;     // 当前显示的提示框（DescImage 背景 + DescText 文字）
     private readonly Dictionary<Button, ColorBlock> _characterButtonDefaultColors = new Dictionary<Button, ColorBlock>();
     private Vector2 _baseRelicGridCellSize;
     private bool _hasBaseRelicGridCellSize;
@@ -148,10 +154,10 @@ public class RelicInventoryPanelUI : MonoBehaviour
         foreach (var go in _entryObjects)
             if (go != null) Destroy(go);
         _entryObjects.Clear();
-        // 旧条目 reparent 到 TooltipLayer 的描述也已脱离条目，需独立清理
-        foreach (var go in _descTexts)
+        // 旧条目 reparent 到 TooltipLayer 的提示框（DescImage + DescText）也已脱离条目，需独立清理
+        foreach (var go in _reparentedDesc)
             if (go != null) Destroy(go);
-        _descTexts.Clear();
+        _reparentedDesc.Clear();
         _activeTooltipItem = null;
         _activeTooltipDesc = null;
 
@@ -215,24 +221,39 @@ public class RelicInventoryPanelUI : MonoBehaviour
         if (priceRow != null)
             priceRow.gameObject.SetActive(false);
 
-        // 遗物库专属：描述文本默认隐藏，鼠标悬停时才显示（商店共用同一预制体，不走这里，故不受影响）。
-        var descNode = item.transform.Find("DescText");
-        if (descNode != null)
+        // 遗物库专属：描述提示框（DescImage 背景 + DescText 文字）默认隐藏，鼠标悬停时才显示。
+        // 商店共用同一预制体但走 ShopPanelUI，不会触发这里，故不受影响。
+        // 把整个 DescImage（含 DescText 子物体）reparent 到 TooltipLayer，作为带背景的介绍提示框。
+        // 注意：无论描述是否为空都挂提示框（与之前只显示 DescText 的稳定版本一致）。
+        // 否则一旦遗物 description 为空，整段悬停逻辑被跳过、TooltipLayer 永不创建，鼠标悬停就彻底不生成提示框。
+        var descImageNode = item.transform.Find("DescImage");
+        // 注意：DescText 是 DescImage 的子物体（prefab 已重构为 DescImage 含 DescText）。
+        // Transform.Find 只搜直接子物体、不向下递归，必须从 DescImage 下找，否则返回 null 导致整段悬停逻辑被跳过。
+        var descTextNode = descImageNode != null ? descImageNode.Find("DescText") : null;
+        if (descImageNode != null && descTextNode != null)
         {
-            var descTmp = descNode.GetComponent<TextMeshProUGUI>();
-            if (descTmp != null && !string.IsNullOrEmpty(relic.description))
-                descTmp.SetText(relic.description);
-            descNode.gameObject.SetActive(false);
-            RaiseDescAboveSiblings(descNode.gameObject);
-            BindDescHover(item, descNode.gameObject);
-            _descTexts.Add(descNode.gameObject);
+            var descTmp = descTextNode.GetComponent<TextMeshProUGUI>();
+            if (descTmp != null)
+            {
+                // 有描述则显示描述，否则回退到遗物名，保证悬停框始终有内容（不依赖外部数据完整性）。
+                descTmp.SetText(!string.IsNullOrEmpty(relic.description) ? relic.description : relic.relicName);
+                descTmp.raycastTarget = false;   // 文字不接收指针，指针穿过它落到背后条目，避免悬停闪烁
+            }
+            // 关闭背景图射线检测（在停用前处理：停用后 Transform.Find 会找不到子物体）。
+            var descImg = descImageNode.GetComponent<Image>();
+            if (descImg != null) descImg.raycastTarget = false;
+
+            descImageNode.gameObject.SetActive(false);
+            RaiseDescAboveSiblings(descImageNode.gameObject);
+            BindDescHover(item, descImageNode.gameObject);
+            _reparentedDesc.Add(descImageNode.gameObject);
         }
 
         _entryObjects.Add(slot);
     }
 
     /// <summary>
-    /// 遗物库条目悬停规则：鼠标移入条目 → 启用 DescText 并对齐到条目下方；鼠标移出 → 禁用 DescText。
+    /// 遗物库条目悬停规则：鼠标移入条目 → 启用提示框（DescImage 背景 + DescText）并对齐到条目下方；鼠标移出 → 禁用。
     /// 用 EventTrigger 挂运行时监听，不改动预制体，因此商店里实例化的 RelicItem 不会有这条规则。
     /// </summary>
     private void BindDescHover(GameObject item, GameObject descGo)
@@ -295,20 +316,27 @@ public class RelicInventoryPanelUI : MonoBehaviour
 
         descRT.anchorMin = descRT.anchorMax = new Vector2(0.5f, 0.5f);
         descRT.pivot = new Vector2(0.5f, 1f);   // 顶部中心为轴，从条目底边向下展开
+
+        // 背景图（DescImage）随文字高度自动撑高，包裹住介绍文字；宽度固定并留出两侧内边距。
+        var tmp = descRT.Find("DescText")?.GetComponent<TextMeshProUGUI>();
+        float textH = tmp != null ? tmp.preferredHeight : 0f;
+        descRT.sizeDelta = new Vector2(tooltipBgWidth, Mathf.Max(textH + tooltipBgPaddingY, tooltipBgMinHeight));
+
         descRT.anchoredPosition = (Vector2)local + tooltipOffset;
     }
 
     /// <summary>
-    /// 让描述文本渲染在所有遗物条目之上，解决被下一行条目遮挡的问题。
+    /// 让描述提示框（DescImage 背景 + DescText 文字）渲染在所有遗物条目之上，解决被下一行条目遮挡的问题。
     ///
-    /// DescText 位于条目 rect 下方、超出 GridLayoutGroup 单元格范围，最初的方案是给它挂
+    /// 描述位于条目 rect 下方、超出 GridLayoutGroup 单元格范围，最初的方案是给它挂
     /// overrideSorting 的嵌套 Canvas，但在本项目面板结构（panel 在 BookCanvas 下、未必
     /// overrideSorting）下经常与其它 UI 同批次绘制，仍按 hierarchy 顺序被下一行条目盖住。
-    /// 这里改为更稳的做法：把 DescText 整个 reparent 到 panel 下的 TooltipLayer
-    /// （作为 panel 的最后一个子物体），让 hierarchy 顺序直接保证它绘制在 Content 之上。
+    /// 这里改为更稳的做法：把整个 DescImage（含 DescText 子物体）reparent 到 panel 下的 TooltipLayer
+    /// （作为 panel 的最后一个子物体），让 hierarchy 顺序直接保证它绘制在 Content 之上；
+    /// DescImage 本身即作为文字背景（prefab 内已配深色半透明填充）。
     /// worldPositionStays 已不再需要：位置由 PositionTooltip 在悬停时按条目当前位置
     /// 动态对齐到条目下方（LateUpdate 跟随，支持滚动），并用 tooltipOffset 字段微调。
-    /// 同时关闭其射线检测：描述不接收指针，指针穿过它落到背后的条目上，
+    /// 同时关闭背景与文字的射线检测：提示框不接收指针，指针穿过它落到背后的条目上，
     /// 符合「移出条目即隐藏」的规则，也不会出现悬停闪烁。
     /// </summary>
     private void RaiseDescAboveSiblings(GameObject descGo)
@@ -322,8 +350,10 @@ public class RelicInventoryPanelUI : MonoBehaviour
         // 只负责脱离条目树；锚点/轴心/位置由 PositionTooltip 在显示时按条目位置动态设定。
         descRT.SetParent(_tooltipLayer, false);
 
-        // 描述不参与点击：关闭射线检测，避免它截获指针事件。
-        var tmp = descGo.GetComponent<TextMeshProUGUI>();
+        // 背景图与文字均不参与点击：关闭射线检测，避免悬停时截获指针导致提示闪烁/隐藏。
+        var img = descGo.GetComponent<Image>();
+        if (img != null) img.raycastTarget = false;
+        var tmp = descGo.transform.Find("DescText")?.GetComponent<TextMeshProUGUI>();
         if (tmp != null) tmp.raycastTarget = false;
     }
 
@@ -337,6 +367,7 @@ public class RelicInventoryPanelUI : MonoBehaviour
         if (panel == null) return;
 
         var go = new GameObject("TooltipLayer", typeof(RectTransform));
+        go.layer = panel.layer;   // 与面板同层，避免被相机剔除掩码漏掉
         _tooltipLayer = go.transform;
         var rt = (RectTransform)_tooltipLayer;
         rt.SetParent(panel.transform, false);

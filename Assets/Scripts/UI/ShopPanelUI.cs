@@ -5,6 +5,7 @@ using LightMiniGame.Card;
 using LightMiniGame.Shop;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -680,6 +681,43 @@ public class ShopPanelUI : MonoBehaviour
 
         SetPrice(item.transform, sold ? "已售" : e.price.ToString(), !sold,
             affordable ? new Color(1f, 0.85f, 0.3f) : new Color(0.6f, 0.6f, 0.6f));
+
+        // 商店专属：鼠标移入 RelicItem 时启用 DescImage（含遗物描述），移出时禁用。
+        // 遗物库内的悬停规则在 RelicInventoryPanelUI 中单独处理，互不影响。
+        AttachRelicHoverTooltip(item, e);
+    }
+
+    /// <summary>
+    /// 商店遗物悬停提示：鼠标移入 RelicItem 时启用 DescImage（含遗物描述），移出时禁用。
+    /// 复用 RelicItem.prefab 内既有的 DescImage/DescText 节点，不改动预制体、不新增层级。
+    /// 商店为单行 HorizontalLayoutGroup 布局，DescImage 向下展开，不会被相邻货物遮挡，
+    /// 因此这里仅用 SetAsLastSibling 保证其在自身条目内绘制在最上层。
+    /// </summary>
+    private static void AttachRelicHoverTooltip(GameObject item, ShopRelicEntry e)
+    {
+        var descImage = item.transform.Find("DescImage")?.gameObject;
+        if (descImage == null) return;
+
+        var descText = descImage.transform.Find("DescText")?.GetComponent<TextMeshProUGUI>();
+        if (descText != null && e.relic != null)
+            descText.text = e.relic.description;
+
+        descImage.SetActive(false);
+
+        var trigger = item.GetComponent<EventTrigger>();
+        if (trigger == null) trigger = item.AddComponent<EventTrigger>();
+
+        var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enter.callback.AddListener(_ =>
+        {
+            descImage.SetActive(true);
+            descImage.transform.SetAsLastSibling();
+        });
+        trigger.triggers.Add(enter);
+
+        var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exit.callback.AddListener(_ => descImage.SetActive(false));
+        trigger.triggers.Add(exit);
     }
 
     /// <summary>
