@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: rzzde
   relicName: "\u5165\u804C\u6307\u5BFC\u2161"
-  description: "\u6B22\u8FCE\u5165\u804C\uFF0C\u65B0\u4EBA\uFF01"
+  description: "\u6B22\u8FCE\u5165\u804C\uFF0C\u65B0\u4EBA\uFF01!"
   icon: {fileID: 21300000, guid: 4b394d08a2f2f9b4c914700a05cf9d48, type: 3}
   value: 100
   grade: 0
