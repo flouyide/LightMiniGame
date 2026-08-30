@@ -4329,6 +4329,7 @@ public class BattleManager : MonoBehaviour
         _isPlayerTurn = false;
 
         var activeChar = ActiveChar;
+        AudioManager.Instance.PlaySfx("CardLib2", 1f);
         foreach (var card in _hand)
         {
             activeChar.discardPile.Add(card);
