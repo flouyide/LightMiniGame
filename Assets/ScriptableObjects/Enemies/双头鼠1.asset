@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac676fbe4e26547eb9f86e31bd682f65, type: 3}
   m_Name: "\u53CC\u5934\u9F201"
   m_EditorClassIdentifier: 
-  enemyName: "\u53CC\u5934\u9F201"
+  enemyName: "\u53CC\u5934\u9F201\u53F7"
   maxHP: 30
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: ff541303fcd7e7342b4c3cc02f6a1729, type: 3}
@@ -33,6 +33,7 @@ MonoBehaviour:
   dexterity: 0
   damageDealtMultiplier: 100
   damageTakenMultiplier: 100
+  fatigue: 0
   highSanityCardCount: 1
   lowSanityCardCount: 1
   abilities: []

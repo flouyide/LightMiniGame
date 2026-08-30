@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baefbfc591fcb482999f3710731b460e, type: 3}
   m_Name: SummonEnemyCompanion
   m_EditorClassIdentifier: 
-  spawnOffset: {x: 220, y: 0}
+  spawnOffset: {x: 500, y: 0}
