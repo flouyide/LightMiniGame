@@ -582,9 +582,9 @@ MonoBehaviour:
         enterBattleEnemies: []
     enemies:
     - config: {fileID: 11400000, guid: 1b08f26542b5d0748ae95b7a28093d6e, type: 2}
-      anchoredPosition: {x: 300, y: -50}
+      anchoredPosition: {x: -450, y: -50}
     - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
-      anchoredPosition: {x: -300, y: -150}
+      anchoredPosition: {x: 150, y: -50}
     lootTable:
       entries:
       - kind: 0
