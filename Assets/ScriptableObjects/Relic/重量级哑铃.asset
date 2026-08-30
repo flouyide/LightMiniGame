@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
-  m_Name: "\u963F\u59E8\u7684\u5361\u5E03\u5947\u8BFA"
+  m_Name: "\u91CD\u91CF\u7EA7\u54D1\u94C3"
   m_EditorClassIdentifier: 
-  relicId: Cappuccino
-  relicName: "\u963F\u59E8\u7684\u5361\u5E03\u5947\u8BFA"
-  description: "\u56DE\u5408\u7ED3\u675F\u65F6\u56DE\u590D1\u70B9\u751F\u547D\u503C"
-  icon: {fileID: 21300000, guid: 9fea876ca07ec3e49b45d67e8be9e5f4, type: 3}
-  value: 50
+  relicId: Dumbbell2
+  relicName: "\u91CD\u91CF\u7EA7\u54D1\u94C3"
+  description: "\u62FE\u8D77\u65F6\u73A9\u5BB6\u529B\u91CF\u52A03"
+  icon: {fileID: 21300000, guid: c4c44010d1810194b87634189893a68d, type: 3}
+  value: 45
   grade: 1
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.PriestAbilityEffect
+  effectScriptName: LightMiniGame.RelicEffects.DumbbellEffect
   effectParams:
-  - 1
+  - 3
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: 6586aeb7af6c1e5478623ec7e11b60b8, type: 3}
+  effectScript: {fileID: 11500000, guid: 435535dfaef251b4db0f8921b5dfb96c, type: 3}
