@@ -30,6 +30,11 @@ public class SettingsPanelUI : MonoBehaviour
 
     private void Awake()
     {
+        // 关键修复：prefab 里 SettingsCanvas 的 localScale 被存成了 (0,0,0)，
+        // 实例化后整个面板缩放为零导致不可见。生成时强制把所有子 Canvas 的缩放归一。
+        foreach (var canvas in GetComponentsInChildren<Canvas>(true))
+            canvas.transform.localScale = Vector3.one;
+
         // 初始隐藏面板（prefab 默认激活，避免一开局就弹窗）
         if (panel != null)
             panel.SetActive(false);
