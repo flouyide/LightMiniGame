@@ -93,6 +93,9 @@ public class ChapterManager : MonoBehaviour
     // 加成写入单局持久属性，跨战斗有效；新开局时会基于 PlayerConfig 初始值重新汇总。
     private readonly Dictionary<string, int> _strengthBonuses = new();
     private readonly Dictionary<string, int> _dexterityBonuses = new();
+    // 遗物等局外效果登记的“福报值（Fortune）加成”。key 为效果来源；多个来源数值相加。
+    // 福报值在每次融合重分配时加到选中数字之和上，无上限。
+    private readonly Dictionary<string, int> _fortuneBonuses = new();
     private List<PageEventData> _currentPages = new();  // 当前显示的3个页面事件列表
     private HashSet<string> _completedEvents = new();   // 已完成事件ID集合
     private HashSet<string> _unlockedEvents = new();    // 已解锁事件ID集合（后续事件解锁）
@@ -270,6 +273,16 @@ public class ChapterManager : MonoBehaviour
             PlayerDexterity = Mathf.Max(0, PlayerDexterity + delta));
     }
 
+    /// <summary>
+    /// 设置指定局外效果提供的福报值（Fortune）加成。获得后立即影响本局福报并跨战斗保留；失去时传入 0 精确移除。
+    /// 福报值在每次融合重分配时加到选中数字之和上（见 FusionController.FusionPoolTotal）。
+    /// </summary>
+    public void SetFortuneBonus(string sourceKey, int amount)
+    {
+        SetPersistedAttributeBonus(_fortuneBonuses, sourceKey, amount, "福报", delta =>
+            PlayerFortune = Mathf.Max(0, PlayerFortune + delta));
+    }
+
     private static int GetPersistedAttributeBonus(Dictionary<string, int> bonuses)
     {
         int total = 0;
@@ -392,7 +405,7 @@ public class ChapterManager : MonoBehaviour
             PlayerSanity = playerConfig.startSanity;
             PlayerMaxSanity = Mathf.Max(1, playerConfig.maxSanity + GetMaxSanityBonus());
             PlayerSanityThreshold = playerConfig.sanityThreshold;
-            PlayerFortune = Mathf.Max(0, playerConfig.startFortune);
+            PlayerFortune = Mathf.Max(0, playerConfig.startFortune + GetPersistedAttributeBonus(_fortuneBonuses));
             PlayerMaxActionPoints = playerConfig.maxActionPoints;
             PlayerDrawPerTurn = playerConfig.drawPerTurn;
             PlayerFusionUsesPerTurn = Mathf.Max(0, playerConfig.fusionUsesPerTurn);
