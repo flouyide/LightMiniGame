@@ -849,6 +849,226 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
+  - eventId: ch1_event_shop
+    displayName: "\u81EA\u52A9\u552E\u5356\u673A"
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
+    enemies: []
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_shop
+    displayName: "\u81EA\u52A9\u552E\u5356\u673A"
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
+    enemies: []
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_shop
+    displayName: "\u81EA\u52A9\u552E\u5356\u673A"
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
+    enemies: []
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
+  - eventId: ch1_event_shop
+    displayName: "\u81EA\u52A9\u552E\u5356\u673A"
+    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 1
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "\u4ED4\u7EC6\u641C\u7D22"
+      effects:
+      - type: 4
+        amount: 1
+        itemDesc: "\u627E\u5230\u4E86\u4E00\u4EF6\u6709\u7528\u7684\u9053\u5177"
+        attributeOp: 0
+        targetAttribute: 0
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+      - type: 9
+        amount: 15
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7A0D\u4F5C\u4F11\u606F"
+      effects:
+      - type: 9
+        amount: 20
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.6
+        enterBattleEnemies: []
+    - optionText: "\u7EE7\u7EED\u8D76\u8DEF"
+      effects: []
+    enemies: []
+    lootTable:
+      entries: []
+    normalBattleBackground: {fileID: 0}
+    lowSanityBattleBackground: {fileID: 0}
+    backgroundSanityThreshold: 4
+    restHealingPercent: 30
+    defaultEffects: []
   - eventId: ch1_event_rest
     displayName: "\u8336\u6C34\u95F4"
     description: "\u56DE\u590D30%\u8840\u91CF"
@@ -959,11 +1179,11 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
-  - eventId: ch1_event_shop
-    displayName: "\u597D\u7269\u5546\u5E97"
-    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
+  - eventId: ch1_event_rest
+    displayName: "\u8336\u6C34\u95F4"
+    description: "\u56DE\u590D30%\u8840\u91CF"
     icon: {fileID: 0}
-    eventType: 1
+    eventType: 2
     isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []
@@ -1014,11 +1234,11 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
-  - eventId: ch1_event_shop
-    displayName: "\u597D\u7269\u5546\u5E97"
-    description: "\u7279\u4EF7\u597D\u7269\uFF0C\u4E0D\u5BB9\u9519\u8FC7"
+  - eventId: ch1_event_rest
+    displayName: "\u8336\u6C34\u95F4"
+    description: "\u56DE\u590D30%\u8840\u91CF"
     icon: {fileID: 0}
-    eventType: 1
+    eventType: 2
     isRepeatable: 1
     isFinalNode: 0
     mutuallyExclusiveIds: []

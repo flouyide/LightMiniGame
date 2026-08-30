@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b62fe793fece52442a0be56a3484630d, type: 3}
   m_Name: ShopConfig
   m_EditorClassIdentifier: 
-  shopCardCount: 6
-  shopRelicCount: 6
+  shopCardCount: 10
+  shopRelicCount: 8
   character1CardRatio: 0.5
   character2CardRatio: 0.5
   character1RelicRatio: 0.5
   character2RelicRatio: 0.5
-  removalCount: 1
-  removalBasePrice: 25
-  removalPriceStep: 25
+  removalCount: 3
+  removalBasePrice: 20
+  removalPriceStep: 10

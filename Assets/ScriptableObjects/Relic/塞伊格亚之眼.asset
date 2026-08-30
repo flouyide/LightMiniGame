@@ -16,7 +16,7 @@ MonoBehaviour:
   relicName: "\u585E\u4F0A\u683C\u4E9A\u4E4B\u773C"
   description: "\u798F\u62A5\u9B54\u65B9\u53EF\u4FEE\u6539\u66F4\u591A\u6570\u503C"
   icon: {fileID: 21300000, guid: a8cd56f178ead474a9601c854b9e5a23, type: 3}
-  value: 100
+  value: 200
   grade: 2
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.FusionHpRelicEffect
