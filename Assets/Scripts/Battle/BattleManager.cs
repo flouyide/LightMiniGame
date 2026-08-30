@@ -2250,6 +2250,7 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     public void BeginBattle()
     {
+        AudioManager.Instance.PlayMusic("battle", 1f);
         if (!_listenersWired) { WireListeners(); _listenersWired = true; }
         _baseDrawPerTurn = drawPerTurn;   // 捕获抽牌基数（Inspector 配置），避免逐场战斗累加
 
