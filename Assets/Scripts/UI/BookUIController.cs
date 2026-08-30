@@ -563,7 +563,7 @@ public class BookUIController : MonoBehaviour
     {
         EnsureFortuneUI();
         if (fortuneText != null)
-            fortuneText.text = $"福报：{Mathf.Max(0, fortune)}";
+            fortuneText.text = Mathf.Max(0, fortune).ToString();
         NudgeFortuneTextLeft();
     }
 
@@ -575,9 +575,11 @@ public class BookUIController : MonoBehaviour
     {
         if (fortuneText != null)
         {
-            ApplyFortuneIconSprite(fortuneText.transform.parent != null
+            var parentImg = fortuneText.transform.parent != null
                 ? fortuneText.transform.parent.GetComponent<Image>()
-                : null);
+                : null;
+            ApplyFortuneIconSprite(parentImg);
+            EnsureFortuneTooltip(parentImg);
             return;
         }
 
@@ -589,6 +591,7 @@ public class BookUIController : MonoBehaviour
         {
             fortuneText = existing.GetComponentInChildren<TextMeshProUGUI>(true);
             ApplyFortuneIconSprite(existing.GetComponent<Image>());
+            EnsureFortuneTooltip(existing.GetComponent<Image>());
             return;
         }
 
@@ -614,8 +617,9 @@ public class BookUIController : MonoBehaviour
 
         var iconImg = iconGO.GetComponent<Image>();
         iconImg.preserveAspect = true;
-        iconImg.raycastTarget = false;
+        iconImg.raycastTarget = true;
         ApplyFortuneIconSprite(iconImg);
+        EnsureFortuneTooltip(iconImg);
 
         var textGO = new GameObject("FortuneText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
         textGO.layer = iconGO.layer;
@@ -643,7 +647,7 @@ public class BookUIController : MonoBehaviour
             fortuneText.fontSize = styleSrc.fontSize;
             fortuneText.color = styleSrc.color;
         }
-        fortuneText.text = "福报：0";
+        fortuneText.text = "0";
         NudgeFortuneTextLeft();
     }
 
@@ -652,6 +656,76 @@ public class BookUIController : MonoBehaviour
     {
         if (fortuneText == null) return;
         fortuneText.rectTransform.anchoredPosition = new Vector2(-22f, 0f);
+    }
+
+    /// <summary>在福报图标上添加 hover 提示（diban.png 背景 + Tips 组件），与其他 TopBar 图标同款。</summary>
+    private void EnsureFortuneTooltip(Image iconImg)
+    {
+        if (iconImg == null) return;
+        iconImg.raycastTarget = true;
+
+        var iconRT = iconImg.GetComponent<RectTransform>();
+        var tipTF = iconRT.Find("FortuneTip");
+        if (tipTF == null)
+        {
+            var tipGO = new GameObject("FortuneTip", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            tipGO.layer = iconImg.gameObject.layer;
+            var tipRT = tipGO.GetComponent<RectTransform>();
+            tipRT.SetParent(iconRT, false);
+            tipRT.anchorMin = tipRT.anchorMax = new Vector2(0.5f, 0.5f);
+            tipRT.pivot = new Vector2(0.5f, 0.5f);
+            tipRT.anchoredPosition = new Vector2(2.7f, -62.5f);
+            tipRT.localScale = new Vector3(1.294427f, 1.294427f, 1.294427f);
+            tipRT.sizeDelta = new Vector2(107.64f, 54.38f);
+
+            var tipImg = tipGO.GetComponent<Image>();
+            tipImg.sprite = LoadDibanSprite();
+            tipImg.type = Image.Type.Simple;
+            tipImg.raycastTarget = false;
+
+            var textGO = new GameObject("Text (TMP)", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            textGO.layer = tipGO.layer;
+            var textRT = textGO.GetComponent<RectTransform>();
+            textRT.SetParent(tipRT, false);
+            textRT.anchorMin = new Vector2(0, 0);
+            textRT.anchorMax = new Vector2(1, 1);
+            textRT.pivot = new Vector2(0.5f, 0.5f);
+            textRT.anchoredPosition = Vector2.zero;
+            textRT.sizeDelta = Vector2.zero;
+
+            var tipText = textGO.GetComponent<TextMeshProUGUI>();
+            tipText.text = "福报";
+            tipText.fontSize = 18;
+            tipText.fontStyle = FontStyles.Bold;
+            tipText.color = Color.black;
+            tipText.alignment = TextAlignmentOptions.Center;
+            tipText.enableWordWrapping = true;
+            tipText.raycastTarget = false;
+            var styleSrc = sanText != null ? sanText : goldText;
+            if (styleSrc != null)
+            {
+                tipText.font = styleSrc.font;
+                if (styleSrc.fontSharedMaterial != null)
+                    tipText.fontSharedMaterial = styleSrc.fontSharedMaterial;
+            }
+
+            tipGO.SetActive(false);
+            tipTF = tipRT;
+        }
+
+        var tips = iconImg.GetComponent<Tips>();
+        if (tips == null)
+            tips = iconImg.gameObject.AddComponent<Tips>();
+        tips.Tip = tipTF.gameObject;
+    }
+
+    private static Sprite LoadDibanSprite()
+    {
+#if UNITY_EDITOR
+        return UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局外/diban.png");
+#else
+        return null;
+#endif
     }
 
     private void ApplyFortuneIconSprite(Image icon)
