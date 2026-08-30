@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac676fbe4e26547eb9f86e31bd682f65, type: 3}
   m_Name: "\u753B\u997C\u6295\u5F71\u4EEA-\u80FD\u529B\u672A\u5B8C\u6210\u56FE\u6CA1\u51FA"
   m_EditorClassIdentifier: 
-  enemyName: "\u753B\u997C\u6295\u5F71\u4EEA-\u80FD\u529B\u672A\u5B8C\u6210"
+  enemyName: "\u753B\u997C\u6295\u5F71\u4EEA"
   maxHP: 140
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: 755df9de3f5121c449a3c63bf417469e, type: 3}

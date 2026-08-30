@@ -138,7 +138,7 @@ MonoBehaviour:
         discountRatio: 0.5
         enterBattleEnemies: []
     enemies:
-    - config: {fileID: 11400000, guid: 71ed9d271fa91964ca6775f555750ec6, type: 2}
+    - config: {fileID: 11400000, guid: e1ae5ac7568c1b74a87377927f327496, type: 2}
       anchoredPosition: {x: 0, y: -100}
     lootTable:
       entries:
@@ -221,8 +221,10 @@ MonoBehaviour:
         discountRatio: 0.5
         enterBattleEnemies: []
     enemies:
-    - config: {fileID: 11400000, guid: 7b6a483dfbeee4c46b397d2afc305dd9, type: 2}
-      anchoredPosition: {x: 0, y: -100}
+    - config: {fileID: 11400000, guid: 1b08f26542b5d0748ae95b7a28093d6e, type: 2}
+      anchoredPosition: {x: -300, y: -100}
+    - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
+      anchoredPosition: {x: 300, y: -100}
     lootTable:
       entries:
       - kind: 1
