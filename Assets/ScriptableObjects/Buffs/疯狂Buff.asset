@@ -16,4 +16,4 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: a183bf5255b91a646a2ad27e593e745e, type: 3}
   attributeType: 10
   minValue: 0
-  description: "\u654C\u4EBA\u56DE\u5408\u7ED3\u675F\u65F6\u5BF9\u73A9\u5BB6\u9020\u6210\u5C42\u6570*\u635F\u5931\u7406\u667A\u503C\u70B9\u4F24\u5BB3"
+  description: "\u654C\u4EBA\u56DE\u5408\u7ED3\u675F\u65F6\u635F\u5931\uFF08\u5C42\u6570*\u635F\u5931\u7406\u667A\u503C\uFF09\u70B9\u8840\u91CF"

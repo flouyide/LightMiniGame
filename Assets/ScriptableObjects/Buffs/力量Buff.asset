@@ -11,9 +11,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c4e9b2a1d8f4e6c9a3b5d7e1f0c2a48, type: 3}
   m_Name: "\u529B\u91CFBuff"
-  m_EditorClassIdentifier:
-  buffName: "力量Buff"
+  m_EditorClassIdentifier: 
+  buffName: "\u529B\u91CFBuff"
   icon: {fileID: 21300000, guid: 9911dbd4f4c6505408d778419f0a8141, type: 3}
   attributeType: 0
   minValue: -2147483648
-  description: "每点力量使造成的攻击伤害 +1。"
+  description: "\u6BCF1\u70B9\u529B\u91CF\u4F7F\u9020\u6210\u7684\u653B\u51FB\u4F24\u5BB3\u52A01\u3002"

@@ -16,5 +16,5 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: cfced5b55feb5e04aa1b320360bb52e6, type: 3}
   attributeType: 9
   minValue: 0
-  description: "\u6253\u51FA\u653B\u51FB\u724C\u589E\u52A0\u70ED\u5EA6\u3002\u70ED\u5EA6\u8FBE\u5230
-    25 \u65F6\u8FC7\u8F7D\uFF0C\u624B\u724C\u8D39\u7528 +1\u3002"
+  description: "\u6253\u51FA\u653B\u51FB\u724C\u589E\u52A0\u70ED\u5EA6\u3002\u70ED\u5EA6\u8FBE\u523025
+    \u65F6\u8FC7\u8F7D\uFF0C\u624B\u724C\u8D39\u7528\u52A01\u3002"
