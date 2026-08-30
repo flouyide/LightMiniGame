@@ -308,6 +308,7 @@ MonoBehaviour:
   descBoxImage: {fileID: 0}
   typeBadgeImage: {fileID: 7826341632639484800}
   costBadgeImage: {fileID: 0}
+  entagleSprite: {fileID: 21300000, guid: f30eb9c2acec503438143f6cf8a74927, type: 3}
   keywordIconContainer: {fileID: 2856627574512661402}
   keywordIconLibrary: {fileID: 0}
   keywordIconSprites: []
