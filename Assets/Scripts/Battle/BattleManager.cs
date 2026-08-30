@@ -2663,6 +2663,7 @@ public class BattleManager : MonoBehaviour
 
     public void DrawCards(int count)
     {
+        AudioManager.Instance.PlaySfx("CardLib2",1f);
         var activeChar = ActiveChar;
         for (int i = 0; i < count; i++)
         {
