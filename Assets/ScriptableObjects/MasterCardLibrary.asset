@@ -63,6 +63,8 @@ MonoBehaviour:
     - {fileID: 11400000, guid: e6150c05b98a31e4f9f678a8f2d83510, type: 2}
     - {fileID: 11400000, guid: 52da2188ad1107742b6100a93fc0645f, type: 2}
     - {fileID: 11400000, guid: d9aacb1d6f0df6b43aa66688a24066ce, type: 2}
+    - {fileID: 11400000, guid: 68aebbe44c9f6484a9af153228c6c9ba, type: 2}
+    - {fileID: 11400000, guid: 3cab9605dda7c3a4e8fabb68bd9a4167, type: 2}
   - character: {fileID: 11400000, guid: b6826da99786a96498d50d26c4e4aabf, type: 2}
     cards:
     - {fileID: 11400000, guid: b731bd683e6e0cf42820472c8b0c9ead, type: 2}

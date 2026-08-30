@@ -6,7 +6,7 @@ namespace LightMiniGame.CardEditor
     public class SummonEnemyCompanionEffect : CustomEffectScript
     {
         [Tooltip("相对最后一名存活敌人的锚点偏移（像素）")]
-        public Vector2 spawnOffset = new Vector2(220f, 0f);
+        public Vector2 spawnOffset = new Vector2(500f, 0f);
 
         public override string GetDisplayName() => "召唤1只与自身同配置的同伴";
 

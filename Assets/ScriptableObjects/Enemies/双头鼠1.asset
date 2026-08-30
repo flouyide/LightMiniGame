@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u53CC\u5934\u9F201"
   m_EditorClassIdentifier: 
   enemyName: "\u53CC\u5934\u9F201\u53F7"
-  maxHP: 30
+  maxHP: 100
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: ff541303fcd7e7342b4c3cc02f6a1729, type: 3}
   phase2Portrait: {fileID: 21300000, guid: ff541303fcd7e7342b4c3cc02f6a1729, type: 3}
@@ -21,12 +21,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5d563e863c5353a4e88479ab30b01e52, type: 2}
   - {fileID: 11400000, guid: dcca4995ae268a540b28baa6a30135f8, type: 2}
   - {fileID: 11400000, guid: 17fbf9122b9dcae4ba4466c6983eb6a9, type: 2}
-  - {fileID: 11400000, guid: aa8bdf9520d9bba48ad59ce17d77e0a2, type: 2}
   phase2Skills:
   - {fileID: 11400000, guid: 5d563e863c5353a4e88479ab30b01e52, type: 2}
   - {fileID: 11400000, guid: dcca4995ae268a540b28baa6a30135f8, type: 2}
   - {fileID: 11400000, guid: 17fbf9122b9dcae4ba4466c6983eb6a9, type: 2}
-  - {fileID: 11400000, guid: aa8bdf9520d9bba48ad59ce17d77e0a2, type: 2}
   difficulty: 1
   actionPriority: 1
   strength: 0
