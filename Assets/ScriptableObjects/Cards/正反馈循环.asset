@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u589E\u52A0\u70ED\u5EA6"
     timing: 0
@@ -172,6 +173,7 @@ MonoBehaviour:
     customOperation: {fileID: 11400000, guid: 2d6eae6157579407da207a20d9419f51, type: 2}
     customParams: '{"heatIncrease": 1}'
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: "\u80FD\u529B\u5361\uFF1A\u89E6\u53D1\u65F6\u673A\u4E3A\u66B4\u51FB\u65F6\u3002\u70ED\u5EA6(Heat)\u589E\u52A0\u9700\u901A\u8FC7\u81EA\u5B9A\u4E49\u6548\u679C\u811A\u672C\u5B9E\u73B0\u3002"

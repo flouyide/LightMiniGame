@@ -209,6 +209,9 @@ public class BattleCardContext : ICardRuntimeContext
     public int SearchCardInDrawPileToHand(string cardName, int count)
         => _battle.SearchCardInDrawPileToHand(cardName, count);
 
+    public int SearchCardInDiscardPileToHand(string cardName, int count)
+        => _battle.SearchCardInDiscardPileToHand(cardName, count);
+
     public int GenerateRandomCardsByKeyword(CardKeyword2 keyword, int count, CardZoneType zone)
         => _battle.GenerateRandomCardsByKeyword(keyword, count, zone);
 

@@ -11,7 +11,10 @@ namespace LightMiniGame.CardEditor
         {
             string cardName = ReadString(customParams, "cardName", "主机");
             int count = ReadInt(customParams, "count", 1);
-            ctx.SearchCardInDrawPileToHand(cardName, count);
+            // 先搜索抽牌堆，不足再搜索弃牌堆
+            int found = ctx.SearchCardInDrawPileToHand(cardName, count);
+            if (found < count)
+                ctx.SearchCardInDiscardPileToHand(cardName, count - found);
         }
 
         private static int ReadInt(string customParams, string key, int fallback)

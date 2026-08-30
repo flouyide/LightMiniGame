@@ -100,6 +100,8 @@ namespace LightMiniGame.CardEditor
         // === 牌堆搜索与定向抽取 ===
         /// <summary>从抽牌堆中搜索指定卡名的牌并移到手牌。返回实际移到手牌的数量。</summary>
         int SearchCardInDrawPileToHand(string cardName, int count);
+        /// <summary>从弃牌堆中搜索指定卡名的牌并移到手牌。返回实际移到手牌的数量。</summary>
+        int SearchCardInDiscardPileToHand(string cardName, int count);
         /// <summary>从牌库中随机生成指定词条的卡牌到手牌。返回实际生成数量。</summary>
         int GenerateRandomCardsByKeyword(CardKeyword2 keyword, int count, CardZoneType zone);
         /// <summary>给手牌中名为指定名称的卡（如「主机」）添加临时伤害加成。</summary>

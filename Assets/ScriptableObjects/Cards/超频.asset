@@ -61,7 +61,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 0
+    operation: 20
     value:
       rid: 1925279627234770993
     repeatCount:
@@ -85,7 +85,7 @@ MonoBehaviour:
     useArmorBreak: 0
     armorBreakValue:
       rid: 1925279627234770995
-    countAsAttack: 1
+    countAsAttack: 0
     resourceType: 4
     resourceOp: 0
     attributeType: 1
@@ -102,8 +102,8 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
-    customParams: 
+    customOperation: {fileID: 11400000, guid: a24ad5fbbc0734e5fb111df444f9974b, type: 2}
+    customParams: 'bonus: 2'
     createdCard: {fileID: 0}
     keywordToApply: 0
   lowSanityEffectNodes:
@@ -132,7 +132,7 @@ MonoBehaviour:
       cardFilterKeyword: 0
       filterIsLowSanityForm: 0
       filterTag: 
-    operation: 0
+    operation: 20
     value:
       rid: 1925279627234770998
     repeatCount:
@@ -156,7 +156,7 @@ MonoBehaviour:
     useArmorBreak: 0
     armorBreakValue:
       rid: 1925279627234771000
-    countAsAttack: 1
+    countAsAttack: 0
     resourceType: 4
     resourceOp: 0
     attributeType: 1
@@ -173,8 +173,8 @@ MonoBehaviour:
     maxTriggers: 0
     maxTriggersPerTurn: 0
     activeOnlyWhenOwnerIsActive: 1
-    customOperation: {fileID: 0}
-    customParams: 
+    customOperation: {fileID: 11400000, guid: a24ad5fbbc0734e5fb111df444f9974b, type: 2}
+    customParams: 'bonus: 3'
     createdCard: {fileID: 0}
     keywordToApply: 0
   customCardScript: {fileID: 0}

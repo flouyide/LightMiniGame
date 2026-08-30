@@ -629,6 +629,35 @@ public class BattleManager : MonoBehaviour
         return moved;
     }
 
+    /// <summary>从弃牌堆中搜索指定卡名的牌并移到手牌。返回实际移到手牌的数量。</summary>
+    public int SearchCardInDiscardPileToHand(string cardName, int count)
+    {
+        if (string.IsNullOrEmpty(cardName) || count <= 0) return 0;
+        var activeChar = ActiveChar;
+        if (activeChar == null || activeChar.discardPile == null) return 0;
+        int moved = 0;
+        for (int i = activeChar.discardPile.Count - 1; i >= 0 && moved < count; i--)
+        {
+            var card = activeChar.discardPile[i];
+            if (card == null) continue;
+            bool match = card.cardName != null && card.cardName.Trim() == cardName.Trim();
+            if (!match && card.sourceEntry != null && card.sourceEntry.cardName != null)
+                match = card.sourceEntry.cardName.Trim() == cardName.Trim();
+            if (!match) continue;
+            if (_hand.Count >= handLimit) break;
+            _hand.Add(card);
+            activeChar.discardPile.RemoveAt(i);
+            moved++;
+        }
+        if (moved > 0)
+        {
+            OnHandCardsChanged?.Invoke();
+            RefreshHandUI();
+            Debug.Log($"[BattleManager] 从弃牌堆搜索「{cardName}」移到手牌 {moved} 张");
+        }
+        return moved;
+    }
+
     /// <summary>从牌库中随机生成指定词条的卡牌到手牌。返回实际生成数量。</summary>
     public int GenerateRandomCardsByKeyword(CardKeyword2 keyword, int count, CardZoneType zone)
     {
@@ -640,7 +669,12 @@ public class BattleManager : MonoBehaviour
         foreach (var entry in db.cards)
         {
             if (entry == null) continue;
-            if ((entry.keyword & (CardKeyword)(int)keyword) != 0)
+            // CardKeyword2 是顺序枚举(0,1,2,3...)，CardKeyword 是位标枚举(1,2,4,8...)，
+            // 直接强转会导致 Accessory(4) 被当作 Recycle(1<<2=4) 而非 Accessory(1<<3=8)。
+            CardKeyword flag = keyword == CardKeyword2.None
+                ? CardKeyword.None
+                : (CardKeyword)(1 << ((int)keyword - 1));
+            if ((entry.keyword & flag) != 0)
                 candidates.Add(entry);
         }
         if (candidates.Count == 0) return 0;
@@ -3291,6 +3325,16 @@ public class BattleManager : MonoBehaviour
         host.attachedEffectNodes.AddRange(nodes);
         int accessoryCount = host.attachedEffectNodes.Count;
         SetCustomData("HostAccessoryCount", accessoryCount);
+
+        // 超频：若已激活，每装一件配件额外给主机 +bonus 伤害
+        if (GetCustomData("OverclockActive") == 1)
+        {
+            int bonus = GetCustomData("OverclockBonusPerAccessory");
+            if (bonus <= 0) bonus = 2;
+            AddDamageBonusToHostCard(bonus);
+            Debug.Log($"[BattleManager] 超频生效：配件「{accessory.cardName}」为主机额外 +{bonus} 伤害");
+        }
+
         Debug.Log($"[BattleManager] 配件「{accessory.cardName}」效果已叠加到主机「{host.cardName}」（现 {accessoryCount} 条附加效果）");
     }
 
@@ -4724,15 +4768,14 @@ public class BattleManager : MonoBehaviour
         foreach (var e in _enemies)
             if (e != null) e.ResetDrawnSkill();
 
-        // (TriggerSystem handles turn start)
-        // (TriggerSystem handles via OnTurnStart)
+        DrawCards(drawPerTurn + _slackBonusDraw);
+        _slackBonusDraw = 0;
+
+        // 先抽牌再触发回合开始事件，确保 OnTurnStart 触发器（如一键装机）能找到手牌中的主机
         _triggerSystem?.OnTurnStart(); // 统一触发器系统回合开始
 
         // 热度系统：通知枪械师遗物回合开始（由遗物重置本回合过载标记等）
         OnPlayerTurnStarted?.Invoke();
-
-        DrawCards(drawPerTurn + _slackBonusDraw);
-        _slackBonusDraw = 0;
         _unfinished?.ApplyPendingHandEffects();
         _recycleUsedThisTurn.Clear();
         _isPlayerTurn = true;
