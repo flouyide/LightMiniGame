@@ -19,8 +19,8 @@ MonoBehaviour:
   value: 100
   grade: 2
   sortOrder: 0
-  effectScriptName: 
+  effectScriptName: LightMiniGame.RelicEffects.FusionHpRelicEffect
   effectParams: []
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 0}
+  effectScript: {fileID: 11500000, guid: 90385e0c22c04db48aa1cfa2414e568f, type: 3}

@@ -208,7 +208,7 @@ MonoBehaviour:
     - optionText: "\u987A\u624B\u62FF\u4E00\u6837\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u91CC\u5965\u91CC\uFF09"
       effects:
       - type: 11
-        amount: 10
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 6
@@ -220,7 +220,7 @@ MonoBehaviour:
     - optionText: "\u6B7B\u78D5\u76D1\u63A7\u4E0B\u90A3\u888B\uFF08\u5931\u53BB14\u751F\u547D\uFF0C\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u7EED\u547D\u5976\u8336\uFF09"
       effects:
       - type: 10
-        amount: 10
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 6
@@ -229,15 +229,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    enemies:
-    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -50}
-    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -150}
-    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -50}
-    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -150}
+    enemies: []
     lootTable:
       entries:
       - kind: 0
@@ -271,7 +263,7 @@ MonoBehaviour:
     - optionText: "\u7EFF\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u97ED\u83DC\uFF09"
       effects:
       - type: 14
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 0
@@ -283,7 +275,7 @@ MonoBehaviour:
     - optionText: "\u7EA2\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u80A1\u795E\uFF09"
       effects:
       - type: 14
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 0
@@ -292,15 +284,7 @@ MonoBehaviour:
         keywordToAdd: 1
         discountRatio: 0
         enterBattleEnemies: []
-    enemies:
-    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -50}
-    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -150}
-    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -50}
-    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -150}
+    enemies: []
     lootTable:
       entries:
       - kind: 0
@@ -334,7 +318,7 @@ MonoBehaviour:
     - optionText: "\u62FF\u8D70\u526A\u5200\u7AE0\u9C7C\uFF08\u5220\u9664\u4E00\u5F20\u5361\u724C\uFF09"
       effects:
       - type: 13
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 0
@@ -346,7 +330,7 @@ MonoBehaviour:
     - optionText: "\u62FF\u8D70\u6234\u5E3D\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u51A0\u5195\uFF09"
       effects:
       - type: 10
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 0
@@ -358,7 +342,7 @@ MonoBehaviour:
     - optionText: "\u62FF\u8D70\u751C\u751C\u5708\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u751C\u751C\u5708\uFF09"
       effects:
       - type: 11
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 0
@@ -367,15 +351,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    enemies:
-    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -50}
-    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -150}
-    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -50}
-    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -150}
+    enemies: []
     lootTable:
       entries:
       - kind: 0
@@ -506,15 +482,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    enemies:
-    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -50}
-    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -150}
-    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -50}
-    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -150}
+    enemies: []
     lootTable:
       entries:
       - kind: 0
@@ -548,7 +516,7 @@ MonoBehaviour:
     - optionText: "\u7ED9\u5F00\u5173\u4E00\u62F3\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\u201C\u6076\u610F\u4E0D\u606F\u201D\uFF09"
       effects:
       - type: 11
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 5
@@ -560,7 +528,7 @@ MonoBehaviour:
     - optionText: "\u4FEE\u590D\u706F\u6CE1\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\u201C\u6B8B\u5B58\u4E4B\u5149\u201D\uFF09"
       effects:
       - type: 10
-        amount: 0
+        amount: 1
         itemDesc: 
         attributeOp: 0
         targetAttribute: 5
@@ -569,15 +537,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    enemies:
-    - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -50}
-    - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -150}
-    - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -50}
-    - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -150}
+    enemies: []
     lootTable:
       entries:
       - kind: 0
