@@ -449,6 +449,7 @@ GameObject:
   - component: {fileID: 5088197560142303953}
   - component: {fileID: 7072287656738498874}
   - component: {fileID: 5000291548482395232}
+  - component: {fileID: 2924681620030554779}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: ArrowLeft
@@ -557,7 +558,31 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 7072287656738498874}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2924681620030554779}
+        m_TargetAssemblyTypeName: MusicControl, Assembly-CSharp
+        m_MethodName: UIClick2
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &2924681620030554779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4168633151767866799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8150859bf8d492f429baeb5a51544591, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4189409308965514253
 GameObject:
   m_ObjectHideFlags: 0
@@ -798,6 +823,7 @@ GameObject:
   - component: {fileID: 7348922695277351177}
   - component: {fileID: 5618419823031027412}
   - component: {fileID: 3983584348797243234}
+  - component: {fileID: 5195177103180441785}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: CloseButton
@@ -898,7 +924,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 7348922695277351177}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 5195177103180441785}
+        m_TargetAssemblyTypeName: MusicControl, Assembly-CSharp
+        m_MethodName: UIClick2
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!222 &3983584348797243234
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -907,6 +945,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5845104379115276144}
   m_CullTransparentMesh: 1
+--- !u!114 &5195177103180441785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5845104379115276144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8150859bf8d492f429baeb5a51544591, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7014658407307425754
 GameObject:
   m_ObjectHideFlags: 0
@@ -1233,6 +1283,7 @@ GameObject:
   - component: {fileID: 8900368907275554574}
   - component: {fileID: 8021897209096513757}
   - component: {fileID: 6940469697675997883}
+  - component: {fileID: 2441682307391771519}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: ArrowRight
@@ -1341,7 +1392,31 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8021897209096513757}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2441682307391771519}
+        m_TargetAssemblyTypeName: MusicControl, Assembly-CSharp
+        m_MethodName: UIClick2
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &2441682307391771519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8471045058658616973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8150859bf8d492f429baeb5a51544591, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8657990812418432033
 GameObject:
   m_ObjectHideFlags: 0
