@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: LuckyRing
   relicName: "\u5E78\u8FD0\u6212\u6307"
-  description: "\u6BCF\u6B21\u878D\u5408\u65F6\u603B\u6570\u503C +5"
+  description: "\u798F\u62A5\u503C +5"
   icon: {fileID: 21300000, guid: f604c93d5b0afa74d8fc5b5bd69533b4, type: 3}
   value: 25
   grade: 1

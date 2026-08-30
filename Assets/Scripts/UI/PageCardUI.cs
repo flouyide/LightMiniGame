@@ -79,8 +79,8 @@ public class PageCardUI : MonoBehaviour
         _onDelete = onDelete;
 
         bool isMysteryEvent = data.eventType == PageEventType.Event;
-        titleText.text = isMysteryEvent ? "神秘事件" : data.displayName;
-        descText.text = isMysteryEvent ? string.Empty : data.description;
+        titleText.text = isMysteryEvent ? "命运" : data.displayName;
+        descText.text = isMysteryEvent ? "幸运女神是否会眷顾你？" : data.description;
 
         if (data.icon != null)
         {
