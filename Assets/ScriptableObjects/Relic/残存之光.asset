@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: RemainingLight
   relicName: "\u6B8B\u5B58\u4E4B\u5149"
-  description: "\u6BCF\u56DE\u5408\u5F00\u59CB\u56DE\u590D 1 \u7406\u667A"
+  description: "\u6BCF\u56DE\u5408\u5F00\u59CB\u56DE\u590D1\u7406\u667A"
   icon: {fileID: 21300000, guid: 8f58cee6ffc4f5b408c42fd13cae8ef1, type: 3}
   value: 15
   grade: 1

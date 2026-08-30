@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_8282d74f
   cardName: "\u8001\u5316\u98CE\u6247"
-  normalDescription: "\u65BD\u52A04\u5C42\u75B2\u60EB\u503C"
-  lowSanityDescription: "\u65BD\u52A05\u5C42\u75B2\u60EB\u503C"
+  normalDescription: "\u65BD\u52A04\u5C42\u75B2\u60EB\u503C\u3002\u56DE\u6D41\u3002\u914D\u4EF6"
+  lowSanityDescription: "\u65BD\u52A05\u5C42\u75B2\u60EB\u503C\u3002\u56DE\u6D41\u3002\u914D\u4EF6"
   cardArt: {fileID: 21300000, guid: 52beab7404d07ee478b85064de846a33, type: 3}
   descBoxSprite: {fileID: 21300000, guid: 78d1f640318bab44da1b4e67a128114b, type: 3}
   typeBoxSprite: {fileID: 21300000, guid: 5201369c9bec34446a3521935074354e, type: 3}

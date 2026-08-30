@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: PressureResistanceMask
   relicName: "\u6297\u538B\u9762\u5177"
-  description: "\u62FE\u8D77\u65F6\u7406\u667A\u4E0A\u9650 +2"
+  description: "\u62FE\u8D77\u65F6\u7406\u667A\u4E0A\u9650\u52A02"
   icon: {fileID: 21300000, guid: b2329169bfcd911459d4a3c22015e6b0, type: 3}
   value: 15
   grade: 0

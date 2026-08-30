@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: MagicCube
   relicName: "\u5F7B\u5E95\u75AF\u72C2\u9B54\u65B9"
-  description: "\u798F\u62A5\u503C +10"
+  description: "\u798F\u62A5\u503C\u52A010"
   icon: {fileID: 21300000, guid: 43c19a4f17ef78a49803dc14a908e4d3, type: 3}
   value: 40
   grade: 1

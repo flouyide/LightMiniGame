@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: Calculator
   relicName: "\u8BA1\u7B97\u5668"
-  description: "\u6BCF\u6253\u51FA\u7B2C\u4E94\u5F20\u724C\u8D39\u7528 -1"
+  description: "\u6BCF\u6253\u51FA\u7B2C\u4E94\u5F20\u724C\u8D39\u7528\u51CF1"
   icon: {fileID: 21300000, guid: 7d171fe8569d077429ecbacf2e17e426, type: 3}
   value: 30
   grade: 1

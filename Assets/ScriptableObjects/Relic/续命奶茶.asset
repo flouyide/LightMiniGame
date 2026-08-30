@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: LifeSavingMilkTea
   relicName: "\u7EED\u547D\u5976\u8336"
-  description: "\u6BCF\u573A\u6218\u6597\u7ED3\u675F\u540E\uFF0C\u6700\u5927\u751F\u547D
-    +3\uFF0C\u5F53\u524D\u751F\u547D +3"
+  description: "\u6BCF\u573A\u6218\u6597\u7ED3\u675F\u540E\uFF0C\u6700\u5927\u751F\u547D\u503C\u52A03\uFF0C\u5F53\u524D\u751F\u547D\u503C\u52A03"
   icon: {fileID: 21300000, guid: f2c7468f3232314408f25b5b52f7bd90, type: 3}
   value: 35
   grade: 1
