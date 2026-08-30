@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   turns:
   - deals:
-    - card: {fileID: 11400000, guid: 8165f2ea61d2e9746ad6c85fb571417d, type: 2}
+    - card: {fileID: 11400000, guid: 4b9cb8c4ff50e25498ae4e9cf6153544, type: 2}
       count: 1
   - deals:
     - card: {fileID: 11400000, guid: b70808a1037abdc48ab5de92daa1f5f9, type: 2}
