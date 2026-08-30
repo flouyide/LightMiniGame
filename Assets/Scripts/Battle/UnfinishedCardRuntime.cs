@@ -26,6 +26,8 @@ public sealed class UnfinishedCardRuntime
     }
 
     public int EntangleStacks => _entangleStacks;
+    public int HandCostReductionThisTurn => _handCostReductionThisTurn;
+    public int TotalHandCostBonus => _entangleStacks - _handCostReductionThisTurn;
     public int DirtyWorkStacks => _dirtyWorkStacks;
     public int IncomingDamageBonus => _dirtyWorkStacks * DirtyWorkDamagePerStack;
 

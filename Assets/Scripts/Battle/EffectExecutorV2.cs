@@ -436,6 +436,10 @@ public class EffectExecutorV2
             case ValueNodeType.ReadLocalVariable:
                 return _localVars != null && _localVars.TryGetValue(node.variableName, out var lv) ? lv : 0;
 
+            // 读取自定义数据（如主机配件数量）
+            case ValueNodeType.ReadCustomData:
+                return _ctx.GetCustomData(node.variableName);
+
             // 读取上次效果结果
             case ValueNodeType.ReadLastEffectResult:
                 return _lastResult != null && _lastResult.TryGetValue(node.resultRef, out var lr) ? lr : 0;

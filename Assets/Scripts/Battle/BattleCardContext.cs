@@ -205,4 +205,13 @@ public class BattleCardContext : ICardRuntimeContext
         => _battle.TryGetCardStatusValueOverride(cardId, status, out value);
     public int ApplyTemporaryKeyword(EffectNode node, bool add, int count)
         => _battle.ApplyTemporaryKeyword(node, add, count);
+
+    public int SearchCardInDrawPileToHand(string cardName, int count)
+        => _battle.SearchCardInDrawPileToHand(cardName, count);
+
+    public int GenerateRandomCardsByKeyword(CardKeyword2 keyword, int count, CardZoneType zone)
+        => _battle.GenerateRandomCardsByKeyword(keyword, count, zone);
+
+    public void AddDamageBonusToHostCard(int bonus)
+        => _battle.AddDamageBonusToHostCard(bonus);
 }

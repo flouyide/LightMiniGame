@@ -160,6 +160,7 @@ namespace LightMiniGame.CardEditor
                 case ValueNodeType.ReadRuntimeFlag:
                 case ValueNodeType.ReadMaxHandCount:
                 case ValueNodeType.ReadHandVacancies:
+                case ValueNodeType.ReadCustomData:
                     return true;
             }
             if (node.operands == null) return false;
@@ -238,6 +239,7 @@ namespace LightMiniGame.CardEditor
                 case ValueNodeType.ReadEnemyCount: return "敌人数";
                 case ValueNodeType.ReadTargetCount: return "目标数";
                 case ValueNodeType.ReadLocalVariable: return variableName;
+                case ValueNodeType.ReadCustomData: return variableName;
                 case ValueNodeType.ReadLastEffectResult: return GetResultName(resultRef);
                 case ValueNodeType.ReadAllEnemiesStatusStacks: return "全场" + GetStatusName(statusRef) + "层数";
                 case ValueNodeType.ReadMaxHandCount: return "手牌上限";

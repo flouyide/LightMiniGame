@@ -521,7 +521,7 @@ public class BattleManager : MonoBehaviour
             var cd = CardEntryAdapter.ConvertSingle(entry);
             if (cd == null) break;
             cd.extraCost = _handCostBonus;
-            cd.statusCostBonus = _unfinished != null ? _unfinished.EntangleStacks : 0;
+            cd.statusCostBonus = _unfinished != null ? _unfinished.TotalHandCostBonus : 0;
             if (zone == CardZoneType.DrawPile)
             {
                 ActiveChar.drawPile.Add(cd);
@@ -597,6 +597,90 @@ public class BattleManager : MonoBehaviour
         || t == CardTarget.NextAttackCard
         || t == CardTarget.NextSkillCard
         || t == CardTarget.NextAbilityCard;
+
+    // === 牌堆搜索与定向抽取 ===
+
+    /// <summary>从抽牌堆中搜索指定卡名的牌并移到手牌。返回实际移到手牌的数量。</summary>
+    public int SearchCardInDrawPileToHand(string cardName, int count)
+    {
+        if (string.IsNullOrEmpty(cardName) || count <= 0) return 0;
+        var activeChar = ActiveChar;
+        if (activeChar == null || activeChar.drawPile == null) return 0;
+        int moved = 0;
+        for (int i = activeChar.drawPile.Count - 1; i >= 0 && moved < count; i--)
+        {
+            var card = activeChar.drawPile[i];
+            if (card == null) continue;
+            bool match = card.cardName != null && card.cardName.Trim() == cardName.Trim();
+            if (!match && card.sourceEntry != null && card.sourceEntry.cardName != null)
+                match = card.sourceEntry.cardName.Trim() == cardName.Trim();
+            if (!match) continue;
+            if (_hand.Count >= handLimit) break;
+            _hand.Add(card);
+            activeChar.drawPile.RemoveAt(i);
+            moved++;
+        }
+        if (moved > 0)
+        {
+            OnHandCardsChanged?.Invoke();
+            RefreshHandUI();
+            Debug.Log($"[BattleManager] 从抽牌堆搜索「{cardName}」移到手牌 {moved} 张");
+        }
+        return moved;
+    }
+
+    /// <summary>从牌库中随机生成指定词条的卡牌到手牌。返回实际生成数量。</summary>
+    public int GenerateRandomCardsByKeyword(CardKeyword2 keyword, int count, CardZoneType zone)
+    {
+        if (keyword == CardKeyword2.None || count <= 0 || _battleEnded) return 0;
+        // 查找全局牌库中带指定词条的卡
+        var db = CardDatabase.Load();
+        if (db == null || db.cards == null || db.cards.Count == 0) return 0;
+        var candidates = new List<CardEntry>();
+        foreach (var entry in db.cards)
+        {
+            if (entry == null) continue;
+            if ((entry.keyword & (CardKeyword)(int)keyword) != 0)
+                candidates.Add(entry);
+        }
+        if (candidates.Count == 0) return 0;
+        int added = 0;
+        for (int i = 0; i < count; i++)
+        {
+            var pick = candidates[UnityEngine.Random.Range(0, candidates.Count)];
+            added += AddGeneratedCards(pick, 1, zone);
+        }
+        return added;
+    }
+
+    /// <summary>给手牌中名为「主机」的卡添加临时伤害加成（叠加到 attachedEffectNodes）。</summary>
+    public void AddDamageBonusToHostCard(int bonus)
+    {
+        CardData host = null;
+        foreach (var c in _hand)
+        {
+            if (c != null && c.IsHostCard) { host = c; break; }
+        }
+        if (host == null)
+        {
+            Debug.Log("[BattleManager] AddDamageBonusToHostCard: 手牌中未找到主机");
+            return;
+        }
+        if (host.attachedEffectNodes == null)
+            host.attachedEffectNodes = new List<EffectNode>();
+        var dmgNode = new EffectNode
+        {
+            enabled = true,
+            displayName = "一键装机增伤",
+            operation = EffectOperation.DealDamage,
+            target = new TargetSelector { category = TargetCategory.Enemy, unitTarget = CombatUnitTarget.SelectedEnemy },
+            value = ValueNode.Constant(bonus),
+            scalingMode = ScalingMode.Fixed,
+            countAsAttack = false
+        };
+        host.attachedEffectNodes.Add(dmgNode);
+        Debug.Log($"[BattleManager] 主机「{host.cardName}」获得 +{bonus} 临时伤害（现 {host.attachedEffectNodes.Count} 条附加效果）");
+    }
 
     private void TryApplyPendingKeywordOnPlay(CardData card)
     {
@@ -2593,7 +2677,7 @@ public class BattleManager : MonoBehaviour
 
             var drawn = activeChar.drawPile[0];
             drawn.extraCost = _handCostBonus;   // 继承当前过载费用加成
-            drawn.statusCostBonus = _unfinished != null ? _unfinished.EntangleStacks : 0;
+            drawn.statusCostBonus = _unfinished != null ? _unfinished.TotalHandCostBonus : 0;
             _hand.Add(drawn);
             activeChar.drawPile.RemoveAt(0);
             _pendingDrawVisuals.Add(drawn);
@@ -3018,7 +3102,20 @@ public class BattleManager : MonoBehaviour
             if (entry.HasEffectNodes(card.isLowSanityForm)
                 || (card.attachedEffectNodes != null && card.attachedEffectNodes.Count > 0))
             {
-                var nodes = card.GetEffectNodes(card.isLowSanityForm);
+                // 能力卡有低理智形态时，合并两套效果，各自带理智条件，
+                // 使注册的触发器在触发时按当前理智选择正确目标。
+                List<EffectNode> nodes;
+                if (entry.cardType == LightMiniGame.CardEditor.CardType.Ability
+                    && entry.hasLowSanityForm
+                    && entry.normalEffectNodes != null && entry.normalEffectNodes.Count > 0
+                    && entry.lowSanityEffectNodes != null && entry.lowSanityEffectNodes.Count > 0)
+                {
+                    nodes = MergeSanityFormEffects(entry);
+                }
+                else
+                {
+                    nodes = card.GetEffectNodes(card.isLowSanityForm);
+                }
                 if (SkipRegisterTriggersOnReplay && nodes != null)
                 {
                     var filtered = new List<EffectNode>(nodes.Count);
@@ -3191,7 +3288,60 @@ public class BattleManager : MonoBehaviour
         if (host.attachedEffectNodes == null)
             host.attachedEffectNodes = new List<EffectNode>();
         host.attachedEffectNodes.AddRange(nodes);
-        Debug.Log($"[BattleManager] 配件「{accessory.cardName}」效果已叠加到主机「{host.cardName}」（现 {host.attachedEffectNodes.Count} 条附加效果）");
+        int accessoryCount = host.attachedEffectNodes.Count;
+        SetCustomData("HostAccessoryCount", accessoryCount);
+        Debug.Log($"[BattleManager] 配件「{accessory.cardName}」效果已叠加到主机「{host.cardName}」（现 {accessoryCount} 条附加效果）");
+    }
+
+    /// <summary>
+    /// 合并能力卡的普通和低理智效果列表，各自附加理智条件，
+    /// 使注册的触发器在触发时按当前理智状态选择正确的效果形态。
+    /// </summary>
+    private static List<EffectNode> MergeSanityFormEffects(CardEntry entry)
+    {
+        var result = new List<EffectNode>();
+
+        // 普通效果：条件 = 非低理智
+        foreach (var node in entry.normalEffectNodes)
+        {
+            if (node == null || !node.enabled) continue;
+            var clone = node.Clone();
+            clone.conditions = WrapWithSanityCondition(clone.conditions, expectLowSanity: false);
+            result.Add(clone);
+        }
+
+        // 低理智效果：条件 = 低理智
+        foreach (var node in entry.lowSanityEffectNodes)
+        {
+            if (node == null || !node.enabled) continue;
+            var clone = node.Clone();
+            clone.conditions = WrapWithSanityCondition(clone.conditions, expectLowSanity: true);
+            result.Add(clone);
+        }
+
+        return result;
+    }
+
+    /// <summary>在现有条件组外包裹一个理智状态检查条件。</summary>
+    private static ConditionGroup WrapWithSanityCondition(ConditionGroup existing, bool expectLowSanity)
+    {
+        var sanityCond = new ConditionEntry
+        {
+            conditionType = ConditionType2.CompareValue,
+            leftValue = new ValueNode
+            {
+                nodeType = ValueNodeType.ReadResource,
+                resourceRef = LightMiniGame.CardEditor.PlayerResourceType.Sanity
+            },
+            comparison = expectLowSanity ? ComparisonOperator.LessOrEqual : ComparisonOperator.Greater,
+            rightValue = ValueNode.Constant(4)
+        };
+
+        var conditions = new List<ConditionEntry> { sanityCond };
+        if (existing != null && existing.conditions != null && existing.conditions.Count > 0)
+            conditions.AddRange(existing.conditions);
+
+        return new ConditionGroup { logic = ConditionLogic2.All, conditions = conditions };
     }
 
     // ========================================================================
@@ -3701,7 +3851,8 @@ public class BattleManager : MonoBehaviour
             {
                 AddTurnCounter("SanityLost", lost);
                 AddBattleCounter("TotalSanityLost", lost);
-                _triggerSystem?.FireEvent(TriggerEvent.OnSanityLost);
+                var eventParams = new Dictionary<string, int> { { "EventValue", lost } };
+                _triggerSystem?.FireEvent(TriggerEvent.OnSanityLost, eventParams);
             }
         }
 
@@ -3739,6 +3890,16 @@ public class BattleManager : MonoBehaviour
             //    Debug.Log($"[BattleManager] {e.Name}（槽位{e.SlotIndex}）理智触发阶段切换 → 阶段{e.Phase}，HP保持 {e.HP}/{e.MaxHP}");
             //}
         }
+
+        // 理智变化后同步手牌的低理智形态标记与卡面描述
+        int sanityThreshold2 = _ruleConfig != null ? _ruleConfig.sanity.lowSanityThreshold : 4;
+        bool lowSanityNow = _playerSanity <= sanityThreshold2;
+        foreach (var c in _hand)
+        {
+            if (c != null && c.sourceEntry != null)
+                c.isLowSanityForm = c.sourceEntry.ShouldUseLowSanityForm(_playerSanity, sanityThreshold2);
+        }
+        RefreshHandDisplays();
 
         UpdateUI();
         ApplyBackground();   // 理智变化实时切换背景

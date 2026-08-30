@@ -322,10 +322,13 @@ public class CardDisplay : MonoBehaviour
         }
 
         var ordered = CardKeywords.GetOrderedFlags(keywords, _keywordDisplayOrder);
-        if (_resolvedKeywordTab != null)
-            _resolvedKeywordTab.gameObject.SetActive(ordered.Count > 0);
+        bool hasEntangle = _data != null && _data.statusCostBonus > 0;
+        int totalCount = ordered.Count + (hasEntangle ? 1 : 0);
 
-        while (_keywordIconPool.Count < ordered.Count)
+        if (_resolvedKeywordTab != null)
+            _resolvedKeywordTab.gameObject.SetActive(totalCount > 0);
+
+        while (_keywordIconPool.Count < totalCount)
         {
             var created = CreateKeywordIcon(container);
             if (created == null) break;
@@ -336,10 +339,17 @@ public class CardDisplay : MonoBehaviour
         {
             var iconGo = _keywordIconPool[i];
             if (iconGo == null) continue;
-            bool on = i < ordered.Count;
+            bool on = i < totalCount;
             iconGo.SetActive(on);
             if (!on) continue;
-            ApplyKeywordIcon(iconGo, ordered[i]);
+            if (i < ordered.Count)
+            {
+                ApplyKeywordIcon(iconGo, ordered[i]);
+            }
+            else
+            {
+                ApplyEntangleIcon(iconGo);
+            }
             ApplyKeywordIconSize(iconGo);
         }
     }
@@ -590,6 +600,25 @@ public class CardDisplay : MonoBehaviour
             bool showLetter = sprite == null && !string.IsNullOrEmpty(name);
             label.gameObject.SetActive(showLetter);
             if (showLetter) label.text = name.Substring(0, 1);
+        }
+    }
+
+    /// <summary>为受缠结影响的手牌渲染伪词条图标（紫色方块 + "缠"字）。</summary>
+    private void ApplyEntangleIcon(GameObject iconGo)
+    {
+        if (iconGo == null) return;
+        var img = iconGo.GetComponent<Image>();
+        var label = iconGo.GetComponentInChildren<TextMeshProUGUI>(true);
+
+        if (img != null)
+        {
+            img.sprite = FallbackIconSprite();
+            img.color = new Color(0.55f, 0.25f, 0.70f, 1f);
+        }
+        if (label != null)
+        {
+            label.gameObject.SetActive(true);
+            label.text = "缠";
         }
     }
 

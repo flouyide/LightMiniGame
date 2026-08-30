@@ -497,7 +497,8 @@ namespace LightMiniGame.CardEditor
         ReadAllEnemiesStatusStacks,
         ReadMaxHandCount,
         ReadHandVacancies,
-        Modulo
+        Modulo,
+        ReadCustomData
     }
 
     // ========================================================================

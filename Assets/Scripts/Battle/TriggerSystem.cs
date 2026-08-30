@@ -121,8 +121,9 @@ public class TriggerSystem
 
     /// <summary>
     /// 触发指定事件。由 BattleManager / EffectExecutor 在对应事件发生时调用。
+    /// eventParams 可携带事件相关数值（如失去理智的数量），子效果可通过 ReadLocalVariable("EventValue") 读取。
     /// </summary>
-    public void FireEvent(TriggerEvent evt)
+    public void FireEvent(TriggerEvent evt, Dictionary<string, int> eventParams = null)
     {
         for (int i = _triggers.Count - 1; i >= 0; i--)
         {
@@ -145,9 +146,19 @@ public class TriggerSystem
                     continue;
             }
 
-            // 执行子效果（传入局部变量快照）
+            // 合并触发器局部变量与事件参数（事件参数优先）
+            var vars = t.localVars != null
+                ? new Dictionary<string, int>(t.localVars)
+                : new Dictionary<string, int>();
+            if (eventParams != null)
+            {
+                foreach (var kv in eventParams)
+                    vars[kv.Key] = kv.Value;
+            }
+
+            // 执行子效果
             Debug.Log($"[TriggerSystem] 触发 {evt} → {(t.isAbility ? "能力" : "临时")}触发器(id={t.id})");
-            _executor.ExecuteTriggerEffects(t.effects, t.localVars);
+            _executor.ExecuteTriggerEffects(t.effects, vars);
 
             t.triggersUsed++;
             t.triggersThisTurn++;
