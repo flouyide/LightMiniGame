@@ -673,7 +673,7 @@ MonoBehaviour:
       data:
         nodeType: 0
         intValue: 5
-        floatValue: 0
+        floatValue: 2.5
         attributeRef: 1
         resourceRef: 1
         statusRef: 0

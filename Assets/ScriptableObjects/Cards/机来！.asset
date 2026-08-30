@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d96128b55e3e42cb9f1deb514efd787, type: 3}
-  m_Name: "\u673A\u6765"
+  m_Name: "\u673A\u6765\uFF01"
   m_EditorClassIdentifier: 
   cardId: card_d73681d2
-  cardName: "\u673A\u6765"
+  cardName: "\u673A\u6765\uFF01"
   normalDescription: "\u5C06\u4E3B\u673A\u4ECE\u724C\u5E93\u653E\u5165\u624B\u724C"
   lowSanityDescription: "\u5C06\u4E3B\u673A\u4ECE\u724C\u5E93\u653E\u5165\u624B\u724C"
   cardArt: {fileID: 21300000, guid: 8d8f1a5d5a9745041b09731f35b6461a, type: 3}
