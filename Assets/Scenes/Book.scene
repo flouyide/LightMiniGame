@@ -1105,6 +1105,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 20.01
       objectReference: {fileID: 0}
+    - target: {fileID: 2225825645341662686, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_text
+      value: "\u8D27\u5E01"
+      objectReference: {fileID: 0}
     - target: {fileID: 3152672531661309488, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -1161,6 +1165,10 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 519420031}
+    - target: {fileID: 5249566666181735745, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_text
+      value: "\u7406\u667A"
+      objectReference: {fileID: 0}
     - target: {fileID: 5550307289624248097, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -1224,6 +1232,10 @@ PrefabInstance:
     - target: {fileID: 5935065382671230308, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6233751434499633468, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+      propertyPath: m_text
+      value: "\u751F\u547D"
       objectReference: {fileID: 0}
     - target: {fileID: 6825519802620891561, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -1322,7 +1334,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2008882131}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 2181239525161034627, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+    - {fileID: 2196801520347766808, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
+    - {fileID: 3005709997010512534, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4491254210299687481, guid: 89da8d5adfb22904d88840638e403d6a, type: 3}
