@@ -16,8 +16,8 @@ MonoBehaviour:
   maxSelections: 15
   events:
   - eventId: ch1_event_final
-    displayName: "\u585E\u4F0A\u683C\u4E9A"
-    description: 
+    displayName: "\u6218\u6597-BOSS"
+    description: "\u5F53\u4F60\u5728\u51DD\u89C6\u5B83\u7684\u65F6\u5019\uFF0C\u5B83\u4E5F\u5728\u51DD\u89C6\u7740\u4F60"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -68,7 +68,7 @@ MonoBehaviour:
     lootTable:
       entries:
       - kind: 0
-        currencyAmount: 20
+        currencyAmount: 30
         cardRarities: 
         cardDrawCount: 0
         cardPickCount: 0
@@ -91,8 +91,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_bgc
-    displayName: "\u80CC\u9505\u866B"
-    description: 
+    displayName: "\u6218\u6597-\u7CBE\u82F1"
+    description: "\u597D\u7529\uFF0C\u597D\u80CC"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -121,7 +121,7 @@ MonoBehaviour:
     lootTable:
       entries:
       - kind: 0
-        currencyAmount: 10
+        currencyAmount: 20
         cardRarities: 
         cardDrawCount: 0
         cardPickCount: 0
@@ -144,8 +144,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_zdtp
-    displayName: "\u7AD9\u961F\u5929\u5E73"
-    description: 
+    displayName: "\u6218\u6597-\u7CBE\u82F1"
+    description: "\u603B\u5F97\u9009\u4E00\u4E2A\u7ACB\u573A\uFF0C\u4E0D\u662F\u5417"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -172,7 +172,7 @@ MonoBehaviour:
     lootTable:
       entries:
       - kind: 0
-        currencyAmount: 10
+        currencyAmount: 20
         cardRarities: 
         cardDrawCount: 0
         cardPickCount: 0
@@ -558,8 +558,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_cxzj
-    displayName: "\u6284\u88AD\u4E13\u5BB6"
-    description: 
+    displayName: "\u6218\u6597-\u666E\u901A"
+    description: "\u4F60\u5145q\u5E01\u5417\uFF1F"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -615,8 +615,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_dkjqr
-    displayName: "\u6253\u5361\u673A\u5668\u4EBA"
-    description: 
+    displayName: "\u6218\u6597-\u666E\u901A"
+    description: "\u8FDF\u5230\u5361\u5DF2\u653E\u7F6E\u5230\u5DE5\u4F4D\u4E0A\uFF0C\u8BF7\u67E5\u6536"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -672,8 +672,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_hhhx
-    displayName: "\u9ED1\u8BDD\u9ED1\u7BB1"
-    description: 
+    displayName: "\u6218\u6597-\u666E\u901A"
+    description: "\u6CA1\u6709\u4EBA\u77E5\u9053\u5B83\u5728\u8BF4\u4EC0\u4E48"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -712,7 +712,7 @@ MonoBehaviour:
     lootTable:
       entries:
       - kind: 0
-        currencyAmount: 10
+        currencyAmount: 15
         cardRarities: 
         cardDrawCount: 0
         cardPickCount: 0
@@ -729,8 +729,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_hbtyy
-    displayName: "\u753B\u997C\u6295\u5F71\u4EEA"
-    description: 
+    displayName: "\u6218\u6597-\u666E\u901A"
+    description: "\u4F60\u4EEC\u7684\u672A\u6765\u5F88\u5149\u660E\uFF01"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -769,7 +769,7 @@ MonoBehaviour:
     lootTable:
       entries:
       - kind: 0
-        currencyAmount: 10
+        currencyAmount: 20
         cardRarities: 
         cardDrawCount: 0
         cardPickCount: 0
@@ -786,8 +786,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_gwyy
-    displayName: "\u5DE5\u4F4D\u70DF\u4E91"
-    description: 
+    displayName: "\u6218\u6597-\u666E\u901A"
+    description: "\u6765\u4E00\u6839\uFF1F\u4EC0\u4E48\uFF0C\u4E00\u6839\u4E0D\u591F\uFF1F"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -1063,8 +1063,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_wnhds
-    displayName: "\u201D\u4E3A\u4F60\u597D\u201C\u5BFC\u5E08"
-    description: 
+    displayName: "\u6218\u6597-\u666E\u901A"
+    description: "\u90FD\u662F\u4E3A\u4F60\u597D\uFF01\uFF01\uFF01"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
