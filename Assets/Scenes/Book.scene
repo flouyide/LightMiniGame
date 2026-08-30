@@ -2188,6 +2188,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4663723853376647076}
   - component: {fileID: 8272002400054892789}
+  - component: {fileID: 8272002400054892790}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: BattleSystem
@@ -2279,12 +2280,41 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ccad82d8b2b004e579fcae9e66f3640e, type: 2}
   - {fileID: 11400000, guid: 1b33bdcba45af4e4ea3a4c9e95cca7c2, type: 2}
   - {fileID: 11400000, guid: 62c1b4e4e7fb144389f7e0a9f78473e8, type: 2}
-  - {fileID: 11400000, guid: 3bf770687e63847fca079956a7956d2c, type: 2}
+  - {fileID: 11400000, guid: a8c3e1f47b925d6e0a1b4c5d6e7f8091, type: 2}
   - {fileID: 11400000, guid: e81ec51de1eb242a6a763a4096bd03c3, type: 2}
   - {fileID: 11400000, guid: 94e7904ad44754c87b838b21980cecd7, type: 2}
   - {fileID: 11400000, guid: c4e8a1b27d5f4c9e8a3b6d1f0e7c2a95, type: 2}
+  - {fileID: 11400000, guid: b9d4e2f58c036a7b1d2e4f5a6b7c8093, type: 2}
+  - {fileID: 11400000, guid: aaf5d60b2c7c9644ab4a3519d26b9cb4, type: 2}
   persistFusion: 0
   includeHPInFusion: 0
+--- !u!114 &8272002400054892790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4346907535367928334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cafd0e56f4371344eb525b19e6b07909, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetObjectName: FusionEntryButton
+  retryUntilFound: 1
+  retryInterval: 0.5
+  title: "\u798F\u62A5\u9B54\u65B9"
+  body: "\u4F60\u8FD8\u5728\u7B49\u4EC0\u4E48\uFF1F\n0.\u4F7F\u7528\u624B\u518C\uFF1A\u70B9\u51FB-\u9009\u53D6\u6570\u503C-\u518D\u6B21\u70B9\u51FB\u8FDB\u884C\u878D\u5408\n1.\u878D\u5408\u91CD\u7EC4\uFF1A\u5C06\u4EFB\u610F\u4E2A\u6570\u503C\u76F8\u52A0\u540E\u91CD\u65B0\u5206\u914D\n2.\u5149\u660E\u798F\u62A5\uFF1A\u91CD\u7EC4\u65F6\u5C06\u798F\u62A5\u503C\u989D\u5916\u8BA1\u5165\u603B\u6570\n3.\u4E34\u65F6\u6743\u9650\uFF1A\u4FEE\u6539\u6570\u503C\u6709\u9650\uFF0C\u65E0\u6CD5\u6C38\u4E45\u4FDD\u7559\n4.\u7B49\u4EF7\u4EA4\u6362\uFF1A\u53EA\u9700\u6536\u53D6\u5FAE\u4E0D\u8DB3\u9053\u76844\u7406\u667A\u5373\u53EF\u4F7F\u7528"
+  preferredWidth: 300
+  titleFontSize: 22
+  bodyFontSize: 18
+  padding: 14
+  spacing: 6
+  side: 1
+  gap: 10
+  screenMargin: 8
+  backgroundColor: {r: 0.08, g: 0.07, b: 0.12, a: 0.94}
+  bodyTextColor: {r: 0.88, g: 0.86, b: 0.9, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

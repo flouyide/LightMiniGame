@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361c9159a0ae6ef45b6b3afe0da25e44, type: 3}
+  m_Name: "\u5149\u660E\u5DE5\u5361"
+  m_EditorClassIdentifier: 
+  relicId: gmgk
+  relicName: "\u5149\u660E\u5DE5\u5361"
+  description: "\u73A9\u5BB6\u56DE\u5408\u7ED3\u675F\u65F6\u82E5\u5904\u4E8E\u4F4E\u7406\u667A\u72B6\u6001\u5219\u83B7\u5F973\u5C42\u75AF\u72C2"
+  icon: {fileID: 21300000, guid: a797b413b5d20cb4cb106fa9910d94b7, type: 3}
+  value: 0
+  grade: 0
+  sortOrder: 0
+  effectScriptName: LightMiniGame.RelicEffects.MadnessLowSanityRelicEffect
+  effectParams: []
+  effectStringParams: []
+  effectObjectParams: []
+  effectScript: {fileID: 11500000, guid: be04276197a378f42a3dad8fb78b4848, type: 3}

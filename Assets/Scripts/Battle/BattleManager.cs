@@ -3838,6 +3838,22 @@ public class BattleManager : MonoBehaviour
             HandlePlayerDefeat();
     }
 
+    private void TickMadness()
+    {
+        if (_playerBuffs == null) return;
+        int stacks = _playerBuffs.GetTempValue(BuffAttributeType.Madness);
+        if (stacks <= 0) return;
+
+        int missingSanity = Mathf.Max(0, _playerMaxSanity - _playerSanity);
+        int dmg = stacks * missingSanity;
+        if (dmg > 0)
+        {
+            LosePlayerHP(dmg);
+            Debug.Log($"[疯狂] 扣除 {dmg} 点生命（层数{stacks} × 缺失理智{missingSanity}），剩余 {_playerHP}");
+        }
+
+        _playerBuffs.RemoveBuff(BuffAttributeType.Madness, 1);
+    }
     /// <summary>玩家受伤的统一处理入口（飘字提示 + 事件记录）。</summary>
     private void OnPlayerDamaged(int damage)
     {
@@ -4507,6 +4523,7 @@ public class BattleManager : MonoBehaviour
         {
             // 敌人回合结束后再触发 OnTurnEnd，让「未受到伤害」能计入敌人攻击。
             _triggerSystem?.OnTurnEnd();
+            TickMadness();
             if (!_battleEnded)
                 StartPlayerTurn();
         }

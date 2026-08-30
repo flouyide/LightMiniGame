@@ -17,6 +17,7 @@ public enum BuffAttributeType
     ArmorBreak,     // 破甲（玩家 / 敌人 buff 栏）
     DirtyWork,      // 脏活（玩家减益：受伤额外 3×层数；仅 UI + UnfinishedCardRuntime）
     Heat,           // 热度（枪械师资源：层数=_customData["Heat"]；仅 UI）
+    Madness,        // 疯狂（玩家减益：大回合结束按 层数×(理智上限-当前理智) 扣血并 -1 层）
 }
 
 // ========================================================================

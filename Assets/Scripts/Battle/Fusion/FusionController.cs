@@ -42,6 +42,12 @@ public class FusionController : MonoBehaviour
 
     // === 融合入口按钮图标（魔方） ===
     private const float EntryButtonSize = 60f;
+    [SerializeField]
+    [Tooltip("融合魔方按钮的 Y 偏移（Inspector 可调）。正值向上（更贴近顶栏），负值向下。")]
+    private float entryButtonOffset = -90f;
+
+    // 未加偏移时的基准 Y（= -TopBar高度 + 36），供偏移重算使用
+    private float _entryButtonBaseY;
     private const string CubeClosedPath = "Assets/Art/局内/魔方关.png";
     private const string CubeOpenPath = "Assets/Art/局内/魔方开.png";
     private static Sprite _cubeClosedSprite;
@@ -102,7 +108,8 @@ public class FusionController : MonoBehaviour
         // TopBar 约占屏幕顶部 12%；略叠进栏下沿，战斗中栏背景已关 raycast
         const float liftIntoBar = 36f;
         float barH = ResolveTopBarHeight(parent.transform as RectTransform);
-        rt.anchoredPosition = new Vector2(78f, -barH + liftIntoBar);
+        _entryButtonBaseY = -barH + liftIntoBar;
+        rt.anchoredPosition = new Vector2(78f, _entryButtonBaseY + entryButtonOffset);
         rt.sizeDelta = new Vector2(EntryButtonSize, EntryButtonSize);
 
         _entryButtonImage = _entryButtonGO.AddComponent<Image>();
@@ -157,6 +164,18 @@ public class FusionController : MonoBehaviour
         if (_entryButtonGO != null)
             _entryButtonGO.transform.SetAsLastSibling();
     }
+    /// <summary>重新套用入口按钮的 Y 偏移；运行模式下在 Inspector 改数值时即时生效。</summary>
+    private void ApplyEntryButtonOffset()
+    {
+        if (_entryButtonGO == null) return;
+        var rt = _entryButtonGO.transform as RectTransform;
+        if (rt == null) return;
+        rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, _entryButtonBaseY + entryButtonOffset);
+    }
+#if UNITY_EDITOR
+// 仅编辑器下调用：Inspector 里改 entryButtonOffset 时立刻刷新按钮位置，方便边看边调。
+private void OnValidate() => ApplyEntryButtonOffset();
+#endif
 
     private Canvas FindParentCanvas()
     {
