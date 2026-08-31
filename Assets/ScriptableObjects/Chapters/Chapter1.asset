@@ -16,8 +16,8 @@ MonoBehaviour:
   maxSelections: 18
   events:
   - eventId: ch1_event_final
-    displayName: "\u6218\u6597-BOSS\uFF08\u5F88\u5F3A\uFF01\uFF01\u5EFA\u8BAE\u6700\u540E\u6311\u6218\uFF09"
-    description: "\u5F53\u4F60\u5728\u51DD\u89C6\u5B83\u7684\u65F6\u5019\uFF0C\u5B83\u4E5F\u5728\u51DD\u89C6\u7740\u4F60"
+    displayName: "\u6218\u6597-BOSS"
+    description: "\u5F53\u4F60\u5728\u51DD\u89C6\u5B83\u7684\u65F6\u5019\uFF0C\u5B83\u4E5F\u5728\u51DD\u89C6\u7740\u4F60\uFF08\u5F88\u5F3A\uFF01\uFF01\u5EFA\u8BAE\u6700\u540E\u6311\u6218\uFF09"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -91,8 +91,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_bgc
-    displayName: "\u6218\u6597-\u7CBE\u82F1\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
-    description: "\u597D\u7529\uFF0C\u597D\u80CC\uFF0C\u597D\u91CD"
+    displayName: "\u6218\u6597-\u7CBE\u82F1"
+    description: "\u597D\u7529\uFF0C\u597D\u80CC\uFF0C\u597D\u91CD\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -144,8 +144,8 @@ MonoBehaviour:
     restHealingPercent: 30
     defaultEffects: []
   - eventId: ch1_event_zdtp
-    displayName: "\u6218\u6597-\u7CBE\u82F1\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
-    description: "\u4FDD\u6301\u4E2D\u7ACB\uFF1F\u8FD9\u4E2A\u4E0D\u662F\u9009\u9879\u54E6~"
+    displayName: "\u6218\u6597-\u7CBE\u82F1"
+    description: "\u4FDD\u6301\u4E2D\u7ACB\uFF1F\u8FD9\u4E2A\u4E0D\u662F\u9009\u9879\u54E6~\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -205,7 +205,7 @@ MonoBehaviour:
     followUpIds: []
     prerequisiteIds: []
     options:
-    - optionText: "\u987A\u624B\u62FF\u4E00\u6837\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u91CC\u5965\u91CC\uFF09"
+    - optionText: "\u987A\u624B\u62FF\u4E00\u6837\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u91CC\u5965\u91CC-\u56DE\u8840\uFF09"
       effects:
       - type: 11
         amount: 1
@@ -217,7 +217,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    - optionText: "\u6B7B\u78D5\u76D1\u63A7\u4E0B\u90A3\u888B\uFF08\u5931\u53BB14\u751F\u547D\uFF0C\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u7EED\u547D\u5976\u8336\uFF09"
+    - optionText: "\u6B7B\u78D5\u76D1\u63A7\u4E0B\u90A3\u888B\uFF08\u5931\u53BB14\u751F\u547D\uFF0C\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u7EED\u547D\u5976\u8336-\u589E\u52A0\u6700\u5927\u751F\u547D\uFF09"
       effects:
       - type: 10
         amount: 1
@@ -260,7 +260,7 @@ MonoBehaviour:
     followUpIds: []
     prerequisiteIds: []
     options:
-    - optionText: "\u7EFF\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u97ED\u83DC\uFF09"
+    - optionText: "\u7EFF\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u97ED\u83DC-\u5728\u798F\u62A5\u9B54\u65B9\u7CFB\u7EDF\u91CC\u8D21\u732E\u6240\u6709\u6570\u503C\uFF09"
       effects:
       - type: 14
         amount: 1
@@ -272,7 +272,7 @@ MonoBehaviour:
         keywordToAdd: 2
         discountRatio: 0
         enterBattleEnemies: []
-    - optionText: "\u7EA2\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u80A1\u795E\uFF09"
+    - optionText: "\u7EA2\u8272\uFF08\u6307\u5B9A\u5361\u724C\u9644\u52A0\u8BCD\u6761\uFF1A\u80A1\u795E-\u5728\u798F\u62A5\u9B54\u65B9\u7CFB\u7EDF\u91CC\u5F97\u5230\u6240\u6709\u6570\u503C\uFF09"
       effects:
       - type: 14
         amount: 1
@@ -327,7 +327,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    - optionText: "\u62FF\u8D70\u6234\u5E3D\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u51A0\u5195\uFF09"
+    - optionText: "\u62FF\u8D70\u6234\u5E3D\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u51A0\u5195-\u6BCF\u56DE\u5408\u83B7\u5F973\u62A4\u7532\uFF09"
       effects:
       - type: 10
         amount: 1
@@ -339,7 +339,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    - optionText: "\u62FF\u8D70\u751C\u751C\u5708\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u751C\u751C\u5708\uFF09"
+    - optionText: "\u62FF\u8D70\u751C\u751C\u5708\u7AE0\u9C7C\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\uFF1A\u751C\u751C\u5708-\u56DE\u8840\u4F46\u6263\u7406\u667A\uFF09"
       effects:
       - type: 11
         amount: 1
@@ -513,7 +513,7 @@ MonoBehaviour:
     followUpIds: []
     prerequisiteIds: []
     options:
-    - optionText: "\u7ED9\u5F00\u5173\u4E00\u62F3\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\u201C\u6076\u610F\u4E0D\u606F\u201D\uFF09"
+    - optionText: "\u7ED9\u5F00\u5173\u4E00\u62F3\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\u201C\u6076\u610F\u4E0D\u606F\u201D\uFF1A\u9AD8\u4F24\u5BB3\u4F46\u51CF\u7406\u667A\uFF09"
       effects:
       - type: 11
         amount: 1
@@ -525,7 +525,7 @@ MonoBehaviour:
         keywordToAdd: 0
         discountRatio: 0
         enterBattleEnemies: []
-    - optionText: "\u4FEE\u590D\u706F\u6CE1\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\u201C\u6B8B\u5B58\u4E4B\u5149\u201D\uFF09"
+    - optionText: "\u4FEE\u590D\u706F\u6CE1\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\u201C\u6B8B\u5B58\u4E4B\u5149\u201D\uFF1A\u6BCF\u56DE\u5408\u6062\u590D\u7406\u667A\uFF09"
       effects:
       - type: 10
         amount: 1
@@ -680,7 +680,8 @@ MonoBehaviour:
     isFinalNode: 0
     mutuallyExclusiveIds: []
     followUpIds: []
-    prerequisiteIds: []
+    prerequisiteIds:
+    - ch1_event_dkjqr
     options:
     - optionText: "\u7ED9\u5F00\u5173\u4E00\u62F3\uFF08\u968F\u673A\u89D2\u8272\u83B7\u5F97\u5361\u724C\u201C\u6076\u610F\u4E0D\u606F\u201D\uFF09"
       effects:
