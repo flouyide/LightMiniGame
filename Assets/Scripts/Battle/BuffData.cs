@@ -65,10 +65,9 @@ public class BuffData : ScriptableObject
         _ => ""
     };
 
-    /// <summary>未配置 BuffData.icon 时的内置图标（编辑器下从工程路径加载）。</summary>
+    /// <summary>未配置 BuffData.icon 时的内置图标。</summary>
     public static Sprite LoadBuiltinIcon(BuffAttributeType type)
     {
-#if UNITY_EDITOR
         string[] paths = type switch
         {
             BuffAttributeType.ArmorBreak => new[] { "Assets/Art/词条标/破甲.png", "Assets/Art/局内/破甲.png" },
@@ -80,10 +79,9 @@ public class BuffData : ScriptableObject
         };
         foreach (string path in paths)
         {
-            var sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            var sprite = RuntimeArt.LoadSprite(path);
             if (sprite != null) return sprite;
         }
-#endif
         return null;
     }
 

@@ -1674,6 +1674,13 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>融合期间冻结手牌滑动/悬停位移，避免高亮数字跟着跑。</summary>
+    public void SetHandLayoutFrozen(bool frozen)
+    {
+        if (handLayout != null)
+            handLayout.SetLayoutFrozen(frozen);
+    }
+
     /// <summary>手动触发一次理智扣除（融合进入时用，作为代价而非条件，允许负值 clamp≥0）。</summary>
     public void DeductSanityAsCost(int amount)
     {
@@ -2620,6 +2627,7 @@ public class BattleManager : MonoBehaviour
         // 敌人能力效果：扫描所有敌人的 abilities，按 RelicData 去重反射实例化并启动
         InitEnemyAbilityEffects();
 
+        SyncAllCardsSanityForm();
         DrawCards(drawPerTurn);
 
         UpdateCharacterSwitchUI();
@@ -2642,11 +2650,15 @@ public class BattleManager : MonoBehaviour
             foreach (var inst in cards)
             {
                 if (inst == null || inst.template == null) continue;
-                var cd = inst.template;
+                // 战斗内始终用副本：融合写在 CardData.fusion 上，不能改到局外牌库模板。
+                if (inst.template.fusion != null)
+                    inst.template.fusion = null;
+                var cd = Instantiate(inst.template);
+                cd.isRuntimeInstance = true;
+                cd.fusion = null;
+                cd.isLowSanityForm = false;
                 if (inst.overrideData != null && inst.overrideData.hasKeywordsOverride)
                 {
-                    cd = Instantiate(inst.template);
-                    cd.isRuntimeInstance = true;
                     cd.keywords = inst.EffectiveKeywords;
                     if (inst.overrideData.keywordOrder != null)
                         cd.keywordOrder = new List<KeywordType>(inst.overrideData.keywordOrder);
@@ -2714,6 +2726,8 @@ public class BattleManager : MonoBehaviour
             var drawn = activeChar.drawPile[0];
             drawn.extraCost = _handCostBonus;   // 继承当前过载费用加成
             drawn.statusCostBonus = _unfinished != null ? _unfinished.TotalHandCostBonus : 0;
+            if (drawn.sourceEntry != null)
+                drawn.isLowSanityForm = drawn.sourceEntry.ShouldUseLowSanityForm(_playerSanity, LowSanityThreshold);
             _hand.Add(drawn);
             activeChar.drawPile.RemoveAt(0);
             _pendingDrawVisuals.Add(drawn);
@@ -3954,14 +3968,8 @@ public class BattleManager : MonoBehaviour
             //}
         }
 
-        // 理智变化后同步手牌的低理智形态标记与卡面描述
-        int sanityThreshold2 = _ruleConfig != null ? _ruleConfig.sanity.lowSanityThreshold : 4;
-        bool lowSanityNow = _playerSanity <= sanityThreshold2;
-        foreach (var c in _hand)
-        {
-            if (c != null && c.sourceEntry != null)
-                c.isLowSanityForm = c.sourceEntry.ShouldUseLowSanityForm(_playerSanity, sanityThreshold2);
-        }
+        // 理智变化后同步所有牌堆的低理智形态（描述与效果共用同一标记）
+        SyncAllCardsSanityForm();
         RefreshHandDisplays();
 
         UpdateUI();
@@ -4015,42 +4023,47 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 升级所有牌堆中的卡牌效果（使用每张牌配置的升级数据）。
-    /// 涵盖手牌、两角色抽牌堆、弃牌堆、消耗堆。
+    /// 按当前理智同步所有牌堆的低理智形态标记（进入与退出都走这里，避免只升不降）。
     /// </summary>
     private void UpgradeAllCardsForDarkMode()
     {
-        // 手牌
-        foreach (var card in _hand)
-            UpgradeSingleCard(card);
+        SyncAllCardsSanityForm();
+        RefreshHandUI();
+        Debug.Log("[BattleManager] 所有卡牌已同步为当前理智形态");
+    }
 
-        // 双角色的牌堆
+    private int LowSanityThreshold =>
+        _ruleConfig != null && _ruleConfig.sanity != null
+            ? _ruleConfig.sanity.lowSanityThreshold
+            : 4;
+
+    /// <summary>
+    /// 手牌、抽牌堆、弃牌堆、消耗堆全部按当前理智重算 isLowSanityForm。
+    /// 打牌效果与卡面描述都读这个标记，必须一起更新。
+    /// </summary>
+    private void SyncAllCardsSanityForm()
+    {
+        int threshold = LowSanityThreshold;
+        SyncCardListSanityForm(_hand, threshold);
+        if (_chars == null) return;
         for (int ci = 0; ci < _chars.Length; ci++)
         {
             if (_chars[ci] == null) continue;
-            foreach (var card in _chars[ci].drawPile)
-                UpgradeSingleCard(card);
-            foreach (var card in _chars[ci].discardPile)
-                UpgradeSingleCard(card);
-            foreach (var card in _chars[ci].consumedPile)
-                UpgradeSingleCard(card);
+            SyncCardListSanityForm(_chars[ci].drawPile, threshold);
+            SyncCardListSanityForm(_chars[ci].discardPile, threshold);
+            SyncCardListSanityForm(_chars[ci].consumedPile, threshold);
         }
-
-        // 刷新手牌 UI（重新应用数据以显示升级后的描述）
-        RefreshHandUI();
-        Debug.Log("[BattleManager] 所有卡牌已升级为低理智形态");
     }
 
-    /// <summary>
-    /// 单张卡牌低理智化：仅设置 isLowSanityForm 标记。
-    /// 升级后的效果由 EffectExecutor 通过 card.GetEffectNodes(true) 自动读取 CardEntry.lowSanityEffectNodes。
-    /// </summary>
-    private void UpgradeSingleCard(CardData card)
+    private void SyncCardListSanityForm(List<CardData> list, int threshold)
     {
-        if (card == null) return;
-        if (card.isLowSanityForm) return;
-
-        card.isLowSanityForm = true;
+        if (list == null) return;
+        for (int i = 0; i < list.Count; i++)
+        {
+            var card = list[i];
+            if (card == null || card.sourceEntry == null) continue;
+            card.isLowSanityForm = card.sourceEntry.ShouldUseLowSanityForm(_playerSanity, threshold);
+        }
     }
 
     /// <summary>全屏暗色遮罩淡入协程</summary>
@@ -4867,6 +4880,8 @@ public class BattleManager : MonoBehaviour
         _unfinished?.Clear();
         _unfinished = null;
         _cardContext = null;
+        SetHandLayoutFrozen(false);
+        ScrubLibraryTemplateFusion();
 
         if (_enemyTurnRoutine != null) { StopCoroutine(_enemyTurnRoutine); _enemyTurnRoutine = null; }
         if (_endTurnExitRoutine != null) { StopCoroutine(_endTurnExitRoutine); _endTurnExitRoutine = null; }
@@ -4889,6 +4904,25 @@ public class BattleManager : MonoBehaviour
         // 胜负已定：广播给掉落面板等结算 UI（ChapterManager 订阅，胜利时弹 LootPanel）
         LastBattleVictory = victory;
         OnBattleFinished?.Invoke(victory);
+    }
+
+    /// <summary>战斗结束清掉牌库模板上残留的融合覆盖，避免带出局外卡面/下一场战斗。</summary>
+    private void ScrubLibraryTemplateFusion()
+    {
+        var globalLib = GlobalCardLibrary.Instance;
+        if (globalLib == null) return;
+        foreach (var lib in globalLib.AllLibraries)
+        {
+            if (lib == null) continue;
+            var cards = globalLib.GetCards(lib.owner);
+            if (cards == null) continue;
+            for (int i = 0; i < cards.Count; i++)
+            {
+                var inst = cards[i];
+                if (inst?.template != null && inst.template.fusion != null)
+                    inst.template.fusion = null;
+            }
+        }
     }
 
     // ========================================================================
