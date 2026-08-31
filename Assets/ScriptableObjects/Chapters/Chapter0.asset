@@ -245,7 +245,7 @@ MonoBehaviour:
     prerequisiteIds:
     - shop01
     options:
-    - optionText: "\u5750\u4E0B\uFF08\u56DE\u590D10\u70B9\u7406\u667A\u503C\uFF09"
+    - optionText: "\u5750\u4E0B\uFF08\u56DE\u590D10\u70B9\u7406\u667A\u503C\uFF0C\u968F\u673A\u89D2\u8272\u83B7\u5F97\u8BC1\u4E66\uFF1A\u8BFA\u5C14\u7279\u4E4B\u7B14\uFF09"
       effects:
       - type: 9
         amount: 10
@@ -253,6 +253,16 @@ MonoBehaviour:
         attributeOp: 0
         targetAttribute: 7
         relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 10
+        amount: 1
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 7
+        relic: {fileID: 11400000, guid: 4e51c840ebc2cce4884b2b8130c7693f, type: 2}
         card: {fileID: 0}
         keywordToAdd: 0
         discountRatio: 0
