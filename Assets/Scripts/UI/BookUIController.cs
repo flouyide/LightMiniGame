@@ -721,11 +721,7 @@ public class BookUIController : MonoBehaviour
 
     private static Sprite LoadDibanSprite()
     {
-#if UNITY_EDITOR
-        return UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/局外/diban.png");
-#else
-        return null;
-#endif
+        return RuntimeArt.LoadSprite("Assets/Art/局外/diban.png");
     }
 
     private void ApplyFortuneIconSprite(Image icon)
@@ -734,11 +730,7 @@ public class BookUIController : MonoBehaviour
         if (icon.sprite != null && fortuneIconSprite == null) return;
         Sprite sprite = fortuneIconSprite;
         if (sprite == null)
-        {
-#if UNITY_EDITOR
-            sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(FortuneIconPath);
-#endif
-        }
+            sprite = RuntimeArt.LoadSprite(FortuneIconPath);
         if (sprite != null)
             icon.sprite = sprite;
     }

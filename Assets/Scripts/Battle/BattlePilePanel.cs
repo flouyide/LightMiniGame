@@ -407,9 +407,7 @@ public class BattlePilePanel : MonoBehaviour
     private static Sprite LoadSprite(ref Sprite cache, string path)
     {
         if (cache != null) return cache;
-#if UNITY_EDITOR
-        cache = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
-#endif
+        cache = RuntimeArt.LoadSprite(path);
         return cache;
     }
 

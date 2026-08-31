@@ -70,6 +70,7 @@ public class HandCardLayout : MonoBehaviour
     private readonly List<Vector3> _targetScales = new List<Vector3>();
     private int _hoveredIndex = -1;
     private int _draggedIndex = -1;
+    private bool _layoutFrozen;
     private float _scrollOffset;
     private float _scrollTarget;
     private float _scrollVelocity;
@@ -590,9 +591,25 @@ public class HandCardLayout : MonoBehaviour
 
     public void SetHoveredIndex(int index)
     {
+        if (_layoutFrozen) index = -1;
         if (_hoveredIndex == index) return;
         _hoveredIndex = index;
         CalculateLayout();
+    }
+
+    /// <summary>融合期间冻结滑动与悬停，并把溢出牌摊开，避免叠在两侧的牌漏掉高亮。</summary>
+    public void SetLayoutFrozen(bool frozen)
+    {
+        if (_layoutFrozen == frozen) return;
+        _layoutFrozen = frozen;
+        if (frozen)
+        {
+            _hoveredIndex = -1;
+            _scrollVelocity = 0f;
+            _scrollTarget = _scrollOffset;
+        }
+        CalculateLayout();
+        if (frozen) SnapToTarget();
     }
 
     private int VisibleSlotCount
@@ -624,9 +641,16 @@ public class HandCardLayout : MonoBehaviour
         int count = _cardObjects.Count;
         if (count == 0) return;
 
-        int vis = VisibleSlotCount;
-        bool windowed = count > vis;
-        float totalWidth = vis <= 1 ? 0f : (vis - 1) * cardSpacing;
+        // 融合时把溢出牌也摊进同一扇形，否则叠在两侧的牌数字网格是空的，高亮会漏掉。
+        bool windowed = !_layoutFrozen && count > VisibleSlotCount;
+        int vis = windowed ? VisibleSlotCount : Mathf.Max(1, count);
+        float spacing = cardSpacing;
+        if (_layoutFrozen && count > maxVisibleCards && count > 1)
+        {
+            int cap = Mathf.Max(1, maxVisibleCards);
+            spacing = cardSpacing * (cap - 1) / (count - 1);
+        }
+        float totalWidth = vis <= 1 ? 0f : (vis - 1) * spacing;
         float fanLeft = -totalWidth / 2f;
         float peek = Mathf.Max(0.05f, overflowPeekSlots);
 
@@ -638,7 +662,7 @@ public class HandCardLayout : MonoBehaviour
             float t = vis <= 1 ? 0.5f : displaySlot / (vis - 1);
             float angle = Mathf.Lerp(-maxFanAngle / 2f, maxFanAngle / 2f, t);
             float rad = angle * Mathf.Deg2Rad;
-            float x = fanLeft + displaySlot * cardSpacing;
+            float x = fanLeft + displaySlot * spacing;
             float y = -fanRadius + Mathf.Cos(rad) * fanRadius;
 
             bool overflowHidden = windowed && (slot < -peek || slot > vis - 1 + peek);
@@ -646,7 +670,7 @@ public class HandCardLayout : MonoBehaviour
             if (overflowHidden)
                 y -= 12f;
 
-            bool hoveredInFan = i == _hoveredIndex && !overflowHidden;
+            bool hoveredInFan = !_layoutFrozen && i == _hoveredIndex && !overflowHidden;
             if (hoveredInFan)
             {
                 y += hoverYOffset;
@@ -682,7 +706,7 @@ public class HandCardLayout : MonoBehaviour
     {
         float peek = Mathf.Max(0.05f, overflowPeekSlots);
         int windowStart = windowed ? Mathf.FloorToInt(_scrollOffset + peek) : 0;
-        int stamp = count * 397 ^ vis * 17 ^ windowStart ^ (_hoveredIndex + 3) * 31 ^ (_draggedIndex + 5);
+        int stamp = count * 397 ^ vis * 17 ^ windowStart ^ (_hoveredIndex + 3) * 31 ^ (_draggedIndex + 5) ^ (_layoutFrozen ? 11 : 0);
         if (stamp == _siblingStamp) return;
         _siblingStamp = stamp;
 
@@ -743,6 +767,8 @@ public class HandCardLayout : MonoBehaviour
         ClampScroll();
         float maxScroll = MaxScroll;
         if (maxScroll <= 0f)
+            return;
+        if (_layoutFrozen)
             return;
 
         if (_draggedIndex < 0 && transform is RectTransform rt && TryGetLocalMouse(rt, out Vector2 local))
@@ -894,6 +920,12 @@ public class HandCardLayout : MonoBehaviour
         CalculateLayout();
         UpdateExits();
         UpdateDrawFlights();
+
+        if (_layoutFrozen)
+        {
+            SnapToTarget();
+            return;
+        }
 
         float follow = 1f - Mathf.Exp(-lerpSpeed * Time.deltaTime);
         for (int i = 0; i < _cardObjects.Count; i++)

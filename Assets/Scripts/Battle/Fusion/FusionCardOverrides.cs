@@ -14,7 +14,8 @@ public enum FusionSlotKind
     Buff,
     Draw,
     Restore,
-    Status
+    Status,
+    Resource
 }
 
 /// <summary>单个效果节点上某个数字槽的融合覆盖。</summary>
@@ -110,6 +111,14 @@ public static class CardFusionSlots
                         Add(list, i, FusionSlotKind.Status, "状态", v, fusion);
                     break;
                 }
+
+                case EffectOperation.ModifyResource:
+                {
+                    int v = ValueNode.ResolveValue(n.value, strength, dexterity);
+                    if (ShouldInclude(v, fusion, i, FusionSlotKind.Resource, false))
+                        Add(list, i, FusionSlotKind.Resource, ResourceLabel(n.resourceType), v, fusion);
+                    break;
+                }
             }
         }
 
@@ -138,6 +147,7 @@ public static class CardFusionSlots
                     break;
                 case EffectOperation.GainBlock:
                 case EffectOperation.ModifyAttribute:
+                case EffectOperation.ModifyResource:
                 case EffectOperation.DrawCards:
                 case EffectOperation.RestoreActionPoints:
                 case EffectOperation.ApplyStatus:
@@ -147,6 +157,18 @@ public static class CardFusionSlots
         }
         return anyFormulaDamage && !anyFusable;
     }
+
+    private static string ResourceLabel(PlayerResourceType type) => type switch
+    {
+        PlayerResourceType.Sanity => "理智",
+        PlayerResourceType.CurrentHealth => "生命",
+        PlayerResourceType.ActionPoints => "能量",
+        PlayerResourceType.Currency => "金币",
+        PlayerResourceType.Heat => "热度",
+        PlayerResourceType.Block => "护甲",
+        PlayerResourceType.Fortune => "福报",
+        _ => "资源"
+    };
 
     private static bool ShouldInclude(int baseValue, FusionCardDelta fusion, int nodeIndex, FusionSlotKind kind, bool legacy)
     {

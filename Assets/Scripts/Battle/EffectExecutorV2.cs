@@ -1055,6 +1055,8 @@ public class EffectExecutorV2
     private void ExecuteModifyResource(EffectNode node)
     {
         int amount = EvaluateValue(node.value);
+        if (_ctx.TryGetFusionSlot(_currentNodeIndex, FusionSlotKind.Resource, out int fusedRes))
+            amount = fusedRes;
 
         switch (node.resourceType)
         {

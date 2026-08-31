@@ -140,6 +140,8 @@ public class CardDisplay : MonoBehaviour
     private bool _displayLowSanity;
     /// <summary>当前 CardEntry 是否要求仅隐藏 DescText（运行时复制牌专用）。</summary>
     private bool _hideDescriptionText;
+    /// <summary>当前卡面是否隐藏描述文字（没有可见数字时不要生成融合高亮）。</summary>
+    public bool HidesDescriptionText => _hideDescriptionText;
 
     /// <summary>实时融合覆盖层：优先读 CardData.fusion（融合可能新建覆盖层使旧引用失效），否则用缓存。</summary>
     private FusionCardDelta LiveFusion => _data != null && _data.fusion != null ? _data.fusion : _fusion;
@@ -661,6 +663,10 @@ public class CardDisplay : MonoBehaviour
     /// </summary>
     public static bool FusionHighlightActive;
 
+    private bool _descOverflowSaved;
+    private TextOverflowModes _descOverflowMode = TextOverflowModes.Ellipsis;
+    private bool _descUseMaxVisibleDescender = true;
+
     /// <summary>
     /// 刷新卡牌UI
     /// </summary>
@@ -681,6 +687,7 @@ public class CardDisplay : MonoBehaviour
             // 每次刷新都显式恢复普通卡牌的文本节点，避免对象复用后错误沿用隐藏状态。
             descText.gameObject.SetActive(!_hideDescriptionText);
             descText.text = GetFusionAwareDescription();
+            ApplyDescOverflowForFusion(FusionHighlightActive);
         }
 
         // 词条文本（有侧签图标时不再在卡面叠一层文字）
@@ -977,76 +984,28 @@ public class CardDisplay : MonoBehaviour
         sizes = new List<Vector2>();
         if (values == null || values.Count == 0 || descText == null) return false;
 
-        EnsureDescMesh();
-        var info = descText.textInfo;
-        if (info == null || info.characterInfo == null || info.characterCount == 0) return false;
-
-        // 1) 解析描述文本中所有“有符号整数 token”（按文档顺序），记录其字符跨度。
-        var tokens = new List<Token>();
-        string text = descText.text;
-        int n = text.Length;
-        for (int idx = 0; idx < n; idx++)
-        {
-            if (!char.IsDigit(text[idx])) continue;
-
-            // 向左吸收可选的 '-'（形成负整数，如 “理智 -1”），只吸收紧邻的单个负号
-            int start = idx;
-            if (idx > 0 && text[idx - 1] == '-') start = idx - 1;
-
-            // 向右吸收连续数字
-            int end = idx;
-            while (end + 1 < n && char.IsDigit(text[end + 1])) end++;
-            if (!int.TryParse(text.Substring(start, end - start + 1), out int val)) continue;
-
-            tokens.Add(new Token { startChar = start, endChar = end, value = val });
-            idx = end; // 跳过已处理的数字
-        }
+        var tokens = EnumerateNumberTokens();
         if (tokens.Count == 0) return false;
 
-        // 2) 为每个 token 计算世界包围盒
-        var tokenRects = new List<Vector4>(tokens.Count); // x=minX,y=minY,z=maxX,w=maxY
-        foreach (var t in tokens)
-        {
-            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
-            Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
-            bool found = false;
-            for (int ci = 0; ci < info.characterCount; ci++)
-            {
-                var ch = info.characterInfo[ci];
-                if (ch.index < t.StartChar || ch.index > t.EndChar) continue;
-                if (!ch.isVisible) continue;
-                Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
-                Vector3 tr = descText.transform.TransformPoint(ch.topRight);
-                Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
-                Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
-                min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
-                max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
-                found = true;
-            }
-            tokenRects.Add(found
-                ? new Vector4(min.x, min.y, max.x, max.y)
-                : new Vector4(0, 0, 0, 0));
-        }
-
-        // 3) 依序为每个可融合数值找“值相等且未被占用”的 token
         var used = new bool[tokens.Count];
         bool anySuccess = false;
         for (int i = 0; i < values.Count; i++)
         {
-            int target = values[i];
-            bool placed = false;
+            int idx = -1;
             for (int t = 0; t < tokens.Count; t++)
             {
-                if (used[t] || tokens[t].value != target) continue;
-                used[t] = true;
-                var r = tokenRects[t];
-                centers.Add(new Vector2((r.x + r.z) * 0.5f, (r.y + r.w) * 0.5f));
-                sizes.Add(new Vector2(r.z - r.x, r.w - r.y));
-                placed = true;
-                anySuccess = true;
+                if (used[t] || tokens[t].value != values[i]) continue;
+                idx = t;
                 break;
             }
-            if (!placed)
+            if (idx >= 0)
+            {
+                used[idx] = true;
+                centers.Add(tokens[idx].center);
+                sizes.Add(tokens[idx].size);
+                anySuccess = true;
+            }
+            else
             {
                 centers.Add(Vector2.zero);
                 sizes.Add(Vector2.zero);
@@ -1193,6 +1152,45 @@ public class CardDisplay : MonoBehaviour
     }
 
     /// <summary>
+    /// 融合期间关掉省略号裁剪，让被挡住的数字也有网格，高亮才能钉在字上。
+    /// </summary>
+    public void PrepareFusionNumberMesh()
+    {
+        if (descText == null) return;
+        ApplyDescOverflowForFusion(true);
+        EnsureDescMesh();
+    }
+
+    /// <summary>融合结束：恢复描述框原来的溢出方式。</summary>
+    public void RestoreDescOverflow()
+    {
+        if (descText == null) return;
+        ApplyDescOverflowForFusion(false);
+        EnsureDescMesh();
+    }
+
+    private void ApplyDescOverflowForFusion(bool fusion)
+    {
+        if (descText == null) return;
+        if (!_descOverflowSaved)
+        {
+            _descOverflowSaved = true;
+            _descOverflowMode = descText.overflowMode;
+            _descUseMaxVisibleDescender = descText.useMaxVisibleDescender;
+        }
+        if (fusion)
+        {
+            descText.overflowMode = TextOverflowModes.Overflow;
+            descText.useMaxVisibleDescender = false;
+        }
+        else
+        {
+            descText.overflowMode = _descOverflowMode;
+            descText.useMaxVisibleDescender = _descUseMaxVisibleDescender;
+        }
+    }
+
+    /// <summary>
     /// 确保 descText 的 TMP 网格已针对当前文本重建（低理智切形态后文本变了但网格可能未刷新，
     /// 直接 ForceMeshUpdate 拿不到字符；先设脏 + 强制 Canvas 更新）。
     /// </summary>
@@ -1207,71 +1205,140 @@ public class CardDisplay : MonoBehaviour
 
     /// <summary>
     /// 枚举该卡描述文本中的每个“整数 token”（值 + 世界中心/尺寸）。
-    /// 供“意图牌库”等非手牌卡面在融合时按 token 逐个精确高亮。
+    /// 供融合按 token 逐个精确高亮。省略号裁掉的数字也会用布局原点估矩形，避免漏高亮。
     /// </summary>
     public List<(int value, Vector2 center, Vector2 size)> EnumerateNumberTokens()
     {
         var result = new List<(int, Vector2, Vector2)>();
         if (descText == null) return result;
 
+        ApplyDescOverflowForFusion(FusionHighlightActive);
         EnsureDescMesh();
         var info = descText.textInfo;
         if (info == null || info.characterInfo == null || info.characterCount == 0)
         {
-            // mesh 未就绪（低理智切形态同帧）：回退纯文本解析，仅返回数值（矩形为零，供数值读取）
-            string t = descText.text;
-            for (int i = 0; i < t.Length; i++)
-            {
-                if (!char.IsDigit(t[i])) continue;
-                int s = i;
-                if (i > 0 && t[i - 1] == '-') s = i - 1;
-                int e = i;
-                while (e + 1 < t.Length && char.IsDigit(t[e + 1])) e++;
-                if (int.TryParse(t.Substring(s, e - s + 1), out int tv))
-                    result.Add((tv, Vector2.zero, Vector2.zero));
-                i = e;
-            }
+            AddNumberTokensFromPlainText(descText.text, result);
             return result;
         }
 
-        string text = descText.text;
-        int n = text.Length;
-        for (int idx = 0; idx < n; idx++)
+        int runStart = -1;
+        bool runMinus = false;
+        int count = info.characterCount;
+        for (int ci = 0; ci <= count; ci++)
         {
-            if (!char.IsDigit(text[idx])) continue;
-            int start = idx;
-            if (idx > 0 && text[idx - 1] == '-') start = idx - 1;
-            int end = idx;
-            while (end + 1 < n && char.IsDigit(text[end + 1])) end++;
-            if (!int.TryParse(text.Substring(start, end - start + 1), out int val))
+            bool isDigit = false;
+            if (ci < count)
             {
-                idx = end;
-                continue;
+                char c = info.characterInfo[ci].character;
+                isDigit = c >= '0' && c <= '9';
             }
-
-            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
-            Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
-            for (int ci = 0; ci < info.characterCount; ci++)
+            if (isDigit)
             {
-                var ch = info.characterInfo[ci];
-                if (ch.index < start || ch.index > end) continue;
-                if (!ch.isVisible) continue;
-                Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
-                Vector3 tr = descText.transform.TransformPoint(ch.topRight);
-                Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
-                Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
-                min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
-                max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+                if (runStart < 0)
+                {
+                    runStart = ci;
+                    runMinus = false;
+                    if (ci > 0 && info.characterInfo[ci - 1].character == '-')
+                        runMinus = true;
+                }
             }
-            if (max.x <= min.x || max.y <= min.y)
+            else if (runStart >= 0)
             {
-                idx = end;
-                continue;
+                FlushDigitRun(info, runStart, ci - 1, runMinus, result);
+                runStart = -1;
             }
-            result.Add((val, (Vector2)((min + max) * 0.5f), new Vector2(max.x - min.x, max.y - min.y)));
-            idx = end;
         }
         return result;
+    }
+
+    private void FlushDigitRun(TMP_TextInfo info, int startCi, int endCi, bool minus, List<(int value, Vector2 center, Vector2 size)> result)
+    {
+        var sb = new StringBuilder();
+        if (minus) sb.Append('-');
+        for (int i = startCi; i <= endCi; i++)
+            sb.Append(info.characterInfo[i].character);
+        if (!int.TryParse(sb.ToString(), out int val)) return;
+
+        int from = minus && startCi > 0 ? startCi - 1 : startCi;
+        Vector2 center, size;
+        if (!TryMeasureGlyphSpan(info, from, endCi, out center, out size))
+            FallbackDescNumberRect(sb.Length, out center, out size);
+        result.Add((val, center, size));
+    }
+
+    private bool TryMeasureGlyphSpan(TMP_TextInfo info, int fromCi, int toCi, out Vector2 center, out Vector2 size)
+    {
+        center = Vector2.zero;
+        size = Vector2.zero;
+        for (int pass = 0; pass < 3; pass++)
+        {
+            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+            Vector3 max = new Vector3(float.MinValue, float.MinValue, 0f);
+            bool found = false;
+            for (int ci = fromCi; ci <= toCi; ci++)
+            {
+                var ch = info.characterInfo[ci];
+                if (pass == 0 && !ch.isVisible) continue;
+                if (pass < 2)
+                {
+                    Vector3 tl = descText.transform.TransformPoint(ch.topLeft);
+                    Vector3 tr = descText.transform.TransformPoint(ch.topRight);
+                    Vector3 bl = descText.transform.TransformPoint(ch.bottomLeft);
+                    Vector3 br = descText.transform.TransformPoint(ch.bottomRight);
+                    min = Vector3.Min(min, Vector3.Min(Vector3.Min(tl, bl), Vector3.Min(tr, br)));
+                    max = Vector3.Max(max, Vector3.Max(Vector3.Max(tl, bl), Vector3.Max(tr, br)));
+                    found = true;
+                }
+                else
+                {
+                    float right = Mathf.Max(ch.xAdvance, ch.origin + 1f);
+                    Vector3 a = descText.transform.TransformPoint(new Vector3(ch.origin, ch.descender, 0f));
+                    Vector3 b = descText.transform.TransformPoint(new Vector3(right, ch.ascender, 0f));
+                    min = Vector3.Min(min, Vector3.Min(a, b));
+                    max = Vector3.Max(max, Vector3.Max(a, b));
+                    found = true;
+                }
+            }
+            if (found && max.x > min.x && max.y > min.y)
+            {
+                center = (Vector2)((min + max) * 0.5f);
+                size = new Vector2(max.x - min.x, max.y - min.y);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void AddNumberTokensFromPlainText(string t, List<(int value, Vector2 center, Vector2 size)> result)
+    {
+        if (string.IsNullOrEmpty(t)) return;
+        for (int i = 0; i < t.Length; i++)
+        {
+            if (!char.IsDigit(t[i])) continue;
+            int s = i;
+            if (i > 0 && t[i - 1] == '-') s = i - 1;
+            int e = i;
+            while (e + 1 < t.Length && char.IsDigit(t[e + 1])) e++;
+            if (int.TryParse(t.Substring(s, e - s + 1), out int tv))
+            {
+                FallbackDescNumberRect(e - s + 1, out var center, out var size);
+                result.Add((tv, center, size));
+            }
+            i = e;
+        }
+    }
+
+    private void FallbackDescNumberRect(int digitLen, out Vector2 center, out Vector2 size)
+    {
+        var rt = descText.rectTransform;
+        center = rt.position;
+        float sx = Mathf.Abs(rt.lossyScale.x);
+        float sy = Mathf.Abs(rt.lossyScale.y);
+        if (sx < 0.0001f) sx = 1f;
+        if (sy < 0.0001f) sy = 1f;
+        float h = Mathf.Max(12f, descText.fontSize * sy);
+        float w = Mathf.Max(12f, descText.fontSize * 0.7f * Mathf.Max(1, digitLen) * sx);
+        size = new Vector2(w, h);
     }
 
     // ========================================================================
@@ -1432,6 +1499,7 @@ public class CardDisplay : MonoBehaviour
                 case LightMiniGame.CardEditor.EffectOperation.DealDamage:
                 case LightMiniGame.CardEditor.EffectOperation.GainBlock:
                 case LightMiniGame.CardEditor.EffectOperation.ModifyAttribute:
+                case LightMiniGame.CardEditor.EffectOperation.ModifyResource:
                 case LightMiniGame.CardEditor.EffectOperation.DrawCards:
                 case LightMiniGame.CardEditor.EffectOperation.RestoreActionPoints:
                     fieldOps.Add(n.operation);
@@ -1585,19 +1653,6 @@ public class CardDisplay : MonoBehaviour
         CardGrade.Gold => goldColor,
         _ => Color.white
     };
-
-    // ========================================================================
-    // 数字 token（融合原位高亮用）
-    // ========================================================================
-
-    private struct Token
-    {
-        public int startChar;
-        public int endChar;
-        public int value;
-        public int StartChar => startChar;
-        public int EndChar => endChar;
-    }
 
     // ========================================================================
     // Editor 预览（编辑器中修改字段后自动刷新）

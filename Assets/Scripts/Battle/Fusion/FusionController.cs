@@ -66,6 +66,12 @@ public class FusionController : MonoBehaviour
         IsOpen = false;
         PanelTransform = null;
         CardDisplay.FusionHighlightActive = false;
+        _battle?.SetHandLayoutFrozen(false);
+        if (_battle != null)
+        {
+            for (int i = 0; i < _battle.HandCount; i++)
+                _battle.GetHandCardDisplay(i)?.RestoreDescOverflow();
+        }
         for (int i = 0; i < _highlights.Count; i++)
         {
             if (_highlights[i] != null)
@@ -270,6 +276,7 @@ private void OnValidate() => ApplyEntryButtonOffset();
 
         _candidates.Clear();
         _selected.Clear();
+        _battle.SetHandLayoutFrozen(true);
         BuildPanel();
         CardDisplay.FusionHighlightActive = true;
         RaiseEntryButton();
@@ -284,6 +291,8 @@ private void OnValidate() => ApplyEntryButtonOffset();
         if (_panelRoot == null) yield break;
         // 手牌强制摆到目标布局，避免读 lerp 动画中途坐标造成高亮错位
         _battle.SnapHandToTarget();
+        for (int i = 0; i < _battle.HandCount; i++)
+            _battle.GetHandCardDisplay(i)?.PrepareFusionNumberMesh();
         yield return null;   // 再等一帧应用 layout 约束
         if (_panelRoot == null) yield break;
         try
@@ -392,10 +401,13 @@ private void OnValidate() => ApplyEntryButtonOffset();
 
     /// <summary>
     /// 把手牌描述里的每个效果数字绑到卡面 token 上。
-    /// 先按数值匹配（同一张牌两个 9 会按出现顺序各占一个），对不上时按描述顺序占用下一个数字。
+    /// 只绑定文案里真实出现的数字；效果有值但卡面没写出来的槽位不参与融合。
     /// </summary>
     private void AddHandDescriptionSlots(List<FusableValue> list, CardData card, CardDisplay hview, int handI, int handIdx)
     {
+        if (hview != null && hview.HidesDescriptionText)
+            return;
+
         var slots = hview != null
             ? hview.EnumerateFusionSlots()
             : CardFusionSlots.Collect(
@@ -417,51 +429,32 @@ private void OnValidate() => ApplyEntryButtonOffset();
         for (int s = 0; s < slots.Count; s++)
         {
             var slot = slots[s];
-            int tok = -1;
-            if (tokens != null && used != null)
-            {
-                for (int k = 0; k < tokens.Count; k++)
-                {
-                    if (used[k] || tokens[k].size == Vector2.zero) continue;
-                    if (tokens[k].value == slot.displayValue) { tok = k; break; }
-                }
-                if (tok < 0)
-                {
-                    for (int k = 0; k < tokens.Count; k++)
-                    {
-                        if (used[k] || tokens[k].size == Vector2.zero) continue;
-                        tok = k;
-                        break;
-                    }
-                }
-            }
+            int tok = FindMatchingToken(tokens, used, slot.displayValue);
+            if (tok < 0) continue;
 
+            used[tok] = true;
             int nodeIdx = slot.nodeIndex;
             var kind = slot.kind;
-            int shown = slot.displayValue;
-            var fv = new FusableValue(
+            list.Add(new FusableValue(
                 $"hand:{handI}:slot:{s}",
                 $"手牌{handI + 1}·{slot.label}",
-                shown, false,
+                tokens[tok].value, false,
                 v => _battle.SetHandCardFusionSlot(handIdx, nodeIdx, kind, v))
-            { cardView = hview };
-
-            if (tok >= 0)
             {
-                used[tok] = true;
-                shown = tokens[tok].value;
-                fv.current = shown;
-                fv.hasExactRect = true;
-                fv.exactCenter = tokens[tok].center;
-                fv.exactSize = tokens[tok].size;
-            }
-            list.Add(fv);
+                cardView = hview,
+                hasExactRect = true,
+                exactCenter = tokens[tok].center,
+                exactSize = tokens[tok].size,
+            });
         }
     }
 
     /// <summary>敌人意图卡描述数字：按效果槽绑定，融合后写回该卡 FusionCardDelta。</summary>
     private void AddEnemyDescriptionSlots(List<FusableValue> list, CardDisplay deckView, int enemyI, int enemySlot, int skillIndex)
     {
+        if (deckView != null && deckView.HidesDescriptionText)
+            return;
+
         var slots = deckView.EnumerateFusionSlots();
         var tokens = deckView.EnumerateNumberTokens();
         var used = tokens != null && tokens.Count > 0 ? new bool[tokens.Count] : null;
@@ -473,6 +466,7 @@ private void OnValidate() => ApplyEntryButtonOffset();
                 return;
             for (int tIdx = 0; tIdx < tokens.Count; tIdx++)
             {
+                if (tokens[tIdx].size == Vector2.zero) continue;
                 int captured = tIdx;
                 list.Add(new FusableValue(
                     $"enemy:{enemyI}:ideck:{skillIndex}:t{tIdx}",
@@ -492,46 +486,36 @@ private void OnValidate() => ApplyEntryButtonOffset();
         for (int s = 0; s < slots.Count; s++)
         {
             var slot = slots[s];
-            int tok = -1;
-            if (tokens != null && used != null)
-            {
-                for (int k = 0; k < tokens.Count; k++)
-                {
-                    if (used[k] || tokens[k].size == Vector2.zero) continue;
-                    if (tokens[k].value == slot.displayValue) { tok = k; break; }
-                }
-                if (tok < 0)
-                {
-                    for (int k = 0; k < tokens.Count; k++)
-                    {
-                        if (used[k] || tokens[k].size == Vector2.zero) continue;
-                        tok = k;
-                        break;
-                    }
-                }
-            }
+            int tok = FindMatchingToken(tokens, used, slot.displayValue);
+            if (tok < 0) continue;
 
+            used[tok] = true;
             int nodeIdx = slot.nodeIndex;
             var kind = slot.kind;
-            int shown = slot.displayValue;
-            var fv = new FusableValue(
+            list.Add(new FusableValue(
                 $"enemy:{enemyI}:ideck:{skillIndex}:slot:{s}",
                 $"敌人{enemyI + 1}意图牌{skillIndex + 1}·{slot.label}",
-                shown, false,
+                tokens[tok].value, false,
                 v => _battle.SetEnemyIntentCardFusionSlot(enemySlot, skillIndex, nodeIdx, kind, v))
-            { cardView = deckView };
-
-            if (tok >= 0)
             {
-                used[tok] = true;
-                shown = tokens[tok].value;
-                fv.current = shown;
-                fv.hasExactRect = true;
-                fv.exactCenter = tokens[tok].center;
-                fv.exactSize = tokens[tok].size;
-            }
-            list.Add(fv);
+                cardView = deckView,
+                hasExactRect = true,
+                exactCenter = tokens[tok].center,
+                exactSize = tokens[tok].size,
+            });
         }
+    }
+
+    /// <summary>只绑定卡面上真实存在的数字；效果有值但文案没写出来的槽位不参与融合。</summary>
+    private static int FindMatchingToken(List<(int value, Vector2 center, Vector2 size)> tokens, bool[] used, int displayValue)
+    {
+        if (tokens == null || used == null) return -1;
+        for (int k = 0; k < tokens.Count; k++)
+        {
+            if (used[k] || tokens[k].size == Vector2.zero) continue;
+            if (tokens[k].value == displayValue) return k;
+        }
+        return -1;
     }
 
     /// <summary>效果槽枚举失败时，退回按类型各高亮一个数字（保证卡面数字仍可融合）。</summary>
@@ -922,14 +906,15 @@ private void OnValidate() => ApplyEntryButtonOffset();
     private static Sprite[] EnsureSelectFrames()
     {
         if (_selectFrames != null && _selectFrames.Length == 4) return _selectFrames;
-#if UNITY_EDITOR
         var paths = new string[] { SelectFrameA, SelectFrameB, SelectFrameC, SelectFrameD };
         _selectFrames = new Sprite[4];
+        int n = 0;
         for (int i = 0; i < paths.Length; i++)
-            _selectFrames[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(paths[i]);
-#else
-        _selectFrames = null;
-#endif
+        {
+            _selectFrames[i] = RuntimeArt.LoadSprite(paths[i]);
+            if (_selectFrames[i] != null) n++;
+        }
+        if (n == 0) _selectFrames = null;
         return _selectFrames;
     }
 
@@ -938,23 +923,13 @@ private void OnValidate() => ApplyEntryButtonOffset();
         if (isOpen)
         {
             if (_cubeOpenSprite == null)
-            {
-#if UNITY_EDITOR
-                _cubeOpenSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(CubeOpenPath);
-#endif
-            }
+                _cubeOpenSprite = RuntimeArt.LoadSprite(CubeOpenPath);
             return _cubeOpenSprite;
         }
-        else
-        {
-            if (_cubeClosedSprite == null)
-            {
-#if UNITY_EDITOR
-                _cubeClosedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(CubeClosedPath);
-#endif
-            }
-            return _cubeClosedSprite;
-        }
+
+        if (_cubeClosedSprite == null)
+            _cubeClosedSprite = RuntimeArt.LoadSprite(CubeClosedPath);
+        return _cubeClosedSprite;
     }
 
     /// <summary>在指定高亮块上播放 Selected 动画覆盖层（5 倍大，居中于块），返回 GameObject。</summary>
@@ -1154,6 +1129,9 @@ private void OnValidate() => ApplyEntryButtonOffset();
         RestoreIntentDeckOverlay();
         _selected.Clear();
         _candidates.Clear();
+        _battle.SetHandLayoutFrozen(false);
+        for (int i = 0; i < _battle.HandCount; i++)
+            _battle.GetHandCardDisplay(i)?.RestoreDescOverflow();
         UpdateEntryInteractable();
     }
 }
