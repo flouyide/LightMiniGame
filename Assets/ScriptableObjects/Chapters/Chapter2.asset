@@ -24,7 +24,8 @@ MonoBehaviour:
     isFinalNode: 1
     mutuallyExclusiveIds: []
     followUpIds: []
-    prerequisiteIds: []
+    prerequisiteIds:
+    - ch1_event_hyyqhzj
     options:
     - optionText: "\u4ED4\u7EC6\u641C\u7D22"
       effects:
@@ -99,7 +100,8 @@ MonoBehaviour:
     isFinalNode: 0
     mutuallyExclusiveIds: []
     followUpIds: []
-    prerequisiteIds: []
+    prerequisiteIds:
+    - ch1_event_szm
     options:
     - optionText: "\u5403\u4E0B\u80FD\u91CF\u7F50\uFF08\u56DE\u590D10\u751F\u547D\uFF09"
       effects:
