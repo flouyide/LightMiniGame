@@ -16,7 +16,7 @@ MonoBehaviour:
   maxSelections: 18
   events:
   - eventId: ch1_event_final
-    displayName: "\u6218\u6597-BOSS\uFF08\u5F88\u5F3A\uFF01\uFF01\uFF09"
+    displayName: "\u6218\u6597-BOSS\uFF08\u5F88\u5F3A\uFF01\uFF01\u5EFA\u8BAE\u6700\u540E\u6311\u6218\uFF09"
     description: "\u5F53\u4F60\u5728\u51DD\u89C6\u5B83\u7684\u65F6\u5019\uFF0C\u5B83\u4E5F\u5728\u51DD\u89C6\u7740\u4F60"
     icon: {fileID: 0}
     eventType: 0
@@ -24,8 +24,7 @@ MonoBehaviour:
     isFinalNode: 1
     mutuallyExclusiveIds: []
     followUpIds: []
-    prerequisiteIds:
-    - ch1_event_zdtp
+    prerequisiteIds: []
     options:
     - optionText: "\u4ED4\u7EC6\u641C\u7D22"
       effects:
@@ -153,8 +152,7 @@ MonoBehaviour:
     isFinalNode: 0
     mutuallyExclusiveIds: []
     followUpIds: []
-    prerequisiteIds:
-    - ch1_event_bgc
+    prerequisiteIds: []
     options:
     - optionText: "\u5403\u4E0B\u80FD\u91CF\u7F50\uFF08\u56DE\u590D10\u751F\u547D\uFF09"
       effects:
