@@ -496,6 +496,49 @@ public class ChapterManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 进入章节时应用角色卡组覆盖。只有明确配置了至少一张卡的条目才会替换运行时牌库；
+    /// 空卡组条目视为“沿用原有卡组”，确保章节配置可选择性覆盖某个角色。
+    /// </summary>
+    private void ApplyChapterDeckOverrides(ChapterConfig chapter)
+    {
+        if (chapter == null || chapter.characterDeckOverrides == null || chapter.characterDeckOverrides.Count == 0)
+            return;
+
+        GlobalCardLibrary.EnsureInstance();
+        var libraries = GlobalCardLibrary.Instance;
+        if (libraries == null) return;
+
+        foreach (var overrideConfig in chapter.characterDeckOverrides)
+        {
+            if (overrideConfig == null || overrideConfig.character == null)
+                continue;
+
+            // 配置列表为空时不改变原有卡组。
+            if (overrideConfig.cards == null || overrideConfig.cards.Count == 0)
+                continue;
+
+            var library = libraries.GetLibrary(overrideConfig.character);
+            if (library == null)
+            {
+                Debug.LogWarning($"[ChapterManager] 章节“{chapter.chapterName}”配置了 {overrideConfig.character.displayName} 的卡组覆盖，" +
+                                 "但该角色未注册到当前局，已跳过。");
+                continue;
+            }
+
+            library.Clear();
+            int added = 0;
+            foreach (var entry in overrideConfig.cards)
+            {
+                if (entry == null) continue;
+                library.Add(CardEntryAdapter.ConvertSingle(entry));
+                added++;
+            }
+
+            Debug.Log($"[ChapterManager] 章节“{chapter.chapterName}”替换 {overrideConfig.character.displayName} 的卡组：{added} 张");
+        }
+    }
+
     private void StartNextChapter()
     {
         _currentChapterIndex++;
@@ -508,6 +551,7 @@ public class ChapterManager : MonoBehaviour
         }
 
         _currentChapter = gameConfig.chapters[_currentChapterIndex];
+        ApplyChapterDeckOverrides(_currentChapter);
         _remainingSelections = Mathf.Max(0, _currentChapter.maxSelections + GetChapterSelectionBonus());
         _completedEvents.Clear();
         _unlockedEvents.Clear();
