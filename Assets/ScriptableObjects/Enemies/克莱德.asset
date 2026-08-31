@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac676fbe4e26547eb9f86e31bd682f65, type: 3}
+  m_Name: "\u514B\u83B1\u5FB7"
+  m_EditorClassIdentifier: 
+  enemyName: "\u514B\u83B1\u5FB7"
+  maxHP: 99999
+  armor: 99999
+  phase1Portrait: {fileID: 21300000, guid: a132d6c1c99d88243a46e722d69597e4, type: 3}
+  phase2Portrait: {fileID: 21300000, guid: a132d6c1c99d88243a46e722d69597e4, type: 3}
+  phase1Skills:
+  - {fileID: 11400000, guid: 669c5b950af1ec74bad91900da113d94, type: 2}
+  - {fileID: 11400000, guid: ab2e41daaf128c04db0c476256b2106a, type: 2}
+  - {fileID: 11400000, guid: 5bcec39567227cf4ca608bcbdac1b6ab, type: 2}
+  - {fileID: 11400000, guid: 5bcec39567227cf4ca608bcbdac1b6ab, type: 2}
+  phase2Skills:
+  - {fileID: 11400000, guid: 669c5b950af1ec74bad91900da113d94, type: 2}
+  - {fileID: 11400000, guid: ab2e41daaf128c04db0c476256b2106a, type: 2}
+  - {fileID: 11400000, guid: 5bcec39567227cf4ca608bcbdac1b6ab, type: 2}
+  - {fileID: 11400000, guid: 5bcec39567227cf4ca608bcbdac1b6ab, type: 2}
+  difficulty: 3
+  actionPriority: 1
+  strength: 999
+  dexterity: 999
+  damageDealtMultiplier: 100
+  damageTakenMultiplier: 100
+  fatigue: 0
+  highSanityCardCount: 4
+  lowSanityCardCount: 4
+  abilities: []

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac676fbe4e26547eb9f86e31bd682f65, type: 3}
-  m_Name: NewEnemy
+  m_Name: "\u5165\u804C\u5BFC\u5E08"
   m_EditorClassIdentifier: 
   enemyName: "\u5165\u804C\u5BFC\u5E08"
   maxHP: 999
