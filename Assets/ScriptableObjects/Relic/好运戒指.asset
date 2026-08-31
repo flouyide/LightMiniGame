@@ -19,9 +19,9 @@ MonoBehaviour:
   value: 15
   grade: 0
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.LuckyRingEffect
+  effectScriptName: LightMiniGame.RelicEffects.LuckyRingEffect1
   effectParams:
   - 5
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: 505e64fa250844448b2684d9f90ab3dc, type: 3}
+  effectScript: {fileID: 11500000, guid: dc9d344cc47f2104ba40b6c777f9eb56, type: 3}

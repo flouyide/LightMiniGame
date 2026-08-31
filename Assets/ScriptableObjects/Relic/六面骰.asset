@@ -19,9 +19,9 @@ MonoBehaviour:
   value: 100
   grade: 2
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.DiceEffect
+  effectScriptName: LightMiniGame.RelicEffects.DiceEffect1
   effectParams:
   - 2
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: 21a46ac66f1c3b047875ba3c0dfe8d44, type: 3}
+  effectScript: {fileID: 11500000, guid: a5c80120b8790594dad1aefd24ebd147, type: 3}

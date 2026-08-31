@@ -19,9 +19,9 @@ MonoBehaviour:
   value: 100
   grade: 2
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.QuickReliefPillEffect
+  effectScriptName: LightMiniGame.RelicEffects.QuickReliefPillEffect2
   effectParams:
   - 6
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: f7d1f52fef4a2304c92bdacb14c34c1c, type: 3}
+  effectScript: {fileID: 11500000, guid: 2145f7b0aa655b64baa5475aa859d8b1, type: 3}

@@ -19,9 +19,9 @@ MonoBehaviour:
   value: 65
   grade: 2
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.CrownEffect
+  effectScriptName: LightMiniGame.RelicEffects.CrownEffect2
   effectParams:
   - 10
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: a4587122cf754c24792586e230b41743, type: 3}
+  effectScript: {fileID: 11500000, guid: b83f4a4ca58f8984da9ed8c35ac48bec, type: 3}

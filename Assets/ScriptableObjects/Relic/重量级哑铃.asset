@@ -19,9 +19,9 @@ MonoBehaviour:
   value: 45
   grade: 1
   sortOrder: 0
-  effectScriptName: LightMiniGame.RelicEffects.DumbbellEffect
+  effectScriptName: LightMiniGame.RelicEffects.DumbbellEffect1
   effectParams:
   - 3
   effectStringParams: []
   effectObjectParams: []
-  effectScript: {fileID: 11500000, guid: 435535dfaef251b4db0f8921b5dfb96c, type: 3}
+  effectScript: {fileID: 11500000, guid: 458046e4f53d54744bb2298f709b1f7b, type: 3}
