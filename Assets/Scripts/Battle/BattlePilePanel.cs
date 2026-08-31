@@ -50,11 +50,13 @@ public class BattlePilePanel : MonoBehaviour
         _attackPrefab = attackPrefab;
         _skillPrefab = skillPrefab;
         _abilityPrefab = abilityPrefab;
-        if (_bound) return;
-        _bound = true;
-        CacheFont();
-        WirePileIcons();
-        BuildPanel();
+        if (!_bound || _drawIconImage == null)
+        {
+            _bound = true;
+            CacheFont();
+            WirePileIcons();
+            if (_panelRoot == null) BuildPanel();
+        }
         RefreshDrawIcon();
     }
 
@@ -388,7 +390,7 @@ public class BattlePilePanel : MonoBehaviour
         string key = character == null
             ? ""
             : $"{character.characterId} {character.displayName} {character.name}";
-        if (ContainsAny(key, "枪械", "gunner", "defect", "silent"))
+        if (ContainsAny(key, "枪械", "gunmith", "gunsmith", "gunner", "gun", "defect", "silent"))
             return LoadSprite(ref _gunnerFolder, GunnerFolderPath);
         if (ContainsAny(key, "拾荒", "scavenge", "watcher"))
             return LoadSprite(ref _scavengerFolder, ScavengerFolderPath);

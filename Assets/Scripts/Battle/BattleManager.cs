@@ -4232,6 +4232,9 @@ public class BattleManager : MonoBehaviour
             switchAvailableIndicator.SetActive(canSwitch);
         if (switchUsedIndicator != null)
             switchUsedIndicator.SetActive(_hasSwitchedThisTurn);
+
+        if (_pilePanel != null)
+            _pilePanel.RefreshDrawIcon();
     }
 
     // ========================================================================
