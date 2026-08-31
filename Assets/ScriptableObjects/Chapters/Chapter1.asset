@@ -93,7 +93,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_bgc
     displayName: "\u6218\u6597-\u7CBE\u82F1\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
-    description: "\u597D\u7529\uFF0C\u597D\u80CC"
+    description: "\u597D\u7529\uFF0C\u597D\u80CC\uFF0C\u597D\u91CD"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -146,7 +146,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_zdtp
     displayName: "\u6218\u6597-\u7CBE\u82F1\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
-    description: "\u603B\u5F97\u9009\u4E00\u4E2A\u7ACB\u573A\uFF0C\u4E0D\u662F\u5417"
+    description: "\u4FDD\u6301\u4E2D\u7ACB\uFF1F\u8FD9\u4E2A\u4E0D\u662F\u9009\u9879\u54E6~"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -561,7 +561,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_cxzj
     displayName: "\u6218\u6597-\u666E\u901A"
-    description: "\u4F60\u5145q\u5E01\u5417\uFF1F"
+    description: "\u5145q\u5E01\u5417\uFF1F\u73A9\u5361\u4E01\u8F66\u5417\uFF1F"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -618,7 +618,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_dkjqr
     displayName: "\u6218\u6597-\u666E\u901A"
-    description: "\u8FDF\u5230\u5361\u5DF2\u653E\u7F6E\u5230\u5DE5\u4F4D\u4E0A\uFF0C\u8BF7\u67E5\u6536"
+    description: "\u5DE5\u4F4D\u4E0A\u6709\u8FDF\u5230\u5361\u7684\uFF0C\u665A\u70B9\u6765\u627E\u6211\uFF01\uFF01"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -675,7 +675,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_hhhx
     displayName: "\u6218\u6597-\u666E\u901A"
-    description: "\u6CA1\u6709\u4EBA\u77E5\u9053\u5B83\u5728\u8BF4\u4EC0\u4E48"
+    description: "\u54E5\u4EEC\u53FD\u91CC\u5495\u565C\u8BF4\u5565\u5462\uFF1F"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
