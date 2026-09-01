@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Chapter3
   m_EditorClassIdentifier: 
   chapterName: "\u9762\u5BF9\u73B0\u5B9E\u5427\uFF0C\u5C11\u5E74"
-  maxSelections: 1
+  maxSelections: 0
   events:
   - eventId: ch3_event_final
     displayName: "\u6218\u6597-BOSS"
@@ -90,6 +90,7 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
+  characterDeckOverrides: []
   NormalBG: {fileID: 21300000, guid: d54e701318e4da34aa66d48e8f6551fa, type: 3}
   AbnormalBG: {fileID: 21300000, guid: d54e701318e4da34aa66d48e8f6551fa, type: 3}
   sanityThreshold: 5

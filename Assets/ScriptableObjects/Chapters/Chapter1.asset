@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Chapter1
   m_EditorClassIdentifier: 
   chapterName: "\u5168\u666F\u673A\u623F"
-  maxSelections: 18
+  maxSelections: 17
   events:
   - eventId: ch1_event_final
     displayName: "\u6218\u6597-BOSS"
-    description: "\u5F53\u4F60\u5728\u51DD\u89C6\u5B83\u7684\u65F6\u5019\uFF0C\u5B83\u4E5F\u5728\u51DD\u89C6\u7740\u4F60\uFF08\u5F88\u5F3A\uFF01\uFF01\u5EFA\u8BAE\u6700\u540E\u6311\u6218\uFF09"
+    description: "\u5F53\u4F60\u5728\u51DD\u89C6\u5B83\u7684\u65F6\u5019\uFF0C\u5B83\u4E5F\u5728\u51DD\u89C6\u7740\u4F60"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -92,7 +92,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_bgc
     displayName: "\u6218\u6597-\u7CBE\u82F1"
-    description: "\u597D\u7529\uFF0C\u597D\u80CC\uFF0C\u597D\u91CD\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
+    description: "\u597D\u7529\uFF0C\u597D\u80CC\uFF0C\u597D\u91CD"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -145,7 +145,7 @@ MonoBehaviour:
     defaultEffects: []
   - eventId: ch1_event_zdtp
     displayName: "\u6218\u6597-\u7CBE\u82F1"
-    description: "\u4FDD\u6301\u4E2D\u7ACB\uFF1F\u8FD9\u4E2A\u4E0D\u662F\u9009\u9879\u54E6~\uFF08\u8F83\u5F3A\uFF0C\u5EFA\u8BAE\u8C28\u614E\u6311\u6218\uFF09"
+    description: "\u4FDD\u6301\u4E2D\u7ACB\uFF1F\u8FD9\u4E2A\u4E0D\u662F\u9009\u9879\u54E6~"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0

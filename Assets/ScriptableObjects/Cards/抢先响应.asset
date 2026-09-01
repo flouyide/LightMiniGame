@@ -102,6 +102,8 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   - enabled: 1
     displayName: "\u82E5\u66B4\u51FB\u51CF\u4E0B\u5F20\u8D39\u7528"
     timing: 0
@@ -170,6 +172,8 @@ MonoBehaviour:
     activeOnlyWhenOwnerIsActive: 1
     customOperation: {fileID: 0}
     customParams: 
+    createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: 

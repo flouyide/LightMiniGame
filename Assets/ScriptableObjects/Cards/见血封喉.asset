@@ -105,6 +105,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 11400000, guid: c138027e021a6d74881fdfdfdcbb0c41, type: 2}
+    keywordToApply: 0
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: 
