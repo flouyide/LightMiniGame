@@ -20,14 +20,12 @@ MonoBehaviour:
   phase1Skills:
   - {fileID: 11400000, guid: 121e5d2086d8783468400da4ce74fead, type: 2}
   - {fileID: 11400000, guid: 8122cf42a13cb3b44bf73e0b1385adf8, type: 2}
-  - {fileID: 11400000, guid: e4a801916746e104fb160f5acfa23d68, type: 2}
   - {fileID: 11400000, guid: e7de847322c21b341a720c8fb861be83, type: 2}
   - {fileID: 11400000, guid: 45bcebbf2d57bf648aea668d23dc6adf, type: 2}
   - {fileID: 11400000, guid: 9fb4a22f483315349986dc7460961b2b, type: 2}
   phase2Skills:
   - {fileID: 11400000, guid: 121e5d2086d8783468400da4ce74fead, type: 2}
   - {fileID: 11400000, guid: 8122cf42a13cb3b44bf73e0b1385adf8, type: 2}
-  - {fileID: 11400000, guid: e4a801916746e104fb160f5acfa23d68, type: 2}
   - {fileID: 11400000, guid: e7de847322c21b341a720c8fb861be83, type: 2}
   - {fileID: 11400000, guid: 45bcebbf2d57bf648aea668d23dc6adf, type: 2}
   - {fileID: 11400000, guid: 9fb4a22f483315349986dc7460961b2b, type: 2}

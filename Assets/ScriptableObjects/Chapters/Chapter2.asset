@@ -166,13 +166,13 @@ MonoBehaviour:
         enterBattleEnemies: []
     enemies:
     - config: {fileID: 11400000, guid: fa1c97a84f8f574499be154c75ff2d58, type: 2}
-      anchoredPosition: {x: -600, y: -50}
+      anchoredPosition: {x: -700, y: -50}
     - config: {fileID: 11400000, guid: 0f567b9c1ceb95649bbb577b9c866311, type: 2}
-      anchoredPosition: {x: -300, y: -150}
+      anchoredPosition: {x: -350, y: -200}
     - config: {fileID: 11400000, guid: 4d34a9ff390cc0a45a5f7dd9e3f9dff9, type: 2}
-      anchoredPosition: {x: 300, y: -50}
+      anchoredPosition: {x: 350, y: -50}
     - config: {fileID: 11400000, guid: 81e3545ad2a61f044a24a81c9aa26dd4, type: 2}
-      anchoredPosition: {x: 600, y: -150}
+      anchoredPosition: {x: 700, y: -200}
     lootTable:
       entries:
       - kind: 0
@@ -542,9 +542,9 @@ MonoBehaviour:
         enterBattleEnemies: []
     enemies:
     - config: {fileID: 11400000, guid: 1b08f26542b5d0748ae95b7a28093d6e, type: 2}
-      anchoredPosition: {x: -450, y: -50}
+      anchoredPosition: {x: -400, y: -50}
     - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
-      anchoredPosition: {x: 150, y: -50}
+      anchoredPosition: {x: 100, y: -50}
     lootTable:
       entries:
       - kind: 0
