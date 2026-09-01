@@ -20,9 +20,11 @@ MonoBehaviour:
   phase1Skills:
   - {fileID: 11400000, guid: b222d4631760b4d4eb8ac783f2786590, type: 2}
   - {fileID: 11400000, guid: 3652ab12dc7cc714998b91361ca6ad7b, type: 2}
+  - {fileID: 11400000, guid: b222d4631760b4d4eb8ac783f2786590, type: 2}
   phase2Skills:
   - {fileID: 11400000, guid: b222d4631760b4d4eb8ac783f2786590, type: 2}
   - {fileID: 11400000, guid: 3652ab12dc7cc714998b91361ca6ad7b, type: 2}
+  - {fileID: 11400000, guid: b222d4631760b4d4eb8ac783f2786590, type: 2}
   difficulty: 2
   actionPriority: 1
   strength: 0

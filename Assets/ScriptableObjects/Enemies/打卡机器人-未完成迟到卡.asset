@@ -21,9 +21,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 83ec53067339d4f4fa10669ccd5fbf7b, type: 2}
   - {fileID: 11400000, guid: c8161282d0a64dd4ba538c084a463478, type: 2}
   - {fileID: 11400000, guid: f26e6093382e09c44906000927a596a5, type: 2}
+  - {fileID: 11400000, guid: f26e6093382e09c44906000927a596a5, type: 2}
   phase2Skills:
   - {fileID: 11400000, guid: 83ec53067339d4f4fa10669ccd5fbf7b, type: 2}
   - {fileID: 11400000, guid: c8161282d0a64dd4ba538c084a463478, type: 2}
+  - {fileID: 11400000, guid: f26e6093382e09c44906000927a596a5, type: 2}
   - {fileID: 11400000, guid: f26e6093382e09c44906000927a596a5, type: 2}
   difficulty: 1
   actionPriority: 1
