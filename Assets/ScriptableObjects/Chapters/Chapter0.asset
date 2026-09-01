@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Chapter0
   m_EditorClassIdentifier: 
   chapterName: "\u5165\u804C\u4E4B\u65C5"
-  maxSelections: 4
+  maxSelections: 1
   events:
   - eventId: guide
     displayName: "\u6218\u6597-\u5F15\u5BFC"
