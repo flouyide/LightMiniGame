@@ -13,4 +13,7 @@ MonoBehaviour:
   m_Name: "\u7267\u5E08\u5361\u7EC4"
   m_EditorClassIdentifier: 
   character: {fileID: 11400000, guid: 05c4874963545144daee7fef33724012, type: 2}
-  startingCards: []
+  startingCards:
+  - {fileID: 11400000, guid: 4b9cb8c4ff50e25498ae4e9cf6153544, type: 2}
+  - {fileID: 11400000, guid: b70808a1037abdc48ab5de92daa1f5f9, type: 2}
+  - {fileID: 11400000, guid: 0bd5be04452dc444482dcc5d1dd3c800, type: 2}
