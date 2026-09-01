@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardId: card_7a35a0ef
   cardName: "\u5168\u666F\u538B\u5236"
-  normalDescription: "+8\u683C\u6321+2\u529B\u91CF"
-  lowSanityDescription: "+12\u683C\u6321+4\u529B\u91CF"
+  normalDescription: "+8\u683C\u6321+10\u529B\u91CF"
+  lowSanityDescription: "+12\u683C\u6321+20\u529B\u91CF"
   cardArt: {fileID: 21300000, guid: 7ef7f690f86485d4cbd40ee40c3fee42, type: 3}
   descBoxSprite: {fileID: 21300000, guid: b32ccd1bf9e9dee40943fe73816b1c38, type: 3}
   typeBoxSprite: {fileID: 0}
@@ -404,7 +404,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 2
+        intValue: 10
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
@@ -564,7 +564,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 4
+        intValue: 20
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
