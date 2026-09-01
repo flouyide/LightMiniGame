@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 565f299fc8762004d8b802c170ed4a72, type: 3}
   m_Name: PlayerConfig
   m_EditorClassIdentifier: 
-  maxHP: 100
-  startHP: 70
+  maxHP: 60
+  startHP: 60
   startGold: 0
   startSanity: 10
   maxSanity: 10

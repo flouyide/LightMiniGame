@@ -1358,6 +1358,37 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
+  characterDeckOverrides:
+  - character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
+    cards:
+    - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
+    - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
+    - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
+    - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
+    - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
+    - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
+    - {fileID: 11400000, guid: c3c3c660339724cb8a701ca154ec2fcd, type: 2}
+    - {fileID: 11400000, guid: 550e24b54cd5a0e49bd42397779db821, type: 2}
+  - character: {fileID: 11400000, guid: b6826da99786a96498d50d26c4e4aabf, type: 2}
+    cards:
+    - {fileID: 11400000, guid: 3aa8012d058f7fd4886859c3d93641f6, type: 2}
+    - {fileID: 11400000, guid: 06b10fd0482ac3846920c2df3c4c8ec1, type: 2}
+    - {fileID: 11400000, guid: be2e235ae616a4f46bdac3057ec8ecf4, type: 2}
+    - {fileID: 11400000, guid: b2632905cd816194fb05818d9787e9b0, type: 2}
+    - {fileID: 11400000, guid: b2632905cd816194fb05818d9787e9b0, type: 2}
+    - {fileID: 11400000, guid: fd37811edc3e30449bd2440a622fd10a, type: 2}
+    - {fileID: 11400000, guid: fd37811edc3e30449bd2440a622fd10a, type: 2}
+    - {fileID: 11400000, guid: fd37811edc3e30449bd2440a622fd10a, type: 2}
+  - character: {fileID: 11400000, guid: 05c4874963545144daee7fef33724012, type: 2}
+    cards:
+    - {fileID: 11400000, guid: a9fcbde3d2b602d47bf85e4d85cd4727, type: 2}
+    - {fileID: 11400000, guid: a9fcbde3d2b602d47bf85e4d85cd4727, type: 2}
+    - {fileID: 11400000, guid: a9fcbde3d2b602d47bf85e4d85cd4727, type: 2}
+    - {fileID: 11400000, guid: 4be6a0c195033d0459e656b18f41c63b, type: 2}
+    - {fileID: 11400000, guid: 4be6a0c195033d0459e656b18f41c63b, type: 2}
+    - {fileID: 11400000, guid: 4be6a0c195033d0459e656b18f41c63b, type: 2}
+    - {fileID: 11400000, guid: 205a1253f7f36894f88524da93553567, type: 2}
+    - {fileID: 11400000, guid: 3bb803a00fd279a4d8f7640419ac2673, type: 2}
   NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   sanityThreshold: 5

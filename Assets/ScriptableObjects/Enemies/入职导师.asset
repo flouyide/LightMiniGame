@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u5165\u804C\u5BFC\u5E08"
   m_EditorClassIdentifier: 
   enemyName: "\u5165\u804C\u5BFC\u5E08"
-  maxHP: 999
+  maxHP: 6
   armor: 0
   phase1Portrait: {fileID: 21300000, guid: 0e2d7d4d2f7ac0547b6cf7626918541a, type: 3}
   phase2Portrait: {fileID: 21300000, guid: a132d6c1c99d88243a46e722d69597e4, type: 3}
@@ -32,4 +32,3 @@ MonoBehaviour:
   lowSanityCardCount: 1
   abilities:
   - relic: {fileID: 11400000, guid: 179addb365bf81d409ed8df57d288971, type: 2}
-  - relic: {fileID: 11400000, guid: 34000db95f8fb0348a2d16575a5ab8f2, type: 2}

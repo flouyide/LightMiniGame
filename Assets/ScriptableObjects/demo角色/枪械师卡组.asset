@@ -14,13 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   character: {fileID: 11400000, guid: b015fdd368c2cc64683b057f7dfcf863, type: 2}
   startingCards:
-  - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
-  - {fileID: 11400000, guid: d842b94ef2ff76c409f76bb4604737de, type: 2}
-  - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
-  - {fileID: 11400000, guid: 783aa92d7e0e4ed4f87dab24d0f49875, type: 2}
-  - {fileID: 11400000, guid: 8d7e348ec937a4d01911eca1e9729110, type: 2}
-  - {fileID: 11400000, guid: 0c32533053f9843d0ad3e07a5badbb73, type: 2}
-  - {fileID: 11400000, guid: c05c6d9c4dbfb40f2a461b95cb7fed35, type: 2}
-  - {fileID: 11400000, guid: 59819af7cfcdcbb4dae531734742d42d, type: 2}
-  - {fileID: 11400000, guid: 22b08182b59e40f48978ef88ef736e76, type: 2}
-  - {fileID: 11400000, guid: a3bccc29a1fdca047a47fabc355c7d35, type: 2}
+  - {fileID: 11400000, guid: 4b9cb8c4ff50e25498ae4e9cf6153544, type: 2}
+  - {fileID: 11400000, guid: b70808a1037abdc48ab5de92daa1f5f9, type: 2}
+  - {fileID: 11400000, guid: 0bd5be04452dc444482dcc5d1dd3c800, type: 2}
