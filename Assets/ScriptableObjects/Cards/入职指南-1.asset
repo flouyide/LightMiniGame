@@ -25,8 +25,8 @@ MonoBehaviour:
   descBoxInset: 0
   grade: 0
   cardType: 1
-  existence: 2
-  lowSanityExistence: 2
+  existence: 0
+  lowSanityExistence: 0
   normalCost: 0
   lowSanityCost: 0
   price: 10
