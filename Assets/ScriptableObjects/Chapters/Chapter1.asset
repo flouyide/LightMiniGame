@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93eb46175a208ce42bfce2066b949083, type: 3}
   m_Name: Chapter1
   m_EditorClassIdentifier: 
-  chapterName: "\u5168\u666F\u673A\u623F"
+  chapterName: "\u7B2C\u4E00\u7AE0\uFF1A\u5168\u666F\u673A\u623F"
   maxSelections: 17
   events:
   - eventId: ch1_event_final
