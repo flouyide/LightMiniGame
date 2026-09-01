@@ -621,9 +621,9 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
-  - eventId: ch1_event_bgt
+  - eventId: ch1_event_wnhds
     displayName: "\u6218\u6597-\u666E\u901A"
-    description: "\u516C\u53F8\u6700\u5F3A\u60C5\u62A5\u7AD9"
+    description: "\u90FD\u662F\u4E3A\u4F60\u597D\uFF01\uFF01"
     icon: {fileID: 0}
     eventType: 0
     isRepeatable: 0
@@ -657,7 +657,7 @@ MonoBehaviour:
         discountRatio: 0
         enterBattleEnemies: []
     enemies:
-    - config: {fileID: 11400000, guid: e1ae5ac7568c1b74a87377927f327496, type: 2}
+    - config: {fileID: 11400000, guid: 8736b52da1f1bfa4e940c4573b72105c, type: 2}
       anchoredPosition: {x: 0, y: -50}
     lootTable:
       entries:
@@ -1289,6 +1289,7 @@ MonoBehaviour:
     backgroundSanityThreshold: 4
     restHealingPercent: 30
     defaultEffects: []
+  characterDeckOverrides: []
   NormalBG: {fileID: 21300000, guid: cbf53323245b401418f4adcf1ee4d8c2, type: 3}
   AbnormalBG: {fileID: 21300000, guid: cbf53323245b401418f4adcf1ee4d8c2, type: 3}
   sanityThreshold: 5
