@@ -2468,8 +2468,8 @@ MonoBehaviour:
   retryUntilFound: 1
   retryInterval: 0.5
   title: "\u798F\u62A5\u9B54\u65B9"
-  body: "\u4F60\u8FD8\u5728\u7B49\u4EC0\u4E48\uFF1F"
-  preferredWidth: 300
+  body: "\u5C06\u4EFB\u610F\u6570\u503C\u76F8\u52A0\u540E\u91CD\u65B0\u5206\u914D\uFF01\n\u91CD\u7EC4\u65F6\u5C06\u798F\u62A5\u503C\u989D\u5916\u8BA1\u5165\u603B\u6570\uFF01\n\u53EA\u9700\u6536\u53D6\u5FAE\u4E0D\u8DB3\u9053\u76844\u7406\u667A\u5373\u53EF\u4F7F\u7528^_^"
+  preferredWidth: 320
   titleFontSize: 22
   bodyFontSize: 18
   padding: 14

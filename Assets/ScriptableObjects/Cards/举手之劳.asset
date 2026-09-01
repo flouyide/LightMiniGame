@@ -15,7 +15,7 @@ MonoBehaviour:
   cardId: card_fa8847e2_copy_96a4_copy_d928_copy_f896
   cardName: "\u4E3E\u624B\u4E4B\u52B3"
   normalDescription: "\u9020\u6210{15+\u529B\u91CF}\u4F24\u5BB3\uFF0C\u5E76\u5931\u53BB2\u7406\u667A"
-  lowSanityDescription: "\u9020\u6210{15+\u529B\u91CF}\u4F24\u5BB3\uFF0C\u5E76\u5931\u53BB2\u7406\u667A"
+  lowSanityDescription: "\u9020\u6210{20+\u529B\u91CF}\u4F24\u5BB3\uFF0C\u5E76\u5931\u53BB2\u7406\u667A"
   cardArt: {fileID: 21300000, guid: 60a3adc89e378f043af59785c742ff2d, type: 3}
   descBoxSprite: {fileID: 21300000, guid: 43e189e3b10da0349a54dde26445ecfa, type: 3}
   typeBoxSprite: {fileID: 0}
@@ -24,11 +24,11 @@ MonoBehaviour:
   descBoxHeight: 95
   descBoxInset: 10
   grade: 0
-  cardType: 1
+  cardType: 0
   existence: 0
   lowSanityExistence: 0
-  normalCost: 1
-  lowSanityCost: 1
+  normalCost: 0
+  lowSanityCost: 0
   price: 10
   keyword: 0
   keywordsAreFlags: 1
@@ -680,7 +680,7 @@ MonoBehaviour:
       type: {class: ValueNode, ns: LightMiniGame.CardEditor, asm: Assembly-CSharp}
       data:
         nodeType: 0
-        intValue: 15
+        intValue: 20
         floatValue: 0
         attributeRef: 1
         resourceRef: 1
