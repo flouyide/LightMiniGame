@@ -6,11 +6,11 @@ using UnityEngine.UI;
 /// <summary>
 /// 融合（Fusion）核心控制器 —— 由 BattleManager.BeginBattle() 自动创建并挂载。
 /// UI 流程（原位高亮版）：
-///  1) 常驻“融合”按钮（左上角魔方），每回合可用一次。
-///  2) 点击进入融合状态：立即扣 4 理智 + 全屏暗色蒙版 + 在每个可融合数值的“原位”
-///     生成半透明高亮片（贴合对应数字，不遮字）。
-///  3) 已选 ≥2 个数值时再点魔方 = 随机融合并回填，本回合禁用。
-///  4) 未选满（0 或 1 个）时再点魔方 = 退出融合状态。
+///  1) 常驻“融合”按钮（左上角魔方），每回合可用 FusionUseLimitThisTurn 次。
+///  2) 点击进入融合状态：全屏暗色蒙版 + 在每个可融合数值的“原位”
+///     生成半透明高亮片（贴合对应数字，不遮字）。未成功融合时退出不扣次数、不扣理智。
+///  3) 已选 ≥2 个数值时再点魔方 = 随机融合并回填，此时才扣 4 理智并消耗一次次数。
+///  4) 未选满（0 或 1 个）时再点魔方 = 退出融合状态，本回合仍可再进。
 /// 全部 UI 由代码在运行时创建，不依赖场景手工摆放。
 /// 重分配总值 = 选中数字之和 + 当前福报值 + 当前激活角色的遗物加成。
 /// </summary>
@@ -270,10 +270,6 @@ private void OnValidate() => ApplyEntryButtonOffset();
 
     private void EnterFusion()
     {
-        // 立即扣 4 理智（代价而非条件，不足也可进，clamp≥0）
-        _battle.DeductSanityAsCost(SanityCost);
-        _battle.MarkFusionUsed();
-
         _candidates.Clear();
         _selected.Clear();
         _battle.SetHandLayoutFrozen(true);
@@ -1108,6 +1104,8 @@ private void OnValidate() => ApplyEntryButtonOffset();
         }
 
         Debug.Log($"[Fusion] 融合 {total} → [{string.Join(",", split)}]");
+        _battle.DeductSanityAsCost(SanityCost);
+        _battle.MarkFusionUsed();
         ExitFusion();
         _battle.SetDirtyUI();
     }

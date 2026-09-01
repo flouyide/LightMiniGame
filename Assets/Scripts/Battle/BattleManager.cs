@@ -1681,7 +1681,7 @@ public class BattleManager : MonoBehaviour
             handLayout.SetLayoutFrozen(frozen);
     }
 
-    /// <summary>手动触发一次理智扣除（融合进入时用，作为代价而非条件，允许负值 clamp≥0）。</summary>
+    /// <summary>融合成功时扣除理智（代价而非条件，不足也可融合，clamp≥0）。</summary>
     public void DeductSanityAsCost(int amount)
     {
         if (amount <= 0) return;
