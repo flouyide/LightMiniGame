@@ -24,7 +24,7 @@ MonoBehaviour:
   descBoxHeight: 95
   descBoxInset: 10
   grade: 1
-  cardType: 0
+  cardType: 1
   existence: 1
   lowSanityExistence: 0
   normalCost: 0
@@ -103,6 +103,7 @@ MonoBehaviour:
     customOperation: {fileID: 0}
     customParams: 
     createdCard: {fileID: 0}
+    keywordToApply: 0
   lowSanityEffectNodes: []
   customCardScript: {fileID: 0}
   designerNotes: 
