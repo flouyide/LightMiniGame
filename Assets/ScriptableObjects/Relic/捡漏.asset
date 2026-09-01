@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: ScavengerInit
   relicName: "\u6361\u6F0F"
-  description: "\u4ECE\u62E5\u6709\u6B64\u9057\u7269\u7684\u89D2\u8272\u5207\u6362\u5230\u5176\u4ED6\u89D2\u8272\u65F6\uFF0C\u83B7\u5F975\u70B9\u798F\u62A5\u503C"
+  description: "\u4ECE\u62E5\u6709\u6B64\u9057\u7269\u7684\u89D2\u8272\u5207\u6362\u5230\u5176\u4ED6\u89D2\u8272\u65F6\uFF0C\u83B7\u5F972\u70B9\u798F\u62A5\u503C\uFF08\u4F7F\u7528\u9B54\u65B9\u65F6\u83B7\u5F97\u989D\u59162\u70B9\u6570\u503C\uFF09"
   icon: {fileID: 21300000, guid: d796f0d78789b1a4faeeaf0f4850379b, type: 3}
   value: 0
   grade: 0
   sortOrder: 0
   effectScriptName: LightMiniGame.RelicEffects.ScavengerFortuneOnSwitchEffect
   effectParams:
-  - 5
+  - 1
   effectStringParams: []
   effectObjectParams: []
   effectScript: {fileID: 11500000, guid: e5f800b909b5a474bba9f47a4bfb4f89, type: 3}
