@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ChapterTest
   m_EditorClassIdentifier: 
   chapterName: "\u6D4B\u8BD5\u7AE0"
-  maxSelections: 100
+  maxSelections: 3
   events:
   - eventId: finalBattle
     displayName: "\u7ED3\u5C3E"
@@ -345,6 +345,347 @@ MonoBehaviour:
       keywordToAdd: 0
       discountRatio: 0.6
       enterBattleEnemies: []
+  - eventId: shop2
+    displayName: "\u6218\u6597\u6D4B\u8BD5"
+    description: Monster Debug only
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+50\u91D1\u5E01\uFF0C-10HP"
+      effects:
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: d180350fdfe7b8142b1985a6f45a1952, type: 2}
+      anchoredPosition: {x: -300, y: -100}
+    - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
+      anchoredPosition: {x: 300, y: -100}
+    lootTable:
+      entries:
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000002000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 0000000001000000
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 00000000
+      - kind: 2
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 01000000
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 5
+    restHealingPercent: 30
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
+  - eventId: shop3
+    displayName: "\u6218\u6597\u6D4B\u8BD5"
+    description: Monster Debug only
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+50\u91D1\u5E01\uFF0C-10HP"
+      effects:
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: d180350fdfe7b8142b1985a6f45a1952, type: 2}
+      anchoredPosition: {x: -300, y: -100}
+    - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
+      anchoredPosition: {x: 300, y: -100}
+    lootTable:
+      entries:
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000002000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 0000000001000000
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 00000000
+      - kind: 2
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 01000000
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 5
+    restHealingPercent: 30
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
+  - eventId: shop4
+    displayName: "\u6218\u6597\u6D4B\u8BD5"
+    description: Monster Debug only
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+50\u91D1\u5E01\uFF0C-10HP"
+      effects:
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: d180350fdfe7b8142b1985a6f45a1952, type: 2}
+      anchoredPosition: {x: -300, y: -100}
+    - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
+      anchoredPosition: {x: 300, y: -100}
+    lootTable:
+      entries:
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000002000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 0000000001000000
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 00000000
+      - kind: 2
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 01000000
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 5
+    restHealingPercent: 30
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
+  - eventId: shop5
+    displayName: "\u6218\u6597\u6D4B\u8BD5"
+    description: Monster Debug only
+    icon: {fileID: 0}
+    eventType: 1
+    isRepeatable: 0
+    isFinalNode: 0
+    mutuallyExclusiveIds: []
+    followUpIds: []
+    prerequisiteIds: []
+    options:
+    - optionText: "+50\u91D1\u5E01\uFF0C-10HP"
+      effects:
+      - type: 9
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+      - type: 9
+        amount: 10
+        itemDesc: 
+        attributeOp: 1
+        targetAttribute: 6
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0
+        enterBattleEnemies: []
+    - optionText: "\u7279\u4EF7\u5546\u5E97"
+      effects:
+      - type: 12
+        amount: 50
+        itemDesc: 
+        attributeOp: 0
+        targetAttribute: 5
+        relic: {fileID: 0}
+        card: {fileID: 0}
+        keywordToAdd: 0
+        discountRatio: 0.5
+        enterBattleEnemies: []
+    enemies:
+    - config: {fileID: 11400000, guid: d180350fdfe7b8142b1985a6f45a1952, type: 2}
+      anchoredPosition: {x: -300, y: -100}
+    - config: {fileID: 11400000, guid: 4c29789bf72adbe48a0a93bb2db5142c, type: 2}
+      anchoredPosition: {x: 300, y: -100}
+    lootTable:
+      entries:
+      - kind: 1
+        currencyAmount: 10
+        cardRarities: 0000000002000000
+        cardDrawCount: 3
+        cardPickCount: 1
+        relicRarities: 0000000001000000
+      - kind: 0
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 00000000
+      - kind: 2
+        currencyAmount: 10
+        cardRarities: 
+        cardDrawCount: 0
+        cardPickCount: 0
+        relicRarities: 01000000
+    normalBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    lowSanityBattleBackground: {fileID: 21300000, guid: 7e293e0aa274ec841a4841c0daa1a321, type: 3}
+    backgroundSanityThreshold: 5
+    restHealingPercent: 30
+    defaultEffects:
+    - type: 6
+      amount: 0
+      itemDesc: 
+      attributeOp: 0
+      targetAttribute: 0
+      relic: {fileID: 0}
+      card: {fileID: 0}
+      keywordToAdd: 0
+      discountRatio: 0.6
+      enterBattleEnemies: []
+  characterDeckOverrides: []
   NormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   AbnormalBG: {fileID: 21300000, guid: 597762ff45792654a99195fd8ac04a9a, type: 3}
   sanityThreshold: 4

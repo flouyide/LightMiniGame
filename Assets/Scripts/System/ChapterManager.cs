@@ -604,7 +604,7 @@ public class ChapterManager : MonoBehaviour
                 availablePool.Add(evt);
         }
 
-        // 最终节点逻辑：仅当剩余选择次数为 0 时强制出现 Boss（Boss 只在剩余 0 时必出现）
+        // 最终节点只会在章节最后一轮刷新：剩余选择次数归零时才参与刷新，并强制出现。
         bool forceFinal = _remainingSelections == 0 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
 
         if (forceFinal)
@@ -623,15 +623,14 @@ public class ChapterManager : MonoBehaviour
         }
         else
         {
-            // 最终节点也可正常参与随机
-            var fullPool = availablePool.ToList();
-            fullPool.AddRange(finalNodeCandidates);
-            Shuffle(fullPool);
+            // 非章节最后一轮：最终节点不参与随机，只从普通事件池刷新。
+            var normalPool = availablePool.ToList();
+            Shuffle(normalPool);
 
-            while (_currentPages.Count < RefreshCount && fullPool.Count > 0)
+            while (_currentPages.Count < RefreshCount && normalPool.Count > 0)
             {
-                _currentPages.Add(fullPool[0]);
-                fullPool.RemoveAt(0);
+                _currentPages.Add(normalPool[0]);
+                normalPool.RemoveAt(0);
             }
         }
 
@@ -689,7 +688,7 @@ public class ChapterManager : MonoBehaviour
             SkipEvent:;
         }
 
-        // 最终节点逻辑：仅当剩余选择次数为 0 时强制出现 Boss（Boss 只在剩余 0 时必出现）
+        // 最终节点只会在章节最后一轮刷新：剩余选择次数归零时才参与刷新，并强制出现。
         bool forceFinal = _remainingSelections == 0 && finalNodeCandidates.Count > 0 && !_finalNodeCompleted;
 
         PageEventData newPage;
@@ -699,13 +698,13 @@ public class ChapterManager : MonoBehaviour
         }
         else
         {
-            var fullPool = availablePool.ToList();
-            fullPool.AddRange(finalNodeCandidates);
-            Shuffle(fullPool);
+            // 非章节最后一轮：最终节点不参与替换刷新，只从普通事件池选择。
+            var normalPool = availablePool.ToList();
+            Shuffle(normalPool);
 
-            if (fullPool.Count > 0)
+            if (normalPool.Count > 0)
             {
-                newPage = fullPool[0];
+                newPage = normalPool[0];
             }
             else
             {
