@@ -32,3 +32,4 @@ MonoBehaviour:
   lowSanityCardCount: 1
   abilities:
   - relic: {fileID: 11400000, guid: 179addb365bf81d409ed8df57d288971, type: 2}
+  - relic: {fileID: 11400000, guid: 34000db95f8fb0348a2d16575a5ab8f2, type: 2}

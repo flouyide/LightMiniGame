@@ -15,11 +15,11 @@ MonoBehaviour:
   turns:
   - deals:
     - card: {fileID: 11400000, guid: 4b9cb8c4ff50e25498ae4e9cf6153544, type: 2}
-      count: 0
+      count: 1
   - deals:
     - card: {fileID: 11400000, guid: b70808a1037abdc48ab5de92daa1f5f9, type: 2}
-      count: 0
+      count: 1
   - deals:
     - card: {fileID: 11400000, guid: 0bd5be04452dc444482dcc5d1dd3c800, type: 2}
-      count: 0
+      count: 1
   loop: 0
